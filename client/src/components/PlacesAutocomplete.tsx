@@ -71,7 +71,7 @@ export function PlacesAutocomplete({
       autocompleteRef.current = new window.google!.maps.places.Autocomplete(
         inputRef.current,
         {
-          types: ["(cities)", "postal_code"],
+          types: ["geocode"],
           fields: ["formatted_address", "geometry", "place_id", "name"],
         }
       );
