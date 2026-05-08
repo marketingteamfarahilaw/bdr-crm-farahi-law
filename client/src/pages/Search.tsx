@@ -272,7 +272,7 @@ export default function SearchPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
-                {[10, 20, 40, 60].map((r) => (
+                {[10, 20, 40, 60, 80, 100].map((r) => (
                   <SelectItem key={r} value={String(r)} className="text-foreground">
                     {r} results
                   </SelectItem>

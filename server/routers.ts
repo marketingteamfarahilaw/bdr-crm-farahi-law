@@ -46,7 +46,7 @@ export const appRouter = router({
           lat: z.number().optional(),
           lng: z.number().optional(),
           radiusMiles: z.number().min(1).max(50).default(10),
-          maxResults: z.number().min(1).max(60).default(20),
+          maxResults: z.number().min(1).max(100).default(20),
         })
       )
       .query(async ({ input }) => {

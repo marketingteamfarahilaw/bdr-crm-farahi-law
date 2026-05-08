@@ -121,8 +121,8 @@ export async function searchGooglePlaces(params: {
   const results: PlaceLead[] = [];
   let pageToken: string | undefined;
 
-  // Places API (New) allows up to 3 pages via nextPageToken
-  for (let page = 0; page < 3 && results.length < maxResults; page++) {
+  // Places API (New) allows up to 5 pages via nextPageToken (20 results per page = 100 max)
+  for (let page = 0; page < 5 && results.length < maxResults; page++) {
     const body: Record<string, unknown> = {
       textQuery: `${query} near ${location}`,
       locationBias: {
