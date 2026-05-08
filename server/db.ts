@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,57 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ─── Saved Leads ─────────────────────────────────────────────────────────────
+
+export async function getSavedLeads(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(savedLeads).where(eq(savedLeads.userId, userId)).orderBy(desc(savedLeads.createdAt));
+}
+
+export async function getSavedLeadByPlaceId(userId: number, placeId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(savedLeads)
+    .where(and(eq(savedLeads.userId, userId), eq(savedLeads.placeId, placeId)))
+    .limit(1);
+  return result[0] ?? undefined;
+}
+
+export async function insertSavedLead(lead: InsertSavedLead) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(savedLeads).values(lead);
+}
+
+export async function deleteSavedLead(userId: number, placeId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(savedLeads).where(and(eq(savedLeads.userId, userId), eq(savedLeads.placeId, placeId)));
+}
+
+export async function updateSavedLeadAnnotation(userId: number, placeId: string, annotation: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(savedLeads).set({ annotation }).where(and(eq(savedLeads.userId, userId), eq(savedLeads.placeId, placeId)));
+}
+
+// ─── Saved Searches ──────────────────────────────────────────────────────────
+
+export async function getSavedSearches(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(savedSearches).where(eq(savedSearches.userId, userId)).orderBy(desc(savedSearches.createdAt));
+}
+
+export async function insertSavedSearch(search: InsertSavedSearch) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(savedSearches).values(search);
+}
+
+export async function deleteSavedSearch(userId: number, id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(savedSearches).where(and(eq(savedSearches.userId, userId), eq(savedSearches.id, id)));
+}
