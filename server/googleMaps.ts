@@ -1,11 +1,12 @@
 /**
- * Google Maps Places API helper
- * Uses the Places API (Text Search + Place Details) to find business leads.
+ * Google Maps Places API (New) helper
+ * Uses the Places API (New) — https://places.googleapis.com/v1/places:searchText
+ * and the Geocoding API for fallback coordinate resolution.
  */
 
 import axios from "axios";
 
-const PLACES_BASE = "https://maps.googleapis.com/maps/api/place";
+const PLACES_NEW_BASE = "https://places.googleapis.com/v1";
 const GEOCODE_BASE = "https://maps.googleapis.com/maps/api/geocode";
 
 export interface PlaceLead {
@@ -33,7 +34,7 @@ function haversineDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 3958.8; // Earth radius in miles
+  const R = 3958.8;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -44,7 +45,7 @@ function haversineDistance(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/** Geocode a city name or zip code to lat/lng */
+/** Geocode a city name or zip code to lat/lng using Geocoding API (still valid) */
 export async function geocodeLocation(
   location: string,
   apiKey: string
@@ -61,40 +62,35 @@ export async function geocodeLocation(
   }
 }
 
-/** Map our internal category key to a Google Places search query */
+/** Map our internal category key to a Places API (New) text search query */
 const CATEGORY_QUERIES: Record<string, string> = {
-  body_shop: "auto body shop",
-  chiropractor: "chiropractor",
-  physical_therapist: "physical therapy",
+  body_shop: "auto body shop collision repair",
+  chiropractor: "chiropractor chiropractic",
+  physical_therapist: "physical therapy rehabilitation",
   medical_clinic: "medical clinic urgent care",
-  orthopedic_doctor: "orthopedic doctor",
+  orthopedic_doctor: "orthopedic doctor surgeon",
   imaging_center: "MRI imaging center radiology",
 };
 
-/** Fetch place details (phone, website) for a single place */
-async function fetchPlaceDetails(
-  placeId: string,
-  apiKey: string
-): Promise<{ phone: string | null; website: string | null }> {
-  try {
-    const res = await axios.get(`${PLACES_BASE}/details/json`, {
-      params: {
-        place_id: placeId,
-        fields: "formatted_phone_number,website",
-        key: apiKey,
-      },
-    });
-    const r = res.data?.result;
-    return {
-      phone: r?.formatted_phone_number ?? null,
-      website: r?.website ?? null,
-    };
-  } catch {
-    return { phone: null, website: null };
-  }
-}
+/**
+ * Fields to request from Places API (New).
+ * Billing note: only request what you need.
+ */
+const PLACE_FIELDS = [
+  "places.id",
+  "places.displayName",
+  "places.formattedAddress",
+  "places.nationalPhoneNumber",
+  "places.websiteUri",
+  "places.rating",
+  "places.userRatingCount",
+  "places.location",
+  "places.businessStatus",
+  "places.types",
+  "places.photos",
+].join(",");
 
-/** Search Google Maps Places for leads */
+/** Search Google Maps using Places API (New) Text Search */
 export async function searchGooglePlaces(params: {
   category: string;
   location: string;
@@ -113,77 +109,85 @@ export async function searchGooglePlaces(params: {
   } else {
     coords = await geocodeLocation(location, apiKey);
   }
-  if (!coords) throw new Error(`Could not geocode location: "${location}". Please select a location from the autocomplete suggestions.`);
+  if (!coords) {
+    throw new Error(
+      `Could not resolve coordinates for: "${location}". Please select a location from the autocomplete suggestions.`
+    );
+  }
 
   const query = CATEGORY_QUERIES[category] ?? category.replace(/_/g, " ");
-  const radiusMeters = Math.min(radiusMiles * 1609.34, 50000); // max 50km
+  const radiusMeters = Math.min(radiusMiles * 1609.34, 50000);
 
   const results: PlaceLead[] = [];
   let pageToken: string | undefined;
 
-  // Fetch up to 3 pages (60 results max from Places API)
+  // Places API (New) allows up to 3 pages via nextPageToken
   for (let page = 0; page < 3 && results.length < maxResults; page++) {
-    const params: Record<string, string | number> = {
-      query: `${query} near ${location}`,
-      location: `${coords.lat},${coords.lng}`,
-      radius: radiusMeters,
-      key: apiKey,
+    const body: Record<string, unknown> = {
+      textQuery: `${query} near ${location}`,
+      locationBias: {
+        circle: {
+          center: { latitude: coords.lat, longitude: coords.lng },
+          radius: radiusMeters,
+        },
+      },
+      maxResultCount: Math.min(maxResults - results.length, 20),
+      languageCode: "en",
     };
-    if (pageToken) params.pagetoken = pageToken;
 
-    const res = await axios.get(`${PLACES_BASE}/textsearch/json`, { params });
-    const data = res.data;
+    if (pageToken) body.pageToken = pageToken;
 
-    if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-      throw new Error(`Google Places API error: ${data.status} — ${data.error_message ?? ""}`);
-    }
+    const res = await axios.post(
+      `${PLACES_NEW_BASE}/places:searchText`,
+      body,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": apiKey,
+          "X-Goog-FieldMask": PLACE_FIELDS,
+        },
+      }
+    );
 
-    const places = data.results ?? [];
-    for (const p of places) {
+    const places: unknown[] = res.data?.places ?? [];
+    pageToken = res.data?.nextPageToken;
+
+    for (const p of places as Record<string, unknown>[]) {
       if (results.length >= maxResults) break;
-      const lat = p.geometry?.location?.lat ?? null;
-      const lng = p.geometry?.location?.lng ?? null;
+
+      const loc = p.location as { latitude?: number; longitude?: number } | undefined;
+      const lat = loc?.latitude ?? null;
+      const lng = loc?.longitude ?? null;
       const distanceMiles =
         lat != null && lng != null
           ? haversineDistance(coords.lat, coords.lng, lat, lng)
           : null;
 
+      const displayName = p.displayName as { text?: string } | undefined;
+      const photos = p.photos as Array<{ name?: string }> | undefined;
+
       results.push({
-        placeId: p.place_id,
-        name: p.name,
-        address: p.formatted_address ?? "",
-        phone: null, // filled in detail fetch
-        website: null,
-        rating: p.rating ?? null,
-        reviewCount: p.user_ratings_total ?? null,
+        placeId: (p.id as string) ?? "",
+        name: displayName?.text ?? (p.formattedAddress as string) ?? "",
+        address: (p.formattedAddress as string) ?? "",
+        phone: (p.nationalPhoneNumber as string | null) ?? null,
+        website: (p.websiteUri as string | null) ?? null,
+        rating: (p.rating as number | null) ?? null,
+        reviewCount: (p.userRatingCount as number | null) ?? null,
         latitude: lat,
         longitude: lng,
         distanceMiles,
         category,
         source: "google",
-        types: p.types ?? [],
-        businessStatus: p.business_status ?? null,
-        photoReference: p.photos?.[0]?.photo_reference ?? null,
+        types: (p.types as string[]) ?? [],
+        businessStatus: (p.businessStatus as string | null) ?? null,
+        photoReference: photos?.[0]?.name ?? null,
       });
     }
 
-    pageToken = data.next_page_token;
     if (!pageToken) break;
-    // Google requires a short delay before using next_page_token
-    if (page < 2) await new Promise((r) => setTimeout(r, 2000));
-  }
-
-  // Fetch details (phone + website) in parallel, batched to avoid rate limits
-  const BATCH = 5;
-  for (let i = 0; i < results.length; i += BATCH) {
-    const batch = results.slice(i, i + BATCH);
-    const details = await Promise.all(
-      batch.map((lead) => fetchPlaceDetails(lead.placeId, apiKey))
-    );
-    details.forEach((d, idx) => {
-      results[i + idx].phone = d.phone;
-      results[i + idx].website = d.website;
-    });
+    // Small delay before fetching next page
+    if (page < 2) await new Promise((r) => setTimeout(r, 500));
   }
 
   return results;

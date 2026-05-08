@@ -78,3 +78,8 @@
 - [x] Pass lat/lng from autocomplete directly to backend (bypass geocoding)
 - [x] Update backend googleMaps.ts to accept lat/lng instead of geocoding text
 - [x] Update tRPC router schema to accept optional lat/lng fields
+
+## API Migration
+- [x] Migrate backend from legacy Places API (Text Search) to Places API (New) — uses https://places.googleapis.com/v1/places:searchText
+- [x] Update place details fetch to use Places API (New) — phone/website now returned inline from searchText, no separate detail call needed
+- [x] Geocoding API still valid and used as fallback; primary path uses lat/lng from autocomplete
