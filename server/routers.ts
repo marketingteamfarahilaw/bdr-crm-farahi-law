@@ -43,6 +43,8 @@ export const appRouter = router({
             "imaging_center",
           ]),
           location: z.string().min(2),
+          lat: z.number().optional(),
+          lng: z.number().optional(),
           radiusMiles: z.number().min(1).max(50).default(10),
           maxResults: z.number().min(1).max(60).default(20),
         })
@@ -54,6 +56,8 @@ export const appRouter = router({
         const places = await searchGooglePlaces({
           category: input.category,
           location: input.location,
+          lat: input.lat,
+          lng: input.lng,
           radiusMiles: input.radiusMiles,
           apiKey: GOOGLE_MAPS_API_KEY,
           maxResults: input.maxResults,
@@ -162,6 +166,8 @@ export const appRouter = router({
           name: z.string().min(1),
           category: z.string(),
           location: z.string(),
+          lat: z.number().optional(),
+          lng: z.number().optional(),
           radiusMiles: z.number().default(10),
         })
       )
@@ -173,6 +179,8 @@ export const appRouter = router({
           location: input.location,
           source: "google",
           radiusMiles: input.radiusMiles,
+          lat: input.lat,
+          lng: input.lng,
         });
         return { success: true };
       }),

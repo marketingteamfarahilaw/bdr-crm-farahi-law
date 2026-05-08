@@ -33,6 +33,8 @@ export const savedSearches = mysqlTable("saved_searches", {
   location: varchar("location", { length: 255 }).notNull(),
   source: mysqlEnum("source", ["google", "yelp", "both"]).default("both").notNull(),
   radiusMiles: int("radiusMiles").default(10).notNull(),
+  lat: float("lat"),
+  lng: float("lng"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

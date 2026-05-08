@@ -19,9 +19,15 @@ export default function SavedSearchesPage() {
     onError: () => toast.error("Failed to delete search."),
   });
 
-  const handleRerun = (search: { category: string; location: string; radiusMiles: number }) => {
+  const handleRerun = (search: { category: string; location: string; radiusMiles: number; lat?: number | null; lng?: number | null }) => {
     // Navigate to search page with params in sessionStorage
-    sessionStorage.setItem("rerunSearch", JSON.stringify(search));
+    sessionStorage.setItem("rerunSearch", JSON.stringify({
+      category: search.category,
+      location: search.location,
+      radiusMiles: search.radiusMiles,
+      lat: search.lat ?? undefined,
+      lng: search.lng ?? undefined,
+    }));
     navigate("/");
     toast.info("Search loaded — click Search to run it.");
   };

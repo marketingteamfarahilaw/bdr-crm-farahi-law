@@ -72,3 +72,9 @@
 - [x] Fix re-run search: Search.tsx reads sessionStorage rerunSearch on mount and pre-fills form
 - [x] Add Google Maps deep link in LeadDetailSheet for location view
 - [x] Add source badge column in results table (Google Maps label)
+
+## Bug Fixes
+- [x] Replace plain text location input with Google Maps Places Autocomplete
+- [x] Pass lat/lng from autocomplete directly to backend (bypass geocoding)
+- [x] Update backend googleMaps.ts to accept lat/lng instead of geocoding text
+- [x] Update tRPC router schema to accept optional lat/lng fields

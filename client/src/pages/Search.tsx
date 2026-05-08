@@ -33,10 +33,11 @@ import {
   ChevronDown,
   SlidersHorizontal,
   Save,
-  MapPin,
 } from "lucide-react";
 import type { Lead, CategoryValue } from "@/types/lead";
 import { CATEGORIES, getCategoryLabel } from "@/types/lead";
+import { PlacesAutocomplete } from "@/components/PlacesAutocomplete";
+import type { PlaceResult } from "@/components/PlacesAutocomplete";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,16 @@ export default function SearchPage() {
     } catch {}
     return "";
   });
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
+    try {
+      const saved = sessionStorage.getItem("rerunSearch");
+      if (saved) {
+        const parsed = JSON.parse(saved) as { lat?: number; lng?: number };
+        if (parsed.lat && parsed.lng) return { lat: parsed.lat, lng: parsed.lng };
+      }
+    } catch {}
+    return null;
+  });
   const [radiusMiles, setRadiusMiles] = useState(() => {
     try {
       const saved = sessionStorage.getItem("rerunSearch");
@@ -89,9 +100,9 @@ export default function SearchPage() {
   const utils = trpc.useUtils();
 
   const { data: leads, isFetching, error } = trpc.leads.search.useQuery(
-    { category, location, radiusMiles, maxResults },
+    { category, location, lat: locationCoords?.lat, lng: locationCoords?.lng, radiusMiles, maxResults },
     {
-      enabled: enabled && location.trim().length >= 2,
+      enabled: enabled && location.trim().length >= 2 && locationCoords != null,
       staleTime: 5 * 60 * 1000,
       retry: false,
     }
@@ -121,10 +132,19 @@ export default function SearchPage() {
       toast.error("Please enter a city or zip code.");
       return;
     }
+    if (!locationCoords) {
+      toast.error("Please select a location from the dropdown suggestions.");
+      return;
+    }
     sessionStorage.removeItem("rerunSearch");
     setEnabled(true);
     setSearchKey((k) => k + 1);
     utils.leads.search.invalidate();
+  };
+
+  const handlePlaceSelect = (place: PlaceResult) => {
+    setLocation(place.description);
+    setLocationCoords({ lat: place.lat, lng: place.lng });
   };
 
   const handleSort = (key: SortKey) => {
@@ -216,16 +236,17 @@ export default function SearchPage() {
 
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">City or Zip Code</Label>
-            <div className="relative">
-              <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="e.g. Los Angeles, CA"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="pl-8 bg-background border-border text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
+            <PlacesAutocomplete
+              value={location}
+              onChange={(val) => {
+                setLocation(val);
+                // Clear coords if user manually edits the text
+                setLocationCoords(null);
+              }}
+              onPlaceSelect={handlePlaceSelect}
+              placeholder="e.g. Los Angeles, CA"
+              className="bg-background border-border"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -538,6 +559,8 @@ export default function SearchPage() {
                   name: saveSearchName || `${getCategoryLabel(category)} in ${location}`,
                   category,
                   location,
+                  lat: locationCoords?.lat,
+                  lng: locationCoords?.lng,
                   radiusMiles,
                 });
               }}

@@ -98,15 +98,22 @@ async function fetchPlaceDetails(
 export async function searchGooglePlaces(params: {
   category: string;
   location: string;
+  lat?: number;
+  lng?: number;
   radiusMiles: number;
   apiKey: string;
   maxResults?: number;
 }): Promise<PlaceLead[]> {
   const { category, location, radiusMiles, apiKey, maxResults = 20 } = params;
 
-  // Geocode the location first
-  const coords = await geocodeLocation(location, apiKey);
-  if (!coords) throw new Error(`Could not geocode location: "${location}"`);
+  // Use provided coordinates, or fall back to geocoding
+  let coords: { lat: number; lng: number } | null = null;
+  if (params.lat != null && params.lng != null) {
+    coords = { lat: params.lat, lng: params.lng };
+  } else {
+    coords = await geocodeLocation(location, apiKey);
+  }
+  if (!coords) throw new Error(`Could not geocode location: "${location}". Please select a location from the autocomplete suggestions.`);
 
   const query = CATEGORY_QUERIES[category] ?? category.replace(/_/g, " ");
   const radiusMeters = Math.min(radiusMiles * 1609.34, 50000); // max 50km
