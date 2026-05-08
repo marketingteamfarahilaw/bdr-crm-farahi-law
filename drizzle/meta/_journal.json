@@ -22,6 +22,20 @@
       "when": 1778260642491,
       "tag": "0002_nebulous_leo",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1778265134158,
+      "tag": "0003_unknown_amphibian",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1778265761256,
+      "tag": "0004_last_kinsey_walden",
+      "breakpoints": true
     }
   ]
 }

@@ -83,3 +83,44 @@
 - [x] Migrate backend from legacy Places API (Text Search) to Places API (New) — uses https://places.googleapis.com/v1/places:searchText
 - [x] Update place details fetch to use Places API (New) — phone/website now returned inline from searchText, no separate detail call needed
 - [x] Geocoding API still valid and used as fallback; primary path uses lat/lng from autocomplete
+
+## Facility Partner CRM Module
+
+### Database Schema
+- [x] facilities table (profile, contact info, assigned rep, status, management flag)
+- [x] contact_logs table (date, type, notes, rep, facility_id)
+- [x] facility_tasks table (due date, assigned to, description, status, facility_id)
+- [x] facility_leads_sent table (month, year, count, facility_id)
+
+### Backend Procedures
+- [x] facilities.list (with filters: status, category, search, sort)
+- [x] facilities.get (single facility with all relations)
+- [x] facilities.create
+- [x] facilities.update
+- [x] facilities.delete
+- [x] facilities.promoteFromScraper (create from a scraped lead)
+- [x] contactLogs.list (by facility)
+- [x] contactLogs.create
+- [x] contactLogs.delete
+- [x] tasks.list (by facility or by current user)
+- [x] tasks.create
+- [x] tasks.complete
+- [x] tasks.delete
+- [x] leadsSent.upsert (monthly count per facility)
+- [x] leadsSent.list (by facility)
+- [x] management.dashboard (admin only: all facilities, overdue tasks, top referrers)
+
+### Frontend Pages
+- [x] /crm/facilities — Facility list page with search, filter, sort
+- [x] /crm/facilities/:id — Facility profile page (all data on one screen)
+- [x] /crm/facilities/new — Add facility form
+- [x] /crm/facilities/:id/edit — Edit facility form
+- [x] /crm/dashboard — Management Dashboard (admin only)
+- [x] RingCentral OAuth connect/disconnect + call sync per facility
+- [x] Promote-to-CRM button in Lead Scraper results table
+- [x] Update sidebar navigation with CRM section (Lead Scraper + Facility Partner CRM)
+
+## CRM Gaps to Address
+- [ ] Add referrals list to facilities.get response
+- [ ] Add sort controls to /crm/facilities list page
+- [ ] Build RingCentral settings/connect UI in Facility Profile

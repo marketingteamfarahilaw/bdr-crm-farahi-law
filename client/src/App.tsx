@@ -8,25 +8,33 @@ import DashboardLayout from "./components/DashboardLayout";
 import SearchPage from "./pages/Search";
 import SavedLeadsPage from "./pages/SavedLeads";
 import SavedSearchesPage from "./pages/SavedSearches";
+import FacilitiesPage from "./pages/crm/Facilities";
+import FacilityProfilePage from "./pages/crm/FacilityProfile";
+import FacilityFormPage from "./pages/crm/FacilityForm";
+import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
 
 function Router() {
   return (
     <DashboardLayout>
       <Switch>
+        {/* Lead Scraper */}
         <Route path="/" component={SearchPage} />
         <Route path="/saved-leads" component={SavedLeadsPage} />
         <Route path="/saved-searches" component={SavedSearchesPage} />
+
+        {/* Facility Partner CRM */}
+        <Route path="/crm/facilities" component={FacilitiesPage} />
+        <Route path="/crm/facilities/new" component={FacilityFormPage} />
+        <Route path="/crm/facilities/:id/edit" component={FacilityFormPage} />
+        <Route path="/crm/facilities/:id" component={FacilityProfilePage} />
+        <Route path="/crm/dashboard" component={ManagementDashboardPage} />
+
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
   );
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
   return (

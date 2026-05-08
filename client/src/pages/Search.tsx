@@ -33,7 +33,9 @@ import {
   ChevronDown,
   SlidersHorizontal,
   Save,
+  Building2,
 } from "lucide-react";
+import { useLocation as useWouter } from "wouter";
 import type { Lead, CategoryValue } from "@/types/lead";
 import { CATEGORIES, getCategoryLabel } from "@/types/lead";
 import { PlacesAutocomplete } from "@/components/PlacesAutocomplete";
@@ -51,6 +53,7 @@ type SortDir = "asc" | "desc";
 type TierFilter = "all" | "hot" | "warm" | "cold";
 
 export default function SearchPage() {
+  const [, navigate] = useWouter();
   const [category, setCategory] = useState<CategoryValue>(() => {
     try {
       const saved = sessionStorage.getItem("rerunSearch");
@@ -421,6 +424,7 @@ export default function SearchPage() {
                     Score <SortIcon col="qualificationScore" />
                   </TableHead>
                   <TableHead className="text-muted-foreground text-xs w-16">Save</TableHead>
+                  <TableHead className="text-muted-foreground text-xs w-20">CRM</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -484,6 +488,9 @@ export default function SearchPage() {
                       <ScoreBadge score={lead.qualificationScore} tier={lead.scoreTier} size="sm" />
                     </TableCell>
                     <TableCell className="py-3">
+                      <PromoteToCRMButton lead={lead} onNavigate={() => navigate("/crm/facilities")} />
+                    </TableCell>
+                    <TableCell className="py-3" style={{ display: 'none' }}>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -573,5 +580,64 @@ export default function SearchPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ─── Promote to CRM Button ───────────────────────────────────────────────────
+
+function PromoteToCRMButton({ lead, onNavigate }: { lead: Lead; onNavigate: () => void }) {
+  const utils = trpc.useUtils();
+  const promote = trpc.crm.facilities.promoteFromScraper.useMutation({
+    onSuccess: (data) => {
+      toast.success(
+        <span>
+          <strong>{lead.name}</strong> added to CRM.{" "}
+          <button
+            className="underline text-primary ml-1"
+            onClick={onNavigate}
+          >
+            View Facilities
+          </button>
+        </span> as any,
+        { duration: 5000 }
+      );
+      utils.crm.facilities.list.invalidate();
+    },
+    onError: (e) => {
+      if (e.message.includes("already exists")) {
+        toast.info(`${lead.name} is already in the CRM.`);
+      } else {
+        toast.error(e.message);
+      }
+    },
+  });
+
+  return (
+    <Button
+      size="icon"
+      variant="ghost"
+      title="Add to Facility CRM"
+      className="h-7 w-7 text-muted-foreground hover:text-emerald-400"
+      disabled={promote.isPending}
+      onClick={(e) => {
+        e.stopPropagation();
+        promote.mutate({
+          name: lead.name,
+          category: lead.category,
+          address: lead.address,
+          phone: lead.phone,
+          website: lead.website,
+          placeId: lead.placeId,
+          latitude: lead.latitude,
+          longitude: lead.longitude,
+        });
+      }}
+    >
+      {promote.isPending ? (
+        <span className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin inline-block" />
+      ) : (
+        <Building2 size={14} />
+      )}
+    </Button>
   );
 }

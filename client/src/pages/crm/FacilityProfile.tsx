@@ -1,0 +1,660 @@
+import { useState } from "react";
+import { useLocation, useParams } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import {
+  ArrowLeft, Phone, Globe, MapPin, User, Mail, AlertTriangle,
+  Plus, CheckCircle2, Circle, Trash2, PhoneCall, Car, MessageSquare,
+  Calendar, Clock, Star, Edit, RefreshCw, Building2
+} from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
+
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  active_partner: { label: "Active Partner", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
+  warm_lead: { label: "Warm Lead", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+  cold: { label: "Cold", color: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
+  churned: { label: "Churned", color: "bg-red-500/20 text-red-400 border-red-500/30" },
+  do_not_contact: { label: "Do Not Contact", color: "bg-red-900/30 text-red-300 border-red-900/50" },
+  needs_agent: { label: "Needs Agent", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  body_shop: "Body Shop", chiropractor: "Chiropractor", physical_therapist: "Physical Therapist",
+  medical_clinic: "Medical Clinic", orthopedic_doctor: "Orthopedic Doctor", imaging_center: "Imaging Center", other: "Other",
+};
+
+const CONTACT_TYPE_ICONS: Record<string, React.ReactNode> = {
+  call: <PhoneCall className="w-4 h-4" />,
+  visit: <Car className="w-4 h-4" />,
+  email: <Mail className="w-4 h-4" />,
+  text: <MessageSquare className="w-4 h-4" />,
+  meeting: <Calendar className="w-4 h-4" />,
+  other: <Clock className="w-4 h-4" />,
+};
+
+const CASE_VALUE_LABELS: Record<string, { label: string; color: string }> = {
+  rank_x: { label: "Rank X", color: "text-purple-400" },
+  high: { label: "High", color: "text-emerald-400" },
+  medium: { label: "Medium", color: "text-amber-400" },
+  low: { label: "Low", color: "text-slate-400" },
+  na: { label: "N/A", color: "text-muted-foreground" },
+};
+
+function AddContactLogDialog({ facilityId, onSuccess }: { facilityId: number; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState("call");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 16));
+  const [callResult, setCallResult] = useState("connected");
+  const [callType, setCallType] = useState("partner_checkin");
+  const [duration, setDuration] = useState("");
+  const [summary, setSummary] = useState("");
+  const utils = trpc.useUtils();
+  const createLog = trpc.crm.contactLogs.create.useMutation({
+    onSuccess: () => {
+      toast.success("Contact logged successfully");
+      utils.crm.facilities.get.invalidate({ id: facilityId });
+      utils.crm.contactLogs.list.invalidate({ facilityId });
+      setOpen(false);
+      setSummary(""); setDuration("");
+      onSuccess();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="gap-1.5" style={{ background: "var(--gold)", color: "#0a0f1e" }}>
+          <Plus className="w-3.5 h-3.5" /> Log Contact
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="bg-card border-border max-w-md">
+        <DialogHeader>
+          <DialogTitle>Log Contact</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Type</label>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger className="bg-background border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="call">Call</SelectItem>
+                  <SelectItem value="visit">Visit</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Date & Time</label>
+              <Input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} className="bg-background border-border" />
+            </div>
+          </div>
+          {type === "call" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Result</label>
+                <Select value={callResult} onValueChange={setCallResult}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="connected">Connected</SelectItem>
+                    <SelectItem value="voicemail">Voicemail</SelectItem>
+                    <SelectItem value="no_answer">No Answer</SelectItem>
+                    <SelectItem value="busy">Busy</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Call Type</label>
+                <Select value={callType} onValueChange={setCallType}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="partner_checkin">Partner Check-in</SelectItem>
+                    <SelectItem value="bdr_checkin">BDR Check-in</SelectItem>
+                    <SelectItem value="fr_checkin">FR Check-in</SelectItem>
+                    <SelectItem value="internal">Internal</SelectItem>
+                    <SelectItem value="potential_lead">Potential Lead</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          {type === "call" && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Duration (e.g. 3:45)</label>
+              <Input value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="0:00" className="bg-background border-border" />
+            </div>
+          )}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Notes / Summary</label>
+            <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="What was discussed?" rows={3} className="bg-background border-border resize-none" />
+          </div>
+          <Button
+            className="w-full"
+            style={{ background: "var(--gold)", color: "#0a0f1e" }}
+            disabled={createLog.isPending}
+            onClick={() => createLog.mutate({
+              facilityId,
+              contactType: type as any,
+              contactDate: new Date(date).toISOString(),
+              callResult: type === "call" ? (callResult as any) : undefined,
+              callDuration: type === "call" && duration ? duration : undefined,
+              callType: type === "call" ? (callType as any) : undefined,
+              summary: summary || undefined,
+            })}
+          >
+            {createLog.isPending ? "Saving..." : "Save Contact Log"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddTaskDialog({ facilityId, onSuccess }: { facilityId: number; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const utils = trpc.useUtils();
+  const createTask = trpc.crm.tasks.create.useMutation({
+    onSuccess: () => {
+      toast.success("Task created");
+      utils.crm.tasks.listByFacility.invalidate({ facilityId });
+      setOpen(false); setTitle(""); setDescription(""); setDueDate("");
+      onSuccess();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5 border-border">
+          <Plus className="w-3.5 h-3.5" /> Add Task
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="bg-card border-border max-w-md">
+        <DialogHeader><DialogTitle>New Task</DialogTitle></DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Task Title *</label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Follow up with Dr. Smith" className="bg-background border-border" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Description</label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="bg-background border-border resize-none" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Due Date</label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="bg-background border-border" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Priority</label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button
+            className="w-full"
+            style={{ background: "var(--gold)", color: "#0a0f1e" }}
+            disabled={!title || createTask.isPending}
+            onClick={() => createTask.mutate({
+              facilityId,
+              title,
+              description: description || undefined,
+              dueDate: dueDate ? new Date(dueDate + "T00:00:00").toISOString() : undefined,
+              priority: priority as any,
+            })}
+          >
+            {createTask.isPending ? "Creating..." : "Create Task"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddReferralDialog({ facilityId, onSuccess }: { facilityId: number; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [referralDate, setReferralDate] = useState(new Date().toISOString().slice(0, 10));
+  const [caseValue, setCaseValue] = useState("medium");
+  const [notes, setNotes] = useState("");
+  const utils = trpc.useUtils();
+  const createReferral = trpc.crm.referrals.create.useMutation({
+    onSuccess: () => {
+      toast.success("Referral recorded");
+      utils.crm.referrals.list.invalidate({ facilityId });
+      utils.crm.facilities.get.invalidate({ id: facilityId });
+      setOpen(false); setClientName(""); setNotes("");
+      onSuccess();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5 border-border">
+          <Plus className="w-3.5 h-3.5" /> Add Referral
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="bg-card border-border max-w-md">
+        <DialogHeader><DialogTitle>Record Referral</DialogTitle></DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Client Name *</label>
+            <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="John Doe" className="bg-background border-border" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Referral Date</label>
+              <Input type="date" value={referralDate} onChange={(e) => setReferralDate(e.target.value)} className="bg-background border-border" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Case Value</label>
+              <Select value={caseValue} onValueChange={setCaseValue}>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rank_x">Rank X</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="na">N/A</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Notes</label>
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="bg-background border-border resize-none" />
+          </div>
+          <Button
+            className="w-full"
+            style={{ background: "var(--gold)", color: "#0a0f1e" }}
+            disabled={!clientName || createReferral.isPending}
+            onClick={() => createReferral.mutate({
+              facilityId,
+              clientName,
+              referralDate: new Date(referralDate).toISOString(),
+              caseValue: caseValue as any,
+              notes: notes || undefined,
+            })}
+          >
+            {createReferral.isPending ? "Saving..." : "Record Referral"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export default function FacilityProfile() {
+  const params = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
+  const facilityId = parseInt(params.id, 10);
+  const utils = trpc.useUtils();
+
+  const { data: facility, isLoading } = trpc.crm.facilities.get.useQuery({ id: facilityId });
+  const { data: contactLogs } = trpc.crm.contactLogs.list.useQuery({ facilityId });
+  const { data: tasks } = trpc.crm.tasks.listByFacility.useQuery({ facilityId });
+  const { data: referrals } = trpc.crm.referrals.list.useQuery({ facilityId });
+  const { data: rcStatus } = trpc.crm.ringcentral.status.useQuery();
+
+  const completeTask = trpc.crm.tasks.complete.useMutation({
+    onSuccess: () => { utils.crm.tasks.listByFacility.invalidate({ facilityId }); toast.success("Task completed"); },
+  });
+  const deleteTask = trpc.crm.tasks.delete.useMutation({
+    onSuccess: () => { utils.crm.tasks.listByFacility.invalidate({ facilityId }); },
+  });
+  const deleteLog = trpc.crm.contactLogs.delete.useMutation({
+    onSuccess: () => { utils.crm.contactLogs.list.invalidate({ facilityId }); utils.crm.facilities.get.invalidate({ id: facilityId }); },
+  });
+  const deleteReferral = trpc.crm.referrals.delete.useMutation({
+    onSuccess: () => { utils.crm.referrals.list.invalidate({ facilityId }); utils.crm.facilities.get.invalidate({ id: facilityId }); },
+  });
+  const syncCalls = trpc.crm.ringcentral.syncCalls.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Synced ${data.synced} calls from RingCentral`);
+      utils.crm.contactLogs.list.invalidate({ facilityId });
+      utils.crm.facilities.get.invalidate({ id: facilityId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const toggleFlag = trpc.crm.facilities.update.useMutation({
+    onSuccess: () => { utils.crm.facilities.get.invalidate({ id: facilityId }); },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!facility) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-muted-foreground">Facility not found.</p>
+        <Button variant="outline" className="mt-4" onClick={() => navigate("/crm/facilities")}>Back to Facilities</Button>
+      </div>
+    );
+  }
+
+  const status = STATUS_LABELS[facility.relationshipStatus] ?? STATUS_LABELS.warm_lead;
+  const openTasks = tasks?.filter((t) => t.status === "open") ?? [];
+  const completedTasks = tasks?.filter((t) => t.status === "completed") ?? [];
+
+  return (
+    <div className="p-6 space-y-6 max-w-5xl">
+      {/* Back + Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <button
+            onClick={() => navigate("/crm/facilities")}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Facilities
+          </button>
+          <div className="flex items-center gap-3">
+            {facility.managementFlag === 1 && <AlertTriangle className="w-5 h-5 text-amber-400" />}
+            <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {facility.name}
+            </h1>
+            <Badge className={`border ${status.color}`}>{status.label}</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {CATEGORY_LABELS[facility.category] ?? facility.category}
+            {facility.city ? ` · ${facility.city}` : ""}
+          </p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-border"
+            onClick={() => toggleFlag.mutate({ id: facilityId, managementFlag: facility.managementFlag !== 1 })}
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            {facility.managementFlag === 1 ? "Clear Flag" : "Flag"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-border"
+            onClick={() => navigate(`/crm/facilities/${facilityId}/edit`)}
+          >
+            <Edit className="w-3.5 h-3.5" /> Edit
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total Leads Sent", value: facility.totalLeads ?? 0, icon: Star },
+          { label: "Referrals Received", value: facility.totalReferrals ?? 0, icon: Building2 },
+          { label: "Open Tasks", value: openTasks.length, icon: Circle },
+          { label: "Contact Logs", value: contactLogs?.length ?? 0, icon: PhoneCall },
+        ].map(({ label, value, icon: Icon }) => (
+          <Card key={label} className="bg-card border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Icon className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{label}</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Main Tabs */}
+      <Tabs defaultValue="overview">
+        <TabsList className="bg-card border border-border">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="contacts">
+            Contact Log {contactLogs && contactLogs.length > 0 && <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">{contactLogs.length}</span>}
+          </TabsTrigger>
+          <TabsTrigger value="tasks">
+            Tasks {openTasks.length > 0 && <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full">{openTasks.length}</span>}
+          </TabsTrigger>
+          <TabsTrigger value="referrals">
+            Referrals {referrals && referrals.length > 0 && <span className="ml-1.5 text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full">{referrals.length}</span>}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-4 mt-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-3"><CardTitle className="text-sm">Facility Info</CardTitle></CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {facility.address && <div className="flex gap-2"><MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" /><span>{facility.address}{facility.city ? `, ${facility.city}` : ""}</span></div>}
+                {facility.phone && <div className="flex gap-2"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`tel:${facility.phone}`} className="hover:text-[var(--gold)]">{facility.phone}</a></div>}
+                {facility.phone2 && <div className="flex gap-2"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`tel:${facility.phone2}`} className="hover:text-[var(--gold)]">{facility.phone2} <span className="text-muted-foreground text-xs">(alt)</span></a></div>}
+                {facility.phone3 && <div className="flex gap-2"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`tel:${facility.phone3}`} className="hover:text-[var(--gold)]">{facility.phone3} <span className="text-muted-foreground text-xs">(alt 2)</span></a></div>}
+                {facility.website && <div className="flex gap-2"><Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={facility.website} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--gold)] truncate">{facility.website}</a></div>}
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-3"><CardTitle className="text-sm">Primary Contact</CardTitle></CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {facility.contactName && <div className="flex gap-2"><User className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>{facility.contactName}{facility.contactTitle ? ` · ${facility.contactTitle}` : ""}</span></div>}
+                {facility.contactPhone && <div className="flex gap-2"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`tel:${facility.contactPhone}`} className="hover:text-[var(--gold)]">{facility.contactPhone}</a></div>}
+                {facility.contactEmail && <div className="flex gap-2"><Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`mailto:${facility.contactEmail}`} className="hover:text-[var(--gold)]">{facility.contactEmail}</a></div>}
+                {facility.assignedRepName && <div className="flex gap-2 pt-2 border-t border-border"><User className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>BD Rep: <span className="text-foreground font-medium">{facility.assignedRepName}</span></span></div>}
+              </CardContent>
+            </Card>
+          </div>
+          {facility.notes && (
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-3"><CardTitle className="text-sm">Notes</CardTitle></CardHeader>
+              <CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{facility.notes}</p></CardContent>
+            </Card>
+          )}
+          {facility.managementNote && (
+            <Card className="bg-amber-500/10 border-amber-500/30">
+              <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2 text-amber-400"><AlertTriangle className="w-4 h-4" />Management Note</CardTitle></CardHeader>
+              <CardContent><p className="text-sm text-amber-300 whitespace-pre-wrap">{facility.managementNote}</p></CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Contact Log Tab */}
+        <TabsContent value="contacts" className="mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-sm text-muted-foreground">{contactLogs?.length ?? 0} contact entries</h3>
+            <div className="flex gap-2">
+              {rcStatus?.connected && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 border-border"
+                  disabled={syncCalls.isPending}
+                  onClick={() => syncCalls.mutate({ facilityId, daysBack: 30 })}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${syncCalls.isPending ? "animate-spin" : ""}`} />
+                  Sync RingCentral
+                </Button>
+              )}
+              <AddContactLogDialog facilityId={facilityId} onSuccess={() => {}} />
+            </div>
+          </div>
+          {contactLogs?.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <PhoneCall className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p>No contact logs yet. Log your first contact above.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {contactLogs?.map((log) => (
+                <Card key={log.id} className="bg-card border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                          {CONTACT_TYPE_ICONS[log.contactType]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium capitalize">{log.contactType}</span>
+                            {log.callResult && (
+                              <Badge variant="outline" className="text-xs capitalize border-border">
+                                {log.callResult.replace("_", " ")}
+                              </Badge>
+                            )}
+                            {log.callType && (
+                              <Badge variant="outline" className="text-xs border-border text-muted-foreground">
+                                {log.callType.replace(/_/g, " ")}
+                              </Badge>
+                            )}
+                            {log.callDuration && <span className="text-xs text-muted-foreground">{log.callDuration}</span>}
+                          </div>
+                          {log.summary && <p className="text-sm text-muted-foreground mt-1">{log.summary}</p>}
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                            <span>{format(new Date(log.contactDate), "MMM d, yyyy h:mm a")}</span>
+                            {log.repName && <span>· {log.repName}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteLog.mutate({ id: log.id })}
+                        className="text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Tasks Tab */}
+        <TabsContent value="tasks" className="mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-sm text-muted-foreground">{openTasks.length} open · {completedTasks.length} completed</h3>
+            <AddTaskDialog facilityId={facilityId} onSuccess={() => {}} />
+          </div>
+          {tasks?.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <CheckCircle2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p>No tasks yet. Add a follow-up task above.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {tasks?.map((task) => (
+                <Card key={task.id} className={`bg-card border-border ${task.status === "completed" ? "opacity-60" : ""}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => task.status === "open" ? completeTask.mutate({ id: task.id }) : undefined}
+                        className="mt-0.5 flex-shrink-0"
+                      >
+                        {task.status === "completed"
+                          ? <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          : <Circle className="w-5 h-5 text-muted-foreground hover:text-emerald-400 transition-colors" />
+                        }
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-medium ${task.status === "completed" ? "line-through text-muted-foreground" : ""}`}>{task.title}</span>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs border-border ${task.priority === "high" ? "text-red-400 border-red-400/30" : task.priority === "low" ? "text-slate-400" : "text-amber-400 border-amber-400/30"}`}
+                          >
+                            {task.priority}
+                          </Badge>
+                        </div>
+                        {task.description && <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>}
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          {task.dueDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Due {format(new Date(task.dueDate), "MMM d, yyyy")}</span>}
+                          {task.assignedToName && <span>· {task.assignedToName}</span>}
+                        </div>
+                      </div>
+                      <button onClick={() => deleteTask.mutate({ id: task.id })} className="text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Referrals Tab */}
+        <TabsContent value="referrals" className="mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-sm text-muted-foreground">{referrals?.length ?? 0} referrals received</h3>
+            <AddReferralDialog facilityId={facilityId} onSuccess={() => {}} />
+          </div>
+          {referrals?.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Star className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p>No referrals recorded yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {referrals?.map((ref) => {
+                const cv = CASE_VALUE_LABELS[ref.caseValue] ?? CASE_VALUE_LABELS.medium;
+                return (
+                  <Card key={ref.id} className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{ref.clientName}</span>
+                            <span className={`text-xs font-medium ${cv.color}`}>{cv.label}</span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>{format(new Date(ref.referralDate), "MMM d, yyyy")}</span>
+                            {ref.repName && <span>· {ref.repName}</span>}
+                          </div>
+                          {ref.notes && <p className="text-xs text-muted-foreground mt-1">{ref.notes}</p>}
+                        </div>
+                        <button onClick={() => deleteReferral.mutate({ id: ref.id })} className="text-muted-foreground hover:text-red-400 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

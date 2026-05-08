@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { searchGooglePlaces } from "./googleMaps";
 import { calculateScore } from "./scoring";
+import { crmRouter } from "./crmRouter";
 import {
   getSavedLeads,
   getSavedLeadByPlaceId,
@@ -154,6 +155,8 @@ export const appRouter = router({
         return { saved: !!lead };
       }),
   }),
+
+  crm: crmRouter,
 
   savedSearches: router({
     list: protectedProcedure.query(async ({ ctx }) => {
