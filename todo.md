@@ -124,3 +124,11 @@
 - [ ] Add referrals list to facilities.get response
 - [ ] Add sort controls to /crm/facilities list page
 - [ ] Build RingCentral settings/connect UI in Facility Profile
+
+## UI Fixes (Round 3)
+- [x] Fix autocomplete location input freezing after one character typed
+- [x] Change Facilities page from tile/card view to sortable list/table view
+- [x] Add bulk import of facilities into the CRM (CSV upload, paste, and downloadable template)
+
+## Future Enhancements
+- [ ] Add multi-select checkboxes to search results table for bulk Promote to CRM action

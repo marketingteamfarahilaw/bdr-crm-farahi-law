@@ -203,6 +203,47 @@ export const crmRouter = router({
         return { success: true };
       }),
 
+    bulkCreate: protectedProcedure
+      .input(
+        z.object({
+          facilities: z.array(
+            z.object({
+              name: z.string().min(1),
+              category: z.enum(CATEGORIES).default("other"),
+              address: z.string().optional(),
+              city: z.string().optional(),
+              phone: z.string().optional(),
+              phone2: z.string().optional(),
+              website: z.string().optional(),
+              contactName: z.string().optional(),
+              contactTitle: z.string().optional(),
+              contactPhone: z.string().optional(),
+              contactEmail: z.string().optional(),
+              assignedRepName: z.string().optional(),
+              relationshipStatus: z.enum(RELATIONSHIP_STATUSES).default("warm_lead"),
+              notes: z.string().optional(),
+            })
+          ),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        let created = 0;
+        let skipped = 0;
+        for (const f of input.facilities) {
+          try {
+            await createFacility({
+              ...f,
+              assignedRepId: ctx.user.id,
+              assignedRepName: f.assignedRepName ?? ctx.user.name ?? ctx.user.email ?? "Unknown",
+            });
+            created++;
+          } catch {
+            skipped++;
+          }
+        }
+        return { created, skipped };
+      }),
+
     promoteFromScraper: protectedProcedure
       .input(
         z.object({

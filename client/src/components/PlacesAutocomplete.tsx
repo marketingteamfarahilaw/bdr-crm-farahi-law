@@ -1,6 +1,6 @@
 /// <reference types="@types/google.maps" />
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,60 +58,71 @@ export function PlacesAutocomplete({
 }: PlacesAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const initializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
-  const initAutocomplete = useCallback(async () => {
-    if (!inputRef.current) return;
+  // Keep stable refs to callbacks so the effect never needs to re-run
+  const onChangeRef = useRef(onChange);
+  const onPlaceSelectRef = useRef(onPlaceSelect);
+  useEffect(() => { onChangeRef.current = onChange; });
+  useEffect(() => { onPlaceSelectRef.current = onPlaceSelect; });
+
+  // Initialize ONCE — no dependency on onChange/onPlaceSelect
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     setIsLoading(true);
-    try {
-      await loadMapsScript();
-      if (!inputRef.current) return;
+    loadMapsScript()
+      .then(() => {
+        if (!inputRef.current) return;
 
-      autocompleteRef.current = new window.google!.maps.places.Autocomplete(
-        inputRef.current,
-        {
-          types: ["geocode"],
-          fields: ["formatted_address", "geometry", "place_id", "name"],
-        }
-      );
+        autocompleteRef.current = new window.google!.maps.places.Autocomplete(
+          inputRef.current,
+          {
+            types: ["geocode"],
+            fields: ["formatted_address", "geometry", "place_id", "name"],
+          }
+        );
 
-      autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current!.getPlace();
-        if (!place.geometry?.location) return;
+        autocompleteRef.current.addListener("place_changed", () => {
+          const place = autocompleteRef.current!.getPlace();
+          if (!place.geometry?.location) return;
 
-        const description =
-          place.formatted_address || place.name || inputRef.current?.value || "";
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-        const placeId = place.place_id || "";
+          const description =
+            place.formatted_address || place.name || inputRef.current?.value || "";
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          const placeId = place.place_id || "";
 
-        onChange(description);
-        onPlaceSelect({ description, lat, lng, placeId });
+          // Use refs so we always call the latest callbacks
+          onChangeRef.current(description);
+          onPlaceSelectRef.current({ description, lat, lng, placeId });
+        });
+
+        setIsReady(true);
+      })
+      .catch((err) => {
+        console.error("Failed to initialize Places Autocomplete:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
 
-      setIsReady(true);
-    } catch (err) {
-      console.error("Failed to initialize Places Autocomplete:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onChange, onPlaceSelect]);
-
-  useEffect(() => {
-    initAutocomplete();
     return () => {
       if (autocompleteRef.current) {
-        window.google?.maps.event.clearInstanceListeners(
-          autocompleteRef.current
-        );
+        window.google?.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [initAutocomplete]);
+  }, []); // empty deps — runs exactly once per mount
 
   const handleClear = () => {
-    onChange("");
-    if (inputRef.current) inputRef.current.focus();
+    onChangeRef.current("");
+    if (inputRef.current) {
+      inputRef.current.value = "";
+      inputRef.current.focus();
+    }
   };
 
   return (
@@ -126,10 +137,10 @@ export function PlacesAutocomplete({
       <input
         ref={inputRef}
         type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={isLoading ? "Loading..." : placeholder}
+        defaultValue={value}
+        placeholder={isLoading ? "Loading maps..." : placeholder}
         disabled={isLoading}
+        onChange={(e) => onChangeRef.current(e.target.value)}
         className={cn(
           "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
           "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
