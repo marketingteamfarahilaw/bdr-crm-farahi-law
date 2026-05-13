@@ -545,6 +545,27 @@ export const crmRouter = router({
       return { success: true };
     }),
 
+    getAccessToken: protectedProcedure.query(async () => {
+      try {
+        const accessToken = await getValidRCToken();
+        return { accessToken };
+      } catch {
+        return { accessToken: null };
+      }
+    }),
+
+    getWidgetConfig: protectedProcedure.query(async () => {
+      const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
+      const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
+      const jwt = process.env.RINGCENTRAL_JWT ?? "";
+      return {
+        clientId,
+        clientSecret,
+        jwt,
+        configured: !!(clientId && clientSecret && jwt),
+      };
+    }),
+
     transcribeCall: protectedProcedure
       .input(z.object({
         facilityId: z.number(),

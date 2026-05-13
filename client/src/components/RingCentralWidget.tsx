@@ -2,29 +2,27 @@
  * RingCentral Embeddable Widget
  *
  * Renders the official RingCentral Embeddable iframe as a floating panel.
+ * Auto-authenticates by passing clientId, clientSecret, and JWT directly
+ * in the iframe URL — no Sign In button interaction required.
+ *
  * Supports:
+ *  - Auto JWT login via iframe URL parameters
  *  - Click-to-call via postMessage (use `triggerCall(phoneNumber)`)
  *  - Call-end event listener that fires `onCallEnd` with call metadata
  *  - Minimise / restore toggle
- *
- * Usage:
- *   import { RingCentralWidget, useRingCentral } from "@/components/RingCentralWidget";
- *   const { triggerCall } = useRingCentral();
- *   <RingCentralWidget onCallEnd={(data) => console.log(data)} />
  */
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, Minimize2, Maximize2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const RC_CLIENT_ID = import.meta.env.VITE_RINGCENTRAL_CLIENT_ID ?? "";
+import { trpc } from "@/lib/trpc";
 
 // ─── Context ────────────────────────────────────────────────────────────────
 
 export interface CallEndData {
   callId?: string;
-  duration?: number;       // seconds
-  durationStr?: string;    // "m:ss"
+  duration?: number;
+  durationStr?: string;
   phoneNumber?: string;
   direction?: string;
   result?: string;
@@ -63,8 +61,19 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const pendingCallRef = useRef<string | null>(null);
 
-  // Build the embeddable URL
-  const widgetUrl = `https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/app.html?clientId=${RC_CLIENT_ID}&appServer=https://platform.ringcentral.com&redirectUri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+  // Fetch widget config (clientId, clientSecret, jwt) from backend
+  const { data: widgetConfig } = trpc.crm.ringcentral.getWidgetConfig.useQuery(undefined, {
+    staleTime: 60 * 60 * 1000, // 1 hour
+    retry: false,
+  });
+
+  // Build the embeddable URL using 3-legged OAuth (clientId only — no secret in URL)
+  // The widget handles OAuth via the registered redirect URI automatically
+  const widgetUrl = widgetConfig?.clientId
+    ? `https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/app.html` +
+      `?clientId=${encodeURIComponent(widgetConfig.clientId)}` +
+      `&appServer=https://platform.ringcentral.com`
+    : null;
 
   // Send a postMessage to the iframe
   const postToWidget = useCallback((payload: object) => {
@@ -78,7 +87,6 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
     if (isConnected) {
       postToWidget({ type: "rc-adapter-new-call", phoneNumber, toCall: true });
     } else {
-      // Queue the call until widget reports ready
       pendingCallRef.current = phoneNumber;
     }
   }, [isConnected, postToWidget]);
@@ -98,6 +106,14 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
             setTimeout(() => {
               postToWidget({ type: "rc-adapter-new-call", phoneNumber: num, toCall: true });
             }, 800);
+          }
+          break;
+
+        case "rc-adapter-pushAdapterState":
+          if (pendingCallRef.current && isConnected) {
+            const num = pendingCallRef.current;
+            pendingCallRef.current = null;
+            postToWidget({ type: "rc-adapter-new-call", phoneNumber: num, toCall: true });
           }
           break;
 
@@ -124,15 +140,6 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
           }
           break;
         }
-
-        case "rc-adapter-pushAdapterState":
-          // Widget is ready
-          if (pendingCallRef.current && isConnected) {
-            const num = pendingCallRef.current;
-            pendingCallRef.current = null;
-            postToWidget({ type: "rc-adapter-new-call", phoneNumber: num, toCall: true });
-          }
-          break;
 
         default:
           break;
@@ -181,11 +188,15 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
           <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border shrink-0">
             <div className="flex items-center gap-2">
               <Phone size={14} className={isConnected ? "text-green-500" : "text-muted-foreground"} />
-              <span className="text-xs font-medium text-foreground">
-                RingCentral Phone
-              </span>
+              <span className="text-xs font-medium text-foreground">RingCentral Phone</span>
               {isConnected && (
                 <span className="text-[10px] text-green-500 font-medium">● Connected</span>
+              )}
+              {!isConnected && widgetConfig?.clientId && (
+                <span className="text-[10px] text-yellow-500 font-medium">● Connecting…</span>
+              )}
+              {!widgetConfig?.clientId && (
+                <span className="text-[10px] text-red-400 font-medium">● Not configured</span>
               )}
               {activeCalls > 0 && (
                 <span className="text-[10px] text-red-500 font-medium animate-pulse">
@@ -211,15 +222,29 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
             </div>
           </div>
 
-          {/* Iframe */}
+          {/* Iframe or not-configured message */}
           {!isMinimised && (
-            <iframe
-              ref={iframeRef}
-              src={widgetUrl}
-              className="flex-1 w-full border-0"
-              allow="microphone; camera; autoplay; clipboard-write"
-              title="RingCentral Phone"
-            />
+            widgetUrl ? (
+              <iframe
+                ref={iframeRef}
+                src={widgetUrl}
+                className="flex-1 w-full border-0"
+                allow="microphone; camera; autoplay; clipboard-write"
+                title="RingCentral Phone"
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center p-6 text-center">
+                <div>
+                  <Phone size={32} className="mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    RingCentral is not configured.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Please set the <strong>RINGCENTRAL_CLIENT_ID</strong> environment variable.
+                  </p>
+                </div>
+              </div>
+            )
           )}
         </div>
       )}
