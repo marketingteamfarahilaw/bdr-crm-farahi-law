@@ -11,14 +11,22 @@ import {
   completeTask,
   createContactLog,
   createFacility,
+  createFacilityLead,
+  createGratitudeAction,
+  createFacilityUpdate,
   createReferral,
   createTask,
   deleteFacility,
   deleteContactLog,
+  deleteFacilityLead,
+  deleteGratitudeAction,
+  deleteFacilityUpdate,
   deleteReferral,
   deleteRingcentralToken,
   deleteTask,
+  getAllFacilitiesForMap,
   getDashboardStats,
+  getRelationshipBalance,
   getFacilityById,
   getLastContactLog,
   getRingcentralToken,
@@ -26,6 +34,9 @@ import {
   getTotalReferrals,
   listContactLogs,
   listFacilities,
+  listFacilityLeads,
+  listGratitudeActions,
+  listFacilityUpdates,
   listLeadsSent,
   listOverdueTasks,
   listReferrals,
@@ -33,6 +44,7 @@ import {
   listTasksByUser,
   reopenTask,
   updateFacility,
+  updateFacilityLead,
   updateReferral,
   upsertLeadsSent,
   upsertRingcentralToken,
@@ -537,6 +549,140 @@ export const crmRouter = router({
         }
         return { success: true, synced };
       }),
+  }),
+
+  // ─── Facility Leads V3 ─────────────────────────────────────────────────────
+
+  facilityLeads: router({
+    list: protectedProcedure
+      .input(z.object({ facilityId: z.number() }))
+      .query(async ({ input }) => listFacilityLeads(input.facilityId)),
+
+    create: protectedProcedure
+      .input(z.object({
+        facilityId: z.number(),
+        direction: z.enum(["sent_to_facility", "received_from_facility"]),
+        leadDate: z.string(),
+        method: z.enum(["phone_call", "sms", "direct_contact", "email", "in_person", "other"]).default("phone_call"),
+        contactPerson: z.string().optional(),
+        clientArea: z.string().optional(),
+        outcome: z.enum(["pending", "signed", "not_signed", "not_qualified", "duplicate", "unknown"]).default("pending"),
+        signedCase: z.number().int().min(0).max(1).default(0),
+        signedDate: z.string().optional(),
+        notes: z.string().optional(),
+        repName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await createFacilityLead({
+          ...input,
+          leadDate: new Date(input.leadDate),
+          signedDate: input.signedDate ? new Date(input.signedDate) : undefined,
+          repId: ctx.user.id,
+          repName: input.repName ?? ctx.user.name ?? ctx.user.email ?? "Unknown",
+        });
+        return { success: true };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        outcome: z.enum(["pending", "signed", "not_signed", "not_qualified", "duplicate", "unknown"]).optional(),
+        signedCase: z.number().int().min(0).max(1).optional(),
+        signedDate: z.string().optional(),
+        notes: z.string().optional(),
+        contactPerson: z.string().optional(),
+        clientArea: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, signedDate, ...rest } = input;
+        await updateFacilityLead(id, {
+          ...rest,
+          ...(signedDate ? { signedDate: new Date(signedDate) } : {}),
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteFacilityLead(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Gratitude Actions V3 ─────────────────────────────────────────────────────
+
+  gratitude: router({
+    list: protectedProcedure
+      .input(z.object({ facilityId: z.number() }))
+      .query(async ({ input }) => listGratitudeActions(input.facilityId)),
+
+    create: protectedProcedure
+      .input(z.object({
+        facilityId: z.number(),
+        actionDate: z.string(),
+        actionType: z.enum(["thank_you_call", "thank_you_sms", "visit", "meal_delivery", "gift", "other"]),
+        amount: z.string().optional(),
+        notes: z.string().optional(),
+        repName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await createGratitudeAction({
+          ...input,
+          actionDate: new Date(input.actionDate),
+          repId: ctx.user.id,
+          repName: input.repName ?? ctx.user.name ?? ctx.user.email ?? "Unknown",
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteGratitudeAction(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Facility Updates / Transcripts V3 ───────────────────────────────────────
+
+  updates: router({
+    list: protectedProcedure
+      .input(z.object({ facilityId: z.number() }))
+      .query(async ({ input }) => listFacilityUpdates(input.facilityId)),
+
+    create: protectedProcedure
+      .input(z.object({
+        facilityId: z.number(),
+        updateDate: z.string(),
+        rawText: z.string().optional(),
+        summary: z.string().optional(),
+        updateType: z.enum(["transcript", "sms", "manual_note", "visit_note", "other"]).default("manual_note"),
+        repName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await createFacilityUpdate({
+          ...input,
+          updateDate: new Date(input.updateDate),
+          repId: ctx.user.id,
+          repName: input.repName ?? ctx.user.name ?? ctx.user.email ?? "Unknown",
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteFacilityUpdate(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Map View ─────────────────────────────────────────────────────────────────
+
+  map: router({
+    allFacilities: protectedProcedure.query(async () => getAllFacilitiesForMap()),
+    relationshipBalance: protectedProcedure.query(async () => getRelationshipBalance()),
   }),
 
   // ─── Management Dashboard ────────────────────────────────────────────────────

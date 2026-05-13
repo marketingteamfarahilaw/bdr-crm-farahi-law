@@ -132,3 +132,51 @@
 
 ## Future Enhancements
 - [ ] Add multi-select checkboxes to search results table for bulk Promote to CRM action
+
+## CRM V3 Upgrade (Facility Partner Tracker Brief)
+
+### Schema Changes
+- [ ] Update facilities table: add partnerStatus, relationshipStrength, preferredContactMethod, serviceArea, followUpWindowDays, priorityPartner, phone3, city, zipCode, lastSignedCaseDate, totalSignedCases, totalLeadsSent, totalLeadsReceived, moneyInvested, lastPackageDate
+- [ ] Create facility_leads table: date, direction (sent/received), method, contactPerson, clientArea, caseStatus/outcome, notes, facilityId, signedCase boolean
+- [ ] Create facility_gratitude table: date, actionType, notes, amount, facilityId, repName
+- [ ] Create facility_updates table: date, rawText (transcript/note), summary, repName, facilityId, extractedData JSON
+- [ ] Update facility_tasks: add followUpReason field
+
+### Backend Procedures
+- [ ] facilities.list: add partnerStatus, relationshipStrength, followUpDue filters
+- [ ] facilities.getMapData: return all facilities with lat/lng, status, category for map pins
+- [ ] leads.create / leads.list / leads.update (outcome)
+- [ ] gratitude.create / gratitude.list
+- [ ] updates.create (transcript/note drop-in with AI summary extraction)
+- [ ] updates.list
+- [ ] dashboard.stats: signed cases, leads sent/received, overdue follow-ups, coverage gaps
+- [ ] dashboard.followUpDue: facilities with follow-up due in next N days
+- [ ] dashboard.relationshipBalance: sent vs received per facility
+- [ ] dashboard.coverageGap: zip codes / areas with no partner coverage
+
+### Frontend Pages
+- [ ] Map-first CRM dashboard: color-coded pins (chiro=blue, body shop=orange), left sidebar list, quick-view drawer on pin/name click
+- [ ] Facility profile: summary card at top, expandable sections (contact log, leads, signed cases, follow-up, gratitude, updates/transcripts)
+- [ ] Lead entry form: direction, method, clientArea, outcome, signedCase, notes
+- [ ] Transcript/note drop-in: paste text, AI extracts summary + key fields, user can edit before saving
+- [ ] Follow-Up dashboard view: overdue + due in 5-15 days, follow-up reason selector
+- [ ] Partner Performance view: table sorted by signed cases, leads sent, leads received, conversion rate
+- [ ] Relationship Balance view: sent vs received per facility, low-reciprocity flagging
+- [ ] Coverage Gap view: map areas with no chiro or body shop partner
+- [ ] Gratitude/relationship action log per facility
+- [ ] Activity Timeline: all updates, calls, leads, gratitude by date
+
+### Spreadsheet Column Alignment
+- [ ] Agent field (assigned BD rep) — already exists as assignedRepName
+- [ ] Type (Chiropractic / Body Shop) — already exists as category
+- [ ] Clean Phone, Phone 2, Phone 3 — add phone3 column
+- [ ] Email Address — already exists as contactEmail
+- [ ] Notes (facility notes) — already exists
+- [ ] Last partner in FLF — add lastPartnerInFLF field
+- [ ] Status dropdown: Partner, Prospect, Dormant, Do Not Use, Priority Partner, Needs Follow-Up
+- [ ] Total calls — computed from contact_logs count
+- [ ] Last check in — computed from last contact log date
+- [ ] Money invested — add moneyInvested field (sum of gratitude amounts)
+- [ ] Last package requested — add lastPackageDate field
+- [ ] Leads received — computed from facility_leads direction=received count
+- [ ] Zip code — add zipCode field

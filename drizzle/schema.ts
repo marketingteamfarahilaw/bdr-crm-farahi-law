@@ -7,6 +7,8 @@ import {
   varchar,
   float,
   json,
+  boolean,
+  decimal,
 } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
@@ -45,7 +47,6 @@ export type InsertSavedSearch = typeof savedSearches.$inferInsert;
 export const savedLeads = mysqlTable("saved_leads", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  // Denormalized lead data so it persists even if not re-scraped
   placeId: varchar("placeId", { length: 255 }).notNull(),
   source: mysqlEnum("source", ["google", "yelp"]).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -58,7 +59,6 @@ export const savedLeads = mysqlTable("saved_leads", {
   reviewCount: int("reviewCount"),
   latitude: float("latitude"),
   longitude: float("longitude"),
-  // Qualification score fields
   qualificationScore: float("qualificationScore"),
   scoreTier: mysqlEnum("scoreTier", ["hot", "warm", "cold"]),
   scoreBreakdown: json("scoreBreakdown"),
@@ -72,14 +72,30 @@ export type InsertSavedLead = typeof savedLeads.$inferInsert;
 
 // ─── Facility Partner CRM ────────────────────────────────────────────────────
 
-/** Core facility / referral partner profile */
+/** V3 partner status options (from brief section 11) */
+export const PARTNER_STATUSES = [
+  "prospect",
+  "active_partner",
+  "priority_partner",
+  "needs_follow_up",
+  "dormant",
+  "do_not_use",
+] as const;
+
+/** V3 relationship strength options */
+export const RELATIONSHIP_STRENGTHS = ["new", "warm", "strong", "at_risk", "unknown"] as const;
+
+/** Core facility / referral partner profile — upgraded for V3 */
 export const facilities = mysqlTable("facilities", {
   id: int("id").autoincrement().primaryKey(),
   // Identity
   name: varchar("name", { length: 255 }).notNull(),
+  /** V3: only "chiropractor" and "body_shop" in V1 */
   category: varchar("category", { length: 100 }).notNull(),
   address: text("address"),
   city: varchar("city", { length: 255 }),
+  zipCode: varchar("zipCode", { length: 20 }),
+  serviceArea: varchar("serviceArea", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   phone2: varchar("phone2", { length: 50 }),
   phone3: varchar("phone3", { length: 50 }),
@@ -89,25 +105,44 @@ export const facilities = mysqlTable("facilities", {
   contactTitle: varchar("contactTitle", { length: 255 }),
   contactPhone: varchar("contactPhone", { length: 50 }),
   contactEmail: varchar("contactEmail", { length: 320 }),
-  // Relationship
+  preferredContactMethod: mysqlEnum("preferredContactMethod", [
+    "phone", "sms", "email", "in_person", "other",
+  ]),
+  // Relationship — V3 fields
   relationshipStatus: mysqlEnum("relationshipStatus", [
-    "active_partner",
-    "warm_lead",
-    "cold",
-    "churned",
-    "do_not_contact",
-    "needs_agent",
-  ])
-    .default("warm_lead")
-    .notNull(),
-  assignedRepId: int("assignedRepId"), // FK → users.id
+    "active_partner", "warm_lead", "cold", "churned", "do_not_contact", "needs_agent",
+  ]).default("warm_lead").notNull(),
+  partnerStatus: mysqlEnum("partnerStatus", [
+    "prospect", "active_partner", "priority_partner", "needs_follow_up", "dormant", "do_not_use",
+  ]).default("prospect").notNull(),
+  relationshipStrength: mysqlEnum("relationshipStrength", [
+    "new", "warm", "strong", "at_risk", "unknown",
+  ]).default("new").notNull(),
+  priorityPartner: int("priorityPartner").default(0).notNull(), // 0 = no, 1 = yes
+  // Follow-up
+  followUpWindowDays: int("followUpWindowDays").default(7).notNull(), // 5-15 days
+  lastContactDate: timestamp("lastContactDate"),
+  nextFollowUpDate: timestamp("nextFollowUpDate"),
+  lastCheckInDate: timestamp("lastCheckInDate"),
+  // Performance metrics (denormalized for fast dashboard queries)
+  totalSignedCases: int("totalSignedCases").default(0).notNull(),
+  totalLeadsSent: int("totalLeadsSent").default(0).notNull(),    // leads we sent TO facility
+  totalLeadsReceived: int("totalLeadsReceived").default(0).notNull(), // leads we got FROM facility
+  totalCalls: int("totalCalls").default(0).notNull(),
+  lastSignedCaseDate: timestamp("lastSignedCaseDate"),
+  // Financial tracking (from spreadsheet: Money invested, Last package)
+  moneyInvested: decimal("moneyInvested", { precision: 10, scale: 2 }).default("0.00"),
+  lastPackageDate: timestamp("lastPackageDate"),
+  lastPartnerInFLF: varchar("lastPartnerInFLF", { length: 255 }),
+  // Assigned BD rep
+  assignedRepId: int("assignedRepId"),
   assignedRepName: varchar("assignedRepName", { length: 255 }),
   // Google Maps link (from scraper)
   placeId: varchar("placeId", { length: 255 }),
   latitude: float("latitude"),
   longitude: float("longitude"),
   // Management
-  managementFlag: int("managementFlag").default(0).notNull(), // 0 = no flag, 1 = flagged
+  managementFlag: int("managementFlag").default(0).notNull(),
   managementNote: text("managementNote"),
   // Internal notes
   notes: text("notes"),
@@ -123,26 +158,19 @@ export const contactLogs = mysqlTable("contact_logs", {
   id: int("id").autoincrement().primaryKey(),
   facilityId: int("facilityId").notNull(),
   contactType: mysqlEnum("contactType", ["call", "visit", "email", "text", "meeting", "other"])
-    .default("call")
-    .notNull(),
+    .default("call").notNull(),
   contactDate: timestamp("contactDate").notNull(),
-  // Call-specific fields (from 2.RC sheet)
   callResult: mysqlEnum("callResult", ["connected", "voicemail", "no_answer", "busy", "other"]),
-  callDuration: varchar("callDuration", { length: 20 }), // HH:MM:SS format
+  callDuration: varchar("callDuration", { length: 20 }),
   callType: mysqlEnum("callType", [
-    "partner_checkin",
-    "bdr_checkin",
-    "fr_checkin",
-    "internal",
-    "potential_lead",
-    "other",
+    "partner_checkin", "bdr_checkin", "fr_checkin", "internal", "potential_lead", "other",
   ]),
-  // Visit-specific fields (from 2.Visits sheet)
-  fieldHours: varchar("fieldHours", { length: 20 }), // HH:MM:SS format
-  // General
+  fieldHours: varchar("fieldHours", { length: 20 }),
   summary: text("summary"),
-  repId: int("repId"), // FK → users.id
+  repId: int("repId"),
   repName: varchar("repName", { length: 255 }),
+  // V3: RingCentral sync flag
+  fromRingCentral: int("fromRingCentral").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -156,10 +184,15 @@ export const facilityTasks = mysqlTable("facility_tasks", {
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   dueDate: timestamp("dueDate"),
-  assignedToId: int("assignedToId"), // FK → users.id
+  assignedToId: int("assignedToId"),
   assignedToName: varchar("assignedToName", { length: 255 }),
   status: mysqlEnum("status", ["open", "completed"]).default("open").notNull(),
   priority: mysqlEnum("priority", ["high", "medium", "low"]).default("medium").notNull(),
+  // V3: follow-up reason
+  followUpReason: mysqlEnum("followUpReason", [
+    "thank_you", "send_lead", "ask_for_referral", "request_update",
+    "check_relationship", "reconnect", "other",
+  ]),
   completedAt: timestamp("completedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -168,12 +201,12 @@ export const facilityTasks = mysqlTable("facility_tasks", {
 export type FacilityTask = typeof facilityTasks.$inferSelect;
 export type InsertFacilityTask = typeof facilityTasks.$inferInsert;
 
-/** Monthly referral lead count sent by a facility */
+/** Monthly referral lead count sent by a facility (legacy — kept for backward compat) */
 export const facilityLeadsSent = mysqlTable("facility_leads_sent", {
   id: int("id").autoincrement().primaryKey(),
   facilityId: int("facilityId").notNull(),
   year: int("year").notNull(),
-  month: int("month").notNull(), // 1-12
+  month: int("month").notNull(),
   count: int("count").default(0).notNull(),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -184,17 +217,91 @@ export type FacilityLeadsSent = typeof facilityLeadsSent.$inferSelect;
 export type InsertFacilityLeadsSent = typeof facilityLeadsSent.$inferInsert;
 
 /**
+ * V3: Individual lead entries — tracks each lead sent to or received from a facility.
+ * This replaces the monthly count model with per-lead tracking.
+ */
+export const facilityLeads = mysqlTable("facility_leads", {
+  id: int("id").autoincrement().primaryKey(),
+  facilityId: int("facilityId").notNull(),
+  // Direction: did we send this lead to the facility, or did they send it to us?
+  direction: mysqlEnum("direction", ["sent_to_facility", "received_from_facility"]).notNull(),
+  leadDate: timestamp("leadDate").notNull(),
+  // How was the lead communicated?
+  method: mysqlEnum("method", ["phone_call", "sms", "direct_contact", "email", "in_person", "other"])
+    .default("phone_call").notNull(),
+  contactPerson: varchar("contactPerson", { length: 255 }),
+  clientArea: varchar("clientArea", { length: 255 }), // e.g. "Pomona", "Ontario"
+  // Outcome tracking — signed cases are the #1 metric
+  outcome: mysqlEnum("outcome", [
+    "pending", "signed", "not_signed", "not_qualified", "duplicate", "unknown",
+  ]).default("pending").notNull(),
+  signedCase: int("signedCase").default(0).notNull(), // 1 = signed case confirmed
+  signedDate: timestamp("signedDate"),
+  notes: text("notes"),
+  repId: int("repId"),
+  repName: varchar("repName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FacilityLead = typeof facilityLeads.$inferSelect;
+export type InsertFacilityLead = typeof facilityLeads.$inferInsert;
+
+/**
+ * V3: Gratitude / relationship-building actions (meals, gifts, visits, thank-you calls)
+ */
+export const facilityGratitude = mysqlTable("facility_gratitude", {
+  id: int("id").autoincrement().primaryKey(),
+  facilityId: int("facilityId").notNull(),
+  actionDate: timestamp("actionDate").notNull(),
+  actionType: mysqlEnum("actionType", [
+    "thank_you_call", "thank_you_sms", "visit", "meal_delivery", "gift", "other",
+  ]).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }), // cost in USD if applicable
+  notes: text("notes"),
+  repId: int("repId"),
+  repName: varchar("repName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FacilityGratitude = typeof facilityGratitude.$inferSelect;
+export type InsertFacilityGratitude = typeof facilityGratitude.$inferInsert;
+
+/**
+ * V3: Transcript / note drop-in updates.
+ * User pastes a call transcript, SMS thread, or manual note.
+ * AI extracts a short summary + key fields. User can edit before saving.
+ */
+export const facilityUpdates = mysqlTable("facility_updates", {
+  id: int("id").autoincrement().primaryKey(),
+  facilityId: int("facilityId").notNull(),
+  updateDate: timestamp("updateDate").notNull(),
+  // Raw input from user (transcript, SMS, or manual note)
+  rawText: text("rawText"),
+  // AI-generated or manually written short summary (shown at top of activity file)
+  summary: varchar("summary", { length: 500 }),
+  // Structured data extracted from the transcript
+  extractedData: json("extractedData"), // { contactPerson, leadDirection, clientArea, promisedAction, followUpDate, relationshipTone, signedCaseStatus }
+  updateType: mysqlEnum("updateType", ["transcript", "sms", "manual_note", "visit_note", "other"])
+    .default("manual_note").notNull(),
+  repId: int("repId"),
+  repName: varchar("repName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FacilityUpdate = typeof facilityUpdates.$inferSelect;
+export type InsertFacilityUpdate = typeof facilityUpdates.$inferInsert;
+
+/**
  * Actual referrals received from a facility (from 2.Rfral Rewrd sheet)
- * Each row = one real client referred by this facility
+ * Kept for backward compatibility — new leads go into facility_leads
  */
 export const facilityReferrals = mysqlTable("facility_referrals", {
   id: int("id").autoincrement().primaryKey(),
   facilityId: int("facilityId").notNull(),
   referralDate: timestamp("referralDate").notNull(),
   clientName: varchar("clientName", { length: 255 }).notNull(),
-  caseValue: mysqlEnum("caseValue", ["rank_x", "high", "medium", "low", "na"])
-    .default("medium")
-    .notNull(),
+  caseValue: mysqlEnum("caseValue", ["rank_x", "high", "medium", "low", "na"]).default("medium").notNull(),
   repId: int("repId"),
   repName: varchar("repName", { length: 255 }),
   notes: text("notes"),
@@ -206,12 +313,11 @@ export type FacilityReferral = typeof facilityReferrals.$inferSelect;
 export type InsertFacilityReferral = typeof facilityReferrals.$inferInsert;
 
 /**
- * RingCentral OAuth tokens stored per-account (one row for the whole org)
- * Allows the app to sync call logs automatically from RingCentral
+ * RingCentral OAuth tokens stored per-account
  */
 export const ringcentralTokens = mysqlTable("ringcentral_tokens", {
   id: int("id").autoincrement().primaryKey(),
-  accountId: varchar("accountId", { length: 128 }).notNull().unique(), // RC account ID
+  accountId: varchar("accountId", { length: 128 }).notNull().unique(),
   accessToken: text("accessToken").notNull(),
   refreshToken: text("refreshToken").notNull(),
   tokenExpiry: timestamp("tokenExpiry").notNull(),

@@ -14,7 +14,8 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Phone, Globe, MapPin, User, Mail, AlertTriangle,
   Plus, CheckCircle2, Circle, Trash2, PhoneCall, Car, MessageSquare,
-  Calendar, Clock, Star, Edit, RefreshCw, Building2
+  Calendar, Clock, Star, Edit, RefreshCw, Building2, Gift, FileText,
+  TrendingUp, Flag, ExternalLink
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -314,6 +315,216 @@ function AddReferralDialog({ facilityId, onSuccess }: { facilityId: number; onSu
   );
 }
 
+// ─── Leads Tab ───────────────────────────────────────────────────────────────
+function LeadsTab({ facilityId }: { facilityId: number }) {
+  const utils = trpc.useUtils();
+  const { data: leads = [], isLoading } = trpc.crm.facilityLeads.list.useQuery({ facilityId });
+  const createLead = trpc.crm.facilityLeads.create.useMutation({
+    onSuccess: () => { utils.crm.facilityLeads.list.invalidate({ facilityId }); utils.crm.facilities.get.invalidate({ id: facilityId }); toast.success("Lead recorded"); setOpen(false); resetForm(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const updateLead = trpc.crm.facilityLeads.update.useMutation({
+    onSuccess: () => { utils.crm.facilityLeads.list.invalidate({ facilityId }); utils.crm.facilities.get.invalidate({ id: facilityId }); toast.success("Lead updated"); },
+  });
+  const deleteLead = trpc.crm.facilityLeads.delete.useMutation({
+    onSuccess: () => { utils.crm.facilityLeads.list.invalidate({ facilityId }); utils.crm.facilities.get.invalidate({ id: facilityId }); toast.success("Lead removed"); },
+  });
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ direction: "received_from_facility" as "sent_to_facility" | "received_from_facility", leadDate: new Date().toISOString().slice(0,10), method: "phone_call", contactPerson: "", clientArea: "", outcome: "pending", signedCase: 0, notes: "", repName: "" });
+  const resetForm = () => setForm({ direction: "received_from_facility", leadDate: new Date().toISOString().slice(0,10), method: "phone_call", contactPerson: "", clientArea: "", outcome: "pending", signedCase: 0, notes: "", repName: "" });
+  const received = (leads as any[]).filter((l) => l.direction === "received_from_facility");
+  const sent = (leads as any[]).filter((l) => l.direction === "sent_to_facility");
+  const signed = (leads as any[]).filter((l) => l.signedCase === 1);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        {[{label:"Received",value:received.length,color:"text-emerald-400"},{label:"Sent",value:sent.length,color:"text-blue-400"},{label:"Signed Cases",value:signed.length,color:"text-yellow-400"}].map(s=><Card key={s.label} className="bg-card border-border"><CardContent className="p-4"><p className="text-xs text-muted-foreground">{s.label}</p><p className={`text-2xl font-bold ${s.color}`}>{s.value}</p></CardContent></Card>)}
+      </div>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-muted-foreground">Lead History</h3>
+        <Button size="sm" variant="outline" className="gap-1.5 border-border" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Lead</Button>
+      </div>
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : (leads as any[]).length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground"><TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-30"/><p>No leads recorded yet.</p></div>
+      ) : (
+        <div className="space-y-2">{(leads as any[]).map((lead)=>(
+          <Card key={lead.id} className="bg-card border-border"><CardContent className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium">{lead.direction==="received_from_facility"?"Received from facility":"Sent to facility"}</span>
+                  <Badge variant="outline" className={`text-xs border-border ${lead.outcome==="signed"?"text-emerald-400":lead.outcome==="pending"?"text-amber-400":"text-slate-400"}`}>{lead.outcome}</Badge>
+                  {lead.signedCase===1&&<Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">✓ Signed</Badge>}
+                  <span className="text-xs text-muted-foreground ml-auto">{lead.leadDate?new Date(lead.leadDate).toLocaleDateString():""}</span>
+                </div>
+                {lead.clientArea&&<p className="text-xs text-muted-foreground mt-0.5">Area: {lead.clientArea}</p>}
+                {lead.repName&&<p className="text-xs text-muted-foreground">Rep: {lead.repName}</p>}
+                {lead.notes&&<p className="text-sm text-muted-foreground mt-1">{lead.notes}</p>}
+                {lead.outcome==="pending"&&<button className="mt-1 text-xs text-emerald-400 hover:text-emerald-300" onClick={()=>updateLead.mutate({id:lead.id,outcome:"signed",signedCase:1})}>Mark as Signed</button>}
+              </div>
+              <button onClick={()=>deleteLead.mutate({id:lead.id})} className="text-muted-foreground hover:text-red-400"><Trash2 className="w-4 h-4"/></button>
+            </div>
+          </CardContent></Card>
+        ))}</div>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader><DialogTitle>Record Lead</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-muted-foreground mb-1 block">Direction</label>
+                <Select value={form.direction} onValueChange={(v:any)=>setForm(f=>({...f,direction:v}))}><SelectTrigger className="bg-background border-border"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="received_from_facility">Received from Facility</SelectItem><SelectItem value="sent_to_facility">Sent to Facility</SelectItem></SelectContent></Select>
+              </div>
+              <div><label className="text-xs text-muted-foreground mb-1 block">Date</label><Input type="date" value={form.leadDate} onChange={e=>setForm(f=>({...f,leadDate:e.target.value}))} className="bg-background border-border"/></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-muted-foreground mb-1 block">Outcome</label>
+                <Select value={form.outcome} onValueChange={v=>setForm(f=>({...f,outcome:v}))}><SelectTrigger className="bg-background border-border"><SelectValue/></SelectTrigger><SelectContent>{["pending","signed","not_signed","not_qualified","duplicate","unknown"].map(t=><SelectItem key={t} value={t}>{t.replace(/_/g," ")}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div><label className="text-xs text-muted-foreground mb-1 block">Client Area</label><Input placeholder="e.g. Pomona" value={form.clientArea} onChange={e=>setForm(f=>({...f,clientArea:e.target.value}))} className="bg-background border-border"/></div>
+            </div>
+            <div className="flex items-center gap-2"><input type="checkbox" id="signed-cb" checked={form.signedCase===1} onChange={e=>setForm(f=>({...f,signedCase:e.target.checked?1:0,outcome:e.target.checked?"signed":f.outcome}))} className="rounded"/><label htmlFor="signed-cb" className="text-sm">Signed Case</label></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">BD Rep</label><Input value={form.repName} onChange={e=>setForm(f=>({...f,repName:e.target.value}))} className="bg-background border-border"/></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Notes</label><Textarea rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} className="bg-background border-border resize-none"/></div>
+            <Button className="w-full" style={{background:"var(--gold)",color:"#0a0f1e"}} disabled={createLead.isPending} onClick={()=>createLead.mutate({facilityId,...form,method:form.method as any,outcome:form.outcome as any})}>{createLead.isPending?"Saving...":"Save Lead"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ─── Gratitude Tab ────────────────────────────────────────────────────────────
+function GratitudeTab({ facilityId }: { facilityId: number }) {
+  const utils = trpc.useUtils();
+  const { data: actions = [], isLoading } = trpc.crm.gratitude.list.useQuery({ facilityId });
+  const createAction = trpc.crm.gratitude.create.useMutation({
+    onSuccess: () => { utils.crm.gratitude.list.invalidate({ facilityId }); utils.crm.facilities.get.invalidate({ id: facilityId }); toast.success("Gratitude action recorded"); setOpen(false); resetForm(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteAction = trpc.crm.gratitude.delete.useMutation({
+    onSuccess: () => { utils.crm.gratitude.list.invalidate({ facilityId }); utils.crm.facilities.get.invalidate({ id: facilityId }); toast.success("Action removed"); },
+  });
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ actionDate: new Date().toISOString().slice(0,10), actionType: "thank_you_call" as any, amount: "", notes: "", repName: "" });
+  const resetForm = () => setForm({ actionDate: new Date().toISOString().slice(0,10), actionType: "thank_you_call", amount: "", notes: "", repName: "" });
+  const totalSpent = (actions as any[]).reduce((sum,a)=>sum+(parseFloat(a.amount??"0")||0),0);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="bg-card border-border"><CardContent className="p-4"><p className="text-xs text-muted-foreground">Total Actions</p><p className="text-2xl font-bold">{(actions as any[]).length}</p></CardContent></Card>
+        <Card className="bg-card border-border"><CardContent className="p-4"><p className="text-xs text-muted-foreground">Total Invested</p><p className="text-2xl font-bold text-yellow-400">${totalSpent.toFixed(2)}</p></CardContent></Card>
+      </div>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-muted-foreground">Gratitude & Relationship Actions</h3>
+        <Button size="sm" variant="outline" className="gap-1.5 border-border" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Action</Button>
+      </div>
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : (actions as any[]).length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground"><Gift className="w-10 h-10 mx-auto mb-3 opacity-30"/><p>No gratitude actions recorded yet.</p></div>
+      ) : (
+        <div className="space-y-2">{(actions as any[]).map((action)=>(
+          <Card key={action.id} className="bg-card border-border"><CardContent className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium capitalize">{action.actionType.replace(/_/g," ")}</span>
+                  {action.amount&&<Badge variant="outline" className="text-xs text-yellow-400 border-yellow-500/30">${parseFloat(action.amount).toFixed(2)}</Badge>}
+                  <span className="text-xs text-muted-foreground ml-auto">{action.actionDate?new Date(action.actionDate).toLocaleDateString():""}</span>
+                </div>
+                {action.repName&&<p className="text-xs text-muted-foreground">By: {action.repName}</p>}
+                {action.notes&&<p className="text-sm text-muted-foreground mt-1">{action.notes}</p>}
+              </div>
+              <button onClick={()=>deleteAction.mutate({id:action.id})} className="text-muted-foreground hover:text-red-400"><Trash2 className="w-4 h-4"/></button>
+            </div>
+          </CardContent></Card>
+        ))}</div>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader><DialogTitle>Record Gratitude Action</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-muted-foreground mb-1 block">Action Type</label>
+                <Select value={form.actionType} onValueChange={(v:any)=>setForm(f=>({...f,actionType:v}))}><SelectTrigger className="bg-background border-border"><SelectValue/></SelectTrigger><SelectContent>{["thank_you_call","thank_you_sms","visit","meal_delivery","gift","other"].map(t=><SelectItem key={t} value={t}>{t.replace(/_/g," ")}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div><label className="text-xs text-muted-foreground mb-1 block">Date</label><Input type="date" value={form.actionDate} onChange={e=>setForm(f=>({...f,actionDate:e.target.value}))} className="bg-background border-border"/></div>
+            </div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Amount Spent ($)</label><Input type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} className="bg-background border-border"/></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">BD Rep</label><Input value={form.repName} onChange={e=>setForm(f=>({...f,repName:e.target.value}))} className="bg-background border-border"/></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Notes</label><Textarea rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} className="bg-background border-border resize-none"/></div>
+            <Button className="w-full" style={{background:"var(--gold)",color:"#0a0f1e"}} disabled={createAction.isPending} onClick={()=>createAction.mutate({facilityId,...form})}>{createAction.isPending?"Saving...":"Save Action"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ─── Updates / Transcripts Tab ────────────────────────────────────────────────
+function UpdatesTab({ facilityId }: { facilityId: number }) {
+  const utils = trpc.useUtils();
+  const { data: updates = [], isLoading } = trpc.crm.updates.list.useQuery({ facilityId });
+  const createUpdate = trpc.crm.updates.create.useMutation({
+    onSuccess: () => { utils.crm.updates.list.invalidate({ facilityId }); toast.success("Update saved"); setOpen(false); resetForm(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteUpdate = trpc.crm.updates.delete.useMutation({
+    onSuccess: () => { utils.crm.updates.list.invalidate({ facilityId }); toast.success("Update removed"); },
+  });
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ updateDate: new Date().toISOString().slice(0,10), updateType: "manual_note" as any, rawText: "", summary: "", repName: "" });
+  const resetForm = () => setForm({ updateDate: new Date().toISOString().slice(0,10), updateType: "manual_note", rawText: "", summary: "", repName: "" });
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-muted-foreground">Notes, Transcripts & Updates</h3>
+        <Button size="sm" variant="outline" className="gap-1.5 border-border" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Update</Button>
+      </div>
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : (updates as any[]).length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground"><FileText className="w-10 h-10 mx-auto mb-3 opacity-30"/><p>No updates yet. Paste call transcripts, SMS threads, or manual notes here.</p></div>
+      ) : (
+        <div className="space-y-2">{(updates as any[]).map((upd)=>(
+          <Card key={upd.id} className="bg-card border-border"><CardContent className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium capitalize">{upd.updateType.replace(/_/g," ")}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{upd.updateDate?new Date(upd.updateDate).toLocaleDateString():""}</span>
+                </div>
+                {upd.repName&&<p className="text-xs text-muted-foreground">By: {upd.repName}</p>}
+                {upd.summary&&<p className="text-sm font-medium text-foreground mt-1">{upd.summary}</p>}
+                {upd.rawText&&(
+                  <details className="mt-1"><summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">View full text</summary>
+                    <pre className="text-xs text-foreground/70 mt-1 whitespace-pre-wrap font-sans bg-muted/30 rounded p-2 max-h-40 overflow-y-auto">{upd.rawText}</pre>
+                  </details>
+                )}
+              </div>
+              <button onClick={()=>deleteUpdate.mutate({id:upd.id})} className="text-muted-foreground hover:text-red-400"><Trash2 className="w-4 h-4"/></button>
+            </div>
+          </CardContent></Card>
+        ))}</div>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader><DialogTitle>Add Update / Note</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-muted-foreground mb-1 block">Type</label>
+                <Select value={form.updateType} onValueChange={(v:any)=>setForm(f=>({...f,updateType:v}))}><SelectTrigger className="bg-background border-border"><SelectValue/></SelectTrigger><SelectContent>{["transcript","sms","manual_note","visit_note","other"].map(t=><SelectItem key={t} value={t}>{t.replace(/_/g," ")}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div><label className="text-xs text-muted-foreground mb-1 block">Date</label><Input type="date" value={form.updateDate} onChange={e=>setForm(f=>({...f,updateDate:e.target.value}))} className="bg-background border-border"/></div>
+            </div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Summary <span className="text-muted-foreground/60">(shown at top)</span></label><Input placeholder="Brief summary..." value={form.summary} onChange={e=>setForm(f=>({...f,summary:e.target.value}))} className="bg-background border-border"/></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Full Text / Transcript <span className="text-muted-foreground/60">(optional)</span></label><Textarea rows={6} placeholder="Paste transcript or full notes here..." value={form.rawText} onChange={e=>setForm(f=>({...f,rawText:e.target.value}))} className="bg-background border-border resize-none"/></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">BD Rep</label><Input value={form.repName} onChange={e=>setForm(f=>({...f,repName:e.target.value}))} className="bg-background border-border"/></div>
+            <Button className="w-full" style={{background:"var(--gold)",color:"#0a0f1e"}} disabled={createUpdate.isPending} onClick={()=>createUpdate.mutate({facilityId,...form})}>{createUpdate.isPending?"Saving...":"Save Update"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function FacilityProfile() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -439,11 +650,14 @@ export default function FacilityProfile() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="overview">
-        <TabsList className="bg-card border border-border">
+        <TabsList className="bg-card border border-border flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="contacts">
             Contact Log {contactLogs && contactLogs.length > 0 && <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">{contactLogs.length}</span>}
           </TabsTrigger>
+          <TabsTrigger value="leads">Leads</TabsTrigger>
+          <TabsTrigger value="gratitude">Gratitude</TabsTrigger>
+          <TabsTrigger value="updates">Updates</TabsTrigger>
           <TabsTrigger value="tasks">
             Tasks {openTasks.length > 0 && <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full">{openTasks.length}</span>}
           </TabsTrigger>
@@ -560,6 +774,12 @@ export default function FacilityProfile() {
           )}
         </TabsContent>
 
+        {/* Leads Tab */}
+        <TabsContent value="leads" className="mt-4"><LeadsTab facilityId={facilityId} /></TabsContent>
+        {/* Gratitude Tab */}
+        <TabsContent value="gratitude" className="mt-4"><GratitudeTab facilityId={facilityId} /></TabsContent>
+        {/* Updates Tab */}
+        <TabsContent value="updates" className="mt-4"><UpdatesTab facilityId={facilityId} /></TabsContent>
         {/* Tasks Tab */}
         <TabsContent value="tasks" className="mt-4">
           <div className="flex items-center justify-between mb-4">

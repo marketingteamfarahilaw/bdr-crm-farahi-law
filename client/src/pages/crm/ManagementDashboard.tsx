@@ -188,7 +188,7 @@ export default function ManagementDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {(stats.topReferrers as Array<{ id: number; name: string; city: string | null; totalReferrals: number }>).map((f, i) => (
+              {(stats.topReferrers as Array<{ id: number; name: string; city: string | null; totalSignedCases: number; totalLeadsReceived: number }>).map((f, i) => (
                 <div
                   key={f.id}
                   className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 cursor-pointer transition-colors"
@@ -200,8 +200,8 @@ export default function ManagementDashboard() {
                     <p className="text-xs text-muted-foreground">{f.city ?? ""}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-[var(--gold)]">{f.totalReferrals}</p>
-                    <p className="text-xs text-muted-foreground">referrals</p>
+                    <p className="text-sm font-bold text-[var(--gold)]">{f.totalSignedCases}</p>
+                    <p className="text-xs text-muted-foreground">signed cases</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </div>
