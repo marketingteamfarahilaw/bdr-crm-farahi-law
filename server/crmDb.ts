@@ -603,3 +603,170 @@ export async function getRelationshipBalance() {
         : 0,
   }));
 }
+
+// ─── BDR Reports ─────────────────────────────────────────────────────────────
+
+/** Call activity summary grouped by rep and month from contact_logs */
+export async function getBdrCallActivity(filters?: { repName?: string; month?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions: any[] = [eq(contactLogs.contactType, "call")];
+  if (filters?.repName) conditions.push(eq(contactLogs.repName, filters.repName));
+
+  const rows = await db
+    .select({
+      repName: contactLogs.repName,
+      callType: contactLogs.callType,
+      callResult: contactLogs.callResult,
+      contactDate: contactLogs.contactDate,
+    })
+    .from(contactLogs)
+    .where(and(...conditions))
+    .orderBy(desc(contactLogs.contactDate));
+
+  // Aggregate in JS for flexibility
+  const byRepMonth: Record<string, Record<string, {
+    total: number; connected: number; voicemail: number; noAnswer: number;
+    partnerCheckin: number; bdrCheckin: number; frCheckin: number; internal: number; potentialLead: number;
+  }>> = {};
+
+  for (const row of rows) {
+    const rep = row.repName ?? "Unknown";
+    const d = row.contactDate ? new Date(row.contactDate) : new Date();
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (filters?.month && monthKey !== filters.month) continue;
+
+    if (!byRepMonth[rep]) byRepMonth[rep] = {};
+    if (!byRepMonth[rep][monthKey]) byRepMonth[rep][monthKey] = {
+      total: 0, connected: 0, voicemail: 0, noAnswer: 0,
+      partnerCheckin: 0, bdrCheckin: 0, frCheckin: 0, internal: 0, potentialLead: 0,
+    };
+    const cell = byRepMonth[rep][monthKey];
+    cell.total++;
+    if (row.callResult === "connected") cell.connected++;
+    if (row.callResult === "voicemail") cell.voicemail++;
+    if (row.callResult === "no_answer") cell.noAnswer++;
+    if (row.callType === "partner_checkin") cell.partnerCheckin++;
+    if (row.callType === "bdr_checkin") cell.bdrCheckin++;
+    if (row.callType === "fr_checkin") cell.frCheckin++;
+    if (row.callType === "internal") cell.internal++;
+    if (row.callType === "potential_lead") cell.potentialLead++;
+  }
+
+  const result: Array<{
+    repName: string; month: string; total: number; connected: number; voicemail: number; noAnswer: number;
+    partnerCheckin: number; bdrCheckin: number; frCheckin: number; internal: number; potentialLead: number;
+  }> = [];
+  for (const [rep, months] of Object.entries(byRepMonth)) {
+    for (const [month, stats] of Object.entries(months)) {
+      result.push({ repName: rep, month, ...stats });
+    }
+  }
+  return result.sort((a, b) => b.month.localeCompare(a.month) || a.repName.localeCompare(b.repName));
+}
+
+/** Partner check-in summary per rep: target vs actual */
+export async function getBdrPartnerCheckins(filters?: { repName?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Count facilities per rep (active partners)
+  const allFacilities = await db
+    .select({
+      assignedRepName: facilities.assignedRepName,
+      id: facilities.id,
+      name: facilities.name,
+      category: facilities.category,
+      partnerStatus: facilities.partnerStatus,
+      lastContactDate: facilities.lastContactDate,
+    })
+    .from(facilities)
+    .where(sql`${facilities.partnerStatus} IN ('active_partner', 'priority_partner')`);
+
+  // Count check-in calls per rep from contact_logs
+  const checkinLogs = await db
+    .select({
+      repName: contactLogs.repName,
+      facilityId: contactLogs.facilityId,
+      contactDate: contactLogs.contactDate,
+    })
+    .from(contactLogs)
+    .where(eq(contactLogs.callType, "partner_checkin"));
+
+  const repStats: Record<string, {
+    repName: string; totalPartners: number; checkinsThisMonth: number;
+    checkinsLast30Days: number; facilitiesNeedingCheckin: number;
+  }> = {};
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  for (const f of allFacilities) {
+    const rep = f.assignedRepName ?? "Unassigned";
+    if (filters?.repName && rep !== filters.repName) continue;
+    if (!repStats[rep]) repStats[rep] = { repName: rep, totalPartners: 0, checkinsThisMonth: 0, checkinsLast30Days: 0, facilitiesNeedingCheckin: 0 };
+    repStats[rep].totalPartners++;
+    const lastContact = f.lastContactDate ? new Date(f.lastContactDate) : null;
+    if (!lastContact || lastContact < thirtyDaysAgo) repStats[rep].facilitiesNeedingCheckin++;
+  }
+
+  for (const log of checkinLogs) {
+    const rep = log.repName ?? "Unknown";
+    if (filters?.repName && rep !== filters.repName) continue;
+    if (!repStats[rep]) continue;
+    const d = log.contactDate ? new Date(log.contactDate) : null;
+    if (!d) continue;
+    if (d >= thisMonthStart) repStats[rep].checkinsThisMonth++;
+    if (d >= thirtyDaysAgo) repStats[rep].checkinsLast30Days++;
+  }
+
+  return Object.values(repStats).sort((a, b) => b.totalPartners - a.totalPartners);
+}
+
+/** Top facilities by contact frequency */
+export async function getBdrTopFacilities(limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .select({
+      facilityId: contactLogs.facilityId,
+      repName: contactLogs.repName,
+    })
+    .from(contactLogs)
+    .where(eq(contactLogs.contactType, "call"));
+
+  const counts: Record<number, { count: number; reps: Set<string> }> = {};
+  for (const row of rows) {
+    if (!counts[row.facilityId]) counts[row.facilityId] = { count: 0, reps: new Set() };
+    counts[row.facilityId].count++;
+    if (row.repName) counts[row.facilityId].reps.add(row.repName);
+  }
+
+  const sorted = Object.entries(counts)
+    .sort(([, a], [, b]) => b.count - a.count)
+    .slice(0, limit);
+
+  const facilityIds = sorted.map(([id]) => Number(id));
+  if (facilityIds.length === 0) return [];
+
+  const facilityRows = await db.select().from(facilities).where(
+    sql`${facilities.id} IN (${sql.join(facilityIds.map((id) => sql`${id}`), sql`, `)})`
+  );
+
+  const facilityMap = new Map(facilityRows.map((f) => [f.id, f]));
+  return sorted.map(([id, stats]) => {
+    const f = facilityMap.get(Number(id));
+    return {
+      facilityId: Number(id),
+      name: f?.name ?? "Unknown",
+      category: f?.category ?? "other",
+      city: f?.city ?? "",
+      assignedRepName: f?.assignedRepName ?? "",
+      callCount: stats.count,
+      reps: Array.from(stats.reps).join(", "),
+    };
+  });
+}

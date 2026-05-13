@@ -205,3 +205,46 @@
 - [x] List/Map toggle buttons added to Facilities page header
 - [x] PlacesAutocomplete migrated to use loading=async (fixes Google Maps deprecation warning)
 - [x] CSS @import ordering warning fixed
+
+## Map Filter Dropdowns
+- [ ] Add Category filter dropdown to map view (All Categories + each facility type)
+- [ ] Add Relationship Status filter dropdown to map view (All Statuses + each status)
+- [ ] Pins update in real time when filters change
+- [ ] Active filter count badge on filter controls
+- [ ] Clear filters button when any filter is active
+- [ ] Pin count updates to show filtered/total
+
+## RingCentral In-App Calling & Transcription
+- [ ] Research RingCentral Embeddable WebPhone SDK (ringcentral-embeddable)
+- [ ] Build RingCentral OAuth connect flow (Client ID + Secret → access/refresh tokens)
+- [ ] Store RingCentral tokens securely per user in ringcentral_tokens table
+- [ ] Embed RingCentral WebPhone widget in the app shell (persistent, collapsible)
+- [ ] Click-to-call button on every facility phone number
+- [ ] Auto-populate dialer with facility phone when click-to-call triggered
+- [ ] Call recording: retrieve recording URL from RingCentral API after call ends
+- [ ] Auto-transcription: send recording to Whisper API, get transcript text
+- [ ] Auto-save transcript to facility Updates tab with call metadata (date, duration, rep, phone)
+- [ ] Auto-create Contact Log entry when call completes (direction, duration, result)
+- [ ] RingCentral Settings page: connect/disconnect account, show connected user info
+- [ ] Call history sync: pull recent calls from RingCentral and match to facilities by phone number
+
+## Bug Fixes (May 2026)
+- [x] Fix Places Autocomplete "Cannot read properties of undefined (reading 'Autocomplete')" — use callback-based Maps loading to ensure places library is ready before init
+- [x] Unify Map.tsx and PlacesAutocomplete.tsx to share a single Maps script load via window._mapsScriptLoading promise
+
+## RingCentral Embeddable Widget (In-App Calling)
+- [x] Embed RingCentral Embeddable iframe widget (floating phone panel) using VITE_RINGCENTRAL_CLIENT_ID
+- [x] Click-to-call: postMessage to widget to dial a phone number from facility profile
+- [x] Listen for call-end events from widget via window.addEventListener('message')
+- [x] On call end: auto-create contact log entry (date, duration, result, phone, facility)
+- [x] On call end: retrieve recording URL from RingCentral API and run Whisper transcription
+- [x] Save transcript to facility_updates table with call metadata
+- [x] Add "Phone" button in sidebar/header to toggle widget visibility
+- [x] JWT-based connect flow: store JWT in ringcentral_tokens table via new procedure
+
+## BDR Reports Dashboard (Excel-based)
+- [x] Add BDR Reports page to sidebar navigation
+- [x] Call Activity report: total calls per agent per month (from contact_logs)
+- [x] Partner Check-In report: facilities checked in vs. target per agent
+- [x] Hashtag category breakdown: #BDRpartnercheckin, #FRpartnercheckin, #PotentialLeadSource counts
+- [x] Active Partners table: agent, type, facility name, contact, status, total calls, last check-in

@@ -17,6 +17,7 @@ import {
   Calendar, Clock, Star, Edit, RefreshCw, Building2, Gift, FileText,
   TrendingUp, Flag, ExternalLink
 } from "lucide-react";
+import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { formatDistanceToNow, format } from "date-fns";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -673,9 +674,9 @@ export default function FacilityProfile() {
               <CardHeader className="pb-3"><CardTitle className="text-sm">Facility Info</CardTitle></CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {facility.address && <div className="flex gap-2"><MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" /><span>{facility.address}{facility.city ? `, ${facility.city}` : ""}</span></div>}
-                {facility.phone && <div className="flex gap-2"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`tel:${facility.phone}`} className="hover:text-[var(--gold)]">{facility.phone}</a></div>}
-                {facility.phone2 && <div className="flex gap-2"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`tel:${facility.phone2}`} className="hover:text-[var(--gold)]">{facility.phone2} <span className="text-muted-foreground text-xs">(alt)</span></a></div>}
-                {facility.phone3 && <div className="flex gap-2"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`tel:${facility.phone3}`} className="hover:text-[var(--gold)]">{facility.phone3} <span className="text-muted-foreground text-xs">(alt 2)</span></a></div>}
+                {facility.phone && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton phoneNumber={facility.phone} className="hover:text-[var(--gold)] text-sm">{facility.phone}</ClickToCallButton></div>}
+                {facility.phone2 && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton phoneNumber={facility.phone2} className="hover:text-[var(--gold)] text-sm">{facility.phone2} <span className="text-muted-foreground text-xs">(alt)</span></ClickToCallButton></div>}
+                {facility.phone3 && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton phoneNumber={facility.phone3} className="hover:text-[var(--gold)] text-sm">{facility.phone3} <span className="text-muted-foreground text-xs">(alt 2)</span></ClickToCallButton></div>}
                 {facility.website && <div className="flex gap-2"><Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={facility.website} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--gold)] truncate">{facility.website}</a></div>}
               </CardContent>
             </Card>
@@ -683,7 +684,7 @@ export default function FacilityProfile() {
               <CardHeader className="pb-3"><CardTitle className="text-sm">Primary Contact</CardTitle></CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {facility.contactName && <div className="flex gap-2"><User className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>{facility.contactName}{facility.contactTitle ? ` · ${facility.contactTitle}` : ""}</span></div>}
-                {facility.contactPhone && <div className="flex gap-2"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`tel:${facility.contactPhone}`} className="hover:text-[var(--gold)]">{facility.contactPhone}</a></div>}
+                {facility.contactPhone && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton phoneNumber={facility.contactPhone} className="hover:text-[var(--gold)] text-sm">{facility.contactPhone}</ClickToCallButton></div>}
                 {facility.contactEmail && <div className="flex gap-2"><Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`mailto:${facility.contactEmail}`} className="hover:text-[var(--gold)]">{facility.contactEmail}</a></div>}
                 {facility.assignedRepName && <div className="flex gap-2 pt-2 border-t border-border"><User className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>BD Rep: <span className="text-foreground font-medium">{facility.assignedRepName}</span></span></div>}
               </CardContent>

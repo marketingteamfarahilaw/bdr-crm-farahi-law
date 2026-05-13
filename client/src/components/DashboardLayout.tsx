@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -36,6 +36,8 @@ const leadScraper = [
 const crmItems = [
   { icon: Building2, label: "Facilities", path: "/crm/facilities" },
   { icon: LayoutDashboard, label: "Mgmt Dashboard", path: "/crm/dashboard" },
+  { icon: Phone, label: "RingCentral", path: "/crm/ringcentral" },
+  { icon: BarChart3, label: "BDR Reports", path: "/crm/reports" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

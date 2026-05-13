@@ -14,20 +14,61 @@ declare global {
   interface Window {
     google?: typeof google;
     _mapsScriptLoading?: Promise<void>;
+    _mapsReady?: boolean;
+    _mapsReadyCallbacks?: Array<() => void>;
+    initGoogleMapsCallback?: () => void;
   }
 }
 
 function loadMapsScript(): Promise<void> {
-  if (window.google?.maps?.places) return Promise.resolve();
+  // Already fully initialized
+  if (window._mapsReady && window.google?.maps?.places?.Autocomplete) {
+    return Promise.resolve();
+  }
+
+  // Already loading — return the existing promise
   if (window._mapsScriptLoading) return window._mapsScriptLoading;
 
-  window._mapsScriptLoading = new Promise<void>((resolve, reject) => {
+  window._mapsReadyCallbacks = window._mapsReadyCallbacks || [];
+
+  window._mapsScriptLoading = new Promise<void>((resolve) => {
+    // Set up the callback that Google Maps will call when fully ready
+    window.initGoogleMapsCallback = () => {
+      window._mapsReady = true;
+      resolve();
+      // Notify any other waiters
+      (window._mapsReadyCallbacks || []).forEach((cb) => cb());
+    };
+
+    // Check if a script tag already exists (loaded by Map.tsx without callback)
+    const existingScript = document.querySelector(
+      'script[src*="maps/api/js"]'
+    ) as HTMLScriptElement | null;
+
+    if (existingScript) {
+      // Script already injected — poll until places is available
+      const poll = () => {
+        if (window.google?.maps?.places?.Autocomplete) {
+          window._mapsReady = true;
+          resolve();
+        } else {
+          setTimeout(poll, 100);
+        }
+      };
+      poll();
+      return;
+    }
+
+    // Inject a new script with the callback parameter
     const script = document.createElement("script");
-    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places,geocoding,geometry,marker&loading=async`;
+    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places,geocoding,geometry,marker&callback=initGoogleMapsCallback`;
     script.async = true;
+    script.defer = true;
     script.crossOrigin = "anonymous";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Google Maps"));
+    script.onerror = () => {
+      console.error("Failed to load Google Maps");
+      resolve(); // resolve anyway to avoid hanging
+    };
     document.head.appendChild(script);
   });
 
@@ -78,7 +119,13 @@ export function PlacesAutocomplete({
       .then(() => {
         if (!inputRef.current) return;
 
-        autocompleteRef.current = new window.google!.maps.places.Autocomplete(
+        // Extra safety check — ensure Autocomplete class is available
+        if (!window.google?.maps?.places?.Autocomplete) {
+          console.error("Google Maps Places library not available after load");
+          return;
+        }
+
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(
           inputRef.current,
           {
             types: ["geocode"],

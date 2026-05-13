@@ -12,6 +12,12 @@ import FacilitiesPage from "./pages/crm/Facilities";
 import FacilityProfilePage from "./pages/crm/FacilityProfile";
 import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
+import RingCentralSettingsPage from "./pages/crm/RingCentralSettings";
+import BdrReportsPage from "./pages/crm/BdrReports";
+import { RingCentralWidget } from "./components/RingCentralWidget";
+import type { CallEndData } from "./components/RingCentralWidget";
+import { trpc } from "./lib/trpc";
+import { toast } from "sonner";
 
 function Router() {
   return (
@@ -28,11 +34,42 @@ function Router() {
         <Route path="/crm/facilities/:id/edit" component={FacilityFormPage} />
         <Route path="/crm/facilities/:id" component={FacilityProfilePage} />
         <Route path="/crm/dashboard" component={ManagementDashboardPage} />
+        <Route path="/crm/ringcentral" component={RingCentralSettingsPage} />
+        <Route path="/crm/reports" component={BdrReportsPage} />
 
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
+  );
+}
+
+function AppWithPhone() {
+  const utils = trpc.useUtils();
+
+  const handleCallEnd = (data: CallEndData) => {
+    // Auto-create a contact log if we can identify a facility from the phone number
+    // The log is created without a facilityId here — users can also manually log from the facility profile.
+    // For now, show a toast so the agent knows the call ended.
+    const dur = data.durationStr ?? "0:00";
+    const phone = data.phoneNumber ?? "unknown";
+    toast.info(
+      `Call ended — ${phone} · ${dur}`,
+      {
+        description: "Open the facility profile to log this call or sync from RingCentral.",
+        duration: 8000,
+      }
+    );
+    // Invalidate contact logs globally so any open profile refreshes
+    utils.crm.contactLogs.list.invalidate();
+    utils.crm.facilities.get.invalidate();
+  };
+
+  return (
+    <>
+      <Router />
+      <RingCentralWidget onCallEnd={handleCallEnd} />
+    </>
   );
 }
 
@@ -42,7 +79,7 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <AppWithPhone />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

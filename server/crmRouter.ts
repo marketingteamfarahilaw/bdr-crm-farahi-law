@@ -7,6 +7,7 @@ import { TRPCError } from "@trpc/server";
 import axios from "axios";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
+import { transcribeAudio } from "./_core/voiceTranscription";
 import {
   completeTask,
   createContactLog,
@@ -48,6 +49,9 @@ import {
   updateReferral,
   upsertLeadsSent,
   upsertRingcentralToken,
+  getBdrCallActivity,
+  getBdrPartnerCheckins,
+  getBdrTopFacilities,
 } from "./crmDb";
 
 const RC_BASE = "https://platform.ringcentral.com";
@@ -506,10 +510,93 @@ export const crmRouter = router({
         return { success: true, ownerName };
       }),
 
+    connectJwt: protectedProcedure
+      .input(z.object({ jwt: z.string() }))
+      .mutation(async ({ input }) => {
+        const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
+        const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
+        if (!clientId || !clientSecret) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral credentials not configured." });
+        }
+        const tokenResp = await axios.post(
+          `${RC_BASE}/restapi/oauth/token`,
+          new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: input.jwt }),
+          { auth: { username: clientId, password: clientSecret }, headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+        );
+        const { access_token, refresh_token, expires_in } = tokenResp.data;
+        const meResp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/extension/~`, {
+          headers: { Authorization: `Bearer ${access_token}` },
+        });
+        const accountId = meResp.data.account?.id?.toString() ?? "default";
+        const ownerName = meResp.data.name ?? "Unknown";
+        await upsertRingcentralToken({
+          accountId,
+          accessToken: access_token,
+          refreshToken: refresh_token ?? "",
+          tokenExpiry: new Date(Date.now() + (expires_in ?? 3600) * 1000),
+          ownerName,
+          ownerExtensionId: meResp.data.id?.toString(),
+        });
+        return { success: true, ownerName };
+      }),
+
     disconnect: protectedProcedure.mutation(async () => {
       await deleteRingcentralToken();
       return { success: true };
     }),
+
+    transcribeCall: protectedProcedure
+      .input(z.object({
+        facilityId: z.number(),
+        callId: z.string(),
+        callDate: z.string(),
+        callDuration: z.string().optional(),
+        phoneNumber: z.string().optional(),
+        repName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const accessToken = await getValidRCToken();
+        // Fetch call recording
+        const recResp = await axios.get(
+          `${RC_BASE}/restapi/v1.0/account/~/recording/${input.callId}/content`,
+          { headers: { Authorization: `Bearer ${accessToken}` }, responseType: "arraybuffer" }
+        ).catch(() => null);
+
+        // Also try fetching via call-log to get recording URI
+        let recordingUrl: string | null = null;
+        try {
+          const callResp = await axios.get(
+            `${RC_BASE}/restapi/v1.0/account/~/call-log/${input.callId}`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+          recordingUrl = callResp.data?.recording?.contentUri ?? null;
+        } catch { /* ignore */ }
+
+        let transcriptText = "";
+        let transcriptSummary = "";
+
+        if (recordingUrl) {
+          // Append access token to recording URL for auth
+          const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
+          const result = await transcribeAudio({ audioUrl: authedUrl });
+          if (!('error' in result)) {
+            transcriptText = result.text ?? "";
+          }
+        }
+
+        // Save to facility_updates as transcript
+        await createFacilityUpdate({
+          facilityId: input.facilityId,
+          updateDate: new Date(input.callDate),
+          rawText: transcriptText || `[Call on ${input.callDate}${input.phoneNumber ? ` to ${input.phoneNumber}` : ""}${input.callDuration ? `, duration: ${input.callDuration}` : ""}]`,
+          summary: transcriptSummary || (transcriptText ? transcriptText.slice(0, 200) : "Call recorded — no transcript available"),
+          updateType: "transcript",
+          repId: ctx.user.id,
+          repName: input.repName ?? ctx.user.name ?? ctx.user.email ?? "Unknown",
+        });
+
+        return { success: true, hasTranscript: !!transcriptText, transcriptText };
+      }),
 
     syncCalls: protectedProcedure
       .input(z.object({ facilityId: z.number(), daysBack: z.number().min(1).max(90).default(30) }))
@@ -685,8 +772,22 @@ export const crmRouter = router({
     relationshipBalance: protectedProcedure.query(async () => getRelationshipBalance()),
   }),
 
-  // ─── Management Dashboard ────────────────────────────────────────────────────
+  // ─── BDR Reports ─────────────────────────────────────────────────────────────
+  bdrReports: router({
+    callActivity: protectedProcedure
+      .input(z.object({ repName: z.string().optional(), month: z.string().optional() }))
+      .query(async ({ input }) => getBdrCallActivity(input)),
 
+    partnerCheckins: protectedProcedure
+      .input(z.object({ repName: z.string().optional() }))
+      .query(async ({ input }) => getBdrPartnerCheckins(input)),
+
+    topFacilities: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(20) }))
+      .query(async ({ input }) => getBdrTopFacilities(input.limit)),
+  }),
+
+  // ─── Management Dashboard ────────────────────────────────────────────────────
   management: router({
     dashboard: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "admin") {
