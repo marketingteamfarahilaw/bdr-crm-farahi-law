@@ -180,3 +180,28 @@
 - [ ] Last package requested — add lastPackageDate field
 - [ ] Leads received — computed from facility_leads direction=received count
 - [ ] Zip code — add zipCode field
+
+## Map View for Facilities Page
+- [ ] Add lat/lng columns to facilities table in schema
+- [ ] Migrate DB with new lat/lng columns
+- [ ] Update facilities.list backend to return lat/lng
+- [ ] Update FacilityForm to geocode address and save lat/lng on create/update
+- [ ] Build FacilitiesMap component with Google Maps, color-coded pins by status
+- [ ] Info window on pin click: name, status, assigned rep, last contact, open profile button
+- [ ] Add List/Map view toggle to Facilities page header
+- [ ] Map shows all facilities with coordinates; facilities without coordinates show a warning count
+- [ ] Color legend on map: Active Partner (gold), Warm Lead (amber), Cold (blue), Churned (gray), Do Not Contact (red)
+
+## Map View Completion Status
+- [x] lat/lng columns already exist in facilities schema (from V3 migration)
+- [x] facilities.mapData tRPC procedure returns all facilities with coordinates
+- [x] FacilitiesMap component built with color-coded AdvancedMarkerElement pins
+- [x] Pin colors: Active Partner=gold, Warm Lead=amber, Cold=blue, Churned=grey, Do Not Contact=red, Needs Agent=purple
+- [x] Category emoji on each pin: Body Shop=🔧, Chiro=🦴, PT=💪, Medical=🏥, Ortho=🩺, Imaging=📷
+- [x] Info window on pin click: name, category, contact, BD rep, last contact, leads received, signed cases, View Profile button
+- [x] Status legend overlay on map
+- [x] Mapped count badge + missing-location warning overlay
+- [x] Empty state when no facilities have coordinates
+- [x] List/Map toggle buttons added to Facilities page header
+- [x] PlacesAutocomplete migrated to use loading=async (fixes Google Maps deprecation warning)
+- [x] CSS @import ordering warning fixed

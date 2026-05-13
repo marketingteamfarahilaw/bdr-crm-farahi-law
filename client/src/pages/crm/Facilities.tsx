@@ -11,10 +11,11 @@ import {
 } from "@/components/ui/table";
 import {
   Building2, Phone, MapPin, User, Plus, Search,
-  AlertTriangle, Clock, ChevronUp, ChevronDown, Upload,
+  AlertTriangle, Clock, ChevronUp, ChevronDown, Upload, List, Map,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { BulkImportDialog } from "./BulkImportDialog";
+import FacilitiesMap from "@/components/FacilitiesMap";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   active_partner: { label: "Active Partner", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
@@ -37,6 +38,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 type SortKey = "name" | "category" | "relationshipStatus" | "assignedRepName" | "lastContact" | "totalLeadsSent";
 type SortDir = "asc" | "desc";
+type ViewMode = "list" | "map";
 
 export default function Facilities() {
   const [, navigate] = useLocation();
@@ -46,12 +48,19 @@ export default function Facilities() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const { data: facilities, isLoading } = trpc.crm.facilities.list.useQuery({
     search: search || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
     category: categoryFilter !== "all" ? categoryFilter : undefined,
   });
+
+  // For map view, fetch all facilities with coordinates (no filter)
+  const { data: mapFacilities, isLoading: mapLoading } = trpc.crm.map.allFacilities.useQuery(
+    undefined,
+    { enabled: viewMode === "map" }
+  );
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -99,6 +108,32 @@ export default function Facilities() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
+                viewMode === "list"
+                  ? "bg-[var(--gold)] text-[#0a0f1e]"
+                  : "bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
+              List
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
+                viewMode === "map"
+                  ? "bg-[var(--gold)] text-[#0a0f1e]"
+                  : "bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Map className="w-3.5 h-3.5" />
+              Map
+            </button>
+          </div>
+
           <Button
             variant="outline"
             onClick={() => setShowBulkImport(true)}
@@ -118,7 +153,7 @@ export default function Facilities() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters — shown in both views */}
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -153,156 +188,180 @@ export default function Facilities() {
         </Select>
       </div>
 
-      {/* Table */}
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 rounded-lg" />
-          ))}
-        </div>
-      ) : sorted.length === 0 ? (
-        <div className="text-center py-20">
-          <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-40" />
-          <p className="text-muted-foreground text-lg">No facilities found</p>
-          <p className="text-muted-foreground text-sm mt-1">Add your first facility partner or bulk import from a CSV</p>
-          <div className="flex items-center gap-3 justify-center mt-4">
-            <Button
-              variant="outline"
-              className="gap-2 border-border"
-              onClick={() => setShowBulkImport(true)}
-            >
-              <Upload className="w-4 h-4" /> Bulk Import
-            </Button>
-            <Button
-              className="gap-2"
-              onClick={() => navigate("/crm/facilities/new")}
-              style={{ background: "var(--gold)", color: "#0a0f1e" }}
-            >
-              <Plus className="w-4 h-4" /> Add Facility
-            </Button>
-          </div>
-        </div>
-      ) : (
+      {/* ── MAP VIEW ─────────────────────────────────────────────────────────── */}
+      {viewMode === "map" && (
         <div className="rounded-xl border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-card hover:bg-card border-border">
-                <TableHead
-                  className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("name")}
-                >
-                  Facility <SortIcon col="name" />
-                </TableHead>
-                <TableHead
-                  className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("category")}
-                >
-                  Category <SortIcon col="category" />
-                </TableHead>
-                <TableHead className="text-muted-foreground text-xs">Contact</TableHead>
-                <TableHead className="text-muted-foreground text-xs">Location</TableHead>
-                <TableHead
-                  className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("relationshipStatus")}
-                >
-                  Status <SortIcon col="relationshipStatus" />
-                </TableHead>
-                <TableHead
-                  className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("assignedRepName")}
-                >
-                  BD Rep <SortIcon col="assignedRepName" />
-                </TableHead>
-                <TableHead
-                  className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground text-right"
-                  onClick={() => handleSort("totalLeadsSent")}
-                >
-                  Leads <SortIcon col="totalLeadsSent" />
-                </TableHead>
-                <TableHead
-                  className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("lastContact")}
-                >
-                  Last Contact <SortIcon col="lastContact" />
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((facility) => {
-                const status = STATUS_LABELS[facility.relationshipStatus] ?? STATUS_LABELS.warm_lead;
-                const lastContactDate = facility.lastContact?.contactDate
-                  ? new Date(facility.lastContact.contactDate)
-                  : null;
-                return (
-                  <TableRow
-                    key={facility.id}
-                    className="border-border hover:bg-card/60 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/crm/facilities/${facility.id}`)}
-                  >
-                    <TableCell className="py-3">
-                      <div className="flex items-center gap-2">
-                        {facility.managementFlag === 1 && (
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                        )}
-                        <span className="font-medium text-foreground text-sm">{facility.name}</span>
-                      </div>
-                      {facility.phone && (
-                        <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
-                          <Phone className="w-3 h-3" />
-                          <span>{facility.phone}</span>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="py-3 text-xs text-muted-foreground">
-                      {CATEGORY_LABELS[facility.category] ?? facility.category}
-                    </TableCell>
-                    <TableCell className="py-3 text-xs text-muted-foreground">
-                      {facility.contactName ? (
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3 flex-shrink-0" />
-                          <span>{facility.contactName}</span>
-                        </div>
-                      ) : (
-                        <span className="opacity-40">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="py-3 text-xs text-muted-foreground">
-                      {facility.city ? (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
-                          <span>{facility.city}</span>
-                        </div>
-                      ) : (
-                        <span className="opacity-40">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <Badge className={`text-xs border ${status.color}`}>
-                        {status.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-3 text-xs text-muted-foreground">
-                      {facility.assignedRepName ?? <span className="opacity-40">—</span>}
-                    </TableCell>
-                    <TableCell className="py-3 text-xs text-right font-medium text-foreground">
-                      {facility.totalLeadsSent ?? 0}
-                    </TableCell>
-                    <TableCell className="py-3 text-xs text-muted-foreground">
-                      {lastContactDate ? (
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 flex-shrink-0" />
-                          <span>{formatDistanceToNow(lastContactDate, { addSuffix: true })}</span>
-                        </div>
-                      ) : (
-                        <span className="opacity-40">Never</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          {mapLoading ? (
+            <div className="h-[600px] flex items-center justify-center bg-card">
+              <div className="text-center">
+                <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-2 animate-pulse" />
+                <p className="text-sm text-muted-foreground">Loading map...</p>
+              </div>
+            </div>
+          ) : (
+            <FacilitiesMap
+              facilities={mapFacilities ?? []}
+              onFacilityClick={(id) => navigate(`/crm/facilities/${id}`)}
+              className="h-[600px]"
+            />
+          )}
         </div>
+      )}
+
+      {/* ── LIST VIEW ────────────────────────────────────────────────────────── */}
+      {viewMode === "list" && (
+        <>
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 rounded-lg" />
+              ))}
+            </div>
+          ) : sorted.length === 0 ? (
+            <div className="text-center py-20">
+              <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-40" />
+              <p className="text-muted-foreground text-lg">No facilities found</p>
+              <p className="text-muted-foreground text-sm mt-1">Add your first facility partner or bulk import from a CSV</p>
+              <div className="flex items-center gap-3 justify-center mt-4">
+                <Button
+                  variant="outline"
+                  className="gap-2 border-border"
+                  onClick={() => setShowBulkImport(true)}
+                >
+                  <Upload className="w-4 h-4" /> Bulk Import
+                </Button>
+                <Button
+                  className="gap-2"
+                  onClick={() => navigate("/crm/facilities/new")}
+                  style={{ background: "var(--gold)", color: "#0a0f1e" }}
+                >
+                  <Plus className="w-4 h-4" /> Add Facility
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-card hover:bg-card border-border">
+                    <TableHead
+                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("name")}
+                    >
+                      Facility <SortIcon col="name" />
+                    </TableHead>
+                    <TableHead
+                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("category")}
+                    >
+                      Category <SortIcon col="category" />
+                    </TableHead>
+                    <TableHead className="text-muted-foreground text-xs">Contact</TableHead>
+                    <TableHead className="text-muted-foreground text-xs">Location</TableHead>
+                    <TableHead
+                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("relationshipStatus")}
+                    >
+                      Status <SortIcon col="relationshipStatus" />
+                    </TableHead>
+                    <TableHead
+                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("assignedRepName")}
+                    >
+                      BD Rep <SortIcon col="assignedRepName" />
+                    </TableHead>
+                    <TableHead
+                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground text-right"
+                      onClick={() => handleSort("totalLeadsSent")}
+                    >
+                      Leads <SortIcon col="totalLeadsSent" />
+                    </TableHead>
+                    <TableHead
+                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("lastContact")}
+                    >
+                      Last Contact <SortIcon col="lastContact" />
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((facility) => {
+                    const status = STATUS_LABELS[facility.relationshipStatus] ?? STATUS_LABELS.warm_lead;
+                    const lastContactDate = facility.lastContact?.contactDate
+                      ? new Date(facility.lastContact.contactDate)
+                      : null;
+                    return (
+                      <TableRow
+                        key={facility.id}
+                        className="border-border hover:bg-card/60 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/crm/facilities/${facility.id}`)}
+                      >
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-2">
+                            {facility.managementFlag === 1 && (
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                            )}
+                            <span className="font-medium text-foreground text-sm">{facility.name}</span>
+                          </div>
+                          {facility.phone && (
+                            <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                              <Phone className="w-3 h-3" />
+                              <span>{facility.phone}</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-muted-foreground">
+                          {CATEGORY_LABELS[facility.category] ?? facility.category}
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-muted-foreground">
+                          {facility.contactName ? (
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3 flex-shrink-0" />
+                              <span>{facility.contactName}</span>
+                            </div>
+                          ) : (
+                            <span className="opacity-40">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-muted-foreground">
+                          {facility.city ? (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3 flex-shrink-0" />
+                              <span>{facility.city}</span>
+                            </div>
+                          ) : (
+                            <span className="opacity-40">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <Badge className={`text-xs border ${status.color}`}>
+                            {status.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-muted-foreground">
+                          {facility.assignedRepName ?? <span className="opacity-40">—</span>}
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-right font-medium text-foreground">
+                          {facility.totalLeadsSent ?? 0}
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-muted-foreground">
+                          {lastContactDate ? (
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 flex-shrink-0" />
+                              <span>{formatDistanceToNow(lastContactDate, { addSuffix: true })}</span>
+                            </div>
+                          ) : (
+                            <span className="opacity-40">Never</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </>
       )}
 
       <BulkImportDialog open={showBulkImport} onClose={() => setShowBulkImport(false)} />

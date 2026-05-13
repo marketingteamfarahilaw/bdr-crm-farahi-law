@@ -23,7 +23,7 @@ function loadMapsScript(): Promise<void> {
 
   window._mapsScriptLoading = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places,geocoding`;
+    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places,geocoding,geometry,marker&loading=async`;
     script.async = true;
     script.crossOrigin = "anonymous";
     script.onload = () => resolve();
