@@ -320,6 +320,81 @@ function createInfoWindowContent(
   return container;
 }
 
+// ── Agent territory polygons ─────────────────────────────────────────────────
+// Approximate county/region boundaries for each agent's territory
+const AGENT_TERRITORIES: Array<{
+  agent: string;
+  color: string;
+  label: string;
+  initials: string;
+  paths: Array<{ lat: number; lng: number }>;
+}> = [
+  {
+    agent: "Miguel Flores",
+    color: "#FF6B35",
+    label: "Miguel Flores",
+    initials: "MF",
+    // Los Angeles County + Orange County
+    paths: [
+      { lat: 34.823, lng: -118.944 }, // NW corner LA County
+      { lat: 34.823, lng: -117.646 }, // NE corner LA County
+      { lat: 34.080, lng: -117.646 }, // SE corner LA County / border with San Bernardino
+      { lat: 33.740, lng: -117.440 }, // Orange County east
+      { lat: 33.400, lng: -117.510 }, // Orange County south
+      { lat: 33.400, lng: -118.050 }, // OC coast south
+      { lat: 33.600, lng: -118.600 }, // Palos Verdes / coast
+      { lat: 34.050, lng: -118.950 }, // Santa Monica mountains west
+    ],
+  },
+  {
+    agent: "Youssef El Karmi",
+    color: "#4ECDC4",
+    label: "Youssef El Karmi",
+    initials: "YE",
+    // NorCal: SF Bay Area + Sacramento Valley + Central Valley (Fresno/Bakersfield)
+    paths: [
+      { lat: 38.864, lng: -123.533 }, // NW (Sonoma coast)
+      { lat: 38.864, lng: -121.200 }, // NE (Sacramento foothills)
+      { lat: 37.200, lng: -119.500 }, // SE (Fresno/Kings)
+      { lat: 35.000, lng: -119.000 }, // Bakersfield south
+      { lat: 35.000, lng: -120.200 }, // SW Bakersfield
+      { lat: 36.200, lng: -121.100 }, // Monterey coast
+      { lat: 37.200, lng: -122.400 }, // Bay Area coast
+      { lat: 37.900, lng: -122.700 }, // Marin
+    ],
+  },
+  {
+    agent: "Rupert Musni",
+    color: "#A855F7",
+    label: "Rupert Musni",
+    initials: "RM",
+    // San Diego County
+    paths: [
+      { lat: 33.500, lng: -117.510 }, // NW border with OC
+      { lat: 33.500, lng: -116.080 }, // NE corner
+      { lat: 32.534, lng: -116.080 }, // SE corner (US-Mexico border)
+      { lat: 32.534, lng: -117.125 }, // SW corner (coast)
+      { lat: 32.700, lng: -117.250 }, // Point Loma
+      { lat: 33.200, lng: -117.480 }, // Carlsbad coast
+    ],
+  },
+  {
+    agent: "David Carrillo",
+    color: "#F59E0B",
+    label: "David Carrillo",
+    initials: "DC",
+    // South Bay + San Gabriel Valley + East LA suburbs
+    paths: [
+      { lat: 34.200, lng: -118.550 }, // Burbank/Glendale NW
+      { lat: 34.200, lng: -117.750 }, // Pasadena/Pomona NE
+      { lat: 33.850, lng: -117.750 }, // Pomona/West Covina SE
+      { lat: 33.750, lng: -118.250 }, // Torrance/Carson S
+      { lat: 33.750, lng: -118.450 }, // El Segundo/Inglewood SW
+      { lat: 34.050, lng: -118.450 }, // Culver City W
+    ],
+  },
+];
+
 // ── Major California cities with coordinates ──────────────────────────────────
 const CA_CITIES = [
   { name: "Los Angeles",    lat: 34.0522,  lng: -118.2437 },
@@ -364,6 +439,9 @@ export default function CaliforniaMapPage() {
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const polygonsRef = useRef<google.maps.Polygon[]>([]);
+  const labelMarkersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const [showZones, setShowZones] = useState(true);
 
   // Data
   const { data: savedLeads = [] } = trpc.savedLeads.list.useQuery();
@@ -520,10 +598,96 @@ export default function CaliforniaMapPage() {
     if (mapRef.current) buildMarkers();
   }, [buildMarkers]);
 
+  // Draw territory polygons
+  const drawTerritories = useCallback((map: google.maps.Map) => {
+    // Clear existing polygons
+    polygonsRef.current.forEach(p => p.setMap(null));
+    polygonsRef.current = [];
+    labelMarkersRef.current.forEach(m => { m.map = null; });
+    labelMarkersRef.current = [];
+
+    if (!showZones) return;
+
+    AGENT_TERRITORIES.forEach(territory => {
+      // Draw filled polygon
+      const polygon = new window.google.maps.Polygon({
+        paths: territory.paths,
+        strokeColor: territory.color,
+        strokeOpacity: 0.85,
+        strokeWeight: 2.5,
+        fillColor: territory.color,
+        fillOpacity: 0.08,
+        map,
+        zIndex: 1,
+      });
+      polygonsRef.current.push(polygon);
+
+      // Compute centroid for label
+      const centroid = territory.paths.reduce(
+        (acc, p) => ({ lat: acc.lat + p.lat / territory.paths.length, lng: acc.lng + p.lng / territory.paths.length }),
+        { lat: 0, lng: 0 }
+      );
+
+      // Create label marker
+      const labelEl = document.createElement("div");
+      labelEl.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        pointer-events: none;
+        user-select: none;
+      `;
+      labelEl.innerHTML = `
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(7,16,31,0.82);
+          border: 1.5px solid ${territory.color}60;
+          border-radius: 10px;
+          padding: 5px 11px 5px 7px;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 2px 16px rgba(0,0,0,0.5), 0 0 0 1px ${territory.color}20;
+        ">
+          <div style="
+            width: 22px; height: 22px; border-radius: 50%;
+            background: ${territory.color};
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; font-weight: 800; color: #07101f;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px ${territory.color}60;
+          ">${territory.initials}</div>
+          <span style="
+            font-size: 11px;
+            font-weight: 700;
+            color: ${territory.color};
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+          ">${territory.label}</span>
+        </div>
+      `;
+
+      const labelMarker = new window.google.maps.marker.AdvancedMarkerElement({
+        map,
+        position: centroid,
+        content: labelEl,
+        zIndex: 2,
+      });
+      labelMarkersRef.current.push(labelMarker);
+    });
+  }, [showZones]);
+
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
+    drawTerritories(map);
     buildMarkers();
-  }, [buildMarkers]);
+  }, [buildMarkers, drawTerritories]);
+
+  // Redraw territories when showZones changes
+  useEffect(() => {
+    if (mapRef.current) drawTerritories(mapRef.current);
+  }, [drawTerritories]);
 
   const toggleCategory = (cat: string) => {
     setActiveCats(prev => {
@@ -592,6 +756,31 @@ export default function CaliforniaMapPage() {
             </div>
           ))}
         </div>
+
+        {/* Zones toggle button */}
+        <button
+          onClick={() => setShowZones(v => !v)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "5px 14px",
+            background: showZones
+              ? "linear-gradient(135deg, rgba(78,205,196,0.2) 0%, rgba(78,205,196,0.1) 100%)"
+              : "rgba(255,255,255,0.04)",
+            border: `1px solid ${showZones ? "rgba(78,205,196,0.5)" : "rgba(255,255,255,0.1)"}`,
+            borderRadius: 8,
+            color: showZones ? "#4ECDC4" : "#94a3b8",
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            backdropFilter: "blur(8px)",
+            letterSpacing: "0.03em",
+            flexShrink: 0,
+          }}
+        >
+          <Layers size={11} />
+          Zones
+        </button>
 
         {/* Filters button */}
         <button
