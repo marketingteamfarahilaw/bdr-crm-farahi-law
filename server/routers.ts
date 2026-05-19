@@ -14,10 +14,21 @@ import {
   updateSavedLeadAnnotation,
   updateSavedLeadAgent,
   getAllAgentZones,
+  getAgentById,
+  createAgent,
+  updateAgent,
+  deleteAgent,
   upsertAgentZone,
   getSavedSearches,
   insertSavedSearch,
   deleteSavedSearch,
+  getAllPiClients,
+  getPiClientById,
+  createPiClient,
+  updatePiClient,
+  deletePiClient,
+  getFilevineSettings,
+  upsertFilevineSettings,
 } from "./db";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -163,6 +174,67 @@ export const appRouter = router({
     list: protectedProcedure.query(async () => {
       return getAllAgentZones();
     }),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getAgentById(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        agentName: z.string().min(1),
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        employer: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional().or(z.literal('')),
+        title: z.string().optional(),
+        notes: z.string().optional(),
+        color: z.string().default('#94a3b8'),
+        cities: z.array(z.string()).default([]),
+        active: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        await createAgent({
+          agentName: input.agentName,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          employer: input.employer,
+          phone: input.phone,
+          email: input.email,
+          title: input.title,
+          notes: input.notes,
+          color: input.color,
+          cities: input.cities,
+          active: input.active,
+        });
+        return { success: true };
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        agentName: z.string().min(1).optional(),
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        employer: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional().or(z.literal('')),
+        title: z.string().optional(),
+        notes: z.string().optional(),
+        color: z.string().optional(),
+        cities: z.array(z.string()).optional(),
+        active: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateAgent(id, data);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteAgent(input.id);
+        return { success: true };
+      }),
     upsert: protectedProcedure
       .input(z.object({
         agentName: z.string(),
@@ -182,6 +254,120 @@ export const appRouter = router({
         await updateSavedLeadAgent(input.placeId, input.assignedAgent);
         return { success: true };
       }),
+  }),
+
+  piClients: router({
+    list: protectedProcedure.query(async () => {
+      return getAllPiClients();
+    }),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getPiClientById(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        phone: z.string().optional(),
+        email: z.string().email().optional().or(z.literal('')),
+        incidentDate: z.string().optional(),
+        incidentType: z.string().optional(),
+        caseStatus: z.enum(['intake','active','settled','closed','lost']).default('intake'),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        zipCode: z.string().optional(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+        filevineCaseId: z.string().optional(),
+        filevineProjectId: z.string().optional(),
+        assignedAgentId: z.number().optional(),
+        assignedAgentName: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await createPiClient({
+          ...input,
+          incidentDate: input.incidentDate ? new Date(input.incidentDate) : undefined,
+        });
+        return { success: true };
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        firstName: z.string().min(1).optional(),
+        lastName: z.string().min(1).optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional().or(z.literal('')),
+        incidentDate: z.string().optional(),
+        incidentType: z.string().optional(),
+        caseStatus: z.enum(['intake','active','settled','closed','lost']).optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        zipCode: z.string().optional(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+        filevineCaseId: z.string().optional(),
+        filevineProjectId: z.string().optional(),
+        assignedAgentId: z.number().optional(),
+        assignedAgentName: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updatePiClient(id, {
+          ...data,
+          incidentDate: data.incidentDate ? new Date(data.incidentDate) : undefined,
+        });
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deletePiClient(input.id);
+        return { success: true };
+      }),
+  }),
+
+  filevine: router({
+    getSettings: protectedProcedure.query(async ({ ctx }) => {
+      const settings = await getFilevineSettings(ctx.user.id);
+      // Never expose raw keys to frontend — just return connection status
+      if (!settings) return { connected: false, orgId: null, baseUrl: 'https://api.filevine.io', lastSyncAt: null };
+      return {
+        connected: settings.connected,
+        orgId: settings.orgId,
+        baseUrl: settings.baseUrl,
+        lastSyncAt: settings.lastSyncAt,
+      };
+    }),
+    saveSettings: protectedProcedure
+      .input(z.object({
+        apiKey: z.string().min(1),
+        apiSecret: z.string().min(1),
+        orgId: z.string().optional(),
+        baseUrl: z.string().url().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await upsertFilevineSettings({
+          userId: ctx.user.id,
+          apiKey: input.apiKey,
+          apiSecret: input.apiSecret,
+          orgId: input.orgId,
+          baseUrl: input.baseUrl ?? 'https://api.filevine.io',
+          connected: true,
+        });
+        return { success: true };
+      }),
+    disconnect: protectedProcedure.mutation(async ({ ctx }) => {
+      await upsertFilevineSettings({
+        userId: ctx.user.id,
+        apiKey: '',
+        apiSecret: '',
+        connected: false,
+      });
+      return { success: true };
+    }),
   }),
 
   crm: crmRouter,

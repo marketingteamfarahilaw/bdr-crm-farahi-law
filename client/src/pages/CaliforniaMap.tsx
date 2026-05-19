@@ -441,6 +441,7 @@ export default function CaliforniaMapPage() {
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const polygonsRef = useRef<google.maps.Polygon[]>([]);
   const labelMarkersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const territoryInfoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const [showZones, setShowZones] = useState(true);
 
   // Data
@@ -605,10 +606,19 @@ export default function CaliforniaMapPage() {
     polygonsRef.current = [];
     labelMarkersRef.current.forEach(m => { m.map = null; });
     labelMarkersRef.current = [];
+    territoryInfoWindowRef.current?.close();
 
     if (!showZones) return;
 
     AGENT_TERRITORIES.forEach(territory => {
+      // Compute per-agent lead stats from allPins
+      const agentPins = allPins.filter(p => p.assignedAgent === territory.agent);
+      const hotCount = agentPins.filter(p => p.scoreTier === "hot").length;
+      const warmCount = agentPins.filter(p => p.scoreTier === "warm").length;
+      const coldCount = agentPins.filter(p => p.scoreTier === "cold").length;
+      const crmCount = agentPins.filter(p => p.inCrm).length;
+      const totalCount = agentPins.length;
+
       // Draw filled polygon
       const polygon = new window.google.maps.Polygon({
         paths: territory.paths,
@@ -619,6 +629,7 @@ export default function CaliforniaMapPage() {
         fillOpacity: 0.08,
         map,
         zIndex: 1,
+        clickable: true,
       });
       polygonsRef.current.push(polygon);
 
@@ -627,6 +638,154 @@ export default function CaliforniaMapPage() {
         (acc, p) => ({ lat: acc.lat + p.lat / territory.paths.length, lng: acc.lng + p.lng / territory.paths.length }),
         { lat: 0, lng: 0 }
       );
+
+      // Build territory popup content
+      const buildTerritoryPopup = (): HTMLElement => {
+        const el = document.createElement("div");
+        el.style.cssText = `
+          font-family: Inter, system-ui, sans-serif;
+          background: linear-gradient(160deg, rgba(10,18,35,0.98) 0%, rgba(7,14,28,0.98) 100%);
+          border: 1px solid ${territory.color}35;
+          border-radius: 14px;
+          padding: 0;
+          min-width: 240px;
+          color: #e2e8f0;
+          box-shadow: 0 20px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 24px ${territory.color}18;
+          overflow: hidden;
+          backdrop-filter: blur(24px);
+        `;
+        const hotPct = totalCount > 0 ? Math.round((hotCount / totalCount) * 100) : 0;
+        const warmPct = totalCount > 0 ? Math.round((warmCount / totalCount) * 100) : 0;
+        const coldPct = totalCount > 0 ? Math.round((coldCount / totalCount) * 100) : 0;
+        el.innerHTML = `
+          <!-- Header -->
+          <div style="
+            background: linear-gradient(90deg, ${territory.color}1a 0%, ${territory.color}06 100%);
+            border-bottom: 1px solid ${territory.color}28;
+            padding: 13px 15px 11px;
+          ">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="
+                width:36px;height:36px;border-radius:50%;
+                background:linear-gradient(135deg,${territory.color},${territory.color}aa);
+                display:flex;align-items:center;justify-content:center;
+                font-size:13px;font-weight:800;color:#07101f;
+                flex-shrink:0;
+                box-shadow:0 0 16px ${territory.color}60;
+              ">${territory.initials}</div>
+              <div>
+                <div style="font-weight:800;font-size:14px;color:#f8fafc;letter-spacing:0.01em;">${territory.label}</div>
+                <div style="font-size:10px;color:${territory.color};font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px;">Territory Overview</div>
+              </div>
+              <div style="margin-left:auto;text-align:right;">
+                <div style="font-size:26px;font-weight:800;color:${territory.color};line-height:1;letter-spacing:-0.02em;">${totalCount}</div>
+                <div style="font-size:9px;color:rgba(148,163,184,0.6);font-weight:500;">total leads</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:13px 15px 14px;">
+            <!-- Temperature breakdown -->
+            <div style="font-size:9px;font-weight:800;color:rgba(148,163,184,0.5);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:9px;">Lead Temperature</div>
+
+            <!-- Progress bar -->
+            <div style="display:flex;height:6px;border-radius:999px;overflow:hidden;margin-bottom:11px;gap:1px;">
+              ${hotCount > 0 ? `<div style="flex:${hotCount};background:#ef4444;border-radius:999px 0 0 999px;"></div>` : ""}
+              ${warmCount > 0 ? `<div style="flex:${warmCount};background:#f59e0b;"></div>` : ""}
+              ${coldCount > 0 ? `<div style="flex:${coldCount};background:#60a5fa;border-radius:0 999px 999px 0;"></div>` : ""}
+              ${totalCount === 0 ? `<div style="flex:1;background:rgba(255,255,255,0.08);border-radius:999px;"></div>` : ""}
+            </div>
+
+            <!-- Stat rows -->
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="font-size:13px;">🔥</span>
+                  <span style="font-size:11px;color:rgba(148,163,184,0.8);">Hot</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;font-weight:700;color:#ef4444;">${hotCount}</span>
+                  <span style="font-size:10px;color:rgba(100,116,139,0.6);min-width:32px;text-align:right;">${hotPct}%</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="font-size:13px;">♨️</span>
+                  <span style="font-size:11px;color:rgba(148,163,184,0.8);">Warm</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;font-weight:700;color:#f59e0b;">${warmCount}</span>
+                  <span style="font-size:10px;color:rgba(100,116,139,0.6);min-width:32px;text-align:right;">${warmPct}%</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="font-size:13px;">❄️</span>
+                  <span style="font-size:11px;color:rgba(148,163,184,0.8);">Cold</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;font-weight:700;color:#60a5fa;">${coldCount}</span>
+                  <span style="font-size:10px;color:rgba(100,116,139,0.6);min-width:32px;text-align:right;">${coldPct}%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Divider -->
+            <div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:10px;"></div>
+
+            <!-- CRM row -->
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:7px;">
+                <span style="font-size:12px;color:#D4AF37;">★</span>
+                <span style="font-size:11px;color:rgba(148,163,184,0.8);">In CRM</span>
+              </div>
+              <span style="
+                font-size:11px;font-weight:700;color:#D4AF37;
+                background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.25);
+                border-radius:999px;padding:2px 10px;
+              ">${crmCount}</span>
+            </div>
+          </div>
+        `;
+        return el;
+      };
+
+      // Click handler on polygon
+      polygon.addListener("click", (e: google.maps.MapMouseEvent) => {
+        territoryInfoWindowRef.current?.close();
+        infoWindowRef.current?.close();
+
+        const iw = new window.google.maps.InfoWindow({
+          content: buildTerritoryPopup(),
+          position: e.latLng ?? centroid,
+          disableAutoPan: false,
+        });
+
+        iw.addListener("domready", () => {
+          const iwBg = document.querySelectorAll(".gm-style-iw, .gm-style-iw-c, .gm-style-iw-t, .gm-style-iw-tc");
+          iwBg.forEach((el) => {
+            (el as HTMLElement).style.background = "transparent";
+            (el as HTMLElement).style.boxShadow = "none";
+            (el as HTMLElement).style.padding = "0";
+          });
+          const closeBtn = document.querySelector(".gm-ui-hover-effect") as HTMLElement;
+          if (closeBtn) {
+            closeBtn.style.cssText = "top:4px!important;right:4px!important;background:#1e2d4a!important;border-radius:50%!important;opacity:1!important;";
+          }
+        });
+
+        iw.open({ map });
+        territoryInfoWindowRef.current = iw;
+      });
+
+      // Hover: brighten fill
+      polygon.addListener("mouseover", () => {
+        polygon.setOptions({ fillOpacity: 0.18, strokeOpacity: 1 });
+      });
+      polygon.addListener("mouseout", () => {
+        polygon.setOptions({ fillOpacity: 0.08, strokeOpacity: 0.85 });
+      });
 
       // Create label marker
       const labelEl = document.createElement("div");
@@ -665,6 +824,16 @@ export default function CaliforniaMapPage() {
             letter-spacing: 0.03em;
             white-space: nowrap;
           ">${territory.label}</span>
+          <span style="
+            font-size: 10px;
+            font-weight: 800;
+            color: #07101f;
+            background: ${territory.color};
+            border-radius: 999px;
+            padding: 1px 7px;
+            margin-left: 2px;
+            box-shadow: 0 0 6px ${territory.color}60;
+          ">${totalCount}</span>
         </div>
       `;
 
@@ -676,7 +845,7 @@ export default function CaliforniaMapPage() {
       });
       labelMarkersRef.current.push(labelMarker);
     });
-  }, [showZones]);
+  }, [showZones, allPins]);
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;

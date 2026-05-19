@@ -15,6 +15,9 @@ import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
 import RingCentralSettingsPage from "./pages/crm/RingCentralSettings";
 import BdrReportsPage from "./pages/crm/BdrReports";
+import AgentsPage from "./pages/Agents";
+import PiClientsPage from "./pages/PiClients";
+import FilevineSettingsPage from "./pages/FilevineSettings";
 import RingCentralCallback from "./pages/RingCentralCallback";
 import { RingCentralWidget } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
@@ -41,6 +44,15 @@ function Router() {
         <Route path="/crm/dashboard" component={ManagementDashboardPage} />
         <Route path="/crm/ringcentral" component={RingCentralSettingsPage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
+
+        {/* Agent Management */}
+        <Route path="/agents" component={AgentsPage} />
+
+        {/* PI Clients */}
+        <Route path="/pi-clients" component={PiClientsPage} />
+
+        {/* Filevine Integration */}
+        <Route path="/filevine" component={FilevineSettingsPage} />
 
         <Route path="/ringcentral-callback" component={RingCentralCallback} />
         <Route path="/404" component={NotFound} />

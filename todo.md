@@ -248,3 +248,26 @@
 - [x] Partner Check-In report: facilities checked in vs. target per agent
 - [x] Hashtag category breakdown: #BDRpartnercheckin, #FRpartnercheckin, #PotentialLeadSource counts
 - [x] Active Partners table: agent, type, facility name, contact, status, total calls, last check-in
+
+## Agent Management (May 2026)
+- [x] Extend agent_zones table with full profile fields: firstName, lastName, employer, phone, email, title, notes, active
+- [x] Add agentZones.create tRPC procedure
+- [x] Add agentZones.update tRPC procedure
+- [x] Add agentZones.delete tRPC procedure
+- [x] Build /agents page with create/edit/delete UI, color picker, status toggle, territory cities display
+- [x] Add "Team & Integrations" section to sidebar with Agents, PI Clients, Filevine nav items
+- [x] Vitest tests for agent CRUD DB helpers (13 tests passing)
+
+## PI Clients (May 2026)
+- [x] Create pi_clients table (identity, incident, case status, location, Filevine IDs, agent assignment)
+- [x] Add piClients.list/create/update/delete tRPC procedures
+- [x] Build /pi-clients page with full CRUD and case status tracking
+- [x] Nearby Partners feature: click "Nearby Partners" on a PI client to see facility partners within N miles on map
+- [x] Radius selector (5/10/15/25 miles) for nearby partners map
+- [x] Partner list chips below map showing matched facilities
+
+## Filevine Integration (May 2026)
+- [x] Create filevine_settings table (userId, apiKey, apiSecret, orgId, baseUrl, connected, lastSyncAt)
+- [x] Add filevine.getSettings / saveSettings / disconnect tRPC procedures
+- [x] Build /filevine settings page with connect/disconnect UI and credential storage
+- [x] API credentials stored server-side only (never exposed to frontend)

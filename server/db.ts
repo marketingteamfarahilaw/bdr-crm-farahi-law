@@ -1,6 +1,6 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones } from "../drizzle/schema";
+import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -130,12 +130,37 @@ export async function updateSavedLeadAgent(placeId: string, assignedAgent: strin
   await db.update(savedLeads).set({ assignedAgent }).where(eq(savedLeads.placeId, placeId));
 }
 
-// ─── Agent Zones ─────────────────────────────────────────────────────────────
+// ─── Agent Zones / Agent Management ─────────────────────────────────────────
 
 export async function getAllAgentZones() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(agentZones);
+  return db.select().from(agentZones).orderBy(agentZones.agentName);
+}
+
+export async function getAgentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(agentZones).where(eq(agentZones.id, id)).limit(1);
+  return result[0] ?? undefined;
+}
+
+export async function createAgent(data: InsertAgentZone) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(agentZones).values(data);
+}
+
+export async function updateAgent(id: number, data: Partial<InsertAgentZone>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(agentZones).set(data).where(eq(agentZones.id, id));
+}
+
+export async function deleteAgent(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(agentZones).where(eq(agentZones.id, id));
 }
 
 export async function upsertAgentZone(agentName: string, color: string, cities: string[]) {
@@ -146,6 +171,60 @@ export async function upsertAgentZone(agentName: string, color: string, cities: 
     await db.update(agentZones).set({ color, cities }).where(eq(agentZones.agentName, agentName));
   } else {
     await db.insert(agentZones).values({ agentName, color, cities });
+  }
+}
+
+// ─── PI Clients ──────────────────────────────────────────────────────────────
+
+export async function getAllPiClients() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(piClients).orderBy(desc(piClients.createdAt));
+}
+
+export async function getPiClientById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(piClients).where(eq(piClients.id, id)).limit(1);
+  return result[0] ?? undefined;
+}
+
+export async function createPiClient(data: InsertPiClient) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(piClients).values(data);
+  return result;
+}
+
+export async function updatePiClient(id: number, data: Partial<InsertPiClient>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(piClients).set(data).where(eq(piClients.id, id));
+}
+
+export async function deletePiClient(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(piClients).where(eq(piClients.id, id));
+}
+
+// ─── Filevine Settings ───────────────────────────────────────────────────────
+
+export async function getFilevineSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(filevineSettings).where(eq(filevineSettings.userId, userId)).limit(1);
+  return result[0] ?? undefined;
+}
+
+export async function upsertFilevineSettings(data: InsertFilevineSettings) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(filevineSettings).where(eq(filevineSettings.userId, data.userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(filevineSettings).set(data).where(eq(filevineSettings.userId, data.userId));
+  } else {
+    await db.insert(filevineSettings).values(data);
   }
 }
 

@@ -73,17 +73,81 @@ export type InsertSavedLead = typeof savedLeads.$inferInsert;
 
 /**
  * Agent zones — California territory assignments per BD rep
+ * Extended with full agent profile fields
  */
 export const agentZones = mysqlTable("agent_zones", {
   id: int("id").autoincrement().primaryKey(),
   agentName: varchar("agentName", { length: 100 }).notNull().unique(),
+  // Profile fields
+  firstName: varchar("firstName", { length: 100 }),
+  lastName: varchar("lastName", { length: 100 }),
+  employer: varchar("employer", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 320 }),
+  title: varchar("title", { length: 255 }),
+  notes: text("notes"),
+  // Territory
   color: varchar("color", { length: 20 }).notNull(),
   cities: json("cities").notNull(), // string[] of city names in this zone
+  active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 export type AgentZone = typeof agentZones.$inferSelect;
 export type InsertAgentZone = typeof agentZones.$inferInsert;
+
+/**
+ * PI Clients — personal injury clients added by BD team
+ * Used to surface nearby partner facilities on the map
+ */
+export const piClients = mysqlTable("pi_clients", {
+  id: int("id").autoincrement().primaryKey(),
+  // Identity
+  firstName: varchar("firstName", { length: 100 }).notNull(),
+  lastName: varchar("lastName", { length: 100 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 320 }),
+  // Incident / case
+  incidentDate: timestamp("incidentDate"),
+  incidentType: varchar("incidentType", { length: 100 }),
+  caseStatus: mysqlEnum("caseStatus", ["intake", "active", "settled", "closed", "lost"]).default("intake").notNull(),
+  // Location (where client is / incident happened)
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  zipCode: varchar("zipCode", { length: 20 }),
+  latitude: float("latitude"),
+  longitude: float("longitude"),
+  // Filevine integration
+  filevineCaseId: varchar("filevineCaseId", { length: 100 }),
+  filevineProjectId: varchar("filevineProjectId", { length: 100 }),
+  // Assignment
+  assignedAgentId: int("assignedAgentId"),
+  assignedAgentName: varchar("assignedAgentName", { length: 255 }),
+  // Notes
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PiClient = typeof piClients.$inferSelect;
+export type InsertPiClient = typeof piClients.$inferInsert;
+
+/**
+ * Filevine integration settings (per-user API credentials)
+ */
+export const filevineSettings = mysqlTable("filevine_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  apiKey: text("apiKey"),
+  apiSecret: text("apiSecret"),
+  orgId: varchar("orgId", { length: 100 }),
+  baseUrl: varchar("baseUrl", { length: 500 }).default("https://api.filevine.io"),
+  connected: boolean("connected").default(false).notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FilevineSettings = typeof filevineSettings.$inferSelect;
+export type InsertFilevineSettings = typeof filevineSettings.$inferInsert;
 
 // ─── Facility Partner CRM ────────────────────────────────────────────────────
 
