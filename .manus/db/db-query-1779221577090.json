@@ -1,0 +1,30 @@
+{
+  "query": "SELECT agentName, color, cities FROM agent_zones;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute SELECT agentName, color, cities FROM agent_zones;",
+  "rows": [
+    {
+      "agentName": "Miguel Flores",
+      "color": "#FF6B35",
+      "cities": "[\"Los Angeles\", \"Long Beach\", \"Anaheim\", \"Santa Ana\", \"Irvine\", \"Glendale\", \"Huntington Beach\", \"Santa Clarita\", \"Garden Grove\", \"Oceanside\"]"
+    },
+    {
+      "agentName": "Youssef El Karmi",
+      "color": "#4ECDC4",
+      "cities": "[\"San Francisco\", \"San Jose\", \"Oakland\", \"Fresno\", \"Sacramento\", \"Bakersfield\", \"Stockton\", \"Modesto\", \"San Bernardino\", \"Riverside\"]"
+    },
+    {
+      "agentName": "Rupert Musni",
+      "color": "#A855F7",
+      "cities": "[\"San Diego\", \"Chula Vista\", \"Escondido\", \"El Cajon\", \"Carlsbad\", \"Vista\", \"San Marcos\", \"Encinitas\", \"National City\", \"La Mesa\"]"
+    },
+    {
+      "agentName": "David Carrillo",
+      "color": "#F59E0B",
+      "cities": "[\"Long Beach\", \"Torrance\", \"Pasadena\", \"Pomona\", \"El Monte\", \"Downey\", \"Inglewood\", \"West Covina\", \"Norwalk\", \"Burbank\"]"
+    }
+  ],
+  "messages": [],
+  "stdout": "agentName\tcolor\tcities\nMiguel Flores\t#FF6B35\t[\"Los Angeles\", \"Long Beach\", \"Anaheim\", \"Santa Ana\", \"Irvine\", \"Glendale\", \"Huntington Beach\", \"Santa Clarita\", \"Garden Grove\", \"Oceanside\"]\nYoussef El Karmi\t#4ECDC4\t[\"San Francisco\", \"San Jose\", \"Oakland\", \"Fresno\", \"Sacramento\", \"Bakersfield\", \"Stockton\", \"Modesto\", \"San Bernardino\", \"Riverside\"]\nRupert Musni\t#A855F7\t[\"San Diego\", \"Chula Vista\", \"Escondido\", \"El Cajon\", \"Carlsbad\", \"Vista\", \"San Marcos\", \"Encinitas\", \"National City\", \"La Mesa\"]\nDavid Carrillo\t#F59E0B\t[\"Long Beach\", \"Torrance\", \"Pasadena\", \"Pomona\", \"El Monte\", \"Downey\", \"Inglewood\", \"West Covina\", \"Norwalk\", \"Burbank\"]\n",
+  "stderr": "",
+  "execution_time_ms": 403
+}

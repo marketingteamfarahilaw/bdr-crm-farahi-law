@@ -12,6 +12,9 @@ import {
   insertSavedLead,
   deleteSavedLead,
   updateSavedLeadAnnotation,
+  updateSavedLeadAgent,
+  getAllAgentZones,
+  upsertAgentZone,
   getSavedSearches,
   insertSavedSearch,
   deleteSavedSearch,
@@ -153,6 +156,31 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         const lead = await getSavedLeadByPlaceId(ctx.user.id, input.placeId);
         return { saved: !!lead };
+      }),
+  }),
+
+  agentZones: router({
+    list: protectedProcedure.query(async () => {
+      return getAllAgentZones();
+    }),
+    upsert: protectedProcedure
+      .input(z.object({
+        agentName: z.string(),
+        color: z.string(),
+        cities: z.array(z.string()),
+      }))
+      .mutation(async ({ input }) => {
+        await upsertAgentZone(input.agentName, input.color, input.cities);
+        return { success: true };
+      }),
+    assignLead: protectedProcedure
+      .input(z.object({
+        placeId: z.string(),
+        assignedAgent: z.string().nullable(),
+      }))
+      .mutation(async ({ input }) => {
+        await updateSavedLeadAgent(input.placeId, input.assignedAgent);
+        return { success: true };
       }),
   }),
 

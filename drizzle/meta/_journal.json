@@ -43,6 +43,13 @@
       "when": 1778691329726,
       "tag": "0005_bizarre_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1779221141651,
+      "tag": "0006_fuzzy_mystique",
+      "breakpoints": true
     }
   ]
 }

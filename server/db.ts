@@ -1,6 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch } from "../drizzle/schema";
+import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -122,6 +122,31 @@ export async function updateSavedLeadAnnotation(userId: number, placeId: string,
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(savedLeads).set({ annotation }).where(and(eq(savedLeads.userId, userId), eq(savedLeads.placeId, placeId)));
+}
+
+export async function updateSavedLeadAgent(placeId: string, assignedAgent: string | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(savedLeads).set({ assignedAgent }).where(eq(savedLeads.placeId, placeId));
+}
+
+// ─── Agent Zones ─────────────────────────────────────────────────────────────
+
+export async function getAllAgentZones() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(agentZones);
+}
+
+export async function upsertAgentZone(agentName: string, color: string, cities: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(agentZones).where(eq(agentZones.agentName, agentName)).limit(1);
+  if (existing.length > 0) {
+    await db.update(agentZones).set({ color, cities }).where(eq(agentZones.agentName, agentName));
+  } else {
+    await db.insert(agentZones).values({ agentName, color, cities });
+  }
 }
 
 // ─── Saved Searches ──────────────────────────────────────────────────────────

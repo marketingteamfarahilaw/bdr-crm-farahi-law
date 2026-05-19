@@ -1,0 +1,9 @@
+{
+  "query": "\nCREATE TABLE `agent_zones` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `agentName` varchar(100) NOT NULL,\n  `color` varchar(20) NOT NULL,\n  `cities` json NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `agent_zones_id` PRIMARY KEY(`id`),\n  CONSTRAINT `agent_zones_agentName_unique` UNIQUE(`agentName`)\n);\n\nALTER TABLE `saved_leads` ADD `assignedAgent` varchar(100);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute \nCREATE TABLE `agent_zones` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `agentName` varchar(100) NOT NULL,\n  `color` varchar(20) NOT NULL,\n  `cities` json NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `agent_zones_id` PRIMARY KEY(`id`),\n  CONSTRAINT `agent_zones_agentName_unique` UNIQUE(`agentName`)\n);\n\nALTER TABLE `saved_leads` ADD `assignedAgent` varchar(100);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 533
+}

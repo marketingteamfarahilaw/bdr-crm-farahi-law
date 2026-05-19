@@ -1,0 +1,26 @@
+{
+  "query": "SELECT assignedAgent, COUNT(*) as count FROM saved_leads GROUP BY assignedAgent ORDER BY count DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute SELECT assignedAgent, COUNT(*) as count FROM saved_leads GROUP BY assignedAgent ORDER BY count DESC;",
+  "rows": [
+    {
+      "assignedAgent": "Youssef El Karmi",
+      "count": "335"
+    },
+    {
+      "assignedAgent": "Miguel Flores",
+      "count": "141"
+    },
+    {
+      "assignedAgent": "Rupert Musni",
+      "count": "118"
+    },
+    {
+      "assignedAgent": "David Carrillo",
+      "count": "7"
+    }
+  ],
+  "messages": [],
+  "stdout": "assignedAgent\tcount\nYoussef El Karmi\t335\nMiguel Flores\t141\nRupert Musni\t118\nDavid Carrillo\t7\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

@@ -63,12 +63,27 @@ export const savedLeads = mysqlTable("saved_leads", {
   scoreTier: mysqlEnum("scoreTier", ["hot", "warm", "cold"]),
   scoreBreakdown: json("scoreBreakdown"),
   annotation: text("annotation"),
+  assignedAgent: varchar("assignedAgent", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type SavedLead = typeof savedLeads.$inferSelect;
 export type InsertSavedLead = typeof savedLeads.$inferInsert;
+
+/**
+ * Agent zones — California territory assignments per BD rep
+ */
+export const agentZones = mysqlTable("agent_zones", {
+  id: int("id").autoincrement().primaryKey(),
+  agentName: varchar("agentName", { length: 100 }).notNull().unique(),
+  color: varchar("color", { length: 20 }).notNull(),
+  cities: json("cities").notNull(), // string[] of city names in this zone
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AgentZone = typeof agentZones.$inferSelect;
+export type InsertAgentZone = typeof agentZones.$inferInsert;
 
 // ─── Facility Partner CRM ────────────────────────────────────────────────────
 

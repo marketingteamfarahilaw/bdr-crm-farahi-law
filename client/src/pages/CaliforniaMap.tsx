@@ -47,6 +47,7 @@ const CATEGORY_CONFIG: Record<string, { emoji: string; color: string }> = {
 };
 
 type TierFilter = "all" | "hot" | "warm" | "cold";
+type AgentFilter = "all" | string;
 
 interface PinLead {
   placeId: string;
@@ -64,7 +65,16 @@ interface PinLead {
   annotation: string | null;
   inCrm: boolean;
   crmId?: number;
+  assignedAgent: string | null;
 }
+
+// ── Agent color map ──────────────────────────────────────────────────────────
+const AGENT_COLORS: Record<string, string> = {
+  "Miguel Flores":    "#FF6B35",
+  "Youssef El Karmi": "#4ECDC4",
+  "Rupert Musni":     "#A855F7",
+  "David Carrillo":   "#F59E0B",
+};
 
 // ── Pin DOM element ───────────────────────────────────────────────────────────
 function createLeadPin(lead: PinLead): HTMLElement {
@@ -84,6 +94,8 @@ function createLeadPin(lead: PinLead): HTMLElement {
   wrapper.onmouseleave = () => { wrapper.style.transform = "scale(1)"; };
 
   // Pin body
+  const agentColor = lead.assignedAgent ? (AGENT_COLORS[lead.assignedAgent] ?? null) : null;
+
   const pin = document.createElement("div");
   pin.style.cssText = `
     width: 34px;
@@ -91,11 +103,11 @@ function createLeadPin(lead: PinLead): HTMLElement {
     border-radius: 50% 50% 50% 0;
     transform: rotate(-45deg);
     background: ${tier.bg};
-    border: 2.5px solid ${tier.border};
+    border: 2.5px solid ${agentColor ?? tier.border};
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 10px ${tier.glow}, 0 2px 8px rgba(0,0,0,0.4);
+    box-shadow: 0 0 10px ${tier.glow}, 0 2px 8px rgba(0,0,0,0.4)${agentColor ? `, 0 0 0 1.5px ${agentColor}88` : ""};
     position: relative;
   `;
 
@@ -219,6 +231,18 @@ function createInfoWindowContent(
         </div>
       ` : ""}
 
+      <!-- Agent badge -->
+      ${lead.assignedAgent ? `
+        <div style="
+          display:flex;align-items:center;gap:6px;
+          background:${AGENT_COLORS[lead.assignedAgent] ?? '#94a3b8'}14;border:1px solid ${AGENT_COLORS[lead.assignedAgent] ?? '#94a3b8'}30;
+          border-radius:8px;padding:5px 10px;margin-bottom:8px;
+        ">
+          <div style="width:8px;height:8px;border-radius:50%;background:${AGENT_COLORS[lead.assignedAgent] ?? '#94a3b8'};flex-shrink:0;"></div>
+          <span style="font-size:10.5px;color:${AGENT_COLORS[lead.assignedAgent] ?? '#94a3b8'};font-weight:600;letter-spacing:0.02em;">👤 ${lead.assignedAgent}</span>
+        </div>
+      ` : ""}
+
       <!-- CRM status -->
       ${lead.inCrm ? `
         <div style="
@@ -325,6 +349,16 @@ export default function CaliforniaMapPage() {
     () => new Set(CATEGORIES.map(c => c.value))
   );
   const [showFilters, setShowFilters] = useState(true);
+  const [agentFilter, setAgentFilter] = useState<AgentFilter>("all");
+
+  // Agent zones data
+  const { data: agentZones = [] } = trpc.agentZones.list.useQuery();
+  const assignLeadMutation = trpc.agentZones.assignLead.useMutation({
+    onSuccess: () => {
+      toast.success("Agent assigned!");
+    },
+    onError: () => toast.error("Failed to assign agent."),
+  });
 
   // Map & markers
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -369,6 +403,7 @@ export default function CaliforniaMapPage() {
         annotation: l.annotation ?? null,
         inCrm: crmPlaceIds.has(l.placeId),
         crmId: crmFacilities.find((f: any) => f.placeId === l.placeId)?.id,
+        assignedAgent: l.assignedAgent ?? null,
       }));
   }, [savedLeads, crmPlaceIds, crmFacilities]);
 
@@ -376,9 +411,10 @@ export default function CaliforniaMapPage() {
   const visiblePins = useMemo(() => {
     return allPins.filter(p =>
       (tierFilter === "all" || p.scoreTier === tierFilter) &&
-      activeCats.has(p.category)
+      activeCats.has(p.category) &&
+      (agentFilter === "all" || p.assignedAgent === agentFilter)
     );
-  }, [allPins, tierFilter, activeCats]);
+  }, [allPins, tierFilter, activeCats, agentFilter]);
 
   // Stats
   const stats = useMemo(() => ({
@@ -735,6 +771,99 @@ export default function CaliforniaMapPage() {
                 })}
               </div>
             </div>
+
+            {/* Agent Zones panel */}
+            {agentZones.length > 0 && (
+              <div style={{
+                background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
+                backdropFilter: "blur(28px) saturate(180%)",
+                border: "1px solid rgba(212,175,55,0.2)",
+                borderRadius: 16,
+                padding: "15px 14px 13px",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 30px rgba(212,175,55,0.04)",
+              }}>
+                <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(212,175,55,0.7)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 11, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ display: "inline-block", width: 16, height: 1.5, background: "linear-gradient(90deg, rgba(212,175,55,0.6), transparent)" }} />
+                  Agent Zones
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {/* All agents button */}
+                  <button
+                    onClick={() => setAgentFilter("all")}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "8px 11px",
+                      borderRadius: 10,
+                      border: `1px solid ${agentFilter === "all" ? "rgba(212,175,55,0.5)" : "rgba(255,255,255,0.06)"}`,
+                      background: agentFilter === "all"
+                        ? "linear-gradient(100deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.08) 100%)"
+                        : "rgba(255,255,255,0.025)",
+                      color: agentFilter === "all" ? "#D4AF37" : "rgba(148,163,184,0.55)",
+                      fontSize: 12, fontWeight: agentFilter === "all" ? 700 : 500,
+                      cursor: "pointer", transition: "all 0.2s ease", width: "100%", textAlign: "left",
+                      boxShadow: agentFilter === "all" ? "0 2px 16px rgba(212,175,55,0.2), 0 0 0 1px rgba(212,175,55,0.12) inset" : "none",
+                    }}
+                  >
+                    <span style={{ fontSize: 13 }}>👥</span>
+                    <span style={{ flex: 1 }}>All Agents</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 800,
+                      background: agentFilter === "all" ? "rgba(212,175,55,0.2)" : "rgba(255,255,255,0.06)",
+                      color: agentFilter === "all" ? "#D4AF37" : "rgba(148,163,184,0.45)",
+                      borderRadius: 999, padding: "2px 8px",
+                      border: `1px solid ${agentFilter === "all" ? "rgba(212,175,55,0.3)" : "rgba(255,255,255,0.06)"}`,
+                      minWidth: 28, textAlign: "center",
+                    }}>{allPins.length}</span>
+                  </button>
+
+                  {/* Per-agent buttons */}
+                  {agentZones.map((zone: any) => {
+                    const active = agentFilter === zone.agentName;
+                    const count = allPins.filter(p => p.assignedAgent === zone.agentName).length;
+                    const initials = zone.agentName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+                    return (
+                      <button
+                        key={zone.agentName}
+                        onClick={() => setAgentFilter(active ? "all" : zone.agentName)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          padding: "8px 11px",
+                          borderRadius: 10,
+                          border: `1px solid ${active ? zone.color + "55" : "rgba(255,255,255,0.06)"}`,
+                          background: active
+                            ? `linear-gradient(100deg, ${zone.color}22 0%, ${zone.color}0a 100%)`
+                            : "rgba(255,255,255,0.025)",
+                          color: active ? zone.color : "rgba(148,163,184,0.55)",
+                          fontSize: 11, fontWeight: active ? 700 : 500,
+                          cursor: "pointer", transition: "all 0.2s ease", width: "100%", textAlign: "left",
+                          boxShadow: active ? `0 2px 16px ${zone.color}28, 0 0 0 1px ${zone.color}18 inset` : "none",
+                        }}
+                      >
+                        {/* Avatar */}
+                        <div style={{
+                          width: 22, height: 22, borderRadius: "50%",
+                          background: `linear-gradient(135deg, ${zone.color}40, ${zone.color}20)`,
+                          border: `1.5px solid ${zone.color}60`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 9, fontWeight: 800, color: zone.color, flexShrink: 0,
+                          boxShadow: active ? `0 0 8px ${zone.color}40` : "none",
+                        }}>{initials}</div>
+                        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{zone.agentName}</span>
+                        <span style={{
+                          fontSize: 10, fontWeight: 800,
+                          background: active ? `linear-gradient(135deg, ${zone.color}28, ${zone.color}14)` : "rgba(255,255,255,0.06)",
+                          color: active ? zone.color : "rgba(148,163,184,0.45)",
+                          borderRadius: 999, padding: "2px 8px",
+                          border: `1px solid ${active ? zone.color + "35" : "rgba(255,255,255,0.06)"}`,
+                          flexShrink: 0, minWidth: 28, textAlign: "center",
+                          boxShadow: active ? `0 0 8px ${zone.color}20` : "none",
+                        }}>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
