@@ -155,15 +155,16 @@ function createInfoWindowContent(
   const container = document.createElement("div");
   container.style.cssText = `
     font-family: Inter, system-ui, sans-serif;
-    background: linear-gradient(135deg, #0d1526 0%, #0f1a2e 100%);
-    border: 1px solid #1e2d4a;
-    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(10,18,35,0.98) 0%, rgba(7,14,28,0.98) 100%);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 14px;
     padding: 0;
-    min-width: 260px;
-    max-width: 300px;
+    min-width: 270px;
+    max-width: 310px;
     color: #e2e8f0;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+    box-shadow: 0 20px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 24px rgba(212,175,55,0.06);
     overflow: hidden;
+    backdrop-filter: blur(24px);
   `;
 
   const stars = lead.rating
@@ -173,89 +174,99 @@ function createInfoWindowContent(
   container.innerHTML = `
     <!-- Header band -->
     <div style="
-      background: linear-gradient(90deg, ${tier.bg}22, ${tier.bg}08);
-      border-bottom: 1px solid ${tier.bg}33;
-      padding: 12px 14px 10px;
+      background: linear-gradient(90deg, ${tier.bg}1a 0%, ${tier.bg}06 100%);
+      border-bottom: 1px solid ${tier.bg}28;
+      padding: 13px 15px 11px;
     ">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:14px;color:#f1f5f9;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${lead.name}</div>
-          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${cat.emoji} ${catLabel}</div>
+          <div style="font-weight:700;font-size:13.5px;color:#f8fafc;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.01em;">${lead.name}</div>
+          <div style="font-size:10.5px;color:rgba(148,163,184,0.7);margin-top:3px;letter-spacing:0.02em;">${cat.emoji} ${catLabel}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
           <span style="
             display:inline-flex;align-items:center;gap:3px;
-            padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;
-            background:${tier.bg}22;color:${tier.bg};border:1px solid ${tier.bg}55;
-          ">${tier.icon} ${tier.label}</span>
-          <span style="font-size:11px;font-weight:700;color:${tier.bg};">${lead.qualificationScore}/100</span>
+            padding:2px 9px;border-radius:999px;font-size:9.5px;font-weight:700;letter-spacing:0.04em;
+            background:${tier.bg}18;color:${tier.bg};border:1px solid ${tier.bg}40;
+            box-shadow: 0 0 8px ${tier.bg}20;
+          ">${tier.icon} ${tier.label.toUpperCase()}</span>
+          <span style="font-size:18px;font-weight:800;color:${tier.bg};line-height:1;letter-spacing:-0.02em;">${lead.qualificationScore}<span style="font-size:10px;font-weight:500;opacity:0.6;">/100</span></span>
         </div>
       </div>
     </div>
 
     <!-- Body -->
-    <div style="padding:12px 14px;">
+    <div style="padding:12px 15px 13px;">
       <!-- Rating -->
       ${lead.rating ? `
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-          <span style="color:#fbbf24;font-size:12px;letter-spacing:-1px;">${stars}</span>
-          <span style="font-size:12px;color:#94a3b8;">${lead.rating} (${(lead.reviewCount ?? 0).toLocaleString()} reviews)</span>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <span style="color:#fbbf24;font-size:11px;letter-spacing:1px;">${stars}</span>
+          <span style="font-size:11px;color:rgba(148,163,184,0.7);">${lead.rating} &bull; ${(lead.reviewCount ?? 0).toLocaleString()} reviews</span>
         </div>
       ` : ""}
 
       <!-- Address -->
-      <div style="font-size:11px;color:#64748b;margin-bottom:6px;display:flex;align-items:flex-start;gap:5px;">
-        <span style="flex-shrink:0;margin-top:1px;">📍</span>
-        <span style="line-height:1.4;">${lead.address}</span>
+      <div style="font-size:10.5px;color:rgba(100,116,139,0.9);margin-bottom:6px;display:flex;align-items:flex-start;gap:6px;">
+        <span style="flex-shrink:0;margin-top:1px;opacity:0.6;">📍</span>
+        <span style="line-height:1.45;">${lead.address}</span>
       </div>
 
       <!-- Phone -->
       ${lead.phone ? `
-        <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;display:flex;align-items:center;gap:5px;">
-          <span>📞</span>
-          <a href="tel:${lead.phone}" style="color:#60a5fa;text-decoration:none;">${lead.phone}</a>
+        <div style="font-size:11.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          <span style="opacity:0.6;">📞</span>
+          <a href="tel:${lead.phone}" style="color:#60a5fa;text-decoration:none;font-weight:500;">${lead.phone}</a>
         </div>
       ` : ""}
 
       <!-- CRM status -->
       ${lead.inCrm ? `
         <div style="
-          display:flex;align-items:center;gap:5px;
-          background:#D4AF3722;border:1px solid #D4AF3744;
-          border-radius:6px;padding:5px 8px;margin-bottom:8px;
+          display:flex;align-items:center;gap:6px;
+          background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.25);
+          border-radius:8px;padding:6px 10px;margin-bottom:10px;
+          box-shadow: 0 0 10px rgba(212,175,55,0.08);
         ">
-          <span style="color:#D4AF37;font-size:12px;">★</span>
-          <span style="font-size:11px;color:#D4AF37;font-weight:600;">Added to CRM</span>
+          <span style="color:#D4AF37;font-size:13px;">★</span>
+          <span style="font-size:11px;color:#D4AF37;font-weight:600;letter-spacing:0.02em;">Added to CRM</span>
         </div>
       ` : ""}
 
       <!-- Annotation -->
       ${lead.annotation ? `
         <div style="
-          background:#1e2d4a;border-radius:6px;padding:6px 8px;margin-bottom:8px;
-          font-size:11px;color:#94a3b8;font-style:italic;line-height:1.4;
-        ">"${lead.annotation}"</div>
+          background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:7px 10px;margin-bottom:10px;
+          font-size:10.5px;color:rgba(148,163,184,0.7);font-style:italic;line-height:1.5;
+        ">&ldquo;${lead.annotation}&rdquo;</div>
       ` : ""}
 
       <!-- Actions -->
-      <div style="display:flex;gap:6px;margin-top:4px;">
+      <div style="display:flex;gap:7px;margin-top:6px;">
         ${!lead.inCrm ? `
           <div id="iw-save" style="
-            flex:1;padding:7px 0;background:#D4AF37;color:#0a0f1e;
-            border:none;border-radius:6px;font-size:11px;font-weight:700;
-            cursor:pointer;text-align:center;transition:background 0.15s;
-          ">+ Save Lead</div>
+            flex:1;padding:8px 0;
+            background:linear-gradient(135deg,#D4AF37 0%,#c9a227 100%);
+            color:#07101f;
+            border:none;border-radius:8px;font-size:11px;font-weight:800;
+            cursor:pointer;text-align:center;transition:all 0.15s;
+            letter-spacing:0.04em;
+            box-shadow:0 2px 12px rgba(212,175,55,0.35);
+          ">+ SAVE LEAD</div>
         ` : `
           <div id="iw-crm" style="
-            flex:1;padding:7px 0;background:#D4AF3722;color:#D4AF37;
-            border:1px solid #D4AF3744;border-radius:6px;font-size:11px;font-weight:700;
-            cursor:pointer;text-align:center;transition:background 0.15s;
+            flex:1;padding:8px 0;
+            background:rgba(212,175,55,0.1);color:#D4AF37;
+            border:1px solid rgba(212,175,55,0.3);border-radius:8px;font-size:11px;font-weight:700;
+            cursor:pointer;text-align:center;transition:all 0.15s;
+            letter-spacing:0.03em;
           ">Open CRM →</div>
         `}
         <div id="iw-search" style="
-          flex:1;padding:7px 0;background:#1e2d4a;color:#94a3b8;
-          border:none;border-radius:6px;font-size:11px;font-weight:600;
-          cursor:pointer;text-align:center;transition:background 0.15s;
+          flex:1;padding:8px 0;
+          background:rgba(255,255,255,0.04);color:rgba(148,163,184,0.8);
+          border:1px solid rgba(255,255,255,0.08);border-radius:8px;font-size:11px;font-weight:600;
+          cursor:pointer;text-align:center;transition:all 0.15s;
+          letter-spacing:0.03em;
         ">Search Area</div>
       </div>
     </div>
@@ -263,22 +274,22 @@ function createInfoWindowContent(
 
   const saveBtn = container.querySelector("#iw-save") as HTMLElement | null;
   if (saveBtn) {
-    saveBtn.onmouseenter = () => { saveBtn.style.background = "#c9a227"; };
-    saveBtn.onmouseleave = () => { saveBtn.style.background = "#D4AF37"; };
+    saveBtn.onmouseenter = () => { saveBtn.style.opacity = "0.88"; saveBtn.style.transform = "translateY(-1px)"; };
+    saveBtn.onmouseleave = () => { saveBtn.style.opacity = "1"; saveBtn.style.transform = "none"; };
     saveBtn.onclick = onSaveLead;
   }
 
   const crmBtn = container.querySelector("#iw-crm") as HTMLElement | null;
   if (crmBtn) {
-    crmBtn.onmouseenter = () => { crmBtn.style.background = "#D4AF3733"; };
-    crmBtn.onmouseleave = () => { crmBtn.style.background = "#D4AF3722"; };
+    crmBtn.onmouseenter = () => { crmBtn.style.background = "rgba(212,175,55,0.18)"; crmBtn.style.transform = "translateY(-1px)"; };
+    crmBtn.onmouseleave = () => { crmBtn.style.background = "rgba(212,175,55,0.1)"; crmBtn.style.transform = "none"; };
     crmBtn.onclick = onOpenCrm;
   }
 
   const searchBtn = container.querySelector("#iw-search") as HTMLElement | null;
   if (searchBtn) {
-    searchBtn.onmouseenter = () => { searchBtn.style.background = "#243552"; };
-    searchBtn.onmouseleave = () => { searchBtn.style.background = "#1e2d4a"; };
+    searchBtn.onmouseenter = () => { searchBtn.style.background = "rgba(255,255,255,0.08)"; searchBtn.style.color = "#f1f5f9"; };
+    searchBtn.onmouseleave = () => { searchBtn.style.background = "rgba(255,255,255,0.04)"; searchBtn.style.color = "rgba(148,163,184,0.8)"; };
     searchBtn.onclick = onSearch;
   }
 
@@ -494,49 +505,82 @@ export default function CaliforniaMapPage() {
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col" style={{ background: "#080d1a" }}>
+    <div className="relative w-full h-full flex flex-col" style={{ background: "#060b16" }}>
       {/* ── Top stats bar ── */}
-      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-[#1e2d4a] bg-[#0d1526]">
-        <div className="flex items-center gap-1.5 mr-2">
-          <MapPin size={15} className="text-[#D4AF37]" />
-          <span className="text-sm font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+      <div
+        className="flex-shrink-0 flex items-center gap-3 px-5 py-2"
+        style={{
+          background: "linear-gradient(90deg, #07101f 0%, #0a1628 60%, #07101f 100%)",
+          borderBottom: "1px solid rgba(212,175,55,0.15)",
+          boxShadow: "0 1px 0 rgba(212,175,55,0.06), 0 4px 16px rgba(0,0,0,0.4)",
+        }}
+      >
+        {/* Logo / title */}
+        <div className="flex items-center gap-2 mr-3 flex-shrink-0">
+          <div style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: "linear-gradient(135deg, #D4AF37 0%, #c9a227 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 0 12px rgba(212,175,55,0.4)",
+          }}>
+            <MapPin size={14} color="#07101f" strokeWidth={2.5} />
+          </div>
+          <span className="text-sm font-bold tracking-wide" style={{ color: "#f1f5f9", fontFamily: "'Playfair Display', serif", letterSpacing: "0.02em" }}>
             California Lead Map
           </span>
         </div>
 
+        {/* Divider */}
+        <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)", flexShrink: 0 }} />
+
         <div className="flex items-center gap-2 flex-1">
-          {/* Stat pills */}
-          <div className="flex items-center gap-1.5 bg-[#1e2d4a] rounded-full px-3 py-1">
-            <Activity size={11} className="text-[#94a3b8]" />
-            <span className="text-xs text-[#94a3b8]"><span className="font-bold text-white">{stats.total}</span> saved leads</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-[#ef444422] border border-[#ef444433] rounded-full px-3 py-1">
-            <span className="text-xs">🔥</span>
-            <span className="text-xs font-bold text-[#ef4444]">{stats.hot}</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-[#f59e0b22] border border-[#f59e0b33] rounded-full px-3 py-1">
-            <span className="text-xs">♨️</span>
-            <span className="text-xs font-bold text-[#f59e0b]">{stats.warm}</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-[#60a5fa22] border border-[#60a5fa33] rounded-full px-3 py-1">
-            <span className="text-xs">❄️</span>
-            <span className="text-xs font-bold text-[#60a5fa]">{stats.cold}</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-[#D4AF3722] border border-[#D4AF3733] rounded-full px-3 py-1">
-            <span className="text-xs">★</span>
-            <span className="text-xs font-bold text-[#D4AF37]">{stats.inCrm} in CRM</span>
-          </div>
+          {/* Stat pills — premium glass style */}
+          {([
+            { icon: <Activity size={10} />, val: stats.total, label: "leads", bg: "rgba(148,163,184,0.08)", border: "rgba(148,163,184,0.15)", color: "#94a3b8", valColor: "#f1f5f9" },
+            { icon: <span style={{fontSize:11}}>🔥</span>, val: stats.hot, label: "hot", bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.25)", color: "#ef4444", valColor: "#ef4444" },
+            { icon: <span style={{fontSize:11}}>♨️</span>, val: stats.warm, label: "warm", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.25)", color: "#f59e0b", valColor: "#f59e0b" },
+            { icon: <span style={{fontSize:11}}>❄️</span>, val: stats.cold, label: "cold", bg: "rgba(96,165,250,0.1)", border: "rgba(96,165,250,0.25)", color: "#60a5fa", valColor: "#60a5fa" },
+            { icon: <span style={{fontSize:11}}>★</span>, val: stats.inCrm, label: "in CRM", bg: "rgba(212,175,55,0.1)", border: "rgba(212,175,55,0.3)", color: "#D4AF37", valColor: "#D4AF37" },
+          ] as const).map((s, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 5,
+              background: s.bg,
+              border: `1px solid ${s.border}`,
+              borderRadius: 999,
+              padding: "3px 10px 3px 8px",
+              backdropFilter: "blur(8px)",
+            }}>
+              <span style={{ color: s.color, display: "flex", alignItems: "center" }}>{s.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: s.valColor, fontVariantNumeric: "tabular-nums" }}>{s.val}</span>
+              <span style={{ fontSize: 10, color: "rgba(148,163,184,0.7)", fontWeight: 500 }}>{s.label}</span>
+            </div>
+          ))}
         </div>
 
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 px-3 text-xs border-[#1e2d4a] text-[#94a3b8] hover:text-white hover:border-[#D4AF37]"
+        {/* Filters button */}
+        <button
           onClick={() => setShowFilters(v => !v)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "5px 14px",
+            background: showFilters
+              ? "linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.1) 100%)"
+              : "rgba(255,255,255,0.04)",
+            border: `1px solid ${showFilters ? "rgba(212,175,55,0.5)" : "rgba(255,255,255,0.1)"}`,
+            borderRadius: 8,
+            color: showFilters ? "#D4AF37" : "#94a3b8",
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            backdropFilter: "blur(8px)",
+            letterSpacing: "0.03em",
+            flexShrink: 0,
+          }}
         >
-          <Filter size={11} className="mr-1" />
+          <Filter size={11} />
           Filters
-        </Button>
+        </button>
       </div>
 
       {/* ── Main map area ── */}
@@ -550,54 +594,103 @@ export default function CaliforniaMapPage() {
 
         {/* ── Left filter panel ── */}
         {showFilters && (
-          <div className="absolute top-3 left-3 z-10 w-56 flex flex-col gap-2">
+          <div className="absolute top-3 left-3 z-10 w-60 flex flex-col gap-2.5">
             {/* Temperature filter */}
-            <div className="bg-[#0d1526]/95 backdrop-blur-md border border-[#1e2d4a] rounded-xl p-3 shadow-2xl">
-              <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-2">Lead Temperature</div>
-              <div className="flex flex-col gap-1.5">
+            <div style={{
+              background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
+              backdropFilter: "blur(28px) saturate(180%)",
+              border: "1px solid rgba(212,175,55,0.2)",
+              borderRadius: 16,
+              padding: "15px 14px 13px",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 30px rgba(212,175,55,0.04)",
+            }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(212,175,55,0.7)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 11, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ display: "inline-block", width: 16, height: 1.5, background: "linear-gradient(90deg, rgba(212,175,55,0.6), transparent)" }} />
+                Lead Temperature
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 {([
-                  ["all",  "⚡", "All Leads",  "#94a3b8"],
-                  ["hot",  "🔥", "Hot",         "#ef4444"],
-                  ["warm", "♨️", "Warm",        "#f59e0b"],
-                  ["cold", "❄️", "Cold",        "#60a5fa"],
-                ] as const).map(([val, icon, label, color]) => (
-                  <button
-                    key={val}
-                    onClick={() => setTierFilter(val)}
-                    style={{
-                      background: tierFilter === val ? `${color}22` : "transparent",
-                      border: `1px solid ${tierFilter === val ? color + "55" : "#1e2d4a"}`,
-                      color: tierFilter === val ? color : "#64748b",
-                    }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer w-full text-left"
-                  >
-                    <span>{icon}</span>
-                    <span>{label}</span>
-                    {val !== "all" && (
-                      <span className="ml-auto text-[10px] opacity-70">
-                        {val === "hot" ? stats.hot : val === "warm" ? stats.warm : stats.cold}
-                      </span>
-                    )}
-                  </button>
-                ))}
+                  ["all",  "⚡", "All Leads",  "#94a3b8", null],
+                  ["hot",  "🔥", "Hot",         "#ef4444", stats.hot],
+                  ["warm", "♨️", "Warm",        "#f59e0b", stats.warm],
+                  ["cold", "❄️", "Cold",        "#60a5fa", stats.cold],
+                ] as const).map(([val, icon, label, color, count]) => {
+                  const active = tierFilter === val;
+                  return (
+                    <button
+                      key={val}
+                      onClick={() => setTierFilter(val)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "8px 11px",
+                        borderRadius: 10,
+                        border: `1px solid ${active ? color + "55" : "rgba(255,255,255,0.06)"}`,
+                        background: active
+                          ? `linear-gradient(100deg, ${color}22 0%, ${color}0a 100%)`
+                          : "rgba(255,255,255,0.025)",
+                        color: active ? color : "rgba(148,163,184,0.55)",
+                        fontSize: 12,
+                        fontWeight: active ? 700 : 500,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        width: "100%",
+                        textAlign: "left",
+                        boxShadow: active ? `0 2px 16px ${color}28, 0 0 0 1px ${color}18 inset` : "none",
+                        letterSpacing: active ? "0.01em" : "0",
+                      }}
+                    >
+                      <span style={{ fontSize: 13 }}>{icon}</span>
+                      <span style={{ flex: 1 }}>{label}</span>
+                      {count !== null && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 800,
+                          background: active ? `linear-gradient(135deg, ${color}30, ${color}18)` : "rgba(255,255,255,0.06)",
+                          color: active ? color : "rgba(148,163,184,0.45)",
+                          borderRadius: 999, padding: "2px 8px",
+                          border: `1px solid ${active ? color + "35" : "rgba(255,255,255,0.06)"}`,
+                          boxShadow: active ? `0 0 8px ${color}20` : "none",
+                          minWidth: 28, textAlign: "center",
+                        }}>{count}</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Category filter */}
-            <div className="bg-[#0d1526]/95 backdrop-blur-md border border-[#1e2d4a] rounded-xl p-3 shadow-2xl">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest">Categories</div>
+            <div style={{
+              background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
+              backdropFilter: "blur(28px) saturate(180%)",
+              border: "1px solid rgba(212,175,55,0.2)",
+              borderRadius: 16,
+              padding: "15px 14px 13px",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 30px rgba(212,175,55,0.04)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(212,175,55,0.7)", letterSpacing: "0.15em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ display: "inline-block", width: 16, height: 1.5, background: "linear-gradient(90deg, rgba(212,175,55,0.6), transparent)" }} />
+                  Categories
+                </div>
                 <button
                   onClick={() => {
                     if (activeCats.size === CATEGORIES.length) setActiveCats(new Set());
                     else setActiveCats(new Set(CATEGORIES.map(c => c.value)));
                   }}
-                  className="text-[9px] text-[#D4AF37] hover:text-[#c9a227] font-semibold"
+                  style={{
+                    fontSize: 10, fontWeight: 800, color: "#D4AF37",
+                    background: "linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))",
+                    border: "1px solid rgba(212,175,55,0.3)",
+                    borderRadius: 7, padding: "3px 10px", cursor: "pointer",
+                    transition: "all 0.15s",
+                    letterSpacing: "0.04em",
+                    boxShadow: "0 0 10px rgba(212,175,55,0.12)",
+                  }}
                 >
                   {activeCats.size === CATEGORIES.length ? "None" : "All"}
                 </button>
               </div>
-              <div className="flex flex-col gap-1">
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {CATEGORIES.map(cat => {
                   const cfg = CATEGORY_CONFIG[cat.value] ?? { emoji: "📍", color: "#94a3b8" };
                   const active = activeCats.has(cat.value);
@@ -607,16 +700,36 @@ export default function CaliforniaMapPage() {
                       key={cat.value}
                       onClick={() => toggleCategory(cat.value)}
                       style={{
-                        background: active ? `${cfg.color}18` : "transparent",
-                        border: `1px solid ${active ? cfg.color + "44" : "#1e2d4a"}`,
-                        color: active ? cfg.color : "#475569",
-                        opacity: active ? 1 : 0.5,
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "8px 11px",
+                        borderRadius: 10,
+                        border: `1px solid ${active ? cfg.color + "50" : "rgba(255,255,255,0.05)"}`,
+                        background: active
+                          ? `linear-gradient(100deg, ${cfg.color}1e 0%, ${cfg.color}08 100%)`
+                          : "rgba(255,255,255,0.025)",
+                        color: active ? cfg.color : "rgba(71,85,105,0.7)",
+                        opacity: active ? 1 : 0.7,
+                        fontSize: 11,
+                        fontWeight: active ? 700 : 400,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        width: "100%",
+                        textAlign: "left",
+                        boxShadow: active ? `0 2px 14px ${cfg.color}22, 0 0 0 1px ${cfg.color}15 inset` : "none",
                       }}
-                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer w-full text-left"
                     >
-                      <span>{cfg.emoji}</span>
-                      <span className="truncate flex-1">{cat.label}</span>
-                      <span className="text-[10px] opacity-70 flex-shrink-0">{count}</span>
+                      <span style={{ fontSize: 14 }}>{cfg.emoji}</span>
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.label}</span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800,
+                        background: active ? `linear-gradient(135deg, ${cfg.color}28, ${cfg.color}14)` : "rgba(255,255,255,0.06)",
+                        color: active ? cfg.color : "rgba(100,116,139,0.5)",
+                        borderRadius: 999, padding: "2px 8px",
+                        border: `1px solid ${active ? cfg.color + "30" : "rgba(255,255,255,0.05)"}`,
+                        flexShrink: 0,
+                        minWidth: 28, textAlign: "center",
+                        boxShadow: active ? `0 0 8px ${cfg.color}18` : "none",
+                      }}>{count}</span>
                     </button>
                   );
                 })}
@@ -626,30 +739,80 @@ export default function CaliforniaMapPage() {
         )}
 
         {/* ── Right: City quick-jump ── */}
-        <div className="absolute top-3 right-3 z-10 bg-[#0d1526]/95 backdrop-blur-md border border-[#1e2d4a] rounded-xl p-3 shadow-2xl w-44">
-          <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-2">Jump to City</div>
-          <div className="flex flex-col gap-1 max-h-72 overflow-y-auto">
+        <div style={{
+          position: "absolute", top: 12, right: 12, zIndex: 10,
+          background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
+          backdropFilter: "blur(28px) saturate(180%)",
+          border: "1px solid rgba(212,175,55,0.2)",
+          borderRadius: 16,
+          padding: "15px 12px 13px",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 30px rgba(212,175,55,0.04)",
+          width: 162,
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(212,175,55,0.7)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 11, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ display: "inline-block", width: 16, height: 1.5, background: "linear-gradient(90deg, rgba(212,175,55,0.6), transparent)" }} />
+            Jump to City
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: 280, overflowY: "auto" }}>
             {CA_CITIES.map(city => (
               <button
                 key={city.name}
                 onClick={() => flyToCity(city)}
-                className="text-left text-[11px] text-[#94a3b8] hover:text-[#D4AF37] hover:bg-[#D4AF3711] px-2 py-1 rounded-lg transition-all cursor-pointer"
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  padding: "6px 9px",
+                  borderRadius: 9,
+                  border: "1px solid transparent",
+                  background: "transparent",
+                  color: "rgba(148,163,184,0.65)",
+                  fontSize: 11, fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "all 0.18s ease",
+                  textAlign: "left",
+                  width: "100%",
+                  letterSpacing: "0.01em",
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = "#D4AF37";
+                  (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(100deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05))";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(212,175,55,0.28)";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 10px rgba(212,175,55,0.1)";
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = "rgba(148,163,184,0.65)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                }}
               >
-                📍 {city.name}
+                <span style={{ fontSize: 8, opacity: 0.4, color: "#D4AF37" }}>◆</span>
+                {city.name}
               </button>
             ))}
           </div>
         </div>
 
         {/* ── Bottom: Visible pin count ── */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
-          <div className="bg-[#0d1526]/95 backdrop-blur-md border border-[#1e2d4a] rounded-full px-4 py-2 shadow-2xl flex items-center gap-2">
-            <MapPin size={12} className="text-[#D4AF37]" />
-            <span className="text-xs text-[#94a3b8]">
-              Showing <span className="font-bold text-white">{visiblePins.length}</span> of <span className="font-bold text-white">{allPins.length}</span> saved leads
+        <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 10 }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8,
+            background: "linear-gradient(90deg, rgba(8,18,36,0.95), rgba(5,12,24,0.95))",
+            backdropFilter: "blur(28px) saturate(180%)",
+            border: "1px solid rgba(212,175,55,0.25)",
+            borderRadius: 999,
+            padding: "8px 20px",
+            boxShadow: "0 6px 28px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 20px rgba(212,175,55,0.06)",
+          }}>
+            <MapPin size={12} color="#D4AF37" />
+            <span style={{ fontSize: 12, color: "rgba(148,163,184,0.8)" }}>
+              Showing{" "}
+              <span style={{ fontWeight: 700, color: "#f1f5f9" }}>{visiblePins.length}</span>
+              {" "}of{" "}
+              <span style={{ fontWeight: 700, color: "#f1f5f9" }}>{allPins.length}</span>
+              {" "}saved leads
             </span>
             {allPins.length === 0 && (
-              <span className="text-xs text-[#64748b] ml-1">— save leads from the search page to see them here</span>
+              <span style={{ fontSize: 11, color: "rgba(100,116,139,0.7)", marginLeft: 4 }}>— save leads from the search page</span>
             )}
           </div>
         </div>
