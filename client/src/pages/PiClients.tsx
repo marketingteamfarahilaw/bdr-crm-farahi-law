@@ -19,6 +19,7 @@ import {
   Building2,
   Navigation,
   Search,
+  Filter,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +31,27 @@ const CASE_STATUSES = [
   { value: "closed",   label: "Closed",   color: "#94a3b8" },
   { value: "lost",     label: "Lost",     color: "#ef4444" },
 ] as const;
+
+const FACILITY_CATEGORIES = [
+  { value: "all",                  label: "All Types",           emoji: "🏢" },
+  { value: "body_shop",            label: "Auto Body Shops",     emoji: "🔧" },
+  { value: "chiropractor",         label: "Chiropractors",       emoji: "🦴" },
+  { value: "physical_therapist",   label: "Physical Therapists", emoji: "💪" },
+  { value: "medical_clinic",       label: "Medical Clinics",     emoji: "🏥" },
+  { value: "orthopedic_doctor",    label: "Orthopedic Doctors",  emoji: "🩺" },
+  { value: "imaging_center",       label: "Imaging Centers",     emoji: "📷" },
+  { value: "other",                label: "Other",               emoji: "🏢" },
+] as const;
+
+const CATEGORY_PIN_COLOR: Record<string, string> = {
+  body_shop:          "#f97316",
+  chiropractor:       "#60a5fa",
+  physical_therapist: "#a78bfa",
+  medical_clinic:     "#22c55e",
+  orthopedic_doctor:  "#facc15",
+  imaging_center:     "#38bdf8",
+  other:              "#94a3b8",
+};
 
 const INCIDENT_TYPES = [
   "Auto Accident", "Slip & Fall", "Dog Bite", "Motorcycle Accident",
@@ -83,6 +105,8 @@ export default function PiClientsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [nearbyClientId, setNearbyClientId] = useState<number | null>(null);
   const [nearbyRadius, setNearbyRadius] = useState(10);
+  const [nearbyCategory, setNearbyCategory] = useState<string>("all");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
@@ -156,7 +180,7 @@ export default function PiClientsPage() {
 
   // Nearby partners map
   const nearbyClient = clients.find((c: any) => c.id === nearbyClientId);
-  const nearbyFacilities = nearbyClient?.latitude && nearbyClient?.longitude
+  const nearbyFacilitiesAll = nearbyClient?.latitude && nearbyClient?.longitude
     ? (crmFacilities as any[]).filter((f: any) => {
         if (!f.latitude || !f.longitude) return false;
         const R = 3958.8;
@@ -171,6 +195,11 @@ export default function PiClientsPage() {
         return dist <= nearbyRadius;
       })
     : [];
+  const nearbyFacilities = nearbyCategory === "all"
+    ? nearbyFacilitiesAll
+    : nearbyFacilitiesAll.filter((f: any) => f.category === nearbyCategory);
+  const activeCategoryLabel = FACILITY_CATEGORIES.find(c => c.value === nearbyCategory)?.label ?? "All Types";
+  const activeCategoryEmoji = FACILITY_CATEGORIES.find(c => c.value === nearbyCategory)?.emoji ?? "🏢";
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -210,16 +239,19 @@ export default function PiClientsPage() {
 
     // Partner pins
     nearbyFacilities.forEach((f: any) => {
+      const pinColor = CATEGORY_PIN_COLOR[f.category] ?? "#94a3b8";
+      const catEntry = FACILITY_CATEGORIES.find(c => c.value === f.category);
+      const emoji = catEntry?.emoji ?? "🏢";
       const el = document.createElement("div");
       el.innerHTML = `<div style="
         width:32px;height:32px;border-radius:50%;
-        background:linear-gradient(135deg,#22c55e,#16a34a);
-        border:2px solid #fff;
+        background:${pinColor}22;
+        border:2px solid ${pinColor};
         display:flex;align-items:center;justify-content:center;
         font-size:14px;
-        box-shadow:0 0 12px rgba(34,197,94,0.5),0 2px 8px rgba(0,0,0,0.4);
+        box-shadow:0 0 12px ${pinColor}66,0 2px 8px rgba(0,0,0,0.4);
         cursor:pointer;
-      ">🏥</div>`;
+      ">${emoji}</div>`;
 
       const marker = new window.google.maps.marker.AdvancedMarkerElement({
         map,
@@ -296,10 +328,70 @@ export default function PiClientsPage() {
                 Nearby Partners for {nearbyClient.firstName} {nearbyClient.lastName}
               </div>
               <div style={{ fontSize:11,color:"rgba(148,163,184,0.5)",marginTop:2 }}>
-                {nearbyFacilities.length} facility partner{nearbyFacilities.length !== 1 ? "s" : ""} within {nearbyRadius} miles
+                {nearbyFacilities.length} of {nearbyFacilitiesAll.length} partner{nearbyFacilitiesAll.length !== 1 ? "s" : ""} within {nearbyRadius} miles{nearbyCategory !== "all" ? ` · ${activeCategoryLabel}` : ""}
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Category filter dropdown */}
+              <div style={{ position:"relative" }}>
+                <button
+                  onClick={() => setShowCategoryDropdown(v => !v)}
+                  style={{
+                    display:"flex",alignItems:"center",gap:6,
+                    padding:"5px 12px",
+                    background:nearbyCategory==="all"?"rgba(255,255,255,0.05)":"rgba(99,102,241,0.12)",
+                    border:`1px solid ${nearbyCategory==="all"?"rgba(255,255,255,0.12)":"rgba(99,102,241,0.35)"}`,
+                    borderRadius:8,cursor:"pointer",
+                    color:nearbyCategory==="all"?"rgba(148,163,184,0.7)":"#818cf8",
+                    fontSize:11,fontWeight:700,
+                    transition:"all 0.15s",
+                  }}
+                >
+                  <Filter size={11} />
+                  <span>{activeCategoryEmoji} {activeCategoryLabel}</span>
+                  <ChevronDown size={10} style={{ opacity:0.6 }} />
+                </button>
+                {showCategoryDropdown && (
+                  <div
+                    style={{
+                      position:"absolute",top:"calc(100% + 6px)",right:0,zIndex:50,
+                      background:"#0d1526",border:"1px solid rgba(99,102,241,0.25)",
+                      borderRadius:10,overflow:"hidden",minWidth:190,
+                      boxShadow:"0 12px 32px rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    {FACILITY_CATEGORIES.map(cat => {
+                      const count = cat.value==="all"
+                        ? nearbyFacilitiesAll.length
+                        : nearbyFacilitiesAll.filter((f:any)=>f.category===cat.value).length;
+                      const isActive = nearbyCategory === cat.value;
+                      return (
+                        <button
+                          key={cat.value}
+                          onClick={() => { setNearbyCategory(cat.value); setShowCategoryDropdown(false); }}
+                          style={{
+                            display:"flex",alignItems:"center",justifyContent:"space-between",
+                            width:"100%",padding:"8px 14px",
+                            background:isActive?"rgba(99,102,241,0.12)":"transparent",
+                            border:"none",cursor:"pointer",
+                            color:isActive?"#818cf8":"rgba(148,163,184,0.75)",
+                            fontSize:12,fontWeight:isActive?700:400,
+                            textAlign:"left",
+                            transition:"background 0.1s",
+                          }}
+                        >
+                          <span style={{ display:"flex",alignItems:"center",gap:7 }}>
+                            <span>{cat.emoji}</span>
+                            <span>{cat.label}</span>
+                          </span>
+                          <span style={{ fontSize:10,color:"rgba(148,163,184,0.4)",fontWeight:600 }}>{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-2">
                 <span style={{ fontSize:11,color:"rgba(148,163,184,0.5)" }}>Radius:</span>
                 {[5,10,15,25].map(r => (
@@ -318,14 +410,22 @@ export default function PiClientsPage() {
           <div style={{ height:360 }}>
             <MapView onMapReady={handleMapReady} />
           </div>
-          {nearbyFacilities.length > 0 && (
-            <div style={{ padding:"12px 20px",borderTop:"1px solid rgba(34,197,94,0.1)",display:"flex",flexWrap:"wrap",gap:8 }}>
-              {nearbyFacilities.map((f: any) => (
-                <div key={f.id} style={{ display:"flex",alignItems:"center",gap:6,background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:999,padding:"4px 12px" }}>
-                  <span style={{ fontSize:11,color:"#22c55e",fontWeight:600 }}>{f.name}</span>
-                  {f.city && <span style={{ fontSize:10,color:"rgba(148,163,184,0.4)" }}>· {f.city}</span>}
-                </div>
-              ))}
+          {nearbyFacilitiesAll.length > 0 && (
+            <div style={{ padding:"12px 20px",borderTop:"1px solid rgba(34,197,94,0.1)",display:"flex",flexWrap:"wrap",gap:8,alignItems:"center" }}>
+              {nearbyFacilities.length === 0 && nearbyCategory !== "all" && (
+                <span style={{ fontSize:11,color:"rgba(148,163,184,0.4)",fontStyle:"italic" }}>No {activeCategoryLabel.toLowerCase()} partners in this radius.</span>
+              )}
+              {nearbyFacilities.map((f: any) => {
+                const pinColor = CATEGORY_PIN_COLOR[f.category] ?? "#94a3b8";
+                const catEntry = FACILITY_CATEGORIES.find(c => c.value === f.category);
+                return (
+                  <div key={f.id} style={{ display:"flex",alignItems:"center",gap:6,background:`${pinColor}12`,border:`1px solid ${pinColor}33`,borderRadius:999,padding:"4px 12px" }}>
+                    <span style={{ fontSize:11 }}>{catEntry?.emoji ?? "🏢"}</span>
+                    <span style={{ fontSize:11,color:pinColor,fontWeight:600 }}>{f.name}</span>
+                    {f.city && <span style={{ fontSize:10,color:"rgba(148,163,184,0.4)" }}>· {f.city}</span>}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
