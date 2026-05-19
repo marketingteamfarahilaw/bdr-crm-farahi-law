@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import SearchPage from "./pages/Search";
+import CaliforniaMapPage from "./pages/CaliforniaMap";
 import SavedLeadsPage from "./pages/SavedLeads";
 import SavedSearchesPage from "./pages/SavedSearches";
 import FacilitiesPage from "./pages/crm/Facilities";
@@ -14,6 +15,7 @@ import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
 import RingCentralSettingsPage from "./pages/crm/RingCentralSettings";
 import BdrReportsPage from "./pages/crm/BdrReports";
+import RingCentralCallback from "./pages/RingCentralCallback";
 import { RingCentralWidget } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
 import { trpc } from "./lib/trpc";
@@ -23,8 +25,11 @@ function Router() {
   return (
     <DashboardLayout>
       <Switch>
+        {/* Home: California Map Dashboard */}
+        <Route path="/" component={CaliforniaMapPage} />
+
         {/* Lead Scraper */}
-        <Route path="/" component={SearchPage} />
+        <Route path="/search" component={SearchPage} />
         <Route path="/saved-leads" component={SavedLeadsPage} />
         <Route path="/saved-searches" component={SavedSearchesPage} />
 
@@ -37,6 +42,7 @@ function Router() {
         <Route path="/crm/ringcentral" component={RingCentralSettingsPage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
 
+        <Route path="/ringcentral-callback" component={RingCentralCallback} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

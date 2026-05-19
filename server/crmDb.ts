@@ -99,6 +99,7 @@ export async function getAllFacilitiesForMap() {
   return db
     .select({
       id: facilities.id,
+      placeId: facilities.placeId,
       name: facilities.name,
       category: facilities.category,
       partnerStatus: facilities.partnerStatus,

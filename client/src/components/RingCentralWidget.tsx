@@ -67,12 +67,27 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
     retry: false,
   });
 
-  // Build the embeddable URL using 3-legged OAuth (clientId only — no secret in URL)
-  // The widget handles OAuth via the registered redirect URI automatically
+  // Build the embeddable URL.
+  // If all three JWT credentials are available, use JWT auto-login (no popup needed).
+  // Otherwise fall back to 3-legged OAuth with our custom redirect URI.
+  const redirectUri = `${window.location.origin}/ringcentral-callback`;
   const widgetUrl = widgetConfig?.clientId
-    ? `https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/app.html` +
-      `?clientId=${encodeURIComponent(widgetConfig.clientId)}` +
-      `&appServer=https://platform.ringcentral.com`
+    ? (() => {
+        const base = `https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/app.html`;
+        const params = new URLSearchParams({
+          clientId: widgetConfig.clientId,
+          appServer: "https://platform.ringcentral.com",
+        });
+        if (widgetConfig.clientSecret && widgetConfig.jwt) {
+          // JWT flow: auto-login without popup
+          params.set("clientSecret", widgetConfig.clientSecret);
+          params.set("jwt", widgetConfig.jwt);
+        } else {
+          // OAuth PKCE flow: user clicks Sign In
+          params.set("redirectUri", redirectUri);
+        }
+        return `${base}?${params.toString()}`;
+      })()
     : null;
 
   // Send a postMessage to the iframe
@@ -117,6 +132,16 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
           }
           break;
 
+        // Handle OAuth callback sent from our /ringcentral-callback page running inside the iframe
+        case "rc-oauth-callback-from-iframe":
+          if (data.callbackUri && iframeRef.current?.contentWindow) {
+            postToWidget({
+              type: "rc-adapter-authorization-code",
+              callbackUri: data.callbackUri,
+            });
+          }
+          break;
+
         case "rc-call-ring-notify":
         case "rc-call-start-notify":
           setActiveCalls((n) => n + 1);
@@ -149,6 +174,44 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [isConnected, onCallEnd, postToWidget]);
+
+  // Listen for OAuth callback stored in localStorage (tab-redirect flow when popup is blocked)
+  useEffect(() => {
+    const checkLocalStorageCallback = () => {
+      const stored = localStorage.getItem("rc_oauth_callback");
+      if (!stored) return;
+      try {
+        const data = JSON.parse(stored);
+        // Only process if recent (within 60 seconds)
+        if (Date.now() - data.timestamp > 60000) {
+          localStorage.removeItem("rc_oauth_callback");
+          return;
+        }
+        localStorage.removeItem("rc_oauth_callback");
+        // Send the callback URI to the widget so it can exchange the code
+        if (data.callbackUri && iframeRef.current?.contentWindow) {
+          postToWidget({
+            type: "rc-adapter-authorization-code",
+            callbackUri: data.callbackUri,
+          });
+        }
+      } catch {
+        localStorage.removeItem("rc_oauth_callback");
+      }
+    };
+
+    // Check immediately in case we just returned from a redirect
+    checkLocalStorageCallback();
+
+    // Also listen for storage events (in case another tab sets it)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "rc_oauth_callback") {
+        checkLocalStorageCallback();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [postToWidget]);
 
   return (
     <RingCentralContext.Provider value={{ triggerCall, isOpen, setIsOpen, isConnected }}>

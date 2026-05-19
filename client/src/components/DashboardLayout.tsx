@@ -21,14 +21,15 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3 } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const leadScraper = [
-  { icon: Search, label: "Lead Search", path: "/" },
+  { icon: Map, label: "CA Lead Map", path: "/" },
+  { icon: Search, label: "Lead Search", path: "/search" },
   { icon: Bookmark, label: "Saved Leads", path: "/saved-leads" },
   { icon: History, label: "Saved Searches", path: "/saved-searches" },
 ];
