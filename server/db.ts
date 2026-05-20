@@ -1,6 +1,6 @@
 import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings } from "../drizzle/schema";
+import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -246,4 +246,39 @@ export async function deleteSavedSearch(userId: number, id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(savedSearches).where(and(eq(savedSearches.userId, userId), eq(savedSearches.id, id)));
+}
+
+// ─── PI Client Call Logs ─────────────────────────────────────────────────────
+
+export async function createPiClientCallLog(data: InsertPiClientCallLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(piClientCallLogs).values(data);
+}
+
+export async function getPiClientCallLogs(piClientId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(piClientCallLogs)
+    .where(eq(piClientCallLogs.piClientId, piClientId))
+    .orderBy(desc(piClientCallLogs.createdAt));
+}
+
+/** Find a PI client whose phone number matches (strips non-digits for comparison) */
+export async function findPiClientByPhone(phone: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  // Normalise: keep digits only
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return undefined;
+  const all = await db.select().from(piClients);
+  return all.find((c) => c.phone && c.phone.replace(/\D/g, "") === digits);
+}
+
+export async function updatePiClientCallLogTranscript(id: number, transcript: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(piClientCallLogs).set({ transcript }).where(eq(piClientCallLogs.id, id));
 }

@@ -29,6 +29,9 @@ import {
   deletePiClient,
   getFilevineSettings,
   upsertFilevineSettings,
+  createPiClientCallLog,
+  getPiClientCallLogs,
+  findPiClientByPhone,
 } from "./db";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -326,6 +329,52 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await deletePiClient(input.id);
         return { success: true };
+      }),
+    logCall: protectedProcedure
+      .input(z.object({
+        piClientId: z.number(),
+        callId: z.string().optional(),
+        phoneNumber: z.string().optional(),
+        direction: z.string().optional(),
+        result: z.string().optional(),
+        duration: z.number().optional(),
+        durationStr: z.string().optional(),
+        startTime: z.string().optional(),
+        transcript: z.string().optional(),
+        agentName: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await createPiClientCallLog(input);
+        return { success: true };
+      }),
+    getCallLogs: protectedProcedure
+      .input(z.object({ piClientId: z.number() }))
+      .query(async ({ input }) => {
+        return getPiClientCallLogs(input.piClientId);
+      }),
+    findByPhone: protectedProcedure
+      .input(z.object({ phone: z.string() }))
+      .query(async ({ input }) => {
+        return findPiClientByPhone(input.phone) ?? null;
+      }),
+    logCallByPhone: protectedProcedure
+      .input(z.object({
+        phone: z.string(),
+        callId: z.string().optional(),
+        direction: z.string().optional(),
+        result: z.string().optional(),
+        duration: z.number().optional(),
+        durationStr: z.string().optional(),
+        startTime: z.string().optional(),
+        transcript: z.string().optional(),
+        agentName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const client = await findPiClientByPhone(input.phone);
+        if (!client) return { success: false as const, reason: 'no_match', piClientId: null, clientName: null };
+        await createPiClientCallLog({ ...input, piClientId: client.id, phoneNumber: input.phone });
+        return { success: true as const, piClientId: client.id, clientName: (client.firstName ?? '') + ' ' + (client.lastName ?? '') };
       }),
   }),
 

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { MapView } from "@/components/Map";
+import { ClickToCallButton } from "@/components/RingCentralWidget";
 import {
   Users,
   Plus,
@@ -20,6 +21,10 @@ import {
   Navigation,
   Search,
   Filter,
+  Clock,
+  PhoneCall,
+  PhoneIncoming,
+  PhoneOutgoing,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -107,6 +112,13 @@ export default function PiClientsPage() {
   const [nearbyRadius, setNearbyRadius] = useState(10);
   const [nearbyCategory, setNearbyCategory] = useState<string>("all");
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [callLogClientId, setCallLogClientId] = useState<number | null>(null);
+
+  // Fetch call logs for the currently-expanded client
+  const { data: callLogs = [] } = trpc.piClients.getCallLogs.useQuery(
+    { piClientId: expandedId ?? 0 },
+    { enabled: expandedId !== null }
+  );
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
@@ -578,13 +590,70 @@ export default function PiClientsPage() {
                 {isExpanded && (
                   <div style={{ padding:"14px 18px 18px" }}>
                     <div className="grid grid-cols-2 gap-3 mb-4">
-                      {client.phone && <div style={{ fontSize:12,color:"#60a5fa" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>PHONE</span><a href={`tel:${client.phone}`} style={{ textDecoration:"none",color:"#60a5fa",fontWeight:600 }}>{client.phone}</a></div>}
+                      {client.phone && (
+                        <div style={{ fontSize:12,color:"#60a5fa" }}>
+                          <span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>PHONE</span>
+                          <ClickToCallButton
+                            phoneNumber={client.phone}
+                            className="text-[#60a5fa] hover:text-[#93c5fd] font-semibold text-xs"
+                          />
+                        </div>
+                      )}
                       {client.email && <div style={{ fontSize:12,color:"#D4AF37" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>EMAIL</span><a href={`mailto:${client.email}`} style={{ textDecoration:"none",color:"#D4AF37",fontWeight:600 }}>{client.email}</a></div>}
                       {client.address && <div className="col-span-2" style={{ fontSize:12,color:"rgba(148,163,184,0.7)" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>ADDRESS</span>{client.address}{client.city ? `, ${client.city}` : ""}{client.zipCode ? ` ${client.zipCode}` : ""}</div>}
                       {client.incidentDate && <div style={{ fontSize:12,color:"rgba(148,163,184,0.7)" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>INCIDENT DATE</span>{new Date(client.incidentDate).toLocaleDateString()}</div>}
                       {client.assignedAgentName && <div style={{ fontSize:12,color:"rgba(148,163,184,0.7)" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>ASSIGNED AGENT</span>{client.assignedAgentName}</div>}
                     </div>
                     {client.notes && <div style={{ background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:8,padding:"8px 12px",marginBottom:14,fontSize:12,color:"rgba(148,163,184,0.65)",lineHeight:1.6 }}>{client.notes}</div>}
+
+                    {/* ── Call Log History ── */}
+                    {isExpanded && (
+                      <div style={{ marginTop:14,borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:14 }}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <PhoneCall size={13} color="#60a5fa" />
+                            <span style={{ fontSize:12,fontWeight:700,color:"rgba(148,163,184,0.8)",letterSpacing:"0.06em",textTransform:"uppercase" }}>Call History</span>
+                            {callLogs.filter((l:any) => l.piClientId === client.id).length > 0 && (
+                              <span style={{ fontSize:10,background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.25)",color:"#60a5fa",borderRadius:999,padding:"1px 7px",fontWeight:700 }}>
+                                {callLogs.filter((l:any) => l.piClientId === client.id).length}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {callLogs.filter((l:any) => l.piClientId === client.id).length === 0 ? (
+                          <div style={{ textAlign:"center",padding:"16px 0",color:"rgba(148,163,184,0.3)",fontSize:11 }}>
+                            No calls logged yet. Click the phone number above to dial via RingCentral.
+                          </div>
+                        ) : (
+                          <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+                            {callLogs.filter((l:any) => l.piClientId === client.id).map((log:any) => (
+                              <div key={log.id} style={{ background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:8,padding:"10px 14px" }}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    {log.direction === "Inbound"
+                                      ? <PhoneIncoming size={11} color="#22c55e" />
+                                      : <PhoneOutgoing size={11} color="#60a5fa" />}
+                                    <span style={{ fontSize:11,fontWeight:600,color:log.direction==="Inbound"?"#22c55e":"#60a5fa" }}>{log.direction ?? "Call"}</span>
+                                    {log.result && <span style={{ fontSize:10,color:"rgba(148,163,184,0.4)" }}>· {log.result}</span>}
+                                    {log.durationStr && <span style={{ fontSize:10,color:"rgba(148,163,184,0.4)" }}>· {log.durationStr}</span>}
+                                  </div>
+                                  <span style={{ fontSize:10,color:"rgba(148,163,184,0.35)" }}>
+                                    {log.startTime ? new Date(log.startTime).toLocaleString() : new Date(log.createdAt).toLocaleString()}
+                                  </span>
+                                </div>
+                                {log.transcript && (
+                                  <div style={{ marginTop:6,background:"rgba(96,165,250,0.05)",border:"1px solid rgba(96,165,250,0.12)",borderRadius:6,padding:"7px 10px",fontSize:11,color:"rgba(148,163,184,0.7)",lineHeight:1.6,maxHeight:120,overflowY:"auto" }}>
+                                    <span style={{ fontSize:9,fontWeight:700,color:"#60a5fa",letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:4 }}>Transcript</span>
+                                    {log.transcript}
+                                  </div>
+                                )}
+                                {log.agentName && <div style={{ marginTop:4,fontSize:10,color:"rgba(148,163,184,0.35)" }}>Agent: {log.agentName}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <button onClick={() => handleEdit(client)} style={{ display:"flex",alignItems:"center",gap:5,padding:"7px 14px",background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.25)",borderRadius:7,color:"#60a5fa",fontSize:12,fontWeight:600,cursor:"pointer" }}><Edit2 size={11} />Edit</button>
                       {deleteConfirmId === client.id ? (

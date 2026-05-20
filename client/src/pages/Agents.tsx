@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { ClickToCallButton } from "@/components/RingCentralWidget";
 import {
   Users,
   Plus,
@@ -608,7 +609,7 @@ export default function AgentsPage() {
                           </div>
                           <div>
                             <div style={{ fontSize: 9, color: "rgba(148,163,184,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 1 }}>Phone</div>
-                            <a href={`tel:${agent.phone}`} style={{ fontSize: 12, color: "#60a5fa", fontWeight: 600, textDecoration: "none" }}>{agent.phone}</a>
+                            <ClickToCallButton phoneNumber={agent.phone} className="text-[#60a5fa] hover:text-[#93c5fd] font-semibold text-xs" />
                           </div>
                         </div>
                       )}

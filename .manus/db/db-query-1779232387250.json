@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `pi_client_call_logs` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`piClientId` int NOT NULL,\n\t`callId` varchar(255),\n\t`phoneNumber` varchar(50),\n\t`direction` varchar(20),\n\t`result` varchar(50),\n\t`duration` int,\n\t`durationStr` varchar(20),\n\t`startTime` varchar(100),\n\t`transcript` text,\n\t`agentName` varchar(255),\n\t`notes` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `pi_client_call_logs_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute CREATE TABLE `pi_client_call_logs` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`piClientId` int NOT NULL,\n\t`callId` varchar(255),\n\t`phoneNumber` varchar(50),\n\t`direction` varchar(20),\n\t`result` varchar(50),\n\t`duration` int,\n\t`durationStr` varchar(20),\n\t`startTime` varchar(100),\n\t`transcript` text,\n\t`agentName` varchar(255),\n\t`notes` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `pi_client_call_logs_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 415
+}

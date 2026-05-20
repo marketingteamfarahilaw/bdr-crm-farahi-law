@@ -149,6 +149,31 @@ export const filevineSettings = mysqlTable("filevine_settings", {
 export type FilevineSettings = typeof filevineSettings.$inferSelect;
 export type InsertFilevineSettings = typeof filevineSettings.$inferInsert;
 
+/**
+ * Call logs for PI clients — auto-created when a RingCentral call ends
+ * and the phone number matches a PI client record.
+ */
+export const piClientCallLogs = mysqlTable("pi_client_call_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  piClientId: int("piClientId").notNull(),
+  // RingCentral call metadata
+  callId: varchar("callId", { length: 255 }),
+  phoneNumber: varchar("phoneNumber", { length: 50 }),
+  direction: varchar("direction", { length: 20 }), // 'Inbound' | 'Outbound'
+  result: varchar("result", { length: 50 }),        // 'Call connected' | 'No Answer' etc.
+  duration: int("duration"),                        // seconds
+  durationStr: varchar("durationStr", { length: 20 }),
+  startTime: varchar("startTime", { length: 100 }),
+  // Transcript (from Whisper via RingCentral recording)
+  transcript: text("transcript"),
+  // Who made the call
+  agentName: varchar("agentName", { length: 255 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PiClientCallLog = typeof piClientCallLogs.$inferSelect;
+export type InsertPiClientCallLog = typeof piClientCallLogs.$inferInsert;
+
 // ─── Facility Partner CRM ────────────────────────────────────────────────────
 
 /** V3 partner status options (from brief section 11) */

@@ -271,3 +271,15 @@
 - [x] Add filevine.getSettings / saveSettings / disconnect tRPC procedures
 - [x] Build /filevine settings page with connect/disconnect UI and credential storage
 - [x] API credentials stored server-side only (never exposed to frontend)
+
+## RingCentral Click-to-Call for PI Clients (May 2026)
+- [x] pi_client_call_logs table created (callId, phoneNumber, direction, result, duration, durationStr, startTime, transcript, agentName, notes)
+- [x] piClients.logCall tRPC procedure (log by piClientId)
+- [x] piClients.getCallLogs tRPC procedure (list logs for a client)
+- [x] piClients.findByPhone tRPC procedure (phone number lookup)
+- [x] piClients.logCallByPhone tRPC procedure (auto-match phone → client and log)
+- [x] Global onCallEnd handler in App.tsx auto-logs to pi_client_call_logs by phone match
+- [x] Toast notification: "Call logged for [Client Name]" on successful auto-log
+- [x] ClickToCallButton on PI Clients page phone numbers (triggers RingCentral widget)
+- [x] Call History panel inside each expanded PI client card (direction, result, duration, transcript, timestamp)
+- [x] ClickToCallButton on Agents page phone numbers
