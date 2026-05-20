@@ -6,6 +6,9 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { searchGooglePlaces } from "./googleMaps";
 import { calculateScore } from "./scoring";
 import { crmRouter } from "./crmRouter";
+import axios from "axios";
+import { transcribeAudio } from "./_core/voiceTranscription";
+import { getRingcentralToken } from "./crmDb";
 import {
   getSavedLeads,
   getSavedLeadByPlaceId,
@@ -375,6 +378,99 @@ export const appRouter = router({
         if (!client) return { success: false as const, reason: 'no_match', piClientId: null, clientName: null };
         await createPiClientCallLog({ ...input, piClientId: client.id, phoneNumber: input.phone });
         return { success: true as const, piClientId: client.id, clientName: (client.firstName ?? '') + ' ' + (client.lastName ?? '') };
+      }),
+
+    /**
+     * transcribeAndLog — called after a RingCentral call ends.
+     * 1. Looks up the PI client by phone number.
+     * 2. Fetches the call recording from RingCentral (via callId).
+     * 3. Transcribes the recording with Whisper.
+     * 4. Saves the full call log + transcript to pi_client_call_logs.
+     */
+    transcribeAndLog: protectedProcedure
+      .input(z.object({
+        phone: z.string(),
+        callId: z.string().optional(),
+        direction: z.string().optional(),
+        result: z.string().optional(),
+        duration: z.number().optional(),
+        durationStr: z.string().optional(),
+        startTime: z.string().optional(),
+        agentName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const RC_BASE = "https://platform.ringcentral.com";
+
+        // 1. Match PI client by phone
+        const client = await findPiClientByPhone(input.phone);
+        const clientName = client ? ((client.firstName ?? '') + ' ' + (client.lastName ?? '')).trim() : null;
+
+        // 2. Get a valid RingCentral access token (reuse existing stored token)
+        let accessToken: string | null = null;
+        try {
+          const stored = await getRingcentralToken();
+          if (stored) {
+            const now = Date.now();
+            if (stored.tokenExpiry.getTime() - now < 5 * 60 * 1000) {
+              // Refresh token
+              const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
+              const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
+              const resp = await axios.post(
+                `${RC_BASE}/restapi/oauth/token`,
+                new URLSearchParams({ grant_type: "refresh_token", refresh_token: stored.refreshToken }),
+                { auth: { username: clientId, password: clientSecret }, headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+              );
+              accessToken = resp.data.access_token;
+            } else {
+              accessToken = stored.accessToken;
+            }
+          }
+        } catch { /* no token stored — proceed without transcription */ }
+
+        // 3. Fetch recording URL from RingCentral call-log
+        let transcriptText = "";
+        if (accessToken && input.callId) {
+          try {
+            const callResp = await axios.get(
+              `${RC_BASE}/restapi/v1.0/account/~/call-log/${input.callId}`,
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+            const recordingUrl: string | null = callResp.data?.recording?.contentUri ?? null;
+            if (recordingUrl) {
+              // 4. Transcribe the recording
+              const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
+              const result = await transcribeAudio({ audioUrl: authedUrl });
+              if (!('error' in result)) {
+                transcriptText = result.text ?? "";
+              }
+            }
+          } catch { /* recording not yet available — save log without transcript */ }
+        }
+
+        // 5. Save call log (with or without transcript)
+        const logData = {
+          phone: input.phone,
+          callId: input.callId,
+          direction: input.direction,
+          result: input.result,
+          duration: input.duration,
+          durationStr: input.durationStr,
+          startTime: input.startTime,
+          transcript: transcriptText || undefined,
+          agentName: input.agentName ?? ctx.user.name ?? ctx.user.email ?? undefined,
+        };
+
+        if (client) {
+          await createPiClientCallLog({ ...logData, piClientId: client.id, phoneNumber: input.phone });
+        }
+
+        return {
+          success: true as const,
+          piClientId: client?.id ?? null,
+          clientName,
+          hasTranscript: !!transcriptText,
+          transcriptText: transcriptText || null,
+        };
       }),
   }),
 
