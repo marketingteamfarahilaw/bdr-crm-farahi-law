@@ -19,7 +19,7 @@ import AgentsPage from "./pages/Agents";
 import PiClientsPage from "./pages/PiClients";
 import FilevineSettingsPage from "./pages/FilevineSettings";
 import RingCentralCallback from "./pages/RingCentralCallback";
-import { RingCentralWidget } from "./components/RingCentralWidget";
+import { RingCentralProvider } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
 import { trpc } from "./lib/trpc";
 import { toast } from "sonner";
@@ -149,10 +149,9 @@ function AppWithPhone() {
   };
 
   return (
-    <>
+    <RingCentralProvider onCallEnd={handleCallEnd}>
       <Router />
-      <RingCentralWidget onCallEnd={handleCallEnd} />
-    </>
+    </RingCentralProvider>
   );
 }
 

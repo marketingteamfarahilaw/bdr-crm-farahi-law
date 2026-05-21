@@ -10,6 +10,9 @@
  *  - Click-to-call via postMessage (use `triggerCall(phoneNumber)`)
  *  - Call-end event listener that fires `onCallEnd` with call metadata
  *  - Minimise / restore toggle
+ *
+ * IMPORTANT: Wrap the entire app with <RingCentralProvider onCallEnd={...}>
+ * so that ClickToCallButton works from any page in the tree.
  */
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -17,7 +20,7 @@ import { Phone, PhoneOff, Minimize2, Maximize2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 
-// ─── Context ────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface CallEndData {
   callId?: string;
@@ -36,6 +39,8 @@ interface RingCentralContextValue {
   isConnected: boolean;
 }
 
+// ─── Context ─────────────────────────────────────────────────────────────────
+
 const RingCentralContext = createContext<RingCentralContextValue>({
   triggerCall: () => {},
   isOpen: false,
@@ -47,13 +52,14 @@ export function useRingCentral() {
   return useContext(RingCentralContext);
 }
 
-// ─── Provider + Widget ───────────────────────────────────────────────────────
+// ─── Provider (wraps entire app) ─────────────────────────────────────────────
 
-interface RingCentralWidgetProps {
+interface RingCentralProviderProps {
   onCallEnd?: (data: CallEndData) => void;
+  children: React.ReactNode;
 }
 
-export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
+export function RingCentralProvider({ onCallEnd, children }: RingCentralProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimised, setIsMinimised] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -68,8 +74,6 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
   });
 
   // Build the embeddable URL.
-  // If all three JWT credentials are available, use JWT auto-login (no popup needed).
-  // Otherwise fall back to 3-legged OAuth with our custom redirect URI.
   const redirectUri = `${window.location.origin}/ringcentral-callback`;
   const widgetUrl = widgetConfig?.clientId
     ? (() => {
@@ -79,11 +83,9 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
           appServer: "https://platform.ringcentral.com",
         });
         if (widgetConfig.clientSecret && widgetConfig.jwt) {
-          // JWT flow: auto-login without popup
           params.set("clientSecret", widgetConfig.clientSecret);
           params.set("jwt", widgetConfig.jwt);
         } else {
-          // OAuth PKCE flow: user clicks Sign In
           params.set("redirectUri", redirectUri);
         }
         return `${base}?${params.toString()}`;
@@ -95,13 +97,14 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
     iframeRef.current?.contentWindow?.postMessage(payload, "*");
   }, []);
 
-  // Trigger a call — if widget not open, open it first then dial
+  // Trigger a call — opens the widget and dials
   const triggerCall = useCallback((phoneNumber: string) => {
     setIsOpen(true);
     setIsMinimised(false);
     if (isConnected) {
       postToWidget({ type: "rc-adapter-new-call", phoneNumber, toCall: true });
     } else {
+      // Store the number; dial it once the widget reports it is logged in
       pendingCallRef.current = phoneNumber;
     }
   }, [isConnected, postToWidget]);
@@ -132,7 +135,6 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
           }
           break;
 
-        // Handle OAuth callback sent from our /ringcentral-callback page running inside the iframe
         case "rc-oauth-callback-from-iframe":
           if (data.callbackUri && iframeRef.current?.contentWindow) {
             postToWidget({
@@ -175,20 +177,18 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
     return () => window.removeEventListener("message", handleMessage);
   }, [isConnected, onCallEnd, postToWidget]);
 
-  // Listen for OAuth callback stored in localStorage (tab-redirect flow when popup is blocked)
+  // Listen for OAuth callback stored in localStorage
   useEffect(() => {
     const checkLocalStorageCallback = () => {
       const stored = localStorage.getItem("rc_oauth_callback");
       if (!stored) return;
       try {
         const data = JSON.parse(stored);
-        // Only process if recent (within 60 seconds)
         if (Date.now() - data.timestamp > 60000) {
           localStorage.removeItem("rc_oauth_callback");
           return;
         }
         localStorage.removeItem("rc_oauth_callback");
-        // Send the callback URI to the widget so it can exchange the code
         if (data.callbackUri && iframeRef.current?.contentWindow) {
           postToWidget({
             type: "rc-adapter-authorization-code",
@@ -200,10 +200,8 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
       }
     };
 
-    // Check immediately in case we just returned from a redirect
     checkLocalStorageCallback();
 
-    // Also listen for storage events (in case another tab sets it)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "rc_oauth_callback") {
         checkLocalStorageCallback();
@@ -215,7 +213,10 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
 
   return (
     <RingCentralContext.Provider value={{ triggerCall, isOpen, setIsOpen, isConnected }}>
-      {/* Floating toggle button */}
+      {/* Render children (the rest of the app) */}
+      {children}
+
+      {/* Floating "Open Phone" toggle button */}
       <button
         onClick={() => {
           setIsOpen((prev) => !prev);
@@ -314,6 +315,10 @@ export function RingCentralWidget({ onCallEnd }: RingCentralWidgetProps) {
     </RingCentralContext.Provider>
   );
 }
+
+// ─── Legacy named export (kept for backward compatibility) ───────────────────
+// Some pages import { RingCentralWidget } — keep it as an alias.
+export const RingCentralWidget = RingCentralProvider;
 
 // ─── Click-to-Call Button ────────────────────────────────────────────────────
 
