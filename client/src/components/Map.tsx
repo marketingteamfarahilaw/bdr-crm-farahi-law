@@ -76,7 +76,7 @@
 
 /// <reference types="@types/google.maps" />
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { usePersistFn } from "@/hooks/usePersistFn";
 import { cn } from "@/lib/utils";
 
@@ -95,20 +95,36 @@ const MAPS_PROXY_URL = DIRECT_API_KEY
   ? "https://maps.googleapis.com"
   : "/api/maps-proxy";
 
-function loadMapScript(): Promise<void> {
+function loadMapScript(): Promise<{ ok: boolean; error?: string }> {
   // Already fully initialized
-  if ((window as any)._mapsReady && window.google?.maps?.places) {
-    return Promise.resolve();
+  if ((window as any)._mapsReady && window.google?.maps?.Map) {
+    return Promise.resolve({ ok: true });
   }
 
   // Already loading — return the existing promise
   if ((window as any)._mapsScriptLoading) return (window as any)._mapsScriptLoading;
 
-  (window as any)._mapsScriptLoading = new Promise<void>((resolve) => {
+  (window as any)._mapsScriptLoading = new Promise<{ ok: boolean; error?: string }>((resolve) => {
+    // Detect ApiNotActivatedMapError from Google's own error reporting
+    const origConsoleError = console.error;
+    const errorListener = (...args: any[]) => {
+      const msg = args.join(" ");
+      if (msg.includes("ApiNotActivatedMapError") || msg.includes("api-not-activated")) {
+        (window as any)._mapsLoadError = "Maps JavaScript API is not enabled for this key. Please enable it in Google Cloud Console.";
+      }
+      origConsoleError(...args);
+    };
+    console.error = errorListener;
+
     // Set up the callback that Google Maps will call when fully ready
     (window as any).initGoogleMapsCallback = () => {
-      (window as any)._mapsReady = true;
-      resolve();
+      console.error = origConsoleError;
+      if ((window as any)._mapsLoadError) {
+        resolve({ ok: false, error: (window as any)._mapsLoadError });
+      } else {
+        (window as any)._mapsReady = true;
+        resolve({ ok: true });
+      }
     };
 
     const script = document.createElement("script");
@@ -117,9 +133,22 @@ function loadMapScript(): Promise<void> {
     script.defer = true;
     script.crossOrigin = "anonymous";
     script.onerror = () => {
-      console.error("Failed to load Google Maps script");
-      resolve(); // resolve anyway to avoid hanging
+      console.error = origConsoleError;
+      resolve({ ok: false, error: "Failed to load Google Maps script. Check your API key and network connection." });
     };
+
+    // Timeout fallback — if callback never fires, check for error
+    setTimeout(() => {
+      if (!(window as any)._mapsReady) {
+        console.error = origConsoleError;
+        resolve({
+          ok: false,
+          error: (window as any)._mapsLoadError ||
+            "Google Maps failed to initialize. The Maps JavaScript API may not be enabled for this key.",
+        });
+      }
+    }, 8000);
+
     document.head.appendChild(script);
   });
 
@@ -141,30 +170,55 @@ export function MapView({
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<google.maps.Map | null>(null);
+  const [mapError, setMapError] = React.useState<string | null>(null);
 
   const init = usePersistFn(async () => {
-    await loadMapScript();
-    if (!mapContainer.current) {
-      console.error("Map container not found");
+    const result = await loadMapScript();
+    if (!result.ok) {
+      setMapError(result.error ?? "Google Maps failed to load.");
       return;
     }
-    map.current = new window.google.maps.Map(mapContainer.current, {
-      zoom: initialZoom,
-      center: initialCenter,
-      mapTypeControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
-      streetViewControl: true,
-      mapId: "DEMO_MAP_ID",
-    });
-    if (onMapReady) {
-      onMapReady(map.current);
+    if (!mapContainer.current) {
+      setMapError("Map container not found.");
+      return;
+    }
+    // Guard: make sure the Maps API actually loaded
+    if (!window.google?.maps?.Map) {
+      setMapError("Google Maps API is not available. The Maps JavaScript API may not be enabled for this key.");
+      return;
+    }
+    try {
+      map.current = new window.google.maps.Map(mapContainer.current, {
+        zoom: initialZoom,
+        center: initialCenter,
+        mapTypeControl: true,
+        fullscreenControl: true,
+        zoomControl: true,
+        streetViewControl: true,
+        mapId: "DEMO_MAP_ID",
+      });
+      if (onMapReady) {
+        onMapReady(map.current);
+      }
+    } catch (err: any) {
+      setMapError(err?.message ?? "Failed to initialize Google Maps.");
     }
   });
 
   useEffect(() => {
     init();
   }, [init]);
+
+  if (mapError) {
+    return (
+      <div className={cn("w-full h-[500px] flex flex-col items-center justify-center bg-slate-900/60 rounded-lg border border-slate-700 text-center px-6", className)}>
+        <div className="text-4xl mb-3">🗺️</div>
+        <p className="text-slate-300 font-semibold text-base mb-1">Map unavailable</p>
+        <p className="text-slate-500 text-sm max-w-sm">{mapError}</p>
+        <p className="text-slate-600 text-xs mt-3">Enable the <strong className="text-slate-400">Maps JavaScript API</strong> in Google Cloud Console for your API key, then reload the page.</p>
+      </div>
+    );
+  }
 
   return (
     <div ref={mapContainer} className={cn("w-full h-[500px]", className)} />
