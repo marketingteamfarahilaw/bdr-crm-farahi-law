@@ -86,11 +86,14 @@ declare global {
   }
 }
 
-const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FORGE_BASE_URL =
-  import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
-  "https://forge.butterfly-effect.dev";
-const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
+// Load Google Maps directly from the CDN using the VITE_GOOGLE_MAPS_API_KEY.
+// Falls back to the server-side proxy if the direct key is not set.
+const DIRECT_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const PROXY_API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
+const API_KEY = DIRECT_API_KEY || PROXY_API_KEY;
+const MAPS_PROXY_URL = DIRECT_API_KEY
+  ? "https://maps.googleapis.com"
+  : "/api/maps-proxy";
 
 function loadMapScript(): Promise<void> {
   // Already fully initialized
