@@ -25,6 +25,8 @@ export interface PlaceLead {
   types: string[];
   businessStatus: string | null;
   photoReference: string | null;
+  /** Concatenated text from reviews + editorial summary — used for lien signal detection */
+  lienTexts: string[];
 }
 
 /** Haversine distance in miles between two lat/lng points */
@@ -88,6 +90,9 @@ const PLACE_FIELDS = [
   "places.businessStatus",
   "places.types",
   "places.photos",
+  "places.reviews",
+  "places.editorialSummary",
+  "places.generativeSummary",
 ].join(",");
 
 /** Search Google Maps using Places API (New) Text Search */
@@ -166,6 +171,21 @@ export async function searchGooglePlaces(params: {
       const displayName = p.displayName as { text?: string } | undefined;
       const photos = p.photos as Array<{ name?: string }> | undefined;
 
+      // Extract text for lien signal detection
+      const reviews = p.reviews as Array<{ text?: { text?: string }; originalText?: { text?: string } }> | undefined;
+      const reviewTexts: string[] = (reviews ?? []).map(
+        (r) => r.text?.text ?? r.originalText?.text ?? ""
+      ).filter(Boolean);
+      const editorialSummary = p.editorialSummary as { text?: string } | undefined;
+      const generativeSummary = p.generativeSummary as { overview?: { text?: string } } | undefined;
+      const lienTexts: string[] = [
+        displayName?.text ?? "",
+        (p.websiteUri as string) ?? "",
+        editorialSummary?.text ?? "",
+        generativeSummary?.overview?.text ?? "",
+        ...reviewTexts,
+      ].filter(Boolean);
+
       results.push({
         placeId: (p.id as string) ?? "",
         name: displayName?.text ?? (p.formattedAddress as string) ?? "",
@@ -182,6 +202,7 @@ export async function searchGooglePlaces(params: {
         types: (p.types as string[]) ?? [],
         businessStatus: (p.businessStatus as string | null) ?? null,
         photoReference: photos?.[0]?.name ?? null,
+        lienTexts,
       });
     }
 

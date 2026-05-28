@@ -63,6 +63,8 @@ export const savedLeads = mysqlTable("saved_leads", {
   scoreTier: mysqlEnum("scoreTier", ["hot", "warm", "cold"]),
   scoreBreakdown: json("scoreBreakdown"),
   annotation: text("annotation"),
+  lienFriendly: boolean("lienFriendly").default(false),
+  lienSignals: text("lienSignals"),  // JSON-serialized string[] of detected lien keyword signals
   assignedAgent: varchar("assignedAgent", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

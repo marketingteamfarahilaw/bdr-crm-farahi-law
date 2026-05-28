@@ -84,8 +84,17 @@ export default function SavedLeadsPage() {
       scoreTier: (sl.scoreTier as "hot" | "warm" | "cold") ?? "cold",
       scoreBreakdown: (sl.scoreBreakdown as ScoreBreakdown) ?? {
         ratingScore: 0, reviewScore: 0, proximityScore: 0, categoryScore: 0,
-        total: sl.qualificationScore ?? 0, tier: (sl.scoreTier as "hot" | "warm" | "cold") ?? "cold",
+        lienScore: 0, total: sl.qualificationScore ?? 0,
+        tier: (sl.scoreTier as "hot" | "warm" | "cold") ?? "cold",
+        lienFriendly: false, lienSignals: [],
       },
+      lienFriendly: (sl as unknown as { lienFriendly?: boolean }).lienFriendly ?? false,
+      lienSignals: (() => {
+        const raw = (sl as unknown as { lienSignals?: string }).lienSignals;
+        if (!raw) return [];
+        try { return JSON.parse(raw) as string[]; } catch { return []; }
+      })(),
+      lienTexts: [],
     };
     setSelectedLead(lead);
     setDetailOpen(true);
@@ -155,6 +164,9 @@ export default function SavedLeadsPage() {
                       <span className="font-semibold text-sm text-foreground">{lead.name}</span>
                       {lead.scoreTier && lead.qualificationScore != null && (
                         <ScoreBadge score={lead.qualificationScore} tier={lead.scoreTier as "hot" | "warm" | "cold"} size="sm" />
+                      )}
+                      {(lead as unknown as { lienFriendly?: boolean }).lienFriendly && (
+                        <Badge className="text-xs bg-emerald-500/15 text-emerald-600 border-emerald-500/30 border">No Insurance</Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-1 mt-0.5">

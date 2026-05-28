@@ -3,8 +3,11 @@ export interface ScoreBreakdown {
   reviewScore: number;
   proximityScore: number;
   categoryScore: number;
+  lienScore: number;
   total: number;
   tier: "hot" | "warm" | "cold";
+  lienFriendly: boolean;
+  lienSignals: string[];
 }
 
 export interface Lead {
@@ -27,6 +30,9 @@ export interface Lead {
   qualificationScore: number;
   scoreTier: "hot" | "warm" | "cold";
   scoreBreakdown: ScoreBreakdown;
+  lienFriendly: boolean;
+  lienSignals: string[];
+  lienTexts: string[];
 }
 
 export const CATEGORIES = [

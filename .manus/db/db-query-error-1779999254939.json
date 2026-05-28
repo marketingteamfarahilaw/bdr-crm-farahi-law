@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  id, name, category, address, phone, website, email,\n  rating, review_count, qualification_score, score_tier,\n  latitude, longitude, place_id, source, notes,\n  created_at, updated_at\nFROM saved_leads\nORDER BY score_tier ASC, qualification_score DESC, category ASC, name ASC\nLIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute \nSELECT \n  id, name, category, address, phone, website, email,\n  rating, review_count, qualification_score, score_tier,\n  latitude, longitude, place_id, source, notes,\n  created_at, updated_at\nFROM saved_leads\nORDER BY score_tier ASC, qualification_score DESC, category ASC, name ASC\nLIMIT 5;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'review_count' in 'field list'"
+  ]
+}

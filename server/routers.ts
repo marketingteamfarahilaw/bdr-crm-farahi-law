@@ -89,6 +89,7 @@ export const appRouter = router({
             reviewCount: place.reviewCount,
             distanceMiles: place.distanceMiles,
             category: place.category,
+            lienTexts: place.lienTexts,
           });
           return {
             ...place,
@@ -96,6 +97,8 @@ export const appRouter = router({
             qualificationScore: breakdown.total,
             scoreTier: breakdown.tier,
             scoreBreakdown: breakdown,
+            lienFriendly: breakdown.lienFriendly,
+            lienSignals: breakdown.lienSignals,
           };
         });
         leads.sort((a, b) => b.qualificationScore - a.qualificationScore);
@@ -127,6 +130,8 @@ export const appRouter = router({
           scoreTier: z.enum(["hot", "warm", "cold"]).nullable(),
           scoreBreakdown: z.any().nullable(),
           annotation: z.string().optional(),
+          lienFriendly: z.boolean().optional(),
+          lienSignals: z.array(z.string()).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -150,6 +155,8 @@ export const appRouter = router({
           scoreTier: input.scoreTier ?? undefined,
           scoreBreakdown: input.scoreBreakdown ?? undefined,
           annotation: input.annotation ?? undefined,
+          lienFriendly: input.lienFriendly ?? false,
+          lienSignals: input.lienSignals ? JSON.stringify(input.lienSignals) : undefined,
         });
         return { saved: true, alreadyExisted: false };
       }),

@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  sl.id,\n  sl.name,\n  sl.category,\n  sl.address,\n  sl.phone,\n  sl.website,\n  sl.email,\n  sl.rating,\n  sl.review_count,\n  sl.qualification_score,\n  sl.score_tier,\n  sl.latitude,\n  sl.longitude,\n  sl.place_id,\n  sl.source,\n  sl.notes,\n  sl.created_at,\n  sl.updated_at,\n  u.name as saved_by\nFROM saved_leads sl\nLEFT JOIN users u ON sl.user_id = u.id\nORDER BY sl.score_tier ASC, sl.qualification_score DESC, sl.category ASC, sl.name ASC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute \nSELECT \n  sl.id,\n  sl.name,\n  sl.category,\n  sl.address,\n  sl.phone,\n  sl.website,\n  sl.email,\n  sl.rating,\n  sl.review_count,\n  sl.qualification_score,\n  sl.score_tier,\n  sl.latitude,\n  sl.longitude,\n  sl.place_id,\n  sl.source,\n  sl.notes,\n  sl.created_at,\n  sl.updated_at,\n  u.name as saved_by\nFROM saved_leads sl\nLEFT JOIN users u ON sl.user_id = u.id\nORDER BY sl.score_tier ASC, sl.qualification_score DESC, sl.category ASC, sl.name ASC;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'sl.user_id' in 'on clause'"
+  ]
+}

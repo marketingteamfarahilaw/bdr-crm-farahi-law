@@ -92,6 +92,7 @@ export default function SearchPage() {
   const [sortKey, setSortKey] = useState<SortKey>("qualificationScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [lienOnly, setLienOnly] = useState(false);
   const [nameFilter, setNameFilter] = useState("");
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -159,6 +160,7 @@ export default function SearchPage() {
     if (!leads) return [];
     let result = [...leads] as Lead[];
     if (tierFilter !== "all") result = result.filter((l) => l.scoreTier === tierFilter);
+    if (lienOnly) result = result.filter((l) => l.lienFriendly);
     if (nameFilter.trim()) {
       const q = nameFilter.toLowerCase();
       result = result.filter(
@@ -174,7 +176,7 @@ export default function SearchPage() {
       return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
     });
     return result;
-  }, [leads, tierFilter, nameFilter, sortKey, sortDir]);
+  }, [leads, tierFilter, lienOnly, nameFilter, sortKey, sortDir]);
 
   const handleExportCSV = () => {
     if (!filteredLeads.length) return;
@@ -312,6 +314,19 @@ export default function SearchPage() {
                 onChange={(e) => setNameFilter(e.target.value)}
                 className="h-8 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground max-w-xs"
               />
+              <button
+                type="button"
+                onClick={() => setLienOnly((v) => !v)}
+                className={`h-8 px-3 rounded-md border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
+                  lienOnly
+                    ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/40 hover:bg-emerald-500/20"
+                    : "bg-background text-muted-foreground border-border hover:text-foreground"
+                }`}
+              >
+                <span>🚫</span>
+                No Insurance
+                {lienOnly && <span className="ml-0.5 bg-emerald-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">✓</span>}
+              </button>
               <Select value={tierFilter} onValueChange={(v) => setTierFilter(v as TierFilter)}>
                 <SelectTrigger className="h-8 text-sm bg-background border-border text-foreground w-32">
                   <SelectValue />
@@ -435,7 +450,12 @@ export default function SearchPage() {
                     onClick={() => { setSelectedLead(lead); setDetailOpen(true); }}
                   >
                     <TableCell className="py-3">
-                      <div className="font-medium text-sm text-foreground leading-tight">{lead.name}</div>
+                      <div className="font-medium text-sm text-foreground leading-tight flex items-center gap-1.5 flex-wrap">
+                        {lead.name}
+                        {lead.lienFriendly && (
+                          <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">No Insurance</span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground mt-0.5 max-w-xs truncate">
                         {lead.address}
                       </div>
