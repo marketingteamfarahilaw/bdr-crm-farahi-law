@@ -1,0 +1,70 @@
+{
+  "query": "SELECT COUNT(*) as total, partnerStatus, category FROM facilities GROUP BY partnerStatus, category ORDER BY partnerStatus, category;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute SELECT COUNT(*) as total, partnerStatus, category FROM facilities GROUP BY partnerStatus, category ORDER BY partnerStatus, category;",
+  "rows": [
+    {
+      "total": "35",
+      "partnerStatus": "prospect",
+      "category": "body_shop"
+    },
+    {
+      "total": "24",
+      "partnerStatus": "prospect",
+      "category": "chiropractor"
+    },
+    {
+      "total": "6",
+      "partnerStatus": "prospect",
+      "category": "imaging_center"
+    },
+    {
+      "total": "15",
+      "partnerStatus": "prospect",
+      "category": "orthopedic_doctor"
+    },
+    {
+      "total": "84",
+      "partnerStatus": "active_partner",
+      "category": "auto_body"
+    },
+    {
+      "total": "148",
+      "partnerStatus": "active_partner",
+      "category": "chiropractor"
+    },
+    {
+      "total": "3",
+      "partnerStatus": "active_partner",
+      "category": "imaging"
+    },
+    {
+      "total": "1",
+      "partnerStatus": "active_partner",
+      "category": "medical_clinic"
+    },
+    {
+      "total": "2",
+      "partnerStatus": "active_partner",
+      "category": "other"
+    },
+    {
+      "total": "21",
+      "partnerStatus": "active_partner",
+      "category": "physical_therapy"
+    },
+    {
+      "total": "34",
+      "partnerStatus": "active_partner",
+      "category": "towing"
+    },
+    {
+      "total": "1",
+      "partnerStatus": "dormant",
+      "category": "towing"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tpartnerStatus\tcategory\n35\tprospect\tbody_shop\n24\tprospect\tchiropractor\n6\tprospect\timaging_center\n15\tprospect\torthopedic_doctor\n84\tactive_partner\tauto_body\n148\tactive_partner\tchiropractor\n3\tactive_partner\timaging\n1\tactive_partner\tmedical_clinic\n2\tactive_partner\tother\n21\tactive_partner\tphysical_therapy\n34\tactive_partner\ttowing\n1\tdormant\ttowing\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2 } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -39,6 +39,16 @@ const crmItems = [
   { icon: LayoutDashboard, label: "Mgmt Dashboard", path: "/crm/dashboard" },
   { icon: Phone, label: "RingCentral", path: "/crm/ringcentral" },
   { icon: BarChart3, label: "BDR Reports", path: "/crm/reports" },
+];
+
+const bdrItems = [
+  { icon: Activity, label: "Agent Dashboard", path: "/bdr/dashboard" },
+  { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits" },
+  { icon: Receipt, label: "FR Expenses", path: "/bdr/fr-expenses" },
+  { icon: CreditCard, label: "BDR Expenses", path: "/bdr/bdr-expenses" },
+  { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards" },
+  { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands" },
+  { icon: Network, label: "Referral Tracker", path: "/bdr/referral-tracker" },
 ];
 
 const teamItems = [
@@ -127,7 +137,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const allMenuItems = [...leadScraper, ...crmItems, ...teamItems];
+  const allMenuItems = [...leadScraper, ...crmItems, ...bdrItems, ...teamItems];
   const activeMenuItem = allMenuItems.find(item => item.path === location || (item.path !== "/" && location.startsWith(item.path)));
   const isMobile = useIsMobile();
 
@@ -236,6 +246,33 @@ function DashboardLayoutContent({
               )}
               <SidebarMenu>
                 {crmItems.map(item => {
+                  const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setLocation(item.path)}
+                        tooltip={item.label}
+                        className="h-9 transition-all font-normal"
+                      >
+                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </div>
+            {/* Divider */}
+            <div className="mx-3 my-1 border-t border-border/40" />
+
+            {/* BDR Intelligence Section */}
+            <div className="px-3 pt-1 pb-3">
+              {!isCollapsed && (
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">BDR Intelligence</p>
+              )}
+              <SidebarMenu>
+                {bdrItems.map(item => {
                   const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
                   return (
                     <SidebarMenuItem key={item.path}>

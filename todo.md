@@ -283,3 +283,53 @@
 - [x] ClickToCallButton on PI Clients page phone numbers (triggers RingCentral widget)
 - [x] Call History panel inside each expanded PI client card (direction, result, duration, transcript, timestamp)
 - [x] ClickToCallButton on Agents page phone numbers
+
+## BDR Excel System Digitization (May 2026)
+
+- [ ] Import all existing facility partners from Excel (Active partners sheet) into facilities table
+- [ ] DB schema: field_visits table (agent, date, facilities visited, hours, notes)
+- [ ] DB schema: fr_expenses table (month, date, agent, facility, store, reason, amount, card type)
+- [ ] DB schema: bdr_expenses table (month, date, agent, facility, phone, store, reason, amount)
+- [ ] DB schema: referral_rewards table (date, agent, SUD, type, facility, client, tier, amount, status, payout, check_date, coordinator, case_number, delivery_type, contact_name, email, phone, address)
+- [ ] DB schema: fr_errands table (date, client, tier, task_type, agent, status, type, notes, address, month)
+- [ ] DB schema: referral_friendly_facilities table (month, client, SUD, type, PD_coordinator, partner_status, facility_name, facility_owner, BDR_assigned, status, date_sent, notes)
+- [ ] Agent Dashboard page with KPIs per agent: total calls, connected calls, call duration, sign-ups, visits, referrals sent/received, expenses
+- [ ] Field Visits log page: create/edit/delete daily visit entries per FR agent
+- [ ] FR Expenses page: log and view UberEats/supplies expenses per FR agent per facility
+- [ ] BDR Expenses page: log and view UberEats/supplies expenses per BDR agent per facility
+- [ ] Referral Rewards page: log client referrals with tier (Medium/High/Rank X), payout, status
+- [ ] FR Errands page: log field errands per client with task type, status, address, notes
+- [ ] Referral-Friendly Facility tracker: log which facility each client was referred to, status, BDR/FR assigned
+- [ ] Wire all new pages into sidebar under BDR Reports section
+
+## BDR Intelligence Module (May 2026)
+
+### Database Schema
+- [x] field_visits table (daily visit log per agent)
+- [x] fr_expenses table (field rep expense log)
+- [x] bdr_expenses table (BDR expense log with month/phone)
+- [x] referral_rewards table (referral rewards with tier, payout, status)
+- [x] fr_errands table (field errands per client)
+- [x] referral_tracker table (referral-friendly tracker)
+
+### Backend Procedures (tRPC bdr.*)
+- [x] bdr.dashboardKpis — aggregate KPIs for agent dashboard
+- [x] bdr.fieldVisits.list / create / update / delete
+- [x] bdr.frExpenses.list / create / update / delete
+- [x] bdr.bdrExpenses.list / create / update / delete
+- [x] bdr.referralRewards.list / create / update / delete
+- [x] bdr.frErrands.list / create / update / delete
+- [x] bdr.referralTracker.list / create / update / delete
+
+### Frontend Pages
+- [x] /bdr/dashboard — Agent Dashboard with KPI cards
+- [x] /bdr/field-visits — Field Visits log with summary cards
+- [x] /bdr/fr-expenses — FR Expenses log with totals
+- [x] /bdr/bdr-expenses — BDR Expenses log with totals
+- [x] /bdr/referral-rewards — Referral Rewards with status tracking
+- [x] /bdr/fr-errands — FR Errands with status tracking
+- [x] /bdr/referral-tracker — Referral-Friendly Tracker
+
+### Navigation
+- [x] Add "BDR Intelligence" section to sidebar with 7 nav items
+- [x] Register all 7 BDR routes in App.tsx

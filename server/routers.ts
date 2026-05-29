@@ -35,6 +35,31 @@ import {
   createPiClientCallLog,
   getPiClientCallLogs,
   findPiClientByPhone,
+  getAllFieldVisits,
+  createFieldVisit,
+  updateFieldVisit,
+  deleteFieldVisit,
+  getAllFrExpenses,
+  createFrExpense,
+  updateFrExpense,
+  deleteFrExpense,
+  getAllBdrExpenses,
+  createBdrExpense,
+  updateBdrExpense,
+  deleteBdrExpense,
+  getAllReferralRewards,
+  createReferralReward,
+  updateReferralReward,
+  deleteReferralReward,
+  getAllFrErrands,
+  createFrErrand,
+  updateFrErrand,
+  deleteFrErrand,
+  getAllReferralTracker,
+  createReferralTracker,
+  updateReferralTracker,
+  deleteReferralTracker,
+  getAgentDashboardKpis,
 } from "./db";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -523,6 +548,328 @@ export const appRouter = router({
   }),
 
   crm: crmRouter,
+
+  bdr: router({
+    dashboardKpis: protectedProcedure.query(async () => getAgentDashboardKpis()),
+
+    fieldVisits: router({
+      list: protectedProcedure.query(async () => getAllFieldVisits()),
+      create: protectedProcedure
+        .input(z.object({
+          visitDate: z.string(),
+          agentName: z.string().min(1),
+          facilityCount: z.number().int().min(0).default(0),
+          hoursWorked: z.string().optional(),
+          facilityNames: z.string().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          await createFieldVisit({
+            visitDate: new Date(input.visitDate),
+            agentName: input.agentName,
+            facilityCount: input.facilityCount,
+            hoursWorked: input.hoursWorked,
+            notes: input.notes,
+            facilitiesVisited: input.facilityNames ? input.facilityNames.split('\n').map(n => ({ name: n.trim() })) : [],
+          });
+          return { success: true };
+        }),
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          visitDate: z.string().optional(),
+          agentName: z.string().optional(),
+          facilityCount: z.number().int().optional(),
+          hoursWorked: z.string().optional(),
+          facilityNames: z.string().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, visitDate, facilityNames, ...rest } = input;
+          await updateFieldVisit(id, {
+            ...rest,
+            ...(visitDate ? { visitDate: new Date(visitDate) } : {}),
+            ...(facilityNames !== undefined ? { facilitiesVisited: facilityNames.split('\n').map(n => ({ name: n.trim() })) } : {}),
+          });
+          return { success: true };
+        }),
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => { await deleteFieldVisit(input.id); return { success: true }; }),
+    }),
+
+    frExpenses: router({
+      list: protectedProcedure.query(async () => getAllFrExpenses()),
+      create: protectedProcedure
+        .input(z.object({
+          expenseDate: z.string(),
+          agentName: z.string().min(1),
+          facilityName: z.string().optional(),
+          storeName: z.string().optional(),
+          reason: z.string().optional(),
+          amount: z.string().default("0.00"),
+          cardType: z.enum(["Personal", "Company"]).default("Company"),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          await createFrExpense({
+            expenseDate: new Date(input.expenseDate),
+            agentName: input.agentName,
+            facilityName: input.facilityName,
+            store: input.storeName,
+            reason: input.reason,
+            amount: input.amount,
+            cardType: input.cardType,
+            notes: input.notes,
+          });
+          return { success: true };
+        }),
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          expenseDate: z.string().optional(),
+          agentName: z.string().optional(),
+          facilityName: z.string().optional(),
+          storeName: z.string().optional(),
+          reason: z.string().optional(),
+          amount: z.string().optional(),
+          cardType: z.enum(["Personal", "Company"]).optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, expenseDate, storeName, ...rest } = input;
+          await updateFrExpense(id, {
+            ...rest,
+            ...(expenseDate ? { expenseDate: new Date(expenseDate) } : {}),
+            ...(storeName !== undefined ? { store: storeName } : {}),
+          });
+          return { success: true };
+        }),
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => { await deleteFrExpense(input.id); return { success: true }; }),
+    }),
+
+    bdrExpenses: router({
+      list: protectedProcedure.query(async () => getAllBdrExpenses()),
+      create: protectedProcedure
+        .input(z.object({
+          expenseDate: z.string(),
+          reportMonth: z.string().optional(),
+          agentName: z.string().min(1),
+          facilityName: z.string().optional(),
+          facilityPhone: z.string().optional(),
+          storeName: z.string().optional(),
+          reason: z.string().optional(),
+          amount: z.string().default("0.00"),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          await createBdrExpense({
+            expenseDate: new Date(input.expenseDate),
+            month: input.reportMonth,
+            agentName: input.agentName,
+            facilityName: input.facilityName,
+            facilityPhone: input.facilityPhone,
+            store: input.storeName,
+            reason: input.reason,
+            amount: input.amount,
+            notes: input.notes,
+          });
+          return { success: true };
+        }),
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          expenseDate: z.string().optional(),
+          reportMonth: z.string().optional(),
+          agentName: z.string().optional(),
+          facilityName: z.string().optional(),
+          facilityPhone: z.string().optional(),
+          storeName: z.string().optional(),
+          reason: z.string().optional(),
+          amount: z.string().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, expenseDate, reportMonth, storeName, ...rest } = input;
+          await updateBdrExpense(id, {
+            ...rest,
+            ...(expenseDate ? { expenseDate: new Date(expenseDate) } : {}),
+            ...(reportMonth !== undefined ? { month: reportMonth } : {}),
+            ...(storeName !== undefined ? { store: storeName } : {}),
+          });
+          return { success: true };
+        }),
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => { await deleteBdrExpense(input.id); return { success: true }; }),
+    }),
+
+    referralRewards: router({
+      list: protectedProcedure.query(async () => getAllReferralRewards()),
+      create: protectedProcedure
+        .input(z.object({
+          agentName: z.string().min(1),
+          sudName: z.string().optional(),
+          referralType: z.enum(["Chiro", "Body Shop", "Towing", "Medical", "Physical Therapy", "Other"]).optional(),
+          facilityName: z.string().optional(),
+          clientName: z.string().optional(),
+          tier: z.enum(["Medium", "High", "Rank X", "Standard"]).optional(),
+          payoutAmount: z.string().optional(),
+          status: z.enum(["Accepted", "Pending", "Denied"]).optional(),
+          caseNumber: z.string().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          await createReferralReward({
+            agentName: input.agentName,
+            sud: input.sudName,
+            referralType: input.referralType ?? "Other",
+            facilityName: input.facilityName,
+            clientName: input.clientName,
+            clientTier: input.tier ?? "Standard",
+            payoutAmount: input.payoutAmount,
+            status: input.status ?? "Pending",
+            caseNumber: input.caseNumber,
+            notes: input.notes,
+          });
+          return { success: true };
+        }),
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          agentName: z.string().optional(),
+          sudName: z.string().optional(),
+          referralType: z.enum(["Chiro", "Body Shop", "Towing", "Medical", "Physical Therapy", "Other"]).optional(),
+          facilityName: z.string().optional(),
+          clientName: z.string().optional(),
+          tier: z.enum(["Medium", "High", "Rank X", "Standard"]).optional(),
+          payoutAmount: z.string().optional(),
+          status: z.enum(["Accepted", "Pending", "Denied"]).optional(),
+          caseNumber: z.string().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, sudName, referralType, tier, payoutAmount, ...rest } = input;
+          await updateReferralReward(id, {
+            ...rest,
+            ...(sudName !== undefined ? { sud: sudName } : {}),
+            ...(referralType !== undefined ? { referralType } : {}),
+            ...(tier !== undefined ? { clientTier: tier } : {}),
+            ...(payoutAmount !== undefined ? { payoutAmount } : {}),
+          });
+          return { success: true };
+        }),
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => { await deleteReferralReward(input.id); return { success: true }; }),
+    }),
+
+    frErrands: router({
+      list: protectedProcedure.query(async () => getAllFrErrands()),
+      create: protectedProcedure
+        .input(z.object({
+          errandDate: z.string(),
+          clientName: z.string().optional(),
+          tier: z.enum(["Medium", "High", "Rank X", "Standard"]).optional(),
+          taskType: z.string().optional(),
+          agentName: z.string().optional(),
+          status: z.enum(["Completed", "Not Completed", "In Progress"]).optional(),
+          notes: z.string().optional(),
+          address: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          await createFrErrand({
+            errandDate: new Date(input.errandDate),
+            clientName: input.clientName ?? "",
+            clientTier: input.tier ?? "Standard",
+            taskType: input.taskType ?? "",
+            agentName: input.agentName,
+            status: input.status ?? "In Progress",
+            notes: input.notes,
+            address: input.address,
+          });
+          return { success: true };
+        }),
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          errandDate: z.string().optional(),
+          clientName: z.string().optional(),
+          tier: z.enum(["Medium", "High", "Rank X", "Standard"]).optional(),
+          taskType: z.string().optional(),
+          agentName: z.string().optional(),
+          status: z.enum(["Completed", "Not Completed", "In Progress"]).optional(),
+          notes: z.string().optional(),
+          address: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, errandDate, tier, ...rest } = input;
+          await updateFrErrand(id, {
+            ...rest,
+            ...(errandDate ? { errandDate: new Date(errandDate) } : {}),
+            ...(tier !== undefined ? { clientTier: tier } : {}),
+          });
+          return { success: true };
+        }),
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => { await deleteFrErrand(input.id); return { success: true }; }),
+    }),
+
+    referralTracker: router({
+      list: protectedProcedure.query(async () => getAllReferralTracker()),
+      create: protectedProcedure
+        .input(z.object({
+          reportMonth: z.string().optional(),
+          clientName: z.string().optional(),
+          pdCoordinator: z.string().optional(),
+          partnerStatus: z.string().optional(),
+          facilityName: z.string().optional(),
+          bdrAgent: z.string().optional(),
+          status: z.enum(["Successful Sent", "Demo Sent", "Pending", "Unsuccessful", "In Progress"]).optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          await createReferralTracker({
+            month: input.reportMonth,
+            clientName: input.clientName ?? "",
+            pdCoordinator: input.pdCoordinator,
+            partnerStatus: input.partnerStatus,
+            facilityName: input.facilityName,
+            bdrAssigned: input.bdrAgent,
+            status: input.status ?? "Pending",
+            notes: input.notes,
+          });
+          return { success: true };
+        }),
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          reportMonth: z.string().optional(),
+          clientName: z.string().optional(),
+          pdCoordinator: z.string().optional(),
+          partnerStatus: z.string().optional(),
+          facilityName: z.string().optional(),
+          bdrAgent: z.string().optional(),
+          status: z.enum(["Successful Sent", "Demo Sent", "Pending", "Unsuccessful", "In Progress"]).optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, reportMonth, bdrAgent, ...rest } = input;
+          await updateReferralTracker(id, {
+            ...rest,
+            ...(reportMonth !== undefined ? { month: reportMonth } : {}),
+            ...(bdrAgent !== undefined ? { bdrAssigned: bdrAgent } : {}),
+          });
+          return { success: true };
+        }),
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => { await deleteReferralTracker(input.id); return { success: true }; }),
+    }),
+  }),
 
   savedSearches: router({
     list: protectedProcedure.query(async ({ ctx }) => {

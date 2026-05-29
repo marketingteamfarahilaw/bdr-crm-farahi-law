@@ -1,6 +1,6 @@
 import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog } from "../drizzle/schema";
+import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -281,4 +281,246 @@ export async function updatePiClientCallLogTranscript(id: number, transcript: st
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(piClientCallLogs).set({ transcript }).where(eq(piClientCallLogs.id, id));
+}
+
+// ─── Field Visits ─────────────────────────────────────────────────────────────
+
+export async function getAllFieldVisits() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(fieldVisits).orderBy(desc(fieldVisits.visitDate));
+}
+
+export async function createFieldVisit(data: InsertFieldVisit) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(fieldVisits).values(data);
+}
+
+export async function updateFieldVisit(id: number, data: Partial<InsertFieldVisit>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(fieldVisits).set(data).where(eq(fieldVisits.id, id));
+}
+
+export async function deleteFieldVisit(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(fieldVisits).where(eq(fieldVisits.id, id));
+}
+
+// ─── FR Expenses ─────────────────────────────────────────────────────────────
+
+export async function getAllFrExpenses() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(frExpenses).orderBy(desc(frExpenses.expenseDate));
+}
+
+export async function createFrExpense(data: InsertFrExpense) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(frExpenses).values(data);
+}
+
+export async function updateFrExpense(id: number, data: Partial<InsertFrExpense>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(frExpenses).set(data).where(eq(frExpenses.id, id));
+}
+
+export async function deleteFrExpense(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(frExpenses).where(eq(frExpenses.id, id));
+}
+
+// ─── BDR Expenses ─────────────────────────────────────────────────────────────
+
+export async function getAllBdrExpenses() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(bdrExpenses).orderBy(desc(bdrExpenses.expenseDate));
+}
+
+export async function createBdrExpense(data: InsertBdrExpense) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(bdrExpenses).values(data);
+}
+
+export async function updateBdrExpense(id: number, data: Partial<InsertBdrExpense>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(bdrExpenses).set(data).where(eq(bdrExpenses.id, id));
+}
+
+export async function deleteBdrExpense(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(bdrExpenses).where(eq(bdrExpenses.id, id));
+}
+
+// ─── Referral Rewards ─────────────────────────────────────────────────────────
+
+export async function getAllReferralRewards() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(referralRewards).orderBy(desc(referralRewards.createdAt));
+}
+
+export async function createReferralReward(data: InsertReferralReward) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(referralRewards).values(data);
+}
+
+export async function updateReferralReward(id: number, data: Partial<InsertReferralReward>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(referralRewards).set(data).where(eq(referralRewards.id, id));
+}
+
+export async function deleteReferralReward(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(referralRewards).where(eq(referralRewards.id, id));
+}
+
+// ─── FR Errands ───────────────────────────────────────────────────────────────
+
+export async function getAllFrErrands() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(frErrands).orderBy(desc(frErrands.errandDate));
+}
+
+export async function createFrErrand(data: InsertFrErrand) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(frErrands).values(data);
+}
+
+export async function updateFrErrand(id: number, data: Partial<InsertFrErrand>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(frErrands).set(data).where(eq(frErrands.id, id));
+}
+
+export async function deleteFrErrand(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(frErrands).where(eq(frErrands.id, id));
+}
+
+// ─── Referral Tracker ─────────────────────────────────────────────────────────
+
+export async function getAllReferralTracker() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(referralTracker).orderBy(desc(referralTracker.createdAt));
+}
+
+export async function createReferralTracker(data: InsertReferralTracker) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(referralTracker).values(data);
+}
+
+export async function updateReferralTracker(id: number, data: Partial<InsertReferralTracker>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(referralTracker).set(data).where(eq(referralTracker.id, id));
+}
+
+export async function deleteReferralTracker(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(referralTracker).where(eq(referralTracker.id, id));
+}
+
+// ─── Agent Dashboard KPIs ─────────────────────────────────────────────────────
+
+export async function getAgentDashboardKpis() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Aggregate per agent: visits, FR expenses, BDR expenses, referral rewards, errands
+  const [visits, frExp, bdrExp, rewards, errands] = await Promise.all([
+    db.select().from(fieldVisits),
+    db.select().from(frExpenses),
+    db.select().from(bdrExpenses),
+    db.select().from(referralRewards),
+    db.select().from(frErrands),
+  ]);
+
+  // Build a map of agentName -> KPIs
+  const agentMap: Record<string, {
+    agentName: string;
+    totalVisits: number;
+    totalFacilitiesVisited: number;
+    totalHoursWorked: number;
+    totalFrExpenses: number;
+    totalBdrExpenses: number;
+    totalReferralRewards: number;
+    acceptedRewards: number;
+    pendingRewards: number;
+    totalErrands: number;
+    completedErrands: number;
+  }> = {};
+
+  const ensure = (name: string) => {
+    if (!agentMap[name]) {
+      agentMap[name] = {
+        agentName: name,
+        totalVisits: 0,
+        totalFacilitiesVisited: 0,
+        totalHoursWorked: 0,
+        totalFrExpenses: 0,
+        totalBdrExpenses: 0,
+        totalReferralRewards: 0,
+        acceptedRewards: 0,
+        pendingRewards: 0,
+        totalErrands: 0,
+        completedErrands: 0,
+      };
+    }
+    return agentMap[name];
+  };
+
+  for (const v of visits) {
+    const kpi = ensure(v.agentName);
+    kpi.totalVisits++;
+    kpi.totalFacilitiesVisited += v.facilityCount ?? 0;
+    if (v.hoursWorked) {
+      const h = parseFloat(v.hoursWorked);
+      if (!isNaN(h)) kpi.totalHoursWorked += h;
+    }
+  }
+
+  for (const e of frExp) {
+    const kpi = ensure(e.agentName);
+    kpi.totalFrExpenses += parseFloat(String(e.amount ?? 0));
+  }
+
+  for (const e of bdrExp) {
+    const kpi = ensure(e.agentName);
+    kpi.totalBdrExpenses += parseFloat(String(e.amount ?? 0));
+  }
+
+  for (const r of rewards) {
+    const kpi = ensure(r.agentName);
+    kpi.totalReferralRewards += parseFloat(String(r.payoutAmount ?? 0));
+    if (r.status === "Accepted") kpi.acceptedRewards++;
+    if (r.status === "Pending") kpi.pendingRewards++;
+  }
+
+  for (const e of errands) {
+    if (!e.agentName) continue;
+    const kpi = ensure(e.agentName);
+    kpi.totalErrands++;
+    if (e.status === "Completed") kpi.completedErrands++;
+  }
+
+  return Object.values(agentMap).sort((a, b) => a.agentName.localeCompare(b.agentName));
 }

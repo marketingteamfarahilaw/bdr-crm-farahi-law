@@ -15,6 +15,13 @@ import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
 import RingCentralSettingsPage from "./pages/crm/RingCentralSettings";
 import BdrReportsPage from "./pages/crm/BdrReports";
+import AgentDashboardPage from "./pages/AgentDashboard";
+import FieldVisitsPage from "./pages/FieldVisits";
+import FrExpensesPage from "./pages/FrExpenses";
+import BdrExpensesPage from "./pages/BdrExpenses";
+import ReferralRewardsPage from "./pages/ReferralRewards";
+import FrErrandsPage from "./pages/FrErrands";
+import ReferralTrackerPage from "./pages/ReferralTracker";
 import AgentsPage from "./pages/Agents";
 import PiClientsPage from "./pages/PiClients";
 import FilevineSettingsPage from "./pages/FilevineSettings";
@@ -44,6 +51,15 @@ function Router() {
         <Route path="/crm/dashboard" component={ManagementDashboardPage} />
         <Route path="/crm/ringcentral" component={RingCentralSettingsPage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
+
+        {/* BDR Reports */}
+        <Route path="/bdr/dashboard" component={AgentDashboardPage} />
+        <Route path="/bdr/field-visits" component={FieldVisitsPage} />
+        <Route path="/bdr/fr-expenses" component={FrExpensesPage} />
+        <Route path="/bdr/bdr-expenses" component={BdrExpensesPage} />
+        <Route path="/bdr/referral-rewards" component={ReferralRewardsPage} />
+        <Route path="/bdr/fr-errands" component={FrErrandsPage} />
+        <Route path="/bdr/referral-tracker" component={ReferralTrackerPage} />
 
         {/* Agent Management */}
         <Route path="/agents" component={AgentsPage} />

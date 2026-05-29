@@ -435,3 +435,148 @@ export const ringcentralTokens = mysqlTable("ringcentral_tokens", {
 
 export type RingcentralToken = typeof ringcentralTokens.$inferSelect;
 export type InsertRingcentralToken = typeof ringcentralTokens.$inferInsert;
+
+// ─── BDR Report Tables (digitized from Excel BDR system) ─────────────────────
+
+/**
+ * Field Visits — daily log of facility visits by FR/BDR agents
+ * Mirrors the "2.Visits" Excel sheet
+ */
+export const fieldVisits = mysqlTable("field_visits", {
+  id: int("id").autoincrement().primaryKey(),
+  visitDate: timestamp("visitDate").notNull(),
+  agentName: varchar("agentName", { length: 255 }).notNull(),
+  agentEmail: varchar("agentEmail", { length: 320 }),
+  agentRole: mysqlEnum("agentRole", ["FR", "BDR", "Manager"]).default("FR").notNull(),
+  // Facilities visited (stored as JSON array of {facilityId, facilityName})
+  facilitiesVisited: json("facilitiesVisited").notNull(), // {id: number, name: string}[]
+  facilityCount: int("facilityCount").default(0).notNull(),
+  hoursWorked: varchar("hoursWorked", { length: 20 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FieldVisit = typeof fieldVisits.$inferSelect;
+export type InsertFieldVisit = typeof fieldVisits.$inferInsert;
+
+/**
+ * FR Expenses — field rep expense log per facility
+ * Mirrors the "2.FR Expen" Excel sheet
+ */
+export const frExpenses = mysqlTable("fr_expenses", {
+  id: int("id").autoincrement().primaryKey(),
+  expenseDate: timestamp("expenseDate").notNull(),
+  agentName: varchar("agentName", { length: 255 }).notNull(),
+  agentEmail: varchar("agentEmail", { length: 320 }),
+  facilityId: int("facilityId"),
+  facilityName: varchar("facilityName", { length: 255 }),
+  store: varchar("store", { length: 255 }), // e.g. "UberEats", "Walmart", "Costco"
+  reason: varchar("reason", { length: 500 }), // e.g. "Partner check-in food delivery"
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  cardType: mysqlEnum("cardType", ["Personal", "Company"]).default("Company").notNull(),
+  receiptUrl: varchar("receiptUrl", { length: 500 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FrExpense = typeof frExpenses.$inferSelect;
+export type InsertFrExpense = typeof frExpenses.$inferInsert;
+
+/**
+ * BDR Expenses — business development rep expense log
+ * Mirrors the "2.BDR Expen" Excel sheet
+ */
+export const bdrExpenses = mysqlTable("bdr_expenses", {
+  id: int("id").autoincrement().primaryKey(),
+  month: varchar("month", { length: 20 }), // e.g. "May 2026"
+  expenseDate: timestamp("expenseDate").notNull(),
+  agentName: varchar("agentName", { length: 255 }).notNull(),
+  agentEmail: varchar("agentEmail", { length: 320 }),
+  facilityId: int("facilityId"),
+  facilityName: varchar("facilityName", { length: 255 }),
+  facilityPhone: varchar("facilityPhone", { length: 50 }),
+  store: varchar("store", { length: 255 }),
+  reason: varchar("reason", { length: 500 }),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BdrExpense = typeof bdrExpenses.$inferSelect;
+export type InsertBdrExpense = typeof bdrExpenses.$inferInsert;
+
+/**
+ * Referral Rewards — client referrals with tier, payout, and status
+ * Mirrors the referral rewards Excel sheet
+ */
+export const referralRewards = mysqlTable("referral_rewards", {
+  id: int("id").autoincrement().primaryKey(),
+  agentName: varchar("agentName", { length: 255 }).notNull(),
+  agentEmail: varchar("agentEmail", { length: 320 }),
+  sud: varchar("sud", { length: 100 }), // Sign-Up Date
+  referralType: mysqlEnum("referralType", ["Chiro", "Body Shop", "Towing", "Medical", "Physical Therapy", "Other"]).default("Chiro").notNull(),
+  facilityId: int("facilityId"),
+  facilityName: varchar("facilityName", { length: 255 }),
+  clientName: varchar("clientName", { length: 255 }),
+  clientTier: mysqlEnum("clientTier", ["Medium", "High", "Rank X", "Standard"]).default("Standard").notNull(),
+  payoutAmount: decimal("payoutAmount", { precision: 10, scale: 2 }),
+  status: mysqlEnum("status", ["Accepted", "Pending", "Denied"]).default("Pending").notNull(),
+  caseNumber: varchar("caseNumber", { length: 100 }),
+  coordinator: varchar("coordinator", { length: 255 }),
+  deliveryType: varchar("deliveryType", { length: 100 }), // e.g. "Zelle", "Check", "Cash"
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ReferralReward = typeof referralRewards.$inferSelect;
+export type InsertReferralReward = typeof referralRewards.$inferInsert;
+
+/**
+ * FR Errands — field errands per client (welfare checks, video footage, etc.)
+ * Mirrors the "2.FR Errand" Excel sheet
+ */
+export const frErrands = mysqlTable("fr_errands", {
+  id: int("id").autoincrement().primaryKey(),
+  errandDate: timestamp("errandDate").notNull(),
+  clientName: varchar("clientName", { length: 255 }).notNull(),
+  clientTier: mysqlEnum("clientTier", ["Medium", "High", "Rank X", "Standard"]).default("Standard").notNull(),
+  taskType: varchar("taskType", { length: 255 }).notNull(), // e.g. "Acquire video footage", "Welfare check", "Get witness statement"
+  agentName: varchar("agentName", { length: 255 }),
+  agentEmail: varchar("agentEmail", { length: 320 }),
+  status: mysqlEnum("status", ["Completed", "Not Completed", "In Progress"]).default("In Progress").notNull(),
+  address: text("address"),
+  notes: text("notes"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FrErrand = typeof frErrands.$inferSelect;
+export type InsertFrErrand = typeof frErrands.$inferInsert;
+
+/**
+ * Referral-Friendly Tracker — tracks which facility each client was referred to
+ * Mirrors the referral-friendly Excel sheet
+ */
+export const referralTracker = mysqlTable("referral_tracker", {
+  id: int("id").autoincrement().primaryKey(),
+  month: varchar("month", { length: 20 }), // e.g. "May 2026"
+  clientName: varchar("clientName", { length: 255 }).notNull(),
+  pdCoordinator: varchar("pdCoordinator", { length: 255 }),
+  partnerStatus: varchar("partnerStatus", { length: 100 }), // e.g. "Partner", "Non-Partner"
+  facilityId: int("facilityId"),
+  facilityName: varchar("facilityName", { length: 255 }),
+  facilityType: varchar("facilityType", { length: 100 }), // e.g. "Chiro", "Body Shop"
+  bdrAssigned: varchar("bdrAssigned", { length: 255 }),
+  status: mysqlEnum("status", [
+    "Successful Sent",
+    "Demo Sent",
+    "Pending",
+    "Unsuccessful",
+    "In Progress",
+  ]).default("Pending").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ReferralTracker = typeof referralTracker.$inferSelect;
+export type InsertReferralTracker = typeof referralTracker.$inferInsert;
