@@ -4,76 +4,47 @@ import { useEffect, useRef, useState } from "react";
 import { MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FORGE_BASE_URL =
-  import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
-  "https://forge.butterfly-effect.dev";
-const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
-
-declare global {
-  interface Window {
-    google?: typeof google;
-    _mapsScriptLoading?: Promise<void>;
-    _mapsReady?: boolean;
-    _mapsReadyCallbacks?: Array<() => void>;
-    initGoogleMapsCallback?: () => void;
-  }
-}
+// ─── Shared Maps loader (mirrors Map.tsx — uses the same window flags) ───────
+const DIRECT_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+const PROXY_API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY as string | undefined;
+const API_KEY = DIRECT_API_KEY || PROXY_API_KEY || "";
+const MAPS_BASE_URL = DIRECT_API_KEY
+  ? "https://maps.googleapis.com"
+  : "/api/maps-proxy";
 
 function loadMapsScript(): Promise<void> {
   // Already fully initialized
-  if (window._mapsReady && window.google?.maps?.places?.Autocomplete) {
+  if ((window as any)._mapsReady && window.google?.maps?.places?.Autocomplete) {
     return Promise.resolve();
   }
 
-  // Already loading — return the existing promise
-  if (window._mapsScriptLoading) return window._mapsScriptLoading;
+  // Map.tsx is already loading — wait for it
+  if ((window as any)._mapsScriptLoading) {
+    return (window as any)._mapsScriptLoading.then(() => {
+      // _mapsScriptLoading from Map.tsx resolves with { ok, error }
+      // We just need the script to be present — resolve regardless
+    });
+  }
 
-  window._mapsReadyCallbacks = window._mapsReadyCallbacks || [];
-
-  window._mapsScriptLoading = new Promise<void>((resolve) => {
-    // Set up the callback that Google Maps will call when fully ready
-    window.initGoogleMapsCallback = () => {
-      window._mapsReady = true;
+  // Neither Map.tsx nor us has started — inject the script ourselves
+  (window as any)._mapsScriptLoading = new Promise<void>((resolve) => {
+    (window as any).initGoogleMapsCallback = () => {
+      (window as any)._mapsReady = true;
       resolve();
-      // Notify any other waiters
-      (window._mapsReadyCallbacks || []).forEach((cb) => cb());
     };
 
-    // Check if a script tag already exists (loaded by Map.tsx without callback)
-    const existingScript = document.querySelector(
-      'script[src*="maps/api/js"]'
-    ) as HTMLScriptElement | null;
-
-    if (existingScript) {
-      // Script already injected — poll until places is available
-      const poll = () => {
-        if (window.google?.maps?.places?.Autocomplete) {
-          window._mapsReady = true;
-          resolve();
-        } else {
-          setTimeout(poll, 100);
-        }
-      };
-      poll();
-      return;
-    }
-
-    // Inject a new script with the callback parameter
     const script = document.createElement("script");
-    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places,geocoding,geometry,marker&callback=initGoogleMapsCallback`;
+    script.src = `${MAPS_BASE_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places,geocoding,geometry,marker&callback=initGoogleMapsCallback`;
     script.async = true;
     script.defer = true;
     script.crossOrigin = "anonymous";
-    script.onerror = () => {
-      console.error("Failed to load Google Maps");
-      resolve(); // resolve anyway to avoid hanging
-    };
+    script.onerror = () => resolve(); // resolve anyway to avoid hanging
     document.head.appendChild(script);
   });
 
-  return window._mapsScriptLoading;
+  return (window as any)._mapsScriptLoading;
 }
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface PlaceResult {
   description: string;
