@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, DollarSign } from "lucide-react";
+import { Plus, Pencil, Trash2, DollarSign, Download } from "lucide-react";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 
@@ -87,6 +87,33 @@ export default function BdrExpenses() {
 
   const totalAmount = expenses?.reduce((s, e) => s + parseFloat(String(e.amount ?? 0)), 0) ?? 0;
 
+  function exportCsv() {
+    if (!expenses || expenses.length === 0) return toast.error("No data to export");
+    const headers = ["Month", "Date", "Agent", "Facility", "Facility Phone", "Store", "Reason", "Amount", "Notes"];
+    const rows = expenses.map((e) => [
+      e.month ?? "",
+      e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "",
+      e.agentName,
+      e.facilityName ?? "",
+      e.facilityPhone ?? "",
+      (e as any).store ?? "",
+      e.reason ?? "",
+      parseFloat(String(e.amount ?? 0)).toFixed(2),
+      e.notes ?? "",
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bdr-expenses-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV downloaded");
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -94,7 +121,12 @@ export default function BdrExpenses() {
           <h1 className="text-2xl font-bold">BDR Expenses</h1>
           <p className="text-muted-foreground text-sm mt-1">Business development rep expense log</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Expense</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportCsv} disabled={!expenses || expenses.length === 0}>
+            <Download className="w-4 h-4 mr-2" />Export CSV
+          </Button>
+          <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Expense</Button>
+        </div>
       </div>
 
       {expenses && expenses.length > 0 && (
