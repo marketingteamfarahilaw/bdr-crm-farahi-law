@@ -89,13 +89,13 @@ function Router() {
 function AppWithPhone() {
   const utils = trpc.useUtils();
 
-  // Auto-log PI client calls when a RingCentral call ends.
-  // Uses transcribeAndLog which: fetches RC recording → Whisper transcription → saves to pi_client_call_logs.
-  const transcribeAndLog = trpc.piClients.transcribeAndLog.useMutation({
+  // Auto-log facility calls when a RingCentral call ends.
+  // Uses logFacilityCall which: matches facility by phone → creates contact log → fetches RC recording → Whisper transcription → AI summary → saves to facility_updates.
+  const logFacilityCall = trpc.crm.ringcentral.logFacilityCall.useMutation({
     onSuccess: (result) => {
-      if (result.success && result.piClientId) {
-        utils.piClients.getCallLogs.invalidate();
-        utils.piClients.list.invalidate();
+      if (result.facilityId) {
+        utils.crm.contactLogs.list.invalidate();
+        utils.crm.facilities.get.invalidate();
       }
     },
   });
@@ -110,10 +110,10 @@ function AppWithPhone() {
       toast.loading("Processing call…", {
         id: processingId,
         description: `${phone} · ${dur} — fetching recording & transcribing`,
-        duration: 30000,
+        duration: 60000,
       });
 
-      transcribeAndLog.mutate(
+      logFacilityCall.mutate(
         {
           phone: data.phoneNumber,
           callId: data.callId,
@@ -126,10 +126,18 @@ function AppWithPhone() {
         {
           onSuccess: (result) => {
             toast.dismiss(processingId);
-            if (result.piClientId) {
-              if (result.hasTranscript) {
+            if (result.facilityId) {
+              if (result.hasTranscript && result.hasAiSummary) {
                 toast.success(
-                  `Call logged & transcribed for ${result.clientName}`,
+                  `Call logged & summarised for ${result.facilityName}`,
+                  {
+                    description: `${dur} · ${data.direction ?? ""} · transcript + AI summary saved`,
+                    duration: 8000,
+                  }
+                );
+              } else if (result.hasTranscript) {
+                toast.success(
+                  `Call logged & transcribed for ${result.facilityName}`,
                   {
                     description: `${dur} · ${data.direction ?? ""} · transcript saved`,
                     duration: 8000,
@@ -137,7 +145,7 @@ function AppWithPhone() {
                 );
               } else {
                 toast.success(
-                  `Call logged for ${result.clientName}`,
+                  `Call logged for ${result.facilityName}`,
                   {
                     description: `${dur} · ${data.direction ?? ""} · no recording available yet`,
                     duration: 6000,
@@ -146,7 +154,7 @@ function AppWithPhone() {
               }
             } else {
               toast.info(`Call ended — ${phone} · ${dur}`, {
-                description: "No matching PI client found. Open a client profile to log manually.",
+                description: "No matching facility found. Open the facility profile to log manually.",
                 duration: 8000,
               });
             }

@@ -8,6 +8,7 @@ import axios from "axios";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { transcribeAudio } from "./_core/voiceTranscription";
+import { invokeLLM } from "./_core/llm";
 import {
   completeTask,
   createContactLog,
@@ -52,6 +53,7 @@ import {
   getBdrCallActivity,
   getBdrPartnerCheckins,
   getBdrTopFacilities,
+  findFacilityByPhone,
 } from "./crmDb";
 
 const RC_BASE = "https://platform.ringcentral.com";
@@ -617,6 +619,118 @@ export const crmRouter = router({
         });
 
         return { success: true, hasTranscript: !!transcriptText, transcriptText };
+      }),
+
+    /**
+     * logFacilityCall — called automatically when a RingCentral call ends.
+     * 1. Matches the phone number to a facility.
+     * 2. Creates a contact log entry.
+     * 3. Fetches the call recording (if available).
+     * 4. Transcribes with Whisper.
+     * 5. Generates an AI summary.
+     * 6. Saves transcript + summary to facility_updates.
+     */
+    logFacilityCall: protectedProcedure
+      .input(z.object({
+        phone: z.string(),
+        callId: z.string().optional(),
+        direction: z.string().optional(),
+        result: z.string().optional(),
+        duration: z.number().optional(),
+        durationStr: z.string().optional(),
+        startTime: z.string().optional(),
+        agentName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // 1. Match facility by phone number
+        const facility = await findFacilityByPhone(input.phone);
+        const agentName = input.agentName ?? ctx.user.name ?? ctx.user.email ?? "Unknown";
+        const callDate = input.startTime ? new Date(input.startTime) : new Date();
+        const durationStr = input.durationStr ?? (input.duration ? `${Math.floor(input.duration / 60)}:${(input.duration % 60).toString().padStart(2, "0")}` : "0:00");
+
+        // 2. Create a contact log entry (always, even without a match)
+        if (facility) {
+          const callResult = (input.result ?? "").toLowerCase().includes("connected") ? "connected"
+            : (input.result ?? "").toLowerCase().includes("voicemail") ? "voicemail"
+            : (input.result ?? "").toLowerCase().includes("no answer") ? "no_answer"
+            : (input.result ?? "").toLowerCase().includes("busy") ? "busy" : "other";
+          await createContactLog({
+            facilityId: facility.id,
+            contactType: "call",
+            contactDate: callDate,
+            callResult,
+            callDuration: durationStr,
+            callType: "partner_checkin",
+            summary: `${input.direction ?? "Outbound"} call to ${input.phone} — ${input.result ?? ""} (${durationStr})`,
+            repId: ctx.user.id,
+            repName: agentName,
+            fromRingCentral: 1,
+          });
+        }
+
+        // 3. Attempt to fetch recording and transcribe
+        let transcriptText = "";
+        let aiSummary = "";
+
+        let accessToken: string | null = null;
+        try { accessToken = await getValidRCToken(); } catch { /* no stored token */ }
+
+        if (accessToken && input.callId) {
+          try {
+            // Wait a few seconds for recording to be available
+            await new Promise((r) => setTimeout(r, 5000));
+            const callResp = await axios.get(
+              `${RC_BASE}/restapi/v1.0/account/~/call-log/${input.callId}`,
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+            const recordingUrl: string | null = callResp.data?.recording?.contentUri ?? null;
+            if (recordingUrl) {
+              const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
+              const result = await transcribeAudio({ audioUrl: authedUrl });
+              if (!('error' in result)) {
+                transcriptText = result.text ?? "";
+              }
+            }
+          } catch { /* recording not yet available */ }
+        }
+
+        // 4. Generate AI summary if we have a transcript
+        if (transcriptText) {
+          try {
+            const llmResp = await invokeLLM({
+              messages: [
+                { role: "system", content: "You are a business development assistant for a law firm. Summarize the following phone call transcript between a BD rep and a facility partner (chiropractor, body shop, etc.) in 2-3 sentences. Focus on: what was discussed, any commitments made, leads mentioned, and next steps. Be concise and professional." },
+                { role: "user", content: transcriptText },
+              ],
+            });
+            aiSummary = (llmResp.choices[0]?.message?.content as string) ?? "";
+          } catch { /* LLM unavailable — skip summary */ }
+        }
+
+        // 5. Save to facility_updates if we have a facility match
+        if (facility) {
+          const rawText = transcriptText || `[Call on ${callDate.toISOString()}${input.phone ? ` to ${input.phone}` : ""}${durationStr ? `, duration: ${durationStr}` : ""}]`;
+          const summary = aiSummary || (transcriptText ? transcriptText.slice(0, 300) : `${input.direction ?? "Outbound"} call — ${input.result ?? ""} (${durationStr})`);
+          await createFacilityUpdate({
+            facilityId: facility.id,
+            updateDate: callDate,
+            rawText,
+            summary,
+            updateType: "transcript",
+            repId: ctx.user.id,
+            repName: agentName,
+          });
+        }
+
+        return {
+          success: true as const,
+          facilityId: facility?.id ?? null,
+          facilityName: facility?.name ?? null,
+          hasTranscript: !!transcriptText,
+          hasAiSummary: !!aiSummary,
+          transcriptText: transcriptText || null,
+          aiSummary: aiSummary || null,
+        };
       }),
 
     syncCalls: protectedProcedure

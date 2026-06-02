@@ -9,75 +9,9 @@ import { registerMapsProxy } from "./mapsProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import axios from "axios";
-import { getRingcentralToken, upsertRingcentralToken } from "../crmDb";
-
-/** Auto-connect RingCentral using the JWT stored in env vars */
-async function autoConnectRingCentral() {
-  const jwt = process.env.RINGCENTRAL_JWT;
-  const clientId = process.env.RINGCENTRAL_CLIENT_ID;
-  const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET;
-  if (!jwt || !clientId || !clientSecret) return;
-
-  try {
-    // Check if we already have a valid token (more than 10 min remaining)
-    const existing = await getRingcentralToken();
-    if (existing && existing.tokenExpiry.getTime() - Date.now() > 10 * 60 * 1000) {
-      console.log(`[RingCentral] Already connected as ${existing.ownerName}`);
-      return;
-    }
-
-    // Exchange JWT for access token
-    const tokenResp = await axios.post(
-      "https://platform.ringcentral.com/restapi/oauth/token",
-      new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion: jwt,
-      }),
-      {
-        auth: { username: clientId, password: clientSecret },
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      }
-    );
-    const { access_token, refresh_token, expires_in } = tokenResp.data;
-
-    // Decode user info from JWT payload (avoids needing ReadAccounts scope)
-    let ownerName = "RingCentral User";
-    let ownerExtensionId: string | undefined;
-    try {
-      const jwtPayload = JSON.parse(Buffer.from(jwt.split(".")[1], "base64").toString());
-      ownerExtensionId = jwtPayload.sub?.toString();
-      ownerName = `RC User (${ownerExtensionId ?? "unknown"})`;
-    } catch { /* ignore decode errors */ }
-
-    // Try to get name via extension endpoint (requires ReadAccounts scope — optional)
-    try {
-      const meResp = await axios.get(
-        "https://platform.ringcentral.com/restapi/v1.0/account/~/extension/~",
-        { headers: { Authorization: `Bearer ${access_token}` } }
-      );
-      if (meResp.data?.name) ownerName = meResp.data.name;
-      if (meResp.data?.id) ownerExtensionId = meResp.data.id.toString();
-    } catch { /* ReadAccounts not available — use JWT-decoded info */ }
-
-    const accountId = ownerExtensionId ?? "default";
-
-    await upsertRingcentralToken({
-      accountId,
-      accessToken: access_token,
-      refreshToken: refresh_token ?? "",
-      tokenExpiry: new Date(Date.now() + (expires_in ?? 3600) * 1000),
-      ownerName,
-      ownerExtensionId,
-    });
-    console.log(`[RingCentral] Auto-connected as ${ownerName}`);
-  } catch (err: any) {
-    const detail = err?.response?.data ?? err?.message;
-    console.warn("[RingCentral] Auto-connect failed:", JSON.stringify(detail));
-    console.warn("[RingCentral] JWT present:", !!process.env.RINGCENTRAL_JWT, "len:", process.env.RINGCENTRAL_JWT?.length ?? 0);
-    console.warn("[RingCentral] ClientId:", process.env.RINGCENTRAL_CLIENT_ID ?? "(missing)");
-  }
-}
+// Note: RingCentral auto-connect via JWT has been removed.
+// Agents now log in to RingCentral directly through the embedded widget UI.
+// The server still stores tokens when agents connect via OAuth through the widget.
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -131,8 +65,6 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
-    // Auto-connect RingCentral after server is up
-    autoConnectRingCentral();
   });
 }
 

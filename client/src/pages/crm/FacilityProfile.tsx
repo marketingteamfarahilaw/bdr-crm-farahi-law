@@ -478,29 +478,50 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground">Notes, Transcripts & Updates</h3>
-        <Button size="sm" variant="outline" className="gap-1.5 border-border" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Update</Button>
+        <h3 className="text-sm font-medium text-muted-foreground">Call Transcripts, Notes & Updates</h3>
+        <Button size="sm" variant="outline" className="gap-1.5 border-border" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Note</Button>
       </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : (updates as any[]).length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground"><FileText className="w-10 h-10 mx-auto mb-3 opacity-30"/><p>No updates yet. Paste call transcripts, SMS threads, or manual notes here.</p></div>
+        <div className="text-center py-12 text-muted-foreground">
+          <Phone className="w-10 h-10 mx-auto mb-3 opacity-30"/>
+          <p className="font-medium">No call logs yet</p>
+          <p className="text-xs mt-1 max-w-xs mx-auto">Call this facility using the phone widget — transcripts and AI summaries will appear here automatically after each call.</p>
+        </div>
       ) : (
-        <div className="space-y-2">{(updates as any[]).map((upd)=>(
-          <Card key={upd.id} className="bg-card border-border"><CardContent className="p-4">
+        <div className="space-y-3">{(updates as any[]).map((upd)=>(
+          <Card key={upd.id} className={`border ${upd.updateType === "transcript" ? "bg-blue-950/20 border-blue-500/20" : "bg-card border-border"}`}>
+            <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium capitalize">{upd.updateType.replace(/_/g," ")}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">{upd.updateDate?new Date(upd.updateDate).toLocaleDateString():""}</span>
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  {upd.updateType === "transcript" ? <Phone className="w-3.5 h-3.5 text-blue-400" /> : <FileText className="w-3.5 h-3.5 text-muted-foreground" />}
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                    upd.updateType === "transcript" ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                    : upd.updateType === "sms" ? "bg-green-500/10 text-green-400 border-green-500/30"
+                    : upd.updateType === "visit_note" ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                    : "bg-muted text-muted-foreground border-border"
+                  }`}>
+                    {upd.updateType === "transcript" ? "Call Transcript" : upd.updateType.replace(/_/g," ")}
+                  </span>
+                  {upd.repName&&<span className="text-xs text-muted-foreground">by {upd.repName}</span>}
+                  <span className="text-xs text-muted-foreground ml-auto">{upd.updateDate?new Date(upd.updateDate).toLocaleString():""}</span>
                 </div>
-                {upd.repName&&<p className="text-xs text-muted-foreground">By: {upd.repName}</p>}
-                {upd.summary&&<p className="text-sm font-medium text-foreground mt-1">{upd.summary}</p>}
-                {upd.rawText&&(
-                  <details className="mt-1"><summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">View full text</summary>
-                    <pre className="text-xs text-foreground/70 mt-1 whitespace-pre-wrap font-sans bg-muted/30 rounded p-2 max-h-40 overflow-y-auto">{upd.rawText}</pre>
+                {upd.summary && (
+                  <div className={`rounded-lg p-3 mb-2 ${upd.updateType === "transcript" ? "bg-blue-500/10" : "bg-muted/30"}`}>
+                    {upd.updateType === "transcript" && <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">AI Summary</p>}
+                    <p className="text-sm text-foreground leading-relaxed">{upd.summary}</p>
+                  </div>
+                )}
+                {upd.rawText && upd.rawText.trim() && !upd.rawText.startsWith("[") && (
+                  <details className="mt-1">
+                    <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
+                      <FileText className="w-3 h-3 inline" /> View full transcript
+                    </summary>
+                    <pre className="text-xs text-foreground/70 mt-2 whitespace-pre-wrap font-sans bg-muted/30 rounded p-3 max-h-60 overflow-y-auto leading-relaxed">{upd.rawText}</pre>
                   </details>
                 )}
               </div>
-              <button onClick={()=>deleteUpdate.mutate({id:upd.id})} className="text-muted-foreground hover:text-red-400"><Trash2 className="w-4 h-4"/></button>
+              <button onClick={()=>deleteUpdate.mutate({id:upd.id})} className="text-muted-foreground hover:text-red-400 flex-shrink-0"><Trash2 className="w-4 h-4"/></button>
             </div>
           </CardContent></Card>
         ))}</div>

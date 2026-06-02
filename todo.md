@@ -343,3 +343,12 @@
 - [x] Email-based account merge on first login (mergeUserByEmail in sdk.ts)
 - [x] Role-based data isolation: agents see only their own records, admin sees all
 - [x] Agent field locked (non-editable) for non-admin users in all BDR forms
+
+## RingCentral Call Logging for Facilities
+- [x] Add findFacilityByPhone helper in crmDb.ts (match phone/phone2/phone3/contactPhone)
+- [x] Add logFacilityCall tRPC procedure: match facility by phone → create contact log → fetch RC recording → transcribe → AI summary → save
+- [x] Remove shared JWT auto-connect from server startup (agents log in with own RC credentials)
+- [x] Update App.tsx onCallEnd handler to call logFacilityCall instead of piClients.transcribeAndLog
+- [x] Update RingCentralWidget: defaultCallWith=ringout (agents log in via widget UI)
+- [x] Display call logs with transcript + AI summary on Facility Profile Updates tab
+- [x] Update RingCentralSettings page to reflect per-agent widget login flow

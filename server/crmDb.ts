@@ -150,6 +150,30 @@ export async function deleteFacility(id: number) {
   await db.delete(facilities).where(eq(facilities.id, id));
 }
 
+/**
+ * Find a facility by any of its phone numbers.
+ * Normalises both sides to digits-only before comparing.
+ */
+export async function findFacilityByPhone(rawPhone: string) {
+  const db = await getDb();
+  if (!db) return null;
+  // Normalise: keep digits only
+  const digits = rawPhone.replace(/\D/g, "");
+  if (!digits) return null;
+  // Pull all facilities and match in JS (MySQL REGEXP on computed columns is complex)
+  const rows = await db.select().from(facilities);
+  for (const f of rows) {
+    const candidates = [f.phone, f.phone2, f.phone3, f.contactPhone].filter(Boolean);
+    for (const c of candidates) {
+      const cd = c!.replace(/\D/g, "");
+      if (cd && (cd === digits || cd.endsWith(digits) || digits.endsWith(cd))) {
+        return f;
+      }
+    }
+  }
+  return null;
+}
+
 // ─── Contact Logs ─────────────────────────────────────────────────────────────
 
 export async function listContactLogs(facilityId: number) {

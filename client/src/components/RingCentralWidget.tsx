@@ -81,6 +81,8 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
         const params = new URLSearchParams({
           clientId: widgetConfig.clientId,
           appServer: "https://platform.ringcentral.com",
+          defaultCallWith: "ringout",
+          enableRingOut: "true",
         });
         if (widgetConfig.clientSecret && widgetConfig.jwt) {
           params.set("clientSecret", widgetConfig.clientSecret);
