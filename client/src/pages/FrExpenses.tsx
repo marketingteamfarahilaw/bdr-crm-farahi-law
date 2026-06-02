@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, DollarSign, Download } from "lucide-react";
 import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
+import { DatePickerField } from "@/components/DatePickerField";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 const CARD_TYPES = ["Company", "Personal"] as const;
@@ -188,28 +189,29 @@ export default function FrExpenses() {
           ) : !expenses || expenses.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">No expenses found. Adjust filters or click "Add Expense".</p>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Agent</TableHead>
-                  <TableHead>Facility</TableHead>
-                  <TableHead>Store</TableHead>
+                  <TableHead className="w-28">Date</TableHead>
+                  <TableHead className="w-24">Agent</TableHead>
+                  <TableHead className="w-36">Facility</TableHead>
+                  <TableHead className="w-28">Store</TableHead>
                   <TableHead>Reason</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Card</TableHead>
+                  <TableHead className="w-24">Amount</TableHead>
+                  <TableHead className="w-24">Card</TableHead>
                   <TableHead className="w-20">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {expenses.map((e) => (
                   <TableRow key={e.id}>
-                    <TableCell>{e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "—"}</TableCell>
                     <TableCell><Badge variant="outline">{e.agentName}</Badge></TableCell>
-                    <TableCell className="max-w-[120px] truncate">{e.facilityName ?? "—"}</TableCell>
-                    <TableCell>{(e as any).store ?? "—"}</TableCell>
-                    <TableCell className="max-w-[140px] truncate text-muted-foreground">{e.reason ?? "—"}</TableCell>
-                    <TableCell className="font-medium text-emerald-600">${parseFloat(String(e.amount ?? 0)).toFixed(2)}</TableCell>
+                    <TableCell className="max-w-[144px] truncate">{e.facilityName ?? "—"}</TableCell>
+                    <TableCell className="max-w-[112px] truncate">{(e as any).store ?? "—"}</TableCell>
+                    <TableCell className="max-w-[180px] truncate text-muted-foreground">{e.reason ?? "—"}</TableCell>
+                    <TableCell className="font-medium text-emerald-600 whitespace-nowrap">${parseFloat(String(e.amount ?? 0)).toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge variant={e.cardType === "Personal" ? "secondary" : "default"}>{e.cardType}</Badge>
                     </TableCell>
@@ -223,6 +225,7 @@ export default function FrExpenses() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -233,8 +236,8 @@ export default function FrExpenses() {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Download className="w-4 h-4" /> Export FR Expenses</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">Select a date range to filter the export. Leave blank to export all records.</p>
-            <div className="space-y-1"><Label>From Date</Label><Input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} /></div>
-            <div className="space-y-1"><Label>To Date</Label><Input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)} min={exportFrom || undefined} /></div>
+            <div className="space-y-1"><Label>From Date</Label><DatePickerField value={exportFrom} onChange={setExportFrom} placeholder="Start date" /></div>
+            <div className="space-y-1"><Label>To Date</Label><DatePickerField value={exportTo} onChange={setExportTo} placeholder="End date" /></div>
             {(!exportFrom && !exportTo) && <p className="text-xs text-muted-foreground">No date range — all {expenses?.length ?? 0} records will be exported.</p>}
           </div>
           <DialogFooter>
@@ -252,7 +255,7 @@ export default function FrExpenses() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Date *</Label>
-                <Input type="date" value={form.expenseDate} onChange={(e) => setForm({ ...form, expenseDate: e.target.value })} />
+                <DatePickerField value={form.expenseDate} onChange={(v) => setForm({ ...form, expenseDate: v })} />
               </div>
               <div className="space-y-1">
                 <Label>Agent *</Label>

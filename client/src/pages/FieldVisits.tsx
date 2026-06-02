@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, MapPin, Clock, Users, Download } from "lucide-react";
 import { toast } from "sonner";
 import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
+import { DatePickerField } from "@/components/DatePickerField";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 
@@ -227,7 +228,7 @@ export default function FieldVisits() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Date *</Label>
-                <Input type="date" value={form.visitDate} onChange={(e) => setForm({ ...form, visitDate: e.target.value })} />
+                <DatePickerField value={form.visitDate} onChange={(v) => setForm({ ...form, visitDate: v })} />
               </div>
               <div className="space-y-1">
                 <Label>Agent *</Label>

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, DollarSign, Download } from "lucide-react";
+import { DatePickerField } from "@/components/DatePickerField";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 
@@ -262,20 +263,11 @@ export default function BdrExpenses() {
             </p>
             <div className="space-y-1">
               <Label>From Date</Label>
-              <Input
-                type="date"
-                value={exportFrom}
-                onChange={(e) => setExportFrom(e.target.value)}
-              />
+              <DatePickerField value={exportFrom} onChange={setExportFrom} placeholder="Start date" />
             </div>
             <div className="space-y-1">
               <Label>To Date</Label>
-              <Input
-                type="date"
-                value={exportTo}
-                onChange={(e) => setExportTo(e.target.value)}
-                min={exportFrom || undefined}
-              />
+              <DatePickerField value={exportTo} onChange={setExportTo} placeholder="End date" />
             </div>
             {exportFrom && exportTo && (
               <p className="text-xs text-muted-foreground">
@@ -311,7 +303,7 @@ export default function BdrExpenses() {
               </div>
               <div className="space-y-1">
                 <Label>Date *</Label>
-                <Input type="date" value={form.expenseDate} onChange={(e) => setForm({ ...form, expenseDate: e.target.value })} />
+                <DatePickerField value={form.expenseDate} onChange={(v) => setForm({ ...form, expenseDate: v })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
