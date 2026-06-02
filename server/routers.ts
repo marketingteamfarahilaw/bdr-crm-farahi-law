@@ -3,6 +3,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { searchGooglePlaces } from "./googleMaps";
 import { calculateScore } from "./scoring";
 import { crmRouter } from "./crmRouter";
@@ -69,6 +70,7 @@ import {
   updateInboundLead,
   deleteInboundLead,
   getReferralStats,
+  getBdrAdminDashboard,
 } from "./db";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -560,6 +562,10 @@ export const appRouter = router({
 
   bdr: router({
     dashboardKpis: protectedProcedure.query(async () => getAgentDashboardKpis()),
+    adminDashboard: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin only' });
+      return getBdrAdminDashboard();
+    }),
 
     fieldVisits: router({
       list: protectedProcedure

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2 } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -42,6 +42,7 @@ const crmItems = [
 ];
 
 const bdrItems = [
+  { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", adminOnly: true },
   { icon: Activity, label: "Agent Dashboard", path: "/bdr/dashboard" },
   { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits" },
   { icon: Receipt, label: "FR Expenses", path: "/bdr/fr-expenses" },
@@ -277,7 +278,7 @@ function DashboardLayoutContent({
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">BDR Intelligence</p>
               )}
               <SidebarMenu>
-                {bdrItems.map(item => {
+                {bdrItems.filter(item => !(item as any).adminOnly || user?.role === 'admin').map(item => {
                   const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
                   return (
                     <SidebarMenuItem key={item.path}>

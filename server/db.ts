@@ -746,3 +746,164 @@ export async function getReferralStats() {
     },
   };
 }
+
+// ─── Admin BDR Summary Dashboard ──────────────────────────────────────────────
+
+export async function getBdrAdminDashboard() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [visits, frExp, bdrExp, rewards, errands, trackers] = await Promise.all([
+    db.select().from(fieldVisits),
+    db.select().from(frExpenses),
+    db.select().from(bdrExpenses),
+    db.select().from(referralRewards),
+    db.select().from(frErrands),
+    db.select().from(referralTracker),
+  ]);
+
+  const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
+
+  // ── Per-agent totals ──────────────────────────────────────────────────────
+  const agentMap: Record<string, {
+    visits: number; facilities: number; hours: number;
+    frExpenses: number; bdrExpenses: number; totalExpenses: number;
+    rewards: number; rewardsPaid: number;
+    errands: number; errandsCompleted: number;
+    referrals: number; referralsSuccessful: number;
+  }> = {};
+
+  const ensureAgent = (name: string) => {
+    if (!agentMap[name]) agentMap[name] = {
+      visits: 0, facilities: 0, hours: 0,
+      frExpenses: 0, bdrExpenses: 0, totalExpenses: 0,
+      rewards: 0, rewardsPaid: 0,
+      errands: 0, errandsCompleted: 0,
+      referrals: 0, referralsSuccessful: 0,
+    };
+    return agentMap[name];
+  };
+
+  for (const v of visits) {
+    const a = ensureAgent(v.agentName);
+    a.visits++;
+    a.facilities += v.facilityCount ?? 0;
+    if (v.hoursWorked) { const h = parseFloat(v.hoursWorked); if (!isNaN(h)) a.hours += h; }
+  }
+  for (const e of frExp) {
+    const a = ensureAgent(e.agentName);
+    const amt = parseFloat(String(e.amount ?? 0));
+    a.frExpenses += amt; a.totalExpenses += amt;
+  }
+  for (const e of bdrExp) {
+    const a = ensureAgent(e.agentName);
+    const amt = parseFloat(String(e.amount ?? 0));
+    a.bdrExpenses += amt; a.totalExpenses += amt;
+  }
+  for (const r of rewards) {
+    const a = ensureAgent(r.agentName);
+    a.rewards++;
+    a.rewardsPaid += parseFloat(String(r.payoutAmount ?? 0));
+  }
+  for (const e of errands) {
+    if (!e.agentName) continue;
+    const a = ensureAgent(e.agentName);
+    a.errands++;
+    if (e.status === "Completed") a.errandsCompleted++;
+  }
+  for (const t of trackers) {
+    if (!t.bdrAssigned) continue;
+    const a = ensureAgent(t.bdrAssigned);
+    a.referrals++;
+    if (t.status === "Successful Sent") a.referralsSuccessful++;
+  }
+
+  const byAgent = AGENTS.map(name => ({ agent: name, ...(agentMap[name] ?? {
+    visits: 0, facilities: 0, hours: 0,
+    frExpenses: 0, bdrExpenses: 0, totalExpenses: 0,
+    rewards: 0, rewardsPaid: 0,
+    errands: 0, errandsCompleted: 0,
+    referrals: 0, referralsSuccessful: 0,
+  }) }));
+
+  // ── Monthly trends (visits + expenses) ───────────────────────────────────
+  const monthMap: Record<string, { month: string; visits: number; expenses: number; rewards: number }> = {};
+  const ensureMonth = (m: string) => {
+    if (!monthMap[m]) monthMap[m] = { month: m, visits: 0, expenses: 0, rewards: 0 };
+    return monthMap[m];
+  };
+  for (const v of visits) {
+    if (!v.visitDate) continue;
+    const d = new Date(v.visitDate);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    ensureMonth(key).visits++;
+  }
+  for (const e of frExp) {
+    if (!e.expenseDate) continue;
+    const d = new Date(e.expenseDate);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    ensureMonth(key).expenses += parseFloat(String(e.amount ?? 0));
+  }
+  for (const e of bdrExp) {
+    if (!e.expenseDate) continue;
+    const d = new Date(e.expenseDate);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    ensureMonth(key).expenses += parseFloat(String(e.amount ?? 0));
+  }
+  for (const r of rewards) {
+    if (!r.createdAt) continue;
+    const d = new Date(r.createdAt);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    ensureMonth(key).rewards += parseFloat(String(r.payoutAmount ?? 0));
+  }
+  const byMonth = Object.values(monthMap).sort((a, b) => a.month.localeCompare(b.month));
+
+  // ── Errand type breakdown ─────────────────────────────────────────────────
+  const errandTypeMap: Record<string, number> = {};
+  for (const e of errands) {
+    const t = e.taskType ?? "Other";
+    errandTypeMap[t] = (errandTypeMap[t] ?? 0) + 1;
+  }
+  const byErrandType = Object.entries(errandTypeMap).map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // ── Referral status breakdown ─────────────────────────────────────────────
+  const refStatusMap: Record<string, number> = {};
+  for (const t of trackers) {
+    refStatusMap[t.status] = (refStatusMap[t.status] ?? 0) + 1;
+  }
+  const byReferralStatus = Object.entries(refStatusMap).map(([status, count]) => ({ status, count }));
+
+  // ── Reward type breakdown (by referralType) ──────────────────────────────
+  const rewardTierMap: Record<string, { count: number; total: number }> = {};
+  for (const r of rewards) {
+    const tier = r.referralType ?? "Other";
+    if (!rewardTierMap[tier]) rewardTierMap[tier] = { count: 0, total: 0 };
+    rewardTierMap[tier].count++;
+    rewardTierMap[tier].total += parseFloat(String(r.payoutAmount ?? 0));
+  }
+  const byRewardTier = Object.entries(rewardTierMap).map(([tier, d]) => ({ tier, ...d }));
+
+  // ── Top-level KPIs ────────────────────────────────────────────────────────
+  const totalExpenses = frExp.reduce((s, e) => s + parseFloat(String(e.amount ?? 0)), 0)
+    + bdrExp.reduce((s, e) => s + parseFloat(String(e.amount ?? 0)), 0);
+  const totalRewardsPaid = rewards.reduce((s, r) => s + parseFloat(String(r.payoutAmount ?? 0)), 0);
+
+  return {
+    kpis: {
+      totalVisits: visits.length,
+      totalFacilities: visits.reduce((s, v) => s + (v.facilityCount ?? 0), 0),
+      totalExpenses: Math.round(totalExpenses * 100) / 100,
+      totalRewardsPaid: Math.round(totalRewardsPaid * 100) / 100,
+      totalErrands: errands.length,
+      completedErrands: errands.filter(e => e.status === "Completed").length,
+      totalReferrals: trackers.length,
+      successfulReferrals: trackers.filter(t => t.status === "Successful Sent").length,
+    },
+    byAgent,
+    byMonth,
+    byErrandType,
+    byReferralStatus,
+    byRewardTier,
+  };
+}
