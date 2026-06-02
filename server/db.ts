@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, gte, lte, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -87,6 +87,23 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function mergeUserByEmail(openId: string, email: string): Promise<void> {
+  // When a pre-registered agent row exists (keyed by email with a placeholder openId),
+  // update it with the real openId so all their BDR data links correctly.
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users)
+    .set({ openId })
+    .where(and(eq(users.email, email), sql`openId LIKE 'pending_%'`));
 }
 
 // ─── Saved Leads ─────────────────────────────────────────────────────────────
@@ -285,10 +302,34 @@ export async function updatePiClientCallLogTranscript(id: number, transcript: st
 
 // ─── Field Visits ─────────────────────────────────────────────────────────────
 
-export async function getAllFieldVisits() {
+export interface BdrFilters {
+  agent?: string;
+  dateFrom?: string;  // ISO date string YYYY-MM-DD
+  dateTo?: string;
+  month?: string;     // e.g. "January"
+  year?: string;      // e.g. "2026"
+  status?: string;
+  search?: string;    // free-text search on client/facility name
+}
+
+export async function getAllFieldVisits(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(fieldVisits).orderBy(desc(fieldVisits.visitDate));
+  const conditions = [];
+  if (filters.agent) conditions.push(eq(fieldVisits.agentName, filters.agent));
+  if (filters.dateFrom) conditions.push(gte(fieldVisits.visitDate, new Date(filters.dateFrom)));
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
+    conditions.push(lte(fieldVisits.visitDate, to));
+  }
+  if (filters.year) {
+    conditions.push(gte(fieldVisits.visitDate, new Date(`${filters.year}-01-01`)));
+    conditions.push(lte(fieldVisits.visitDate, new Date(`${filters.year}-12-31T23:59:59`)));
+  }
+  if (filters.search) conditions.push(like(fieldVisits.notes, `%${filters.search}%`));
+  const q = db.select().from(fieldVisits);
+  if (conditions.length) q.where(and(...conditions));
+  return q.orderBy(desc(fieldVisits.visitDate));
 }
 
 export async function createFieldVisit(data: InsertFieldVisit) {
@@ -311,10 +352,25 @@ export async function deleteFieldVisit(id: number) {
 
 // ─── FR Expenses ─────────────────────────────────────────────────────────────
 
-export async function getAllFrExpenses() {
+export async function getAllFrExpenses(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(frExpenses).orderBy(desc(frExpenses.expenseDate));
+  const conditions = [];
+  if (filters.agent) conditions.push(eq(frExpenses.agentName, filters.agent));
+  if (filters.dateFrom) conditions.push(gte(frExpenses.expenseDate, new Date(filters.dateFrom)));
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
+    conditions.push(lte(frExpenses.expenseDate, to));
+  }
+  if (filters.year) {
+    conditions.push(gte(frExpenses.expenseDate, new Date(`${filters.year}-01-01`)));
+    conditions.push(lte(frExpenses.expenseDate, new Date(`${filters.year}-12-31T23:59:59`)));
+  }
+  if (filters.status) conditions.push(eq(frExpenses.cardType, filters.status as "Personal" | "Company"));
+  if (filters.search) conditions.push(like(frExpenses.facilityName, `%${filters.search}%`));
+  const q = db.select().from(frExpenses);
+  if (conditions.length) q.where(and(...conditions));
+  return q.orderBy(desc(frExpenses.expenseDate));
 }
 
 export async function createFrExpense(data: InsertFrExpense) {
@@ -337,10 +393,25 @@ export async function deleteFrExpense(id: number) {
 
 // ─── BDR Expenses ─────────────────────────────────────────────────────────────
 
-export async function getAllBdrExpenses() {
+export async function getAllBdrExpenses(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(bdrExpenses).orderBy(desc(bdrExpenses.expenseDate));
+  const conditions = [];
+  if (filters.agent) conditions.push(eq(bdrExpenses.agentName, filters.agent));
+  if (filters.dateFrom) conditions.push(gte(bdrExpenses.expenseDate, new Date(filters.dateFrom)));
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
+    conditions.push(lte(bdrExpenses.expenseDate, to));
+  }
+  if (filters.month) conditions.push(like(bdrExpenses.month, `%${filters.month}%`));
+  if (filters.year) {
+    conditions.push(gte(bdrExpenses.expenseDate, new Date(`${filters.year}-01-01`)));
+    conditions.push(lte(bdrExpenses.expenseDate, new Date(`${filters.year}-12-31T23:59:59`)));
+  }
+  if (filters.search) conditions.push(like(bdrExpenses.facilityName, `%${filters.search}%`));
+  const q = db.select().from(bdrExpenses);
+  if (conditions.length) q.where(and(...conditions));
+  return q.orderBy(desc(bdrExpenses.expenseDate));
 }
 
 export async function createBdrExpense(data: InsertBdrExpense) {
@@ -363,10 +434,25 @@ export async function deleteBdrExpense(id: number) {
 
 // ─── Referral Rewards ─────────────────────────────────────────────────────────
 
-export async function getAllReferralRewards() {
+export async function getAllReferralRewards(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(referralRewards).orderBy(desc(referralRewards.createdAt));
+  const conditions = [];
+  if (filters.agent) conditions.push(eq(referralRewards.agentName, filters.agent));
+  if (filters.status) conditions.push(eq(referralRewards.status, filters.status as "Accepted" | "Pending" | "Denied"));
+  if (filters.search) conditions.push(like(referralRewards.clientName, `%${filters.search}%`));
+  if (filters.dateFrom) conditions.push(gte(referralRewards.createdAt, new Date(filters.dateFrom)));
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
+    conditions.push(lte(referralRewards.createdAt, to));
+  }
+  if (filters.year) {
+    conditions.push(gte(referralRewards.createdAt, new Date(`${filters.year}-01-01`)));
+    conditions.push(lte(referralRewards.createdAt, new Date(`${filters.year}-12-31T23:59:59`)));
+  }
+  const q = db.select().from(referralRewards);
+  if (conditions.length) q.where(and(...conditions));
+  return q.orderBy(desc(referralRewards.createdAt));
 }
 
 export async function createReferralReward(data: InsertReferralReward) {
@@ -389,10 +475,25 @@ export async function deleteReferralReward(id: number) {
 
 // ─── FR Errands ───────────────────────────────────────────────────────────────
 
-export async function getAllFrErrands() {
+export async function getAllFrErrands(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(frErrands).orderBy(desc(frErrands.errandDate));
+  const conditions = [];
+  if (filters.agent) conditions.push(eq(frErrands.agentName, filters.agent));
+  if (filters.status) conditions.push(eq(frErrands.status, filters.status as "Completed" | "Not Completed" | "In Progress"));
+  if (filters.dateFrom) conditions.push(gte(frErrands.errandDate, new Date(filters.dateFrom)));
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
+    conditions.push(lte(frErrands.errandDate, to));
+  }
+  if (filters.year) {
+    conditions.push(gte(frErrands.errandDate, new Date(`${filters.year}-01-01`)));
+    conditions.push(lte(frErrands.errandDate, new Date(`${filters.year}-12-31T23:59:59`)));
+  }
+  if (filters.search) conditions.push(like(frErrands.clientName, `%${filters.search}%`));
+  const q = db.select().from(frErrands);
+  if (conditions.length) q.where(and(...conditions));
+  return q.orderBy(desc(frErrands.errandDate));
 }
 
 export async function createFrErrand(data: InsertFrErrand) {
@@ -415,10 +516,26 @@ export async function deleteFrErrand(id: number) {
 
 // ─── Referral Tracker ─────────────────────────────────────────────────────────
 
-export async function getAllReferralTracker() {
+export async function getAllReferralTracker(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(referralTracker).orderBy(desc(referralTracker.createdAt));
+  const conditions = [];
+  if (filters.agent) conditions.push(eq(referralTracker.bdrAssigned, filters.agent));
+  if (filters.status) conditions.push(eq(referralTracker.status, filters.status as "Successful Sent" | "Demo Sent" | "Pending" | "Unsuccessful" | "In Progress"));
+  if (filters.month) conditions.push(like(referralTracker.month, `%${filters.month}%`));
+  if (filters.search) conditions.push(like(referralTracker.clientName, `%${filters.search}%`));
+  if (filters.dateFrom) conditions.push(gte(referralTracker.createdAt, new Date(filters.dateFrom)));
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
+    conditions.push(lte(referralTracker.createdAt, to));
+  }
+  if (filters.year) {
+    conditions.push(gte(referralTracker.createdAt, new Date(`${filters.year}-01-01`)));
+    conditions.push(lte(referralTracker.createdAt, new Date(`${filters.year}-12-31T23:59:59`)));
+  }
+  const q = db.select().from(referralTracker);
+  if (conditions.length) q.where(and(...conditions));
+  return q.orderBy(desc(referralTracker.createdAt));
 }
 
 export async function createReferralTracker(data: InsertReferralTracker) {

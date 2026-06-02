@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, MapPin, Clock, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Clock, Users, Download } from "lucide-react";
 import { toast } from "sonner";
+import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 
@@ -33,8 +35,18 @@ const defaultForm: FormData = {
 };
 
 export default function FieldVisits() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const utils = trpc.useUtils();
-  const { data: visits, isLoading } = trpc.bdr.fieldVisits.list.useQuery();
+  const [filters, setFilters] = useState<BdrFilterValues>({});
+
+  // Build query input — non-admins are locked to their own agent name
+  const queryInput = isAdmin
+    ? (Object.keys(filters).length > 0 ? filters : undefined)
+    : { agent: (user as any)?.agentName ?? undefined };
+
+  const { data: visits, isLoading } = trpc.bdr.fieldVisits.list.useQuery(queryInput);
+
   const createMutation = trpc.bdr.fieldVisits.create.useMutation({
     onSuccess: () => { utils.bdr.fieldVisits.list.invalidate(); toast.success("Visit logged"); setOpen(false); setForm(defaultForm); },
     onError: (e) => toast.error(e.message),
@@ -54,7 +66,7 @@ export default function FieldVisits() {
 
   function openCreate() {
     setEditing(null);
-    setForm(defaultForm);
+    setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName ?? "") });
     setOpen(true);
   }
 
@@ -82,6 +94,28 @@ export default function FieldVisits() {
     }
   }
 
+  function exportCsv() {
+    if (!visits?.length) return toast.error("No data to export");
+    const headers = ["Date", "Agent", "Facility Count", "Hours Worked", "Facilities", "Notes"];
+    const rows = visits.map((v) => [
+      v.visitDate ? new Date(v.visitDate).toLocaleDateString() : "",
+      v.agentName,
+      v.facilityCount ?? 0,
+      v.hoursWorked ?? "",
+      Array.isArray(v.facilitiesVisited) ? (v.facilitiesVisited as {name:string}[]).map(f=>f.name).join("; ") : "",
+      v.notes ?? "",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `field-visits-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${visits.length} records`);
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -89,8 +123,21 @@ export default function FieldVisits() {
           <h1 className="text-2xl font-bold">Field Visits</h1>
           <p className="text-muted-foreground text-sm mt-1">Daily log of facility visits by FR/BDR agents</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Log Visit</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportCsv} disabled={!visits?.length}>
+            <Download className="w-4 h-4 mr-2" />Export CSV
+          </Button>
+          <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Log Visit</Button>
+        </div>
       </div>
+
+      {/* Filters */}
+      <BdrFilterBar
+        filters={filters}
+        onChange={setFilters}
+        show={{ agent: true, dateRange: true, year: true, search: true }}
+        showAgentFilter={isAdmin}
+      />
 
       {/* Summary cards */}
       {visits && visits.length > 0 && (
@@ -118,7 +165,12 @@ export default function FieldVisits() {
               <Clock className="w-8 h-8 text-amber-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {visits.reduce((s, v) => s + (v.hoursWorked ? parseFloat(v.hoursWorked) || 0 : 0), 0).toFixed(1)}
+                  {visits.reduce((s, v) => {
+                    if (!v.hoursWorked) return s;
+                    const m = v.hoursWorked.match(/(\d+)h\s*(\d+)?m?/);
+                    if (m) return s + parseInt(m[1]||"0") + (parseInt(m[2]||"0")/60);
+                    return s + (parseFloat(v.hoursWorked) || 0);
+                  }, 0).toFixed(1)}
                 </p>
                 <p className="text-xs text-muted-foreground">Total Hours</p>
               </div>
@@ -128,12 +180,12 @@ export default function FieldVisits() {
       )}
 
       <Card>
-        <CardHeader><CardTitle>Visit Log</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Visit Log {visits ? `(${visits.length})` : ""}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !visits || visits.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No visits logged yet. Click "Log Visit" to add one.</p>
+            <p className="text-muted-foreground text-sm text-center py-8">No visits found. Adjust filters or click "Log Visit" to add one.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -179,10 +231,14 @@ export default function FieldVisits() {
               </div>
               <div className="space-y-1">
                 <Label>Agent *</Label>
-                <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
-                  <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
-                </Select>
+                {isAdmin ? (
+                  <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={form.agentName} disabled className="bg-muted" />
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -192,7 +248,7 @@ export default function FieldVisits() {
               </div>
               <div className="space-y-1">
                 <Label>Hours Worked</Label>
-                <Input placeholder="e.g. 7.5" value={form.hoursWorked} onChange={(e) => setForm({ ...form, hoursWorked: e.target.value })} />
+                <Input placeholder="e.g. 7h 30m" value={form.hoursWorked} onChange={(e) => setForm({ ...form, hoursWorked: e.target.value })} />
               </div>
             </div>
             <div className="space-y-1">

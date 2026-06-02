@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, DollarSign, Download } from "lucide-react";
+import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 const CARD_TYPES = ["Company", "Personal"] as const;
@@ -38,8 +40,17 @@ const defaultForm: FormData = {
 };
 
 export default function FrExpenses() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const utils = trpc.useUtils();
-  const { data: expenses, isLoading } = trpc.bdr.frExpenses.list.useQuery();
+  const [filters, setFilters] = useState<BdrFilterValues>({});
+
+  const queryInput = isAdmin
+    ? (Object.keys(filters).length > 0 ? filters : undefined)
+    : { agent: (user as any)?.agentName ?? undefined };
+
+  const { data: expenses, isLoading } = trpc.bdr.frExpenses.list.useQuery(queryInput);
+
   const createMutation = trpc.bdr.frExpenses.create.useMutation({
     onSuccess: () => { utils.bdr.frExpenses.list.invalidate(); toast.success("Expense added"); setOpen(false); setForm(defaultForm); },
     onError: (e) => toast.error(e.message),
@@ -56,13 +67,15 @@ export default function FrExpenses() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState<FormData>(defaultForm);
-
-  // Export date range state
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFrom, setExportFrom] = useState("");
   const [exportTo, setExportTo] = useState("");
 
-  function openCreate() { setEditing(null); setForm(defaultForm); setOpen(true); }
+  function openCreate() {
+    setEditing(null);
+    setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName ?? "") });
+    setOpen(true);
+  }
 
   function openEdit(e: NonNullable<typeof expenses>[0]) {
     setEditing(e.id);
@@ -90,46 +103,28 @@ export default function FrExpenses() {
 
   function runExport() {
     if (!expenses || expenses.length === 0) return toast.error("No data to export");
-
     const from = exportFrom ? new Date(exportFrom + "T00:00:00") : null;
     const to = exportTo ? new Date(exportTo + "T23:59:59") : null;
-
     const filtered = expenses.filter((e) => {
-      if (!e.expenseDate) return !from && !to; // include undated rows only if no filter set
+      if (!e.expenseDate) return !from && !to;
       const d = new Date(e.expenseDate);
       if (from && d < from) return false;
       if (to && d > to) return false;
       return true;
     });
-
-    if (filtered.length === 0) {
-      toast.error("No expenses found in the selected date range");
-      return;
-    }
-
+    if (filtered.length === 0) return toast.error("No expenses found in the selected date range");
     const headers = ["Date", "Agent", "Facility", "Store", "Reason", "Amount", "Card Type", "Notes"];
     const rows = filtered.map((e) => [
       e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "",
-      e.agentName,
-      e.facilityName ?? "",
-      (e as any).store ?? "",
-      e.reason ?? "",
-      parseFloat(String(e.amount ?? 0)).toFixed(2),
-      e.cardType ?? "",
-      e.notes ?? "",
+      e.agentName, e.facilityName ?? "", (e as any).store ?? "",
+      e.reason ?? "", parseFloat(String(e.amount ?? 0)).toFixed(2), e.cardType ?? "", e.notes ?? "",
     ]);
-
-    const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const suffix = from || to
-      ? `${exportFrom || "start"}_to_${exportTo || "end"}`
-      : new Date().toISOString().split("T")[0];
+    const suffix = from || to ? `${exportFrom || "start"}_to_${exportTo || "end"}` : new Date().toISOString().split("T")[0];
     a.download = `fr-expenses-${suffix}.csv`;
     a.click();
     URL.revokeObjectURL(url);
@@ -147,16 +142,20 @@ export default function FrExpenses() {
           <p className="text-muted-foreground text-sm mt-1">Field rep expense log per facility visit</p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setExportOpen(true)}
-            disabled={!expenses || expenses.length === 0}
-          >
+          <Button variant="outline" onClick={() => setExportOpen(true)} disabled={!expenses?.length}>
             <Download className="w-4 h-4 mr-2" />Export CSV
           </Button>
           <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Expense</Button>
         </div>
       </div>
+
+      <BdrFilterBar
+        filters={filters}
+        onChange={setFilters}
+        show={{ agent: true, dateRange: true, year: true, status: true, search: true }}
+        statusOptions={["Company", "Personal"]}
+        showAgentFilter={isAdmin}
+      />
 
       {expenses && expenses.length > 0 && (
         <div className="grid grid-cols-2 gap-4">
@@ -182,12 +181,12 @@ export default function FrExpenses() {
       )}
 
       <Card>
-        <CardHeader><CardTitle>Expense Log</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Expense Log {expenses ? `(${expenses.length})` : ""}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !expenses || expenses.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No expenses logged yet.</p>
+            <p className="text-muted-foreground text-sm text-center py-8">No expenses found. Adjust filters or click "Add Expense".</p>
           ) : (
             <Table>
               <TableHeader>
@@ -228,53 +227,19 @@ export default function FrExpenses() {
         </CardContent>
       </Card>
 
-      {/* Export Date Range Dialog */}
+      {/* Export Dialog */}
       <Dialog open={exportOpen} onOpenChange={setExportOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Download className="w-4 h-4" /> Export FR Expenses
-            </DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Download className="w-4 h-4" /> Export FR Expenses</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              Select a date range to filter the export. Leave both fields blank to export all records.
-            </p>
-            <div className="space-y-1">
-              <Label>From Date</Label>
-              <Input
-                type="date"
-                value={exportFrom}
-                onChange={(e) => setExportFrom(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>To Date</Label>
-              <Input
-                type="date"
-                value={exportTo}
-                onChange={(e) => setExportTo(e.target.value)}
-                min={exportFrom || undefined}
-              />
-            </div>
-            {exportFrom && exportTo && (
-              <p className="text-xs text-muted-foreground">
-                Exporting expenses from {new Date(exportFrom).toLocaleDateString()} to {new Date(exportTo).toLocaleDateString()}
-              </p>
-            )}
-            {(!exportFrom && !exportTo) && (
-              <p className="text-xs text-muted-foreground">
-                No date range set — all {expenses?.length ?? 0} records will be exported.
-              </p>
-            )}
+            <p className="text-sm text-muted-foreground">Select a date range to filter the export. Leave blank to export all records.</p>
+            <div className="space-y-1"><Label>From Date</Label><Input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} /></div>
+            <div className="space-y-1"><Label>To Date</Label><Input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)} min={exportFrom || undefined} /></div>
+            {(!exportFrom && !exportTo) && <p className="text-xs text-muted-foreground">No date range — all {expenses?.length ?? 0} records will be exported.</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setExportOpen(false); setExportFrom(""); setExportTo(""); }}>
-              Cancel
-            </Button>
-            <Button onClick={runExport}>
-              <Download className="w-4 h-4 mr-2" /> Download CSV
-            </Button>
+            <Button variant="outline" onClick={() => { setExportOpen(false); setExportFrom(""); setExportTo(""); }}>Cancel</Button>
+            <Button onClick={runExport}><Download className="w-4 h-4 mr-2" /> Download CSV</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -291,10 +256,14 @@ export default function FrExpenses() {
               </div>
               <div className="space-y-1">
                 <Label>Agent *</Label>
-                <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
-                  <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
-                </Select>
+                {isAdmin ? (
+                  <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={form.agentName} disabled className="bg-muted" />
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

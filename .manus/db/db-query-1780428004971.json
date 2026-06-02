@@ -1,0 +1,18 @@
+{
+  "query": "UPDATE fr_expenses SET agentName = 'Queenie' WHERE agentName = 'Quee';\nSELECT bdrAssigned, COUNT(*) as cnt FROM referral_tracker GROUP BY bdrAssigned;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute UPDATE fr_expenses SET agentName = 'Queenie' WHERE agentName = 'Quee';\nSELECT bdrAssigned, COUNT(*) as cnt FROM referral_tracker GROUP BY bdrAssigned;\n",
+  "rows": [
+    {
+      "bdrAssigned": "Ally",
+      "cnt": "127"
+    },
+    {
+      "bdrAssigned": "Queenie",
+      "cnt": "62"
+    }
+  ],
+  "messages": [],
+  "stdout": "bdrAssigned\tcnt\nAlly\t127\nQueenie\t62\n",
+  "stderr": "",
+  "execution_time_ms": 277
+}

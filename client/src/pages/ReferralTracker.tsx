@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,8 +52,16 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ReferralTracker() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const utils = trpc.useUtils();
-  const { data: trackers, isLoading } = trpc.bdr.referralTracker.list.useQuery();
+  const [filters, setFilters] = useState<BdrFilterValues>({});
+
+  const queryInput = isAdmin
+    ? (Object.keys(filters).length > 0 ? filters : undefined)
+    : { agent: (user as any)?.agentName ?? undefined };
+
+  const { data: trackers, isLoading } = trpc.bdr.referralTracker.list.useQuery(queryInput);
   const createMutation = trpc.bdr.referralTracker.create.useMutation({
     onSuccess: () => { utils.bdr.referralTracker.list.invalidate(); toast.success("Tracker entry added"); setOpen(false); setForm(defaultForm); },
     onError: (e) => toast.error(e.message),
@@ -69,7 +79,7 @@ export default function ReferralTracker() {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState<FormData>(defaultForm);
 
-  function openCreate() { setEditing(null); setForm(defaultForm); setOpen(true); }
+  function openCreate() { setEditing(null); setForm({ ...defaultForm, bdrAgent: isAdmin ? "" : ((user as any)?.agentName ?? "") }); setOpen(true); }
 
   function openEdit(t: NonNullable<typeof trackers>[0]) {
     setEditing(t.id);
@@ -109,6 +119,14 @@ export default function ReferralTracker() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Entry</Button>
       </div>
 
+      <BdrFilterBar
+        filters={filters}
+        onChange={setFilters}
+        show={{ agent: true, month: true, year: true, status: true, search: true }}
+        statusOptions={["Pending", "In Progress", "Successful Sent", "Demo Sent", "Unsuccessful"]}
+        showAgentFilter={isAdmin}
+      />
+
       {trackers && trackers.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           <Card>
@@ -142,12 +160,12 @@ export default function ReferralTracker() {
       )}
 
       <Card>
-        <CardHeader><CardTitle>Referral Tracker</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Referral Tracker {trackers ? `(${trackers.length})` : ""}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !trackers || trackers.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No tracker entries yet.</p>
+            <p className="text-muted-foreground text-sm text-center py-8">No entries found. Adjust filters or click "Add Entry".</p>
           ) : (
             <Table>
               <TableHeader>
@@ -239,10 +257,14 @@ export default function ReferralTracker() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>BDR Agent</Label>
-                <Select value={form.bdrAgent} onValueChange={(v) => setForm({ ...form, bdrAgent: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select BDR" /></SelectTrigger>
-                  <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
-                </Select>
+                {isAdmin ? (
+                  <Select value={form.bdrAgent} onValueChange={(v) => setForm({ ...form, bdrAgent: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select BDR" /></SelectTrigger>
+                    <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={form.bdrAgent} disabled className="bg-muted" />
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Status</Label>

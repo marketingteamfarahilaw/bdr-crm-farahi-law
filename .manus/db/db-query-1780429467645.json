@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Pre-register agent accounts so they get linked on first OAuth login\n-- These rows will be matched by email when the agent first signs in\nINSERT INTO users (openId, name, email, role, agentName, loginMethod, createdAt, updatedAt)\nVALUES\n  ('pending_gracel', 'Gracel', 'gracel@farahilaw.com', 'user', 'Gracel', 'oauth', NOW(), NOW()),\n  ('pending_queenie', 'Queenie', 'queenie@farahilaw.com', 'user', 'Queenie', 'oauth', NOW(), NOW()),\n  ('pending_ally', 'Ally', 'ally@farahilaw.com', 'user', 'Ally', 'oauth', NOW(), NOW()),\n  ('pending_miguel', 'Miguel', 'miguelf@farahilaw.com', 'user', 'Miguel', 'oauth', NOW(), NOW())\nON DUPLICATE KEY UPDATE\n  agentName = VALUES(agentName),\n  role = VALUES(role),\n  updatedAt = NOW();\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute \n-- Pre-register agent accounts so they get linked on first OAuth login\n-- These rows will be matched by email when the agent first signs in\nINSERT INTO users (openId, name, email, role, agentName, loginMethod, createdAt, updatedAt)\nVALUES\n  ('pending_gracel', 'Gracel', 'gracel@farahilaw.com', 'user', 'Gracel', 'oauth', NOW(), NOW()),\n  ('pending_queenie', 'Queenie', 'queenie@farahilaw.com', 'user', 'Queenie', 'oauth', NOW(), NOW()),\n  ('pending_ally', 'Ally', 'ally@farahilaw.com', 'user', 'Ally', 'oauth', NOW(), NOW()),\n  ('pending_miguel', 'Miguel', 'miguelf@farahilaw.com', 'user', 'Miguel', 'oauth', NOW(), NOW())\nON DUPLICATE KEY UPDATE\n  agentName = VALUES(agentName),\n  role = VALUES(role),\n  updatedAt = NOW();\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1076
+}

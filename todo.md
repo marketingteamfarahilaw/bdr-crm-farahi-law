@@ -333,3 +333,13 @@
 ### Navigation
 - [x] Add "BDR Intelligence" section to sidebar with 7 nav items
 - [x] Register all 7 BDR routes in App.tsx
+
+## BDR Filters & Role-Based Access (Jun 2026)
+- [x] Add BdrFilterBar component (agent, date range, month, year, status, search)
+- [x] Add filter params to all 6 BDR tRPC procedures (fieldVisits, frExpenses, bdrExpenses, frErrands, referralRewards, referralTracker)
+- [x] Apply BdrFilterBar to all 6 BDR pages
+- [x] Add agentName column to users table (links user to BDR data)
+- [x] Pre-register 4 agent accounts (gracel, queenie, ally, miguelf @farahilaw.com)
+- [x] Email-based account merge on first login (mergeUserByEmail in sdk.ts)
+- [x] Role-based data isolation: agents see only their own records, admin sees all
+- [x] Agent field locked (non-editable) for non-admin users in all BDR forms

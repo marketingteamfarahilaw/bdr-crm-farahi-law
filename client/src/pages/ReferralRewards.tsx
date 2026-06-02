@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,8 +52,16 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ReferralRewards() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const utils = trpc.useUtils();
-  const { data: rewards, isLoading } = trpc.bdr.referralRewards.list.useQuery();
+  const [filters, setFilters] = useState<BdrFilterValues>({});
+
+  const queryInput = isAdmin
+    ? (Object.keys(filters).length > 0 ? filters : undefined)
+    : { agent: (user as any)?.agentName ?? undefined };
+
+  const { data: rewards, isLoading } = trpc.bdr.referralRewards.list.useQuery(queryInput);
   const createMutation = trpc.bdr.referralRewards.create.useMutation({
     onSuccess: () => { utils.bdr.referralRewards.list.invalidate(); toast.success("Referral reward added"); setOpen(false); setForm(defaultForm); },
     onError: (e) => toast.error(e.message),
@@ -69,7 +79,7 @@ export default function ReferralRewards() {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState<FormData>(defaultForm);
 
-  function openCreate() { setEditing(null); setForm(defaultForm); setOpen(true); }
+  function openCreate() { setEditing(null); setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName ?? "") }); setOpen(true); }
 
   function openEdit(r: NonNullable<typeof rewards>[0]) {
     setEditing(r.id);
@@ -110,6 +120,14 @@ export default function ReferralRewards() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Referral</Button>
       </div>
 
+      <BdrFilterBar
+        filters={filters}
+        onChange={setFilters}
+        show={{ agent: true, dateRange: true, year: true, status: true, search: true }}
+        statusOptions={["Pending", "Accepted", "Denied"]}
+        showAgentFilter={isAdmin}
+      />
+
       {rewards && rewards.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           <Card>
@@ -143,12 +161,12 @@ export default function ReferralRewards() {
       )}
 
       <Card>
-        <CardHeader><CardTitle>Referral Reward Log</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Referral Reward Log {rewards ? `(${rewards.length})` : ""}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !rewards || rewards.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No referral rewards logged yet.</p>
+            <p className="text-muted-foreground text-sm text-center py-8">No referral rewards found. Adjust filters or click "Add Referral".</p>
           ) : (
             <Table>
               <TableHeader>
@@ -202,10 +220,14 @@ export default function ReferralRewards() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Agent *</Label>
-                <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
-                  <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
-                </Select>
+                {isAdmin ? (
+                  <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={form.agentName} disabled className="bg-muted" />
+                )}
               </div>
               <div className="space-y-1">
                 <Label>SUD (Sign-Up Date)</Label>

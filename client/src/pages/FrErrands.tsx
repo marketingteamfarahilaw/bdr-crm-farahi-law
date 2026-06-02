@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,8 +55,16 @@ const statusColors: Record<string, string> = {
 };
 
 export default function FrErrands() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const utils = trpc.useUtils();
-  const { data: errands, isLoading } = trpc.bdr.frErrands.list.useQuery();
+  const [filters, setFilters] = useState<BdrFilterValues>({});
+
+  const queryInput = isAdmin
+    ? (Object.keys(filters).length > 0 ? filters : undefined)
+    : { agent: (user as any)?.agentName ?? undefined };
+
+  const { data: errands, isLoading } = trpc.bdr.frErrands.list.useQuery(queryInput);
   const createMutation = trpc.bdr.frErrands.create.useMutation({
     onSuccess: () => { utils.bdr.frErrands.list.invalidate(); toast.success("Errand added"); setOpen(false); setForm(defaultForm); },
     onError: (e) => toast.error(e.message),
@@ -72,7 +82,7 @@ export default function FrErrands() {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState<FormData>(defaultForm);
 
-  function openCreate() { setEditing(null); setForm(defaultForm); setOpen(true); }
+  function openCreate() { setEditing(null); setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName ?? "") }); setOpen(true); }
 
   function openEdit(e: NonNullable<typeof errands>[0]) {
     setEditing(e.id);
@@ -112,6 +122,14 @@ export default function FrErrands() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Errand</Button>
       </div>
 
+      <BdrFilterBar
+        filters={filters}
+        onChange={setFilters}
+        show={{ agent: true, dateRange: true, year: true, status: true, search: true }}
+        statusOptions={["In Progress", "Completed", "Not Completed"]}
+        showAgentFilter={isAdmin}
+      />
+
       {errands && errands.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           <Card>
@@ -145,12 +163,12 @@ export default function FrErrands() {
       )}
 
       <Card>
-        <CardHeader><CardTitle>Errand Log</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Errand Log {errands ? `(${errands.length})` : ""}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !errands || errands.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No errands logged yet.</p>
+            <p className="text-muted-foreground text-sm text-center py-8">No errands found. Adjust filters or click "Add Errand".</p>
           ) : (
             <Table>
               <TableHeader>
@@ -226,10 +244,14 @@ export default function FrErrands() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Agent</Label>
-                <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
-                  <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
-                </Select>
+                {isAdmin ? (
+                  <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={form.agentName} disabled className="bg-muted" />
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Status</Label>

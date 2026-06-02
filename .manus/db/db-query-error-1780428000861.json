@@ -1,0 +1,8 @@
+{
+  "query": "UPDATE fr_expenses SET agentName = 'Queenie' WHERE agentName = 'Quee';\nSELECT agentName, COUNT(*) as cnt FROM referral_tracker GROUP BY agentName;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute UPDATE fr_expenses SET agentName = 'Queenie' WHERE agentName = 'Quee';\nSELECT agentName, COUNT(*) as cnt FROM referral_tracker GROUP BY agentName;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'agentname' in 'group statement'"
+  ]
+}

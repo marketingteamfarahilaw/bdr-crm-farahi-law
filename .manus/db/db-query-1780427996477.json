@@ -1,0 +1,115 @@
+{
+  "query": "\nSELECT 'field_visits' as tbl, agentName, COUNT(*) as cnt FROM field_visits GROUP BY agentName\nUNION ALL\nSELECT 'fr_expenses', agentName, COUNT(*) FROM fr_expenses GROUP BY agentName\nUNION ALL\nSELECT 'bdr_expenses', agentName, COUNT(*) FROM bdr_expenses GROUP BY agentName\nUNION ALL\nSELECT 'fr_errands', agentName, COUNT(*) FROM fr_errands GROUP BY agentName\nUNION ALL\nSELECT 'referral_rewards', agentName, COUNT(*) FROM referral_rewards GROUP BY agentName\nUNION ALL\nSELECT 'referral_tracker', bdrAssigned, COUNT(*) FROM referral_tracker GROUP BY bdrAssigned\nORDER BY tbl, agentName;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute \nSELECT 'field_visits' as tbl, agentName, COUNT(*) as cnt FROM field_visits GROUP BY agentName\nUNION ALL\nSELECT 'fr_expenses', agentName, COUNT(*) FROM fr_expenses GROUP BY agentName\nUNION ALL\nSELECT 'bdr_expenses', agentName, COUNT(*) FROM bdr_expenses GROUP BY agentName\nUNION ALL\nSELECT 'fr_errands', agentName, COUNT(*) FROM fr_errands GROUP BY agentName\nUNION ALL\nSELECT 'referral_rewards', agentName, COUNT(*) FROM referral_rewards GROUP BY agentName\nUNION ALL\nSELECT 'referral_tracker', bdrAssigned, COUNT(*) FROM referral_tracker GROUP BY bdrAssigned\nORDER BY tbl, agentName;\n",
+  "rows": [
+    {
+      "tbl": "bdr_expenses",
+      "agentName": "Ally",
+      "cnt": "157"
+    },
+    {
+      "tbl": "bdr_expenses",
+      "agentName": "Angelica Tobias",
+      "cnt": "4"
+    },
+    {
+      "tbl": "bdr_expenses",
+      "agentName": "Jaque Solayao",
+      "cnt": "2"
+    },
+    {
+      "tbl": "bdr_expenses",
+      "agentName": "Miguel",
+      "cnt": "63"
+    },
+    {
+      "tbl": "bdr_expenses",
+      "agentName": "Queenie",
+      "cnt": "50"
+    },
+    {
+      "tbl": "field_visits",
+      "agentName": "Gracel",
+      "cnt": "126"
+    },
+    {
+      "tbl": "field_visits",
+      "agentName": "Miguel",
+      "cnt": "64"
+    },
+    {
+      "tbl": "field_visits",
+      "agentName": "Queenie",
+      "cnt": "64"
+    },
+    {
+      "tbl": "fr_errands",
+      "agentName": "Gracel",
+      "cnt": "61"
+    },
+    {
+      "tbl": "fr_errands",
+      "agentName": "Miguel",
+      "cnt": "31"
+    },
+    {
+      "tbl": "fr_errands",
+      "agentName": "Queenie",
+      "cnt": "26"
+    },
+    {
+      "tbl": "fr_expenses",
+      "agentName": "Gracel",
+      "cnt": "720"
+    },
+    {
+      "tbl": "fr_expenses",
+      "agentName": "Miguel",
+      "cnt": "37"
+    },
+    {
+      "tbl": "fr_expenses",
+      "agentName": "Quee",
+      "cnt": "1"
+    },
+    {
+      "tbl": "fr_expenses",
+      "agentName": "Queenie",
+      "cnt": "293"
+    },
+    {
+      "tbl": "referral_rewards",
+      "agentName": "Ally",
+      "cnt": "16"
+    },
+    {
+      "tbl": "referral_rewards",
+      "agentName": "Gracel",
+      "cnt": "42"
+    },
+    {
+      "tbl": "referral_rewards",
+      "agentName": "Miguel",
+      "cnt": "8"
+    },
+    {
+      "tbl": "referral_rewards",
+      "agentName": "Queenie",
+      "cnt": "34"
+    },
+    {
+      "tbl": "referral_tracker",
+      "agentName": "Ally",
+      "cnt": "127"
+    },
+    {
+      "tbl": "referral_tracker",
+      "agentName": "Queenie",
+      "cnt": "62"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tagentName\tcnt\nbdr_expenses\tAlly\t157\nbdr_expenses\tAngelica Tobias\t4\nbdr_expenses\tJaque Solayao\t2\nbdr_expenses\tMiguel\t63\nbdr_expenses\tQueenie\t50\nfield_visits\tGracel\t126\nfield_visits\tMiguel\t64\nfield_visits\tQueenie\t64\nfr_errands\tGracel\t61\nfr_errands\tMiguel\t31\nfr_errands\tQueenie\t26\nfr_expenses\tGracel\t720\nfr_expenses\tMiguel\t37\nfr_expenses\tQuee\t1\nfr_expenses\tQueenie\t293\nreferral_rewards\tAlly\t16\nreferral_rewards\tGracel\t42\nreferral_rewards\tMiguel\t8\nreferral_rewards\tQueenie\t34\nreferral_tracker\tAlly\t127\nreferral_tracker\tQueenie\t62\n",
+  "stderr": "",
+  "execution_time_ms": 301
+}

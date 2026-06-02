@@ -562,7 +562,16 @@ export const appRouter = router({
     dashboardKpis: protectedProcedure.query(async () => getAgentDashboardKpis()),
 
     fieldVisits: router({
-      list: protectedProcedure.query(async () => getAllFieldVisits()),
+      list: protectedProcedure
+        .input(z.object({
+          agent: z.string().optional(),
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+          month: z.string().optional(),
+          year: z.string().optional(),
+          search: z.string().optional(),
+        }).optional())
+        .query(async ({ input }) => getAllFieldVisits(input ?? {})),
       create: protectedProcedure
         .input(z.object({
           visitDate: z.string(),
@@ -608,7 +617,16 @@ export const appRouter = router({
     }),
 
     frExpenses: router({
-      list: protectedProcedure.query(async () => getAllFrExpenses()),
+      list: protectedProcedure
+        .input(z.object({
+          agent: z.string().optional(),
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+          year: z.string().optional(),
+          status: z.string().optional(),
+          search: z.string().optional(),
+        }).optional())
+        .query(async ({ input }) => getAllFrExpenses(input ?? {})),
       create: protectedProcedure
         .input(z.object({
           expenseDate: z.string(),
@@ -660,7 +678,16 @@ export const appRouter = router({
     }),
 
     bdrExpenses: router({
-      list: protectedProcedure.query(async () => getAllBdrExpenses()),
+      list: protectedProcedure
+        .input(z.object({
+          agent: z.string().optional(),
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+          month: z.string().optional(),
+          year: z.string().optional(),
+          search: z.string().optional(),
+        }).optional())
+        .query(async ({ input }) => getAllBdrExpenses(input ?? {})),
       create: protectedProcedure
         .input(z.object({
           expenseDate: z.string(),
@@ -716,7 +743,16 @@ export const appRouter = router({
     }),
 
     referralRewards: router({
-      list: protectedProcedure.query(async () => getAllReferralRewards()),
+      list: protectedProcedure
+        .input(z.object({
+          agent: z.string().optional(),
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+          year: z.string().optional(),
+          status: z.string().optional(),
+          search: z.string().optional(),
+        }).optional())
+        .query(async ({ input }) => getAllReferralRewards(input ?? {})),
       create: protectedProcedure
         .input(z.object({
           agentName: z.string().min(1),
@@ -776,7 +812,16 @@ export const appRouter = router({
     }),
 
     frErrands: router({
-      list: protectedProcedure.query(async () => getAllFrErrands()),
+      list: protectedProcedure
+        .input(z.object({
+          agent: z.string().optional(),
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+          year: z.string().optional(),
+          status: z.string().optional(),
+          search: z.string().optional(),
+        }).optional())
+        .query(async ({ input }) => getAllFrErrands(input ?? {})),
       create: protectedProcedure
         .input(z.object({
           errandDate: z.string(),
@@ -828,7 +873,17 @@ export const appRouter = router({
     }),
 
     referralTracker: router({
-      list: protectedProcedure.query(async () => getAllReferralTracker()),
+      list: protectedProcedure
+        .input(z.object({
+          agent: z.string().optional(),
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+          month: z.string().optional(),
+          year: z.string().optional(),
+          status: z.string().optional(),
+          search: z.string().optional(),
+        }).optional())
+        .query(async ({ input }) => getAllReferralTracker(input ?? {})),
       create: protectedProcedure
         .input(z.object({
           reportMonth: z.string().optional(),
