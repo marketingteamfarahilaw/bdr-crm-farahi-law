@@ -169,7 +169,7 @@ export default function BdrAdminDashboard() {
         <KpiCard icon={Network} label="Successful Referrals" value={kpis.successfulReferrals} sub={`of ${kpis.totalReferrals} total`} color="text-emerald-500" />
         <KpiCard icon={ClipboardList} label="Total Errands" value={kpis.totalErrands} sub={`${kpis.completedErrands} completed`} color="text-blue-500" />
         <KpiCard icon={CheckCircle} label="Errand Completion" value={kpis.totalErrands > 0 ? `${Math.round((kpis.completedErrands / kpis.totalErrands) * 100)}%` : "—"} sub="completion rate" color="text-teal-500" />
-        <KpiCard icon={TrendingUp} label="Referral Success Rate" value={kpis.totalReferrals > 0 ? `${Math.round((kpis.successfulReferrals / kpis.totalReferrals) * 100)}%` : "—"} sub="successful sends" color="text-purple-500" />
+        <KpiCard icon={TrendingUp} label="Leads Received from Partners" value={kpis.totalLeadsReceived ?? 0} sub="inbound partner leads" color="text-purple-500" />
         <KpiCard icon={Users} label="Active Agents" value={byAgent.filter(a => a.visits > 0 || a.frExpenses > 0).length} sub="with recorded activity" color="text-orange-500" />
       </div>
 

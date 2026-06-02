@@ -1,0 +1,20 @@
+{
+  "query": "SELECT email, role, agentName FROM users WHERE email = 'miguelf@farahilaw.com';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute SELECT email, role, agentName FROM users WHERE email = 'miguelf@farahilaw.com';",
+  "rows": [
+    {
+      "email": "miguelf@farahilaw.com",
+      "role": "admin",
+      "agentName": "NULL"
+    },
+    {
+      "email": "miguelf@farahilaw.com",
+      "role": "admin",
+      "agentName": "Miguel"
+    }
+  ],
+  "messages": [],
+  "stdout": "email\trole\tagentName\nmiguelf@farahilaw.com\tadmin\tNULL\nmiguelf@farahilaw.com\tadmin\tMiguel\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

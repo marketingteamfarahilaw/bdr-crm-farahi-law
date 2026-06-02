@@ -753,13 +753,14 @@ export async function getBdrAdminDashboard() {
   const db = await getDb();
   if (!db) return null;
 
-  const [visits, frExp, bdrExp, rewards, errands, trackers] = await Promise.all([
+  const [visits, frExp, bdrExp, rewards, errands, trackers, inboundLeadsRows] = await Promise.all([
     db.select().from(fieldVisits),
     db.select().from(frExpenses),
     db.select().from(bdrExpenses),
     db.select().from(referralRewards),
     db.select().from(frErrands),
     db.select().from(referralTracker),
+    db.select().from(inboundLeads),
   ]);
 
   const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
@@ -899,6 +900,7 @@ export async function getBdrAdminDashboard() {
       completedErrands: errands.filter(e => e.status === "Completed").length,
       totalReferrals: trackers.length,
       successfulReferrals: trackers.filter(t => t.status === "Successful Sent").length,
+      totalLeadsReceived: inboundLeadsRows.length,
     },
     byAgent,
     byMonth,
