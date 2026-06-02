@@ -172,35 +172,35 @@ export default function FrErrands() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Tier</TableHead>
-                  <TableHead>Task</TableHead>
-                  <TableHead>Agent</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead className="w-20">Actions</TableHead>
+                <TableRow className="h-8">
+                  <TableHead className="py-1.5">Status</TableHead>
+                  <TableHead className="py-1.5">Date</TableHead>
+                  <TableHead className="py-1.5">Client</TableHead>
+                  <TableHead className="py-1.5">Tier</TableHead>
+                  <TableHead className="py-1.5">Task</TableHead>
+                  <TableHead className="py-1.5">Agent</TableHead>
+                  <TableHead className="py-1.5">Address</TableHead>
+                  <TableHead className="w-16 py-1.5">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {errands.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell>{e.errandDate ? new Date(e.errandDate).toLocaleDateString() : "—"}</TableCell>
-                    <TableCell className="font-medium">{e.clientName}</TableCell>
-                    <TableCell><Badge variant="secondary">{e.clientTier}</Badge></TableCell>
-                    <TableCell className="max-w-[140px] truncate">{e.taskType}</TableCell>
-                    <TableCell><Badge variant="outline">{e.agentName ?? "—"}</Badge></TableCell>
-                    <TableCell>
+                  <TableRow key={e.id} className="h-8">
+                    <TableCell className="py-1">
                       <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColors[e.status] ?? ""}`}>
                         {e.status}
                       </span>
                     </TableCell>
-                    <TableCell className="max-w-[120px] truncate text-muted-foreground">{e.address ?? "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => openEdit(e)}><Pencil className="w-3.5 h-3.5" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => deleteMutation.mutate({ id: e.id })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                    <TableCell className="py-1 text-sm">{e.errandDate ? new Date(e.errandDate).toLocaleDateString() : "—"}</TableCell>
+                    <TableCell className="py-1 font-medium text-sm">{e.clientName}</TableCell>
+                    <TableCell className="py-1"><Badge variant="secondary" className="text-xs">{e.clientTier}</Badge></TableCell>
+                    <TableCell className="py-1 max-w-[140px] truncate text-sm">{e.taskType}</TableCell>
+                    <TableCell className="py-1"><Badge variant="outline" className="text-xs">{e.agentName ?? "—"}</Badge></TableCell>
+                    <TableCell className="py-1 max-w-[120px] truncate text-muted-foreground text-sm">{e.address ?? "—"}</TableCell>
+                    <TableCell className="py-1">
+                      <div className="flex gap-0.5">
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openEdit(e)}><Pencil className="w-3 h-3" /></Button>
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => deleteMutation.mutate({ id: e.id })}><Trash2 className="w-3 h-3 text-destructive" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

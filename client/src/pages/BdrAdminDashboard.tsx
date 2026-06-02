@@ -10,8 +10,12 @@ import {
 } from "recharts";
 import {
   Users, MapPin, DollarSign, Gift, ClipboardList, Network,
-  TrendingUp, Award, CheckCircle, AlertCircle,
+  TrendingUp, Award, CheckCircle, AlertCircle, Download,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const AGENT_COLORS: Record<string, string> = {
   Gracel: "#6366f1",
@@ -75,6 +79,55 @@ export default function BdrAdminDashboard() {
 
   const { kpis, byAgent, byMonth, byErrandType, byReferralStatus, byRewardTier } = data;
 
+  // ── Export helpers ────────────────────────────────────────────────────────
+  const exportCSV = () => {
+    const headers = [
+      "Agent", "Visits", "Facilities", "Hours",
+      "FR Expenses", "BDR Expenses", "Total Expenses",
+      "Rewards Paid", "Errands", "Errands Completed",
+      "Referrals", "Successful Referrals",
+    ];
+    const rows = byAgent.map(a => [
+      a.agent, a.visits, a.facilities, a.hours.toFixed(2),
+      a.frExpenses.toFixed(2), a.bdrExpenses.toFixed(2), a.totalExpenses.toFixed(2),
+      a.rewardsPaid.toFixed(2), a.errands, a.errandsCompleted,
+      a.referrals, a.referralsSuccessful,
+    ]);
+    // Totals row
+    rows.push([
+      "TOTAL",
+      kpis.totalVisits, kpis.totalFacilities,
+      byAgent.reduce((s, a) => s + a.hours, 0).toFixed(2),
+      byAgent.reduce((s, a) => s + a.frExpenses, 0).toFixed(2),
+      byAgent.reduce((s, a) => s + a.bdrExpenses, 0).toFixed(2),
+      kpis.totalExpenses.toFixed(2),
+      kpis.totalRewardsPaid.toFixed(2),
+      kpis.totalErrands, kpis.completedErrands,
+      kpis.totalReferrals, kpis.successfulReferrals,
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bdr-admin-summary-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportMonthlyCSV = () => {
+    const headers = ["Month", "Visits", "Expenses", "Rewards Paid"];
+    const rows = byMonth.map(m => [m.month, m.visits, m.expenses.toFixed(2), m.rewards.toFixed(2)]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bdr-monthly-trends-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Format month labels (2025-01 → Jan '25)
   const monthlyData = byMonth.map((m) => {
     const [year, month] = m.month.split("-");
@@ -85,9 +138,27 @@ export default function BdrAdminDashboard() {
   return (
     <div className="p-6 space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">BDR Admin Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">Aggregated metrics across all agents and time periods</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">BDR Admin Dashboard</h1>
+          <p className="text-muted-foreground text-sm mt-1">Aggregated metrics across all agents and time periods</p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 shrink-0">
+              <Download className="w-4 h-4" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportCSV}>
+              Agent Summary CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportMonthlyCSV}>
+              Monthly Trends CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Top KPI cards */}
