@@ -57,6 +57,11 @@ export default function FrExpenses() {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState<FormData>(defaultForm);
 
+  // Export date range state
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFrom, setExportFrom] = useState("");
+  const [exportTo, setExportTo] = useState("");
+
   function openCreate() { setEditing(null); setForm(defaultForm); setOpen(true); }
 
   function openEdit(e: NonNullable<typeof expenses>[0]) {
@@ -83,12 +88,27 @@ export default function FrExpenses() {
     }
   }
 
-  const totalAmount = expenses?.reduce((s, e) => s + parseFloat(String(e.amount ?? 0)), 0) ?? 0;
-
-  function exportCsv() {
+  function runExport() {
     if (!expenses || expenses.length === 0) return toast.error("No data to export");
+
+    const from = exportFrom ? new Date(exportFrom + "T00:00:00") : null;
+    const to = exportTo ? new Date(exportTo + "T23:59:59") : null;
+
+    const filtered = expenses.filter((e) => {
+      if (!e.expenseDate) return !from && !to; // include undated rows only if no filter set
+      const d = new Date(e.expenseDate);
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      toast.error("No expenses found in the selected date range");
+      return;
+    }
+
     const headers = ["Date", "Agent", "Facility", "Store", "Reason", "Amount", "Card Type", "Notes"];
-    const rows = expenses.map((e) => [
+    const rows = filtered.map((e) => [
       e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "",
       e.agentName,
       e.facilityName ?? "",
@@ -98,18 +118,26 @@ export default function FrExpenses() {
       e.cardType ?? "",
       e.notes ?? "",
     ]);
+
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
+
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `fr-expenses-${new Date().toISOString().split("T")[0]}.csv`;
+    const suffix = from || to
+      ? `${exportFrom || "start"}_to_${exportTo || "end"}`
+      : new Date().toISOString().split("T")[0];
+    a.download = `fr-expenses-${suffix}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("CSV downloaded");
+    toast.success(`Exported ${filtered.length} expense${filtered.length !== 1 ? "s" : ""}`);
+    setExportOpen(false);
   }
+
+  const totalAmount = expenses?.reduce((s, e) => s + parseFloat(String(e.amount ?? 0)), 0) ?? 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -119,7 +147,11 @@ export default function FrExpenses() {
           <p className="text-muted-foreground text-sm mt-1">Field rep expense log per facility visit</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={exportCsv} disabled={!expenses || expenses.length === 0}>
+          <Button
+            variant="outline"
+            onClick={() => setExportOpen(true)}
+            disabled={!expenses || expenses.length === 0}
+          >
             <Download className="w-4 h-4 mr-2" />Export CSV
           </Button>
           <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Expense</Button>
@@ -196,6 +228,58 @@ export default function FrExpenses() {
         </CardContent>
       </Card>
 
+      {/* Export Date Range Dialog */}
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="w-4 h-4" /> Export FR Expenses
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Select a date range to filter the export. Leave both fields blank to export all records.
+            </p>
+            <div className="space-y-1">
+              <Label>From Date</Label>
+              <Input
+                type="date"
+                value={exportFrom}
+                onChange={(e) => setExportFrom(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>To Date</Label>
+              <Input
+                type="date"
+                value={exportTo}
+                onChange={(e) => setExportTo(e.target.value)}
+                min={exportFrom || undefined}
+              />
+            </div>
+            {exportFrom && exportTo && (
+              <p className="text-xs text-muted-foreground">
+                Exporting expenses from {new Date(exportFrom).toLocaleDateString()} to {new Date(exportTo).toLocaleDateString()}
+              </p>
+            )}
+            {(!exportFrom && !exportTo) && (
+              <p className="text-xs text-muted-foreground">
+                No date range set — all {expenses?.length ?? 0} records will be exported.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setExportOpen(false); setExportFrom(""); setExportTo(""); }}>
+              Cancel
+            </Button>
+            <Button onClick={runExport}>
+              <Download className="w-4 h-4 mr-2" /> Download CSV
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add / Edit Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{editing !== null ? "Edit Expense" : "Add FR Expense"}</DialogTitle></DialogHeader>
