@@ -22,6 +22,8 @@ import BdrExpensesPage from "./pages/BdrExpenses";
 import ReferralRewardsPage from "./pages/ReferralRewards";
 import FrErrandsPage from "./pages/FrErrands";
 import ReferralTrackerPage from "./pages/ReferralTracker";
+import PartnerReferralTrackerPage from "./pages/PartnerReferralTracker";
+import ReferralReportsPage from "./pages/ReferralReports";
 import AgentsPage from "./pages/Agents";
 import PiClientsPage from "./pages/PiClients";
 import FilevineSettingsPage from "./pages/FilevineSettings";
@@ -60,6 +62,10 @@ function Router() {
         <Route path="/bdr/referral-rewards" component={ReferralRewardsPage} />
         <Route path="/bdr/fr-errands" component={FrErrandsPage} />
         <Route path="/bdr/referral-tracker" component={ReferralTrackerPage} />
+
+        {/* Partner Referral Workflow */}
+        <Route path="/referral/tracker" component={PartnerReferralTrackerPage} />
+        <Route path="/referral/reports" component={ReferralReportsPage} />
 
         {/* Agent Management */}
         <Route path="/agents" component={AgentsPage} />

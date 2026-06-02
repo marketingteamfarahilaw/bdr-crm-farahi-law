@@ -1,6 +1,6 @@
 import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker } from "../drizzle/schema";
+import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -523,4 +523,109 @@ export async function getAgentDashboardKpis() {
   }
 
   return Object.values(agentMap).sort((a, b) => a.agentName.localeCompare(b.agentName));
+}
+
+// ─── Outbound Referrals ────────────────────────────────────────────────────────
+
+export async function getAllOutboundReferrals() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(outboundReferrals).orderBy(desc(outboundReferrals.createdAt));
+}
+
+export async function createOutboundReferral(data: Omit<InsertOutboundReferral, "id" | "createdAt" | "updatedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(outboundReferrals).values(data);
+}
+
+export async function updateOutboundReferral(id: number, data: Partial<Omit<InsertOutboundReferral, "id" | "createdAt" | "updatedAt">>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(outboundReferrals).set(data).where(eq(outboundReferrals.id, id));
+}
+
+export async function deleteOutboundReferral(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.delete(outboundReferrals).where(eq(outboundReferrals.id, id));
+}
+
+// ─── Inbound Leads ────────────────────────────────────────────────────────────
+
+export async function getAllInboundLeads() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(inboundLeads).orderBy(desc(inboundLeads.createdAt));
+}
+
+export async function createInboundLead(data: Omit<InsertInboundLead, "id" | "createdAt" | "updatedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(inboundLeads).values(data);
+}
+
+export async function updateInboundLead(id: number, data: Partial<Omit<InsertInboundLead, "id" | "createdAt" | "updatedAt">>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(inboundLeads).set(data).where(eq(inboundLeads.id, id));
+}
+
+export async function deleteInboundLead(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.delete(inboundLeads).where(eq(inboundLeads.id, id));
+}
+
+// ─── Referral Reporting Aggregates ───────────────────────────────────────────
+
+export async function getReferralStats() {
+  const db = await getDb();
+  if (!db) return { outbound: [], inbound: [], summary: { totalOutbound: 0, totalInbound: 0, totalSigned: 0 } };
+
+  const outboundRows = await db.select().from(outboundReferrals).orderBy(desc(outboundReferrals.createdAt));
+  const inboundRows = await db.select().from(inboundLeads).orderBy(desc(inboundLeads.createdAt));
+
+  // Per-facility aggregates
+  const facilityMap: Record<string, { sent: number; received: number; signed: number }> = {};
+
+  for (const r of outboundRows) {
+    const key = r.recommendedFacility ?? "Unknown";
+    if (!facilityMap[key]) facilityMap[key] = { sent: 0, received: 0, signed: 0 };
+    facilityMap[key].sent++;
+  }
+  for (const l of inboundRows) {
+    const key = l.referringFacility ?? "Unknown";
+    if (!facilityMap[key]) facilityMap[key] = { sent: 0, received: 0, signed: 0 };
+    facilityMap[key].received++;
+    if (l.signed) facilityMap[key].signed++;
+  }
+
+  const byFacility = Object.entries(facilityMap).map(([facility, counts]) => ({ facility, ...counts }));
+
+  // Per-agent aggregates
+  const agentMap: Record<string, { sent: number; received: number }> = {};
+  for (const r of outboundRows) {
+    const key = r.assignedAgent ?? "Unassigned";
+    if (!agentMap[key]) agentMap[key] = { sent: 0, received: 0 };
+    agentMap[key].sent++;
+  }
+  for (const l of inboundRows) {
+    const key = l.assignedAgent ?? "Unassigned";
+    if (!agentMap[key]) agentMap[key] = { sent: 0, received: 0 };
+    agentMap[key].received++;
+  }
+  const byAgent = Object.entries(agentMap).map(([agent, counts]) => ({ agent, ...counts }));
+
+  return {
+    outbound: outboundRows,
+    inbound: inboundRows,
+    byFacility,
+    byAgent,
+    summary: {
+      totalOutbound: outboundRows.length,
+      totalInbound: inboundRows.length,
+      totalSigned: inboundRows.filter(l => l.signed).length,
+    },
+  };
 }

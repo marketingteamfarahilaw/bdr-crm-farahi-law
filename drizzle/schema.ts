@@ -580,3 +580,93 @@ export const referralTracker = mysqlTable("referral_tracker", {
 });
 export type ReferralTracker = typeof referralTracker.$inferSelect;
 export type InsertReferralTracker = typeof referralTracker.$inferInsert;
+
+// ─── Partner Lead Referral Workflow ───────────────────────────────────────────
+
+/**
+ * Outbound referrals — leads sent FROM the firm TO a partner facility.
+ * Covers Steps 8 & 11 of the Partner Lead Referral Workflow.
+ */
+export const outboundReferrals = mysqlTable("outbound_referrals", {
+  id: int("id").autoincrement().primaryKey(),
+
+  // Client info
+  clientName: varchar("clientName", { length: 255 }).notNull(),
+  filevineLinkOrRef: varchar("filevineLinkOrRef", { length: 500 }),
+  clientAddress: text("clientAddress"),
+  clientCity: varchar("clientCity", { length: 100 }),
+  clientZip: varchar("clientZip", { length: 20 }),
+  dateSigned: timestamp("dateSigned"),
+
+  // Referral decision
+  referralNeeded: boolean("referralNeeded").default(true),
+  referralType: varchar("referralType", { length: 100 }),
+  assignedAgent: varchar("assignedAgent", { length: 100 }),
+  recommendedFacility: varchar("recommendedFacility", { length: 255 }),
+  facilityOwner: varchar("facilityOwner", { length: 100 }),
+  distanceTravelTime: varchar("distanceTravelTime", { length: 100 }),
+  reasonForSelection: text("reasonForSelection"),
+
+  // Referral tracking
+  referralSentDate: timestamp("referralSentDate"),
+  status: mysqlEnum("status", [
+    "Pending Review",
+    "Assigned to Agent",
+    "Facility Selected",
+    "Referral Sent",
+    "Facility Confirmed",
+    "Client Scheduled",
+    "Client Attended",
+    "Issue / Needs Follow-Up",
+    "Completed",
+    "Not Referred",
+  ]).default("Pending Review").notNull(),
+  followUpDate: timestamp("followUpDate"),
+  facilityConfirmed: boolean("facilityConfirmed").default(false),
+  clientScheduled: boolean("clientScheduled").default(false),
+  clientAttended: boolean("clientAttended").default(false),
+
+  // Reciprocity context
+  facilityHadSentLeads: boolean("facilityHadSentLeads").default(false),
+
+  // Meta
+  notes: text("notes"),
+  lastUpdatedBy: varchar("lastUpdatedBy", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OutboundReferral = typeof outboundReferrals.$inferSelect;
+export type InsertOutboundReferral = typeof outboundReferrals.$inferInsert;
+
+/**
+ * Inbound leads — leads received BY the firm FROM a partner facility.
+ * Covers Step 9 of the Partner Lead Referral Workflow.
+ */
+export const inboundLeads = mysqlTable("inbound_leads", {
+  id: int("id").autoincrement().primaryKey(),
+
+  // Lead info
+  leadName: varchar("leadName", { length: 255 }).notNull(),
+  dateReceived: timestamp("dateReceived"),
+  referringFacility: varchar("referringFacility", { length: 255 }),
+  facilityContact: varchar("facilityContact", { length: 255 }),
+  assignedAgent: varchar("assignedAgent", { length: 100 }),
+  caseType: varchar("caseType", { length: 100 }),
+
+  // Outcome
+  signed: boolean("signed").default(false),
+  signedDate: timestamp("signedDate"),
+  notSignedReason: text("notSignedReason"),
+
+  // Reciprocity
+  countsTowardPartnerActivity: boolean("countsTowardPartnerActivity").default(true),
+
+  // Meta
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InboundLead = typeof inboundLeads.$inferSelect;
+export type InsertInboundLead = typeof inboundLeads.$inferInsert;

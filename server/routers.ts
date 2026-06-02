@@ -60,6 +60,15 @@ import {
   updateReferralTracker,
   deleteReferralTracker,
   getAgentDashboardKpis,
+  getAllOutboundReferrals,
+  createOutboundReferral,
+  updateOutboundReferral,
+  deleteOutboundReferral,
+  getAllInboundLeads,
+  createInboundLead,
+  updateInboundLead,
+  deleteInboundLead,
+  getReferralStats,
 } from "./db";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -908,6 +917,154 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  referralWorkflow: router({
+    // Outbound referrals (leads sent to facilities)
+    outbound: router({
+      list: protectedProcedure.query(async () => getAllOutboundReferrals()),
+      create: protectedProcedure
+        .input(z.object({
+          clientName: z.string().min(1),
+          filevineLinkOrRef: z.string().optional(),
+          clientAddress: z.string().optional(),
+          clientCity: z.string().optional(),
+          clientZip: z.string().optional(),
+          dateSigned: z.string().optional(),
+          referralNeeded: z.boolean().optional(),
+          referralType: z.string().optional(),
+          assignedAgent: z.string().optional(),
+          recommendedFacility: z.string().optional(),
+          facilityOwner: z.string().optional(),
+          distanceTravelTime: z.string().optional(),
+          reasonForSelection: z.string().optional(),
+          referralSentDate: z.string().optional(),
+          status: z.enum([
+            "Pending Review", "Assigned to Agent", "Facility Selected",
+            "Referral Sent", "Facility Confirmed", "Client Scheduled",
+            "Client Attended", "Issue / Needs Follow-Up", "Completed", "Not Referred",
+          ]).optional(),
+          followUpDate: z.string().optional(),
+          facilityConfirmed: z.boolean().optional(),
+          clientScheduled: z.boolean().optional(),
+          clientAttended: z.boolean().optional(),
+          facilityHadSentLeads: z.boolean().optional(),
+          notes: z.string().optional(),
+          lastUpdatedBy: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { dateSigned, referralSentDate, followUpDate, ...rest } = input;
+          await createOutboundReferral({
+            ...rest,
+            ...(dateSigned ? { dateSigned: new Date(dateSigned) } : {}),
+            ...(referralSentDate ? { referralSentDate: new Date(referralSentDate) } : {}),
+            ...(followUpDate ? { followUpDate: new Date(followUpDate) } : {}),
+          });
+          return { success: true };
+        }),
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          clientName: z.string().optional(),
+          filevineLinkOrRef: z.string().optional(),
+          clientAddress: z.string().optional(),
+          clientCity: z.string().optional(),
+          clientZip: z.string().optional(),
+          dateSigned: z.string().optional(),
+          referralNeeded: z.boolean().optional(),
+          referralType: z.string().optional(),
+          assignedAgent: z.string().optional(),
+          recommendedFacility: z.string().optional(),
+          facilityOwner: z.string().optional(),
+          distanceTravelTime: z.string().optional(),
+          reasonForSelection: z.string().optional(),
+          referralSentDate: z.string().optional(),
+          status: z.enum([
+            "Pending Review", "Assigned to Agent", "Facility Selected",
+            "Referral Sent", "Facility Confirmed", "Client Scheduled",
+            "Client Attended", "Issue / Needs Follow-Up", "Completed", "Not Referred",
+          ]).optional(),
+          followUpDate: z.string().optional(),
+          facilityConfirmed: z.boolean().optional(),
+          clientScheduled: z.boolean().optional(),
+          clientAttended: z.boolean().optional(),
+          facilityHadSentLeads: z.boolean().optional(),
+          notes: z.string().optional(),
+          lastUpdatedBy: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, dateSigned, referralSentDate, followUpDate, ...rest } = input;
+          await updateOutboundReferral(id, {
+            ...rest,
+            ...(dateSigned ? { dateSigned: new Date(dateSigned) } : {}),
+            ...(referralSentDate ? { referralSentDate: new Date(referralSentDate) } : {}),
+            ...(followUpDate ? { followUpDate: new Date(followUpDate) } : {}),
+          });
+          return { success: true };
+        }),
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => { await deleteOutboundReferral(input.id); return { success: true }; }),
+    }),
+
+    // Inbound leads (received from facilities)
+    inbound: router({
+      list: protectedProcedure.query(async () => getAllInboundLeads()),
+      create: protectedProcedure
+        .input(z.object({
+          leadName: z.string().min(1),
+          dateReceived: z.string().optional(),
+          referringFacility: z.string().optional(),
+          facilityContact: z.string().optional(),
+          assignedAgent: z.string().optional(),
+          caseType: z.string().optional(),
+          signed: z.boolean().optional(),
+          signedDate: z.string().optional(),
+          notSignedReason: z.string().optional(),
+          countsTowardPartnerActivity: z.boolean().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { dateReceived, signedDate, ...rest } = input;
+          await createInboundLead({
+            ...rest,
+            ...(dateReceived ? { dateReceived: new Date(dateReceived) } : {}),
+            ...(signedDate ? { signedDate: new Date(signedDate) } : {}),
+          });
+          return { success: true };
+        }),
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          leadName: z.string().optional(),
+          dateReceived: z.string().optional(),
+          referringFacility: z.string().optional(),
+          facilityContact: z.string().optional(),
+          assignedAgent: z.string().optional(),
+          caseType: z.string().optional(),
+          signed: z.boolean().optional(),
+          signedDate: z.string().optional(),
+          notSignedReason: z.string().optional(),
+          countsTowardPartnerActivity: z.boolean().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, dateReceived, signedDate, ...rest } = input;
+          await updateInboundLead(id, {
+            ...rest,
+            ...(dateReceived ? { dateReceived: new Date(dateReceived) } : {}),
+            ...(signedDate ? { signedDate: new Date(signedDate) } : {}),
+          });
+          return { success: true };
+        }),
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => { await deleteInboundLead(input.id); return { success: true }; }),
+    }),
+
+    // Reporting aggregates
+    stats: protectedProcedure.query(async () => getReferralStats()),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
+

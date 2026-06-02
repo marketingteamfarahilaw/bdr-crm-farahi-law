@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -49,6 +49,11 @@ const bdrItems = [
   { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards" },
   { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands" },
   { icon: Network, label: "Referral Tracker", path: "/bdr/referral-tracker" },
+];
+
+const referralItems = [
+  { icon: ArrowLeftRight, label: "Referral Tracker", path: "/referral/tracker" },
+  { icon: FileBarChart2, label: "Referral Reports", path: "/referral/reports" },
 ];
 
 const teamItems = [
@@ -137,7 +142,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const allMenuItems = [...leadScraper, ...crmItems, ...bdrItems, ...teamItems];
+  const allMenuItems = [...leadScraper, ...crmItems, ...bdrItems, ...referralItems, ...teamItems];
   const activeMenuItem = allMenuItems.find(item => item.path === location || (item.path !== "/" && location.startsWith(item.path)));
   const isMobile = useIsMobile();
 
@@ -273,6 +278,33 @@ function DashboardLayoutContent({
               )}
               <SidebarMenu>
                 {bdrItems.map(item => {
+                  const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setLocation(item.path)}
+                        tooltip={item.label}
+                        className="h-9 transition-all font-normal"
+                      >
+                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </div>
+            {/* Divider */}
+            <div className="mx-3 my-1 border-t border-border/40" />
+
+            {/* Partner Referral Workflow Section */}
+            <div className="px-3 pt-1 pb-3">
+              {!isCollapsed && (
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">Partner Referrals</p>
+              )}
+              <SidebarMenu>
+                {referralItems.map(item => {
                   const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
                   return (
                     <SidebarMenuItem key={item.path}>
