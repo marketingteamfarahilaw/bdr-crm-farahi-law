@@ -19,6 +19,7 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   agentName: varchar("agentName", { length: 100 }), // Links user to BDR agent data (e.g. 'Gracel', 'Queenie', 'Ally', 'Miguel', 'Rupert')
+  ringoutMyLocation: varchar("ringoutMyLocation", { length: 30 }), // Phone number for RingOut first-leg call (e.g. +12025551234)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

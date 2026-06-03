@@ -795,3 +795,80 @@ export async function getBdrTopFacilities(limit = 20) {
     };
   });
 }
+
+/** Daily facility calls KPI — calls to facilities per agent per day (today + last 30 days).
+ *  Goal: > 15 calls per agent per day.
+ */
+export async function getDailyFacilityCallsKPI(filters?: { repName?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions: any[] = [eq(contactLogs.contactType, "call")];
+  if (filters?.repName) conditions.push(eq(contactLogs.repName, filters.repName));
+
+  const rows = await db
+    .select({
+      repName: contactLogs.repName,
+      contactDate: contactLogs.contactDate,
+    })
+    .from(contactLogs)
+    .where(and(...conditions))
+    .orderBy(desc(contactLogs.contactDate));
+
+  // Aggregate by rep + day
+  const byRepDay: Record<string, Record<string, number>> = {};
+  for (const row of rows) {
+    const rep = row.repName ?? "Unknown";
+    const d = row.contactDate ? new Date(row.contactDate) : new Date();
+    const dayKey = d.toISOString().slice(0, 10); // YYYY-MM-DD
+    if (!byRepDay[rep]) byRepDay[rep] = {};
+    byRepDay[rep][dayKey] = (byRepDay[rep][dayKey] ?? 0) + 1;
+  }
+
+  const result: Array<{ repName: string; date: string; calls: number; meetsGoal: boolean }> = [];
+  for (const [rep, days] of Object.entries(byRepDay)) {
+    for (const [date, calls] of Object.entries(days)) {
+      result.push({ repName: rep, date, calls, meetsGoal: calls >= 15 });
+    }
+  }
+  return result.sort((a, b) => b.date.localeCompare(a.date) || a.repName.localeCompare(b.repName));
+}
+
+/** Monthly facilities called KPI — unique facilities called per agent per month.
+ *  Goal: > 4 unique facilities called per month.
+ */
+export async function getMonthlyFacilitiesCalledKPI(filters?: { repName?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions: any[] = [eq(contactLogs.contactType, "call")];
+  if (filters?.repName) conditions.push(eq(contactLogs.repName, filters.repName));
+
+  const rows = await db
+    .select({
+      repName: contactLogs.repName,
+      facilityId: contactLogs.facilityId,
+      contactDate: contactLogs.contactDate,
+    })
+    .from(contactLogs)
+    .where(and(...conditions));
+
+  // Aggregate unique facilities per rep per month
+  const byRepMonth: Record<string, Record<string, Set<number>>> = {};
+  for (const row of rows) {
+    const rep = row.repName ?? "Unknown";
+    const d = row.contactDate ? new Date(row.contactDate) : new Date();
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!byRepMonth[rep]) byRepMonth[rep] = {};
+    if (!byRepMonth[rep][monthKey]) byRepMonth[rep][monthKey] = new Set();
+    byRepMonth[rep][monthKey].add(row.facilityId);
+  }
+
+  const result: Array<{ repName: string; month: string; uniqueFacilities: number; meetsGoal: boolean }> = [];
+  for (const [rep, months] of Object.entries(byRepMonth)) {
+    for (const [month, facilitySet] of Object.entries(months)) {
+      result.push({ repName: rep, month, uniqueFacilities: facilitySet.size, meetsGoal: facilitySet.size >= 4 });
+    }
+  }
+  return result.sort((a, b) => b.month.localeCompare(a.month) || a.repName.localeCompare(b.repName));
+}

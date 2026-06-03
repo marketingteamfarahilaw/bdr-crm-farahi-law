@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `users` ADD `ringoutMyLocation` varchar(30);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute ALTER TABLE `users` ADD `ringoutMyLocation` varchar(30);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 547
+}

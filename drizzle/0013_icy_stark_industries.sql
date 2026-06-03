@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `ringoutMyLocation` varchar(30);

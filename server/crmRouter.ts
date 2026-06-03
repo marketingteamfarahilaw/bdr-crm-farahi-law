@@ -54,7 +54,12 @@ import {
   getBdrPartnerCheckins,
   getBdrTopFacilities,
   findFacilityByPhone,
+  getDailyFacilityCallsKPI,
+  getMonthlyFacilitiesCalledKPI,
 } from "./crmDb";
+import { getDb } from "./db";
+import { users } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 const RC_BASE = "https://platform.ringcentral.com";
 
@@ -556,17 +561,33 @@ export const crmRouter = router({
       }
     }),
 
-    getWidgetConfig: protectedProcedure.query(async () => {
+    getWidgetConfig: protectedProcedure.query(async ({ ctx }) => {
       const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
-      // Only return clientId — agents log in via the widget UI (OAuth).
-      // Do NOT return clientSecret or jwt to the frontend; those are server-side only.
+      // Fetch the user's RingOut myLocation number from DB
+      const db = await getDb();
+      const userRow = db ? await db.select({ ringoutMyLocation: users.ringoutMyLocation })
+        .from(users)
+        .where(eq(users.id, ctx.user.id))
+        .then((r: { ringoutMyLocation: string | null }[]) => r[0] ?? null) : null;
       return {
         clientId,
         clientSecret: "",
         jwt: "",
         configured: !!clientId,
+        myLocation: userRow?.ringoutMyLocation ?? "",
       };
     }),
+
+    setMyLocation: protectedProcedure
+      .input(z.object({ myLocation: z.string().max(30) }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        await db.update(users)
+          .set({ ringoutMyLocation: input.myLocation || null })
+          .where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
 
     transcribeCall: protectedProcedure
       .input(z.object({
@@ -1012,6 +1033,16 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
     topFacilities: protectedProcedure
       .input(z.object({ limit: z.number().min(1).max(100).default(20) }))
       .query(async ({ input }) => getBdrTopFacilities(input.limit)),
+
+    /** Daily calls to facilities per agent. Goal: > 15 calls/day. */
+    dailyFacilityCalls: protectedProcedure
+      .input(z.object({ repName: z.string().optional() }))
+      .query(async ({ input }) => getDailyFacilityCallsKPI(input)),
+
+    /** Unique facilities called per agent per month. Goal: > 4 facilities/month. */
+    monthlyFacilitiesCalled: protectedProcedure
+      .input(z.object({ repName: z.string().optional() }))
+      .query(async ({ input }) => getMonthlyFacilitiesCalledKPI(input)),
   }),
 
   // ─── Management Dashboard ────────────────────────────────────────────────────

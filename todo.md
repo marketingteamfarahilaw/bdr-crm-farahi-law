@@ -362,3 +362,11 @@
 - [x] Fix widget: stop passing JWT/clientSecret to frontend (agents log in via widget OAuth)
 - [x] Add postMessage to switch calling mode to RingOut after login
 - [x] Add RingOut mode hint banner in widget panel
+
+## RingOut myLocation + BDR Call KPIs
+- [ ] Fix getWidgetConfig/setMyLocation to use getDb() pattern (not import db directly)
+- [ ] Add myLocation phone number field to RingCentral Settings page (per-user)
+- [ ] Pass myLocation in rc-calling-settings-update postMessage after widget login
+- [ ] Add daily calls to facilities KPI to BDR dashboard (goal: >15/day per agent)
+- [ ] Add monthly facilities called KPI to BDR dashboard (goal: >4/month per facility)
+- [ ] Add DB query helpers for daily/monthly call counts from facility_updates/contact_logs

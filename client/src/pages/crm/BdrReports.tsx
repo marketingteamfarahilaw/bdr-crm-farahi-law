@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Phone, PhoneCall, Users, TrendingUp, CheckCircle2, AlertCircle,
-  BarChart3, Building2, Calendar
+  BarChart3, Building2, Calendar, Target, XCircle
 } from "lucide-react";
 
 const AGENTS = ["All", "Ally", "Grace", "Queenie", "Miguel"];
@@ -128,6 +128,8 @@ export default function BdrReports() {
     repName: agentFilter,
   });
   const { data: topFacilities, isLoading: loadingTop } = trpc.crm.bdrReports.topFacilities.useQuery({ limit: 20 });
+  const { data: dailyCalls } = trpc.crm.bdrReports.dailyFacilityCalls.useQuery({ repName: agentFilter });
+  const { data: monthlyCalls } = trpc.crm.bdrReports.monthlyFacilitiesCalled.useQuery({ repName: agentFilter });
 
   // Derive available months from call activity
   const availableMonths = useMemo(() => {
@@ -243,6 +245,7 @@ export default function BdrReports() {
       <Tabs defaultValue="activity">
         <TabsList className="bg-card border border-border">
           <TabsTrigger value="activity">Call Activity</TabsTrigger>
+          <TabsTrigger value="kpis">Call KPIs</TabsTrigger>
           <TabsTrigger value="checkins">Partner Check-Ins</TabsTrigger>
           <TabsTrigger value="active-partners">Active Partners</TabsTrigger>
           <TabsTrigger value="top">Top Facilities</TabsTrigger>
@@ -500,6 +503,131 @@ export default function BdrReports() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* ── Call KPIs Tab ── */}
+        <TabsContent value="kpis" className="mt-4 space-y-6">
+          {/* Goal banners */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-amber-950/20 border-amber-500/30">
+              <CardContent className="p-4 flex items-start gap-3">
+                <Target className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-300">Daily Calls to Facilities</p>
+                  <p className="text-xs text-amber-300/70 mt-0.5">Goal: <strong className="text-amber-300">&gt; 15 calls per agent per day</strong></p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-950/20 border-blue-500/30">
+              <CardContent className="p-4 flex items-start gap-3">
+                <Building2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-blue-300">Unique Facilities Called / Month</p>
+                  <p className="text-xs text-blue-300/70 mt-0.5">Goal: <strong className="text-blue-300">&gt; 4 facilities per agent per month</strong></p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Daily Calls Table */}
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                Daily Calls to Facilities
+                <Badge variant="outline" className="text-xs ml-auto">Goal: &gt;15/day</Badge>
+              </CardTitle>
+            </CardHeader>
+            {dailyCalls && dailyCalls.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30">
+                      <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Agent</th>
+                      <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Date</th>
+                      <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Calls</th>
+                      <th className="text-center px-4 py-2.5 text-xs text-muted-foreground font-medium">Goal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyCalls.slice(0, 60).map((row, i) => (
+                      <tr key={i} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-2.5 font-medium text-foreground">{row.repName}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">
+                          {new Date(row.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span className={`font-bold text-sm ${row.meetsGoal ? "text-emerald-400" : "text-amber-400"}`}>
+                            {row.calls}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          {row.meetsGoal
+                            ? <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto" />
+                            : <XCircle className="w-4 h-4 text-red-400/60 mx-auto" />}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Phone className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p>No facility call data yet. Calls logged from facility profiles will appear here.</p>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Monthly Unique Facilities Table */}
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                Unique Facilities Called per Month
+                <Badge variant="outline" className="text-xs ml-auto">Goal: &gt;4/month</Badge>
+              </CardTitle>
+            </CardHeader>
+            {monthlyCalls && monthlyCalls.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30">
+                      <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Agent</th>
+                      <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Month</th>
+                      <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Unique Facilities</th>
+                      <th className="text-center px-4 py-2.5 text-xs text-muted-foreground font-medium">Goal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {monthlyCalls.map((row, i) => (
+                      <tr key={i} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-2.5 font-medium text-foreground">{row.repName}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">
+                          {new Date(row.month + "-01").toLocaleDateString("en-US", { year: "numeric", month: "long" })}
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span className={`font-bold text-sm ${row.meetsGoal ? "text-emerald-400" : "text-amber-400"}`}>
+                            {row.uniqueFacilities}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          {row.meetsGoal
+                            ? <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto" />
+                            : <XCircle className="w-4 h-4 text-red-400/60 mx-auto" />}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p>No monthly facility call data yet.</p>
+              </CardContent>
+            )}
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

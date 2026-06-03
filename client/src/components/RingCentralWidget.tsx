@@ -118,13 +118,20 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
         case "rc-login-status-notify":
           setIsConnected(!!data.loggedIn);
           if (data.loggedIn) {
-            // Switch calling mode to RingOut after login so calls go through desk/cell phone
+            // Switch calling mode to RingOut after login so calls go through desk/cell phone.
+            // myLocation is required for RingOut — user sets it in RingCentral Settings page.
+            const myLoc = widgetConfig?.myLocation;
             setTimeout(() => {
-              postToWidget({
-                type: "rc-adapter-update-calling-settings",
+              const msg: Record<string, string> = {
+                type: "rc-calling-settings-update",
                 callWith: "ringout",
-              });
-            }, 1200);
+              };
+              if (myLoc) {
+                msg.myLocation = myLoc;
+                msg.ringoutPrompt = "false";
+              }
+              postToWidget(msg);
+            }, 1500);
             if (pendingCallRef.current) {
               const num = pendingCallRef.current;
               pendingCallRef.current = null;
