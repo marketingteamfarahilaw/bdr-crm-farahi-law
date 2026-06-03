@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Phone, PhoneCall, Users, TrendingUp, CheckCircle2, AlertCircle,
-  BarChart3, Building2, Calendar, Target, XCircle
+  BarChart3, Building2, Calendar
 } from "lucide-react";
 
 const AGENTS = ["All", "Ally", "Grace", "Queenie", "Miguel"];
@@ -128,8 +128,6 @@ export default function BdrReports() {
     repName: agentFilter,
   });
   const { data: topFacilities, isLoading: loadingTop } = trpc.crm.bdrReports.topFacilities.useQuery({ limit: 20 });
-  const { data: dailyCalls } = trpc.crm.bdrReports.dailyFacilityCalls.useQuery({ repName: agentFilter });
-  const { data: monthlyCalls } = trpc.crm.bdrReports.monthlyFacilitiesCalled.useQuery({ repName: agentFilter });
 
   // Derive available months from call activity
   const availableMonths = useMemo(() => {
@@ -245,7 +243,6 @@ export default function BdrReports() {
       <Tabs defaultValue="activity">
         <TabsList className="bg-card border border-border">
           <TabsTrigger value="activity">Call Activity</TabsTrigger>
-          <TabsTrigger value="kpis">Call KPIs</TabsTrigger>
           <TabsTrigger value="checkins">Partner Check-Ins</TabsTrigger>
           <TabsTrigger value="active-partners">Active Partners</TabsTrigger>
           <TabsTrigger value="top">Top Facilities</TabsTrigger>
@@ -503,163 +500,6 @@ export default function BdrReports() {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
-
-        {/* ── Call KPIs Tab ── */}
-        <TabsContent value="kpis" className="mt-4 space-y-6">
-          {/* Goal banners */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-amber-950/20 border-amber-500/30">
-              <CardContent className="p-4 flex items-start gap-3">
-                <Target className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-300">Daily Calls to Facilities</p>
-                  <p className="text-xs text-amber-300/70 mt-0.5">Goal: <strong className="text-amber-300">&gt; 15 calls per agent per day</strong></p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-blue-950/20 border-blue-500/30">
-              <CardContent className="p-4 flex items-start gap-3">
-                <Building2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-blue-300">Unique Facilities Called / Month</p>
-                  <p className="text-xs text-blue-300/70 mt-0.5">Goal: <strong className="text-blue-300">&gt; 4 facilities per agent per month</strong></p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Daily Calls Progress Cards */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Phone className="w-4 h-4 text-amber-400" />
-                Daily Calls to Facilities
-              </h3>
-              <Badge variant="outline" className="text-xs">Goal: &gt;15/day</Badge>
-            </div>
-            {dailyCalls && dailyCalls.length > 0 ? (
-              <div className="space-y-3">
-                {dailyCalls.slice(0, 30).map((row, i) => {
-                  const GOAL = 15;
-                  const pct = Math.min(100, Math.round((row.calls / GOAL) * 100));
-                  const isToday = row.date === new Date().toISOString().slice(0, 10);
-                  const barColor = row.meetsGoal ? "bg-emerald-500" : pct >= 60 ? "bg-amber-500" : "bg-red-500/70";
-                  return (
-                    <Card key={i} className={`bg-card border-border ${isToday ? "ring-1 ring-amber-500/40" : ""}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm text-foreground">{row.repName}</span>
-                            {isToday && <Badge className="text-xs bg-amber-500/20 text-amber-300 border-0">Today</Badge>}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-lg font-bold ${row.meetsGoal ? "text-emerald-400" : "text-amber-400"}`}>
-                              {row.calls}
-                            </span>
-                            <span className="text-xs text-muted-foreground">/ {GOAL}</span>
-                            {row.meetsGoal
-                              ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                              : <XCircle className="w-4 h-4 text-red-400/60" />}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-2.5 bg-muted/40 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className={`text-xs font-medium w-10 text-right ${row.meetsGoal ? "text-emerald-400" : "text-muted-foreground"}`}>
-                            {pct}%
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1.5">
-                          {new Date(row.date).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
-                          {row.meetsGoal
-                            ? <span className="text-emerald-400 ml-2">Goal reached!</span>
-                            : <span className="text-amber-400/70 ml-2">{GOAL - row.calls} more to reach goal</span>}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            ) : (
-              <Card className="bg-card border-border">
-                <CardContent className="p-8 text-center text-muted-foreground">
-                  <Phone className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p>No facility call data yet. Calls logged from facility profiles will appear here.</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Monthly Unique Facilities Progress Cards */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-blue-400" />
-                Unique Facilities Called per Month
-              </h3>
-              <Badge variant="outline" className="text-xs">Goal: &gt;4/month</Badge>
-            </div>
-            {monthlyCalls && monthlyCalls.length > 0 ? (
-              <div className="space-y-3">
-                {monthlyCalls.map((row, i) => {
-                  const GOAL = 4;
-                  const pct = Math.min(100, Math.round((row.uniqueFacilities / GOAL) * 100));
-                  const isCurrentMonth = row.month === new Date().toISOString().slice(0, 7);
-                  const barColor = row.meetsGoal ? "bg-blue-500" : pct >= 50 ? "bg-amber-500" : "bg-red-500/70";
-                  return (
-                    <Card key={i} className={`bg-card border-border ${isCurrentMonth ? "ring-1 ring-blue-500/40" : ""}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm text-foreground">{row.repName}</span>
-                            {isCurrentMonth && <Badge className="text-xs bg-blue-500/20 text-blue-300 border-0">This Month</Badge>}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-lg font-bold ${row.meetsGoal ? "text-blue-400" : "text-amber-400"}`}>
-                              {row.uniqueFacilities}
-                            </span>
-                            <span className="text-xs text-muted-foreground">/ {GOAL}</span>
-                            {row.meetsGoal
-                              ? <CheckCircle2 className="w-4 h-4 text-blue-400" />
-                              : <XCircle className="w-4 h-4 text-red-400/60" />}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-2.5 bg-muted/40 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className={`text-xs font-medium w-10 text-right ${row.meetsGoal ? "text-blue-400" : "text-muted-foreground"}`}>
-                            {pct}%
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1.5">
-                          {new Date(row.month + "-01").toLocaleDateString("en-US", { year: "numeric", month: "long" })}
-                          {row.meetsGoal
-                            ? <span className="text-blue-400 ml-2">Goal reached!</span>
-                            : <span className="text-amber-400/70 ml-2">{GOAL - row.uniqueFacilities} more {GOAL - row.uniqueFacilities === 1 ? "facility" : "facilities"} to reach goal</span>}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            ) : (
-              <Card className="bg-card border-border">
-                <CardContent className="p-8 text-center text-muted-foreground">
-                  <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p>No monthly facility call data yet.</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
         </TabsContent>
       </Tabs>
     </div>

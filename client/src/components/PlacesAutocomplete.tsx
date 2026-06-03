@@ -1,7 +1,50 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+/// <reference types="@types/google.maps" />
+
+import { useEffect, useRef, useState } from "react";
 import { MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { trpc } from "@/lib/trpc";
+
+// ─── Shared Maps loader (mirrors Map.tsx — uses the same window flags) ───────
+const DIRECT_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+const PROXY_API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY as string | undefined;
+const API_KEY = DIRECT_API_KEY || PROXY_API_KEY || "";
+const MAPS_BASE_URL = DIRECT_API_KEY
+  ? "https://maps.googleapis.com"
+  : "/api/maps-proxy";
+
+function loadMapsScript(): Promise<void> {
+  // Already fully initialized
+  if ((window as any)._mapsReady && window.google?.maps?.places?.Autocomplete) {
+    return Promise.resolve();
+  }
+
+  // Map.tsx is already loading — wait for it
+  if ((window as any)._mapsScriptLoading) {
+    return (window as any)._mapsScriptLoading.then(() => {
+      // _mapsScriptLoading from Map.tsx resolves with { ok, error }
+      // We just need the script to be present — resolve regardless
+    });
+  }
+
+  // Neither Map.tsx nor us has started — inject the script ourselves
+  (window as any)._mapsScriptLoading = new Promise<void>((resolve) => {
+    (window as any).initGoogleMapsCallback = () => {
+      (window as any)._mapsReady = true;
+      resolve();
+    };
+
+    const script = document.createElement("script");
+    script.src = `${MAPS_BASE_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places,geocoding,geometry,marker&callback=initGoogleMapsCallback`;
+    script.async = true;
+    script.defer = true;
+    script.crossOrigin = "anonymous";
+    script.onerror = () => resolve(); // resolve anyway to avoid hanging
+    document.head.appendChild(script);
+  });
+
+  return (window as any)._mapsScriptLoading;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface PlaceResult {
   description: string;
@@ -25,132 +68,108 @@ export function PlacesAutocomplete({
   placeholder = "e.g. Los Angeles, CA",
   className,
 }: PlacesAutocompleteProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const initializedRef = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
-  const [debouncedInput, setDebouncedInput] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
-
+  // Keep stable refs to callbacks so the effect never needs to re-run
   const onChangeRef = useRef(onChange);
   const onPlaceSelectRef = useRef(onPlaceSelect);
   useEffect(() => { onChangeRef.current = onChange; });
   useEffect(() => { onPlaceSelectRef.current = onPlaceSelect; });
 
-  // Server-side autocomplete via tRPC
-  const { data: suggestions = [], isFetching } = trpc.leads.autocomplete.useQuery(
-    { input: debouncedInput },
-    { enabled: debouncedInput.length >= 2, staleTime: 30_000 }
-  );
-
-  // Close dropdown on outside click
+  // Initialize ONCE — no dependency on onChange/onPlaceSelect
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    setIsLoading(true);
+    loadMapsScript()
+      .then(() => {
+        if (!inputRef.current) return;
+
+        // Extra safety check — ensure Autocomplete class is available
+        if (!window.google?.maps?.places?.Autocomplete) {
+          console.error("Google Maps Places library not available after load");
+          return;
+        }
+
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(
+          inputRef.current,
+          {
+            types: ["geocode"],
+            fields: ["formatted_address", "geometry", "place_id", "name"],
+          }
+        );
+
+        autocompleteRef.current.addListener("place_changed", () => {
+          const place = autocompleteRef.current!.getPlace();
+          if (!place.geometry?.location) return;
+
+          const description =
+            place.formatted_address || place.name || inputRef.current?.value || "";
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          const placeId = place.place_id || "";
+
+          // Use refs so we always call the latest callbacks
+          onChangeRef.current(description);
+          onPlaceSelectRef.current({ description, lat, lng, placeId });
+        });
+
+        setIsReady(true);
+      })
+      .catch((err) => {
+        console.error("Failed to initialize Places Autocomplete:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+
+    return () => {
+      if (autocompleteRef.current) {
+        window.google?.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    onChangeRef.current(val);
-    setActiveIndex(-1);
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setDebouncedInput(val);
-      if (val.length >= 2) setShowDropdown(true);
-      else setShowDropdown(false);
-    }, 250);
-  };
-
-  // Geocode the selected place using the Maps proxy
-  const handleSelectSuggestion = useCallback(async (suggestion: { description: string; placeId: string }) => {
-    onChangeRef.current(suggestion.description);
-    setShowDropdown(false);
-    setActiveIndex(-1);
-
-    // Use the geocoding API via the maps proxy to get lat/lng
-    try {
-      const resp = await fetch(
-        `/api/maps-proxy/maps/api/geocode/json?place_id=${encodeURIComponent(suggestion.placeId)}`
-      );
-      const data = await resp.json() as {
-        status: string;
-        results: Array<{ geometry: { location: { lat: number; lng: number } } }>;
-      };
-      if (data.status === "OK" && data.results[0]) {
-        const loc = data.results[0].geometry.location;
-        onPlaceSelectRef.current({
-          description: suggestion.description,
-          lat: loc.lat,
-          lng: loc.lng,
-          placeId: suggestion.placeId,
-        });
-      }
-    } catch (err) {
-      console.error("Geocode failed:", err);
-    }
-  }, []);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showDropdown || suggestions.length === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.max(i - 1, -1));
-    } else if (e.key === "Enter" && activeIndex >= 0) {
-      e.preventDefault();
-      handleSelectSuggestion(suggestions[activeIndex]);
-    } else if (e.key === "Escape") {
-      setShowDropdown(false);
-    }
-  };
+  }, []); // empty deps — runs exactly once per mount
 
   const handleClear = () => {
     onChangeRef.current("");
-    setDebouncedInput("");
-    setShowDropdown(false);
-    inputRef.current?.focus();
+    if (inputRef.current) {
+      inputRef.current.value = "";
+      inputRef.current.focus();
+    }
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div className="relative">
       <MapPin
         size={14}
-        className="absolute left-3 top-1/2 -translate-y-1/2 shrink-0 text-muted-foreground z-10"
+        className={cn(
+          "absolute left-3 top-1/2 -translate-y-1/2 shrink-0 transition-colors",
+          isReady ? "text-primary" : "text-muted-foreground"
+        )}
       />
       <input
         ref={inputRef}
         type="text"
-        value={value}
-        placeholder={placeholder}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={() => {
-          if (suggestions.length > 0) setShowDropdown(true);
-        }}
+        defaultValue={value}
+        placeholder={isLoading ? "Loading maps..." : placeholder}
+        disabled={isLoading}
+        onChange={(e) => onChangeRef.current(e.target.value)}
         className={cn(
           "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
           "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-          "text-foreground pl-8",
+          "disabled:cursor-not-allowed disabled:opacity-50 text-foreground",
+          "pl-8",
           value ? "pr-8" : "",
           className
         )}
         autoComplete="off"
       />
-      {/* Right icon: spinner while fetching, X to clear */}
-      {isFetching ? (
-        <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-          <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground animate-spin" />
-        </div>
-      ) : value ? (
+      {value && (
         <button
           type="button"
           onClick={handleClear}
@@ -158,32 +177,6 @@ export function PlacesAutocomplete({
         >
           <X size={13} />
         </button>
-      ) : null}
-
-      {/* Suggestions dropdown */}
-      {showDropdown && suggestions.length > 0 && (
-        <ul className="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border border-border bg-popover shadow-lg overflow-hidden py-1">
-          {suggestions.map((s, i) => (
-            <li key={s.placeId}>
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleSelectSuggestion(s);
-                }}
-                className={cn(
-                  "w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors",
-                  i === activeIndex
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <MapPin size={12} className="shrink-0 text-muted-foreground" />
-                <span className="truncate">{s.description}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
       )}
     </div>
   );

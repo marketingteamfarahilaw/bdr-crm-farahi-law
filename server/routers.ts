@@ -140,45 +140,6 @@ export const appRouter = router({
         leads.sort((a, b) => b.qualificationScore - a.qualificationScore);
         return leads;
       }),
-    autocomplete: protectedProcedure
-      .input(z.object({ input: z.string().min(2) }))
-      .query(async ({ input }) => {
-        if (!GOOGLE_MAPS_API_KEY) return [];
-        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json`;
-        const resp = await axios.get(url, {
-          params: {
-            input: input.input,
-            types: "geocode",
-            components: "country:us",
-            key: GOOGLE_MAPS_API_KEY,
-          },
-          timeout: 8000,
-        });
-        const data = resp.data as { status: string; predictions?: Array<{ description: string; place_id: string }> };
-        if (data.status !== "OK" && data.status !== "ZERO_RESULTS") return [];
-        return (data.predictions ?? []).map((p) => ({
-          description: p.description,
-          placeId: p.place_id,
-        }));
-      }),
-    geocode: protectedProcedure
-      .input(z.object({ placeId: z.string() }))
-      .query(async ({ input }) => {
-        if (!GOOGLE_MAPS_API_KEY) return null;
-        const resp = await axios.get(
-          `https://maps.googleapis.com/maps/api/geocode/json`,
-          { params: { place_id: input.placeId, key: GOOGLE_MAPS_API_KEY }, timeout: 8000 }
-        );
-        const data = resp.data as {
-          status: string;
-          results: Array<{ geometry: { location: { lat: number; lng: number } } }>;
-        };
-        if (data.status !== "OK" || !data.results[0]) return null;
-        return {
-          lat: data.results[0].geometry.location.lat,
-          lng: data.results[0].geometry.location.lng,
-        };
-      }),
   }),
 
   savedLeads: router({

@@ -1,8 +1,0 @@
-{
-  "query": "SELECT cl.id, cl.facilityId, cl.type, cl.direction, cl.duration, cl.createdAt, f.name as facilityName FROM contact_logs cl LEFT JOIN facilities f ON cl.facilityId = f.id ORDER BY cl.createdAt DESC LIMIT 10;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute SELECT cl.id, cl.facilityId, cl.type, cl.direction, cl.duration, cl.createdAt, f.name as facilityName FROM contact_logs cl LEFT JOIN facilities f ON cl.facilityId = f.id ORDER BY cl.createdAt DESC LIMIT 10;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 1: Unknown column 'cl.type' in 'field list'"
-  ]
-}

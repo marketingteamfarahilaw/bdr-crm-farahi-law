@@ -363,10 +363,9 @@
 - [x] Add postMessage to switch calling mode to RingOut after login
 - [x] Add RingOut mode hint banner in widget panel
 
-## RingOut myLocation + BDR Call KPIs
-- [ ] Fix getWidgetConfig/setMyLocation to use getDb() pattern (not import db directly)
-- [ ] Add myLocation phone number field to RingCentral Settings page (per-user)
-- [ ] Pass myLocation in rc-calling-settings-update postMessage after widget login
-- [ ] Add daily calls to facilities KPI to BDR dashboard (goal: >15/day per agent)
-- [ ] Add monthly facilities called KPI to BDR dashboard (goal: >4/month per facility)
-- [ ] Add DB query helpers for daily/monthly call counts from facility_updates/contact_logs
+## RC Call Logging Fixes (June 2026)
+- [x] Fix: Phone number logged as caller ID instead of facility number (direction-aware logic)
+- [x] Fix: syncCalls 403 error handled gracefully (shows friendly message)
+- [x] Fix: Use extension-level call-log API instead of account-level (ReadCallLog vs ReadCompanyCallLog)
+- [x] Fix: Pass facilityId from ClickToCallButton through to logFacilityCall (prevents duplicate facility mismatch)
+- [x] Fix: RC widget JWT auto-login (pass clientSecret + jwt in iframe URL params)

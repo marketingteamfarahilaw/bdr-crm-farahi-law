@@ -116,13 +116,13 @@ function AppWithPhone() {
       logFacilityCall.mutate(
         {
           phone: data.phoneNumber,
+          facilityId: data.facilityId,
           callId: data.callId,
           direction: data.direction,
           result: data.result,
           duration: data.duration,
           durationStr: data.durationStr,
           startTime: data.startTime,
-          facilityId: data.facilityId,
         },
         {
           onSuccess: (result) => {

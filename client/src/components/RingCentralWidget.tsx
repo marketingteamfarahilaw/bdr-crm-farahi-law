@@ -27,12 +27,11 @@ export interface CallEndData {
   duration?: number;
   durationStr?: string;
   phoneNumber?: string;
+  facilityId?: number;
   direction?: string;
   result?: string;
   startTime?: string;
-  facilityId?: number;
 }
-
 interface RingCentralContextValue {
   triggerCall: (phoneNumber: string, facilityId?: number) => void;
   isOpen: boolean;
@@ -67,11 +66,8 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   const [activeCalls, setActiveCalls] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const pendingCallRef = useRef<string | null>(null);
-  // Track active call phone number from rc-active-call-notify / rc-call-init-notify
-  // so we have it available when rc-call-end-notify fires (which sometimes lacks toNumber)
   const activeCallPhoneRef = useRef<string | null>(null);
-  // Track the facilityId from which the call was initiated (for exact matching with duplicates)
-  const activeCallFacilityRef = useRef<number | null>(null);
+  const activeCallFacilityRef = useRef<number | undefined>(undefined);
 
   // Fetch widget config (clientId, clientSecret, jwt) from backend
   const { data: widgetConfig } = trpc.crm.ringcentral.getWidgetConfig.useQuery(undefined, {
@@ -91,12 +87,11 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
           appServer: "https://platform.ringcentral.com",
           redirectUri: officialRedirectUri,
           defaultCallWith: "browser",
+          enableRingOut: "true",
         };
-        // If JWT credentials are available, pass them for auto-login (bypasses OAuth popup)
-        if (widgetConfig.clientSecret && widgetConfig.jwt) {
-          params.clientSecret = widgetConfig.clientSecret;
-          params.jwt = widgetConfig.jwt;
-        }
+        // Add clientSecret and jwt for auto-login if available
+        if (widgetConfig.clientSecret) params.clientSecret = widgetConfig.clientSecret;
+        if (widgetConfig.jwt) params.jwt = widgetConfig.jwt;
         return `${base}?${new URLSearchParams(params).toString()}`;
       })()
     : null;
@@ -110,10 +105,8 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   const triggerCall = useCallback((phoneNumber: string, facilityId?: number) => {
     setIsOpen(true);
     setIsMinimised(false);
-    // Always store the dialed number so we have it when the call ends
     activeCallPhoneRef.current = phoneNumber;
-    // Store the facilityId so we log to the exact facility the user clicked from
-    activeCallFacilityRef.current = facilityId ?? null;
+    activeCallFacilityRef.current = facilityId;
     if (isConnected) {
       postToWidget({ type: "rc-adapter-new-call", phoneNumber, toCall: true });
     } else {
@@ -132,11 +125,14 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
         case "rc-login-status-notify":
           setIsConnected(!!data.loggedIn);
           if (data.loggedIn) {
-            // Switch calling mode to Browser (WebRTC) so calls go through computer mic/speaker
+            // Switch calling mode to RingOut after login so calls go through desk/cell phone.
+            // rc-calling-settings-update is the correct postMessage type per RC Embeddable docs.
+            // myLocation is required for RingOut — use the user's own RC number or a mobile number.
+            // We omit myLocation here so the widget prompts the user to set it once in Settings.
             setTimeout(() => {
               postToWidget({
                 type: "rc-calling-settings-update",
-                callWith: "browser",
+                callWith: "ringout",
               });
             }, 1500);
             if (pendingCallRef.current) {
@@ -149,32 +145,6 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
           }
           break;
 
-        case "rc-active-call-notify": {
-          // Track phone number from active call updates — direction-aware
-          const activeCall = data.call ?? {};
-          let activePhone: string | null = null;
-          if (activeCall.direction === "Outbound" || activeCall.direction === "outbound") {
-            activePhone = activeCall.toNumber ?? activeCall.phoneNumber ?? null;
-          } else {
-            activePhone = activeCall.fromNumber ?? activeCall.phoneNumber ?? null;
-          }
-          // Only overwrite if we got a valid phone and don't already have one from triggerCall
-          if (activePhone && !activeCallPhoneRef.current) activeCallPhoneRef.current = activePhone;
-          break;
-        }
-        case "rc-telephony-session-notify": {
-          // Telephony session event fires for all call modes — capture phone number
-          const session = data.telephonySession ?? {};
-          const parties: any[] = session.parties ?? [];
-          for (const party of parties) {
-            const p = party.to?.phoneNumber ?? party.from?.phoneNumber ?? null;
-            if (p && p !== session.extensionId) {
-              activeCallPhoneRef.current = p;
-              break;
-            }
-          }
-          break;
-        }
         case "rc-adapter-pushAdapterState":
           if (pendingCallRef.current && isConnected) {
             const num = pendingCallRef.current;
@@ -193,20 +163,9 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
           break;
 
         case "rc-call-ring-notify":
-        case "rc-call-init-notify":
-        case "rc-call-start-notify": {
+        case "rc-call-start-notify":
           setActiveCalls((n) => n + 1);
-          // Capture phone number — direction-aware, don't overwrite triggerCall value
-          const initCall = data.call ?? {};
-          let initPhone: string | null = null;
-          if (initCall.direction === "Outbound" || initCall.direction === "outbound") {
-            initPhone = initCall.toNumber ?? initCall.phoneNumber ?? null;
-          } else {
-            initPhone = initCall.fromNumber ?? initCall.phoneNumber ?? null;
-          }
-          if (initPhone && !activeCallPhoneRef.current) activeCallPhoneRef.current = initPhone;
           break;
-        }
 
         case "rc-call-end-notify": {
           setActiveCalls((n) => Math.max(0, n - 1));
@@ -214,32 +173,29 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
             const call = data.call ?? {};
             const durationSecs = call.duration ?? 0;
             const durationStr = `${Math.floor(durationSecs / 60)}:${(durationSecs % 60).toString().padStart(2, "0")}`;
-            // For outbound calls, the facility number is toNumber (never fromNumber — that's our caller ID).
-            // For inbound calls, the facility number is fromNumber.
-            // Always prefer activeCallPhoneRef (set by triggerCall from facility page) as the most reliable source.
+            // Direction-aware phone number: for outbound calls use the stored
+            // activeCallPhoneRef (the facility number we clicked), then toNumber.
+            // Never use fromNumber for outbound (that's our own caller ID).
+            const isOutbound = (call.direction ?? "").toLowerCase() === "outbound";
             let phoneNumber: string | undefined;
-            if (call.direction === "Outbound" || call.direction === "outbound") {
-              phoneNumber = activeCallPhoneRef.current ?? call.toNumber ?? call.phoneNumber ?? undefined;
-            } else if (call.direction === "Inbound" || call.direction === "inbound") {
-              phoneNumber = call.fromNumber ?? call.phoneNumber ?? activeCallPhoneRef.current ?? undefined;
+            if (isOutbound) {
+              phoneNumber = activeCallPhoneRef.current ?? call.toNumber;
             } else {
-              // Unknown direction — prefer activeCallPhoneRef, then toNumber
-              phoneNumber = activeCallPhoneRef.current ?? call.toNumber ?? call.phoneNumber ?? undefined;
+              phoneNumber = call.fromNumber ?? activeCallPhoneRef.current;
             }
-            const facilityId = activeCallFacilityRef.current ?? undefined;
-            activeCallPhoneRef.current = null; // clear after use
-            activeCallFacilityRef.current = null; // clear after use
-            console.log("[RC] rc-call-end-notify call data:", JSON.stringify({ toNumber: call.toNumber, fromNumber: call.fromNumber, phoneNumber: call.phoneNumber, sessionId: call.sessionId, id: call.id, direction: call.direction, result: call.result, duration: durationSecs, facilityId }));
             onCallEnd({
               callId: call.sessionId ?? call.id,
               duration: durationSecs,
               durationStr,
               phoneNumber,
+              facilityId: activeCallFacilityRef.current,
               direction: call.direction,
               result: call.result,
               startTime: call.startTime,
-              facilityId,
             });
+            // Clear refs after use
+            activeCallPhoneRef.current = null;
+            activeCallFacilityRef.current = undefined;
           }
           break;
         }
@@ -362,10 +318,10 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
             </div>
           </div>
 
-          {/* Browser mode hint */}
+          {/* RingOut mode hint */}
           {!isMinimised && isConnected && (
             <div className="px-3 py-1.5 bg-blue-950/40 border-b border-blue-500/20 flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] text-blue-300">🎧 Browser mode: calls use your computer’s microphone and speaker.</span>
+              <span className="text-[10px] text-blue-300">📞 RingOut mode: your phone rings first, then connects to the facility.</span>
             </div>
           )}
 
@@ -411,7 +367,6 @@ interface ClickToCallButtonProps {
   className?: string;
   children?: React.ReactNode;
 }
-
 export function ClickToCallButton({ phoneNumber, facilityId, className, children }: ClickToCallButtonProps) {
   const { triggerCall } = useRingCentral();
 

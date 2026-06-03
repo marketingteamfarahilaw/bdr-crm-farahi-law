@@ -54,13 +54,10 @@ import {
   getBdrPartnerCheckins,
   getBdrTopFacilities,
   findFacilityByPhone,
-  getDailyFacilityCallsKPI,
-  getMonthlyFacilitiesCalledKPI,
 } from "./crmDb";
 import { getDb } from "./db";
-import { users, facilities } from "../drizzle/schema";
+import { facilities } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
-
 const RC_BASE = "https://platform.ringcentral.com";
 
 async function refreshRCToken(refreshToken: string, clientId: string, clientSecret: string) {
@@ -72,66 +69,22 @@ async function refreshRCToken(refreshToken: string, clientId: string, clientSecr
   return resp.data as { access_token: string; refresh_token: string; expires_in: number };
 }
 
-async function exchangeJwtForToken(): Promise<string> {
-  const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
-  const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
-  const jwt = process.env.RINGCENTRAL_JWT ?? "";
-  if (!clientId || !clientSecret || !jwt) throw new Error("RC credentials not configured");
-  const tokenResp = await axios.post(
-    `${RC_BASE}/restapi/oauth/token`,
-    new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }),
-    { auth: { username: clientId, password: clientSecret }, headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-  );
-  const { access_token, refresh_token, expires_in } = tokenResp.data;
-  // Persist so subsequent calls can reuse this token
-  const stored = await getRingcentralToken();
-  await upsertRingcentralToken({
-    accountId: stored?.accountId ?? "default",
-    accessToken: access_token,
-    refreshToken: refresh_token ?? "",
-    tokenExpiry: new Date(Date.now() + (expires_in ?? 3600) * 1000),
-    ownerExtensionId: stored?.ownerExtensionId ?? undefined,
-    ownerName: stored?.ownerName ?? undefined,
-  });
-  return access_token;
-}
-
 async function getValidRCToken(): Promise<string> {
   const stored = await getRingcentralToken();
+  if (!stored) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral not connected" });
   const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
   const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
-  // If no stored token, try JWT exchange first
-  if (!stored) {
-    try { return await exchangeJwtForToken(); } catch {
-      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral not connected" });
-    }
-  }
   if (stored.tokenExpiry.getTime() - Date.now() < 5 * 60 * 1000) {
-    // First try refresh token
-    try {
-      const refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
-      await upsertRingcentralToken({
-        accountId: stored.accountId,
-        accessToken: refreshed.access_token,
-        refreshToken: refreshed.refresh_token,
-        tokenExpiry: new Date(Date.now() + refreshed.expires_in * 1000),
-        ownerExtensionId: stored.ownerExtensionId ?? undefined,
-        ownerName: stored.ownerName ?? undefined,
-      });
-      return refreshed.access_token;
-    } catch (err: any) {
-      // Refresh token expired/revoked — fall back to JWT exchange
-      const status = err?.response?.status;
-      if (status === 400 || status === 401) {
-        try { return await exchangeJwtForToken(); } catch {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "RingCentral session expired. Please go to RingCentral Settings and reconnect your account.",
-          });
-        }
-      }
-      throw err;
-    }
+    const refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
+    await upsertRingcentralToken({
+      accountId: stored.accountId,
+      accessToken: refreshed.access_token,
+      refreshToken: refreshed.refresh_token,
+      tokenExpiry: new Date(Date.now() + refreshed.expires_in * 1000),
+      ownerExtensionId: stored.ownerExtensionId ?? undefined,
+      ownerName: stored.ownerName ?? undefined,
+    });
+    return refreshed.access_token;
   }
   return stored.accessToken;
 }
@@ -184,21 +137,6 @@ export const crmRouter = router({
           })
         );
         return enriched;
-      }),
-
-    quickSearch: protectedProcedure
-      .input(z.object({ query: z.string().min(1) }))
-      .query(async ({ input }) => {
-        const rows = await listFacilities({ search: input.query, sortBy: "name", sortDir: "asc" });
-        return rows.slice(0, 10).map((f: any) => ({
-          id: f.id,
-          name: f.name,
-          category: f.category,
-          address: f.address ?? "",
-          city: f.city ?? "",
-          phone: f.phone ?? "",
-          relationshipStatus: f.relationshipStatus ?? "",
-        }));
       }),
 
     get: protectedProcedure
@@ -620,35 +558,17 @@ export const crmRouter = router({
       }
     }),
 
-    getWidgetConfig: protectedProcedure.query(async ({ ctx }) => {
+    getWidgetConfig: protectedProcedure.query(async () => {
       const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
       const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
       const jwt = process.env.RINGCENTRAL_JWT ?? "";
-      // Fetch the user's RingOut myLocation number from DB
-      const db = await getDb();
-      const userRow = db ? await db.select({ ringoutMyLocation: users.ringoutMyLocation })
-        .from(users)
-        .where(eq(users.id, ctx.user.id))
-        .then((r: { ringoutMyLocation: string | null }[]) => r[0] ?? null) : null;
       return {
         clientId,
         clientSecret,
         jwt,
-        configured: !!clientId && !!clientSecret,
-        myLocation: userRow?.ringoutMyLocation ?? "",
+        configured: !!clientId,
       };
     }),
-
-    setMyLocation: protectedProcedure
-      .input(z.object({ myLocation: z.string().max(30) }))
-      .mutation(async ({ input, ctx }) => {
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
-        await db.update(users)
-          .set({ ringoutMyLocation: input.myLocation || null })
-          .where(eq(users.id, ctx.user.id));
-        return { success: true };
-      }),
 
     transcribeCall: protectedProcedure
       .input(z.object({
@@ -671,7 +591,7 @@ export const crmRouter = router({
         let recordingUrl: string | null = null;
         try {
           const callResp = await axios.get(
-            `${RC_BASE}/restapi/v1.0/account/~/call-log/${input.callId}`,
+            `${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${input.callId}`,
             { headers: { Authorization: `Bearer ${accessToken}` } }
           );
           recordingUrl = callResp.data?.recording?.contentUri ?? null;
@@ -715,23 +635,23 @@ export const crmRouter = router({
     logFacilityCall: protectedProcedure
       .input(z.object({
         phone: z.string(),
+        facilityId: z.number().optional(),
         callId: z.string().optional(),
         direction: z.string().optional(),
         result: z.string().optional(),
         duration: z.number().optional(),
         durationStr: z.string().optional(),
-        startTime: z.union([z.string(), z.number()]).optional(),
+        startTime: z.string().optional(),
         agentName: z.string().optional(),
-        facilityId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        // 1. Match facility: prefer explicit facilityId (from click-to-call), fall back to phone lookup
-        let facility: Awaited<ReturnType<typeof findFacilityByPhone>> = null;
+        // 1. Match facility — prefer facilityId (from click-to-call) over phone matching
+        let facility: any = null;
         if (input.facilityId) {
           const db = await getDb();
           if (db) {
-            const row = await db.select().from(facilities).where(eq(facilities.id, input.facilityId)).then((r: any[]) => r[0] ?? null);
-            if (row) facility = row;
+            const [row] = await db.select().from(facilities).where(eq(facilities.id, input.facilityId)).limit(1);
+            facility = row ?? null;
           }
         }
         if (!facility) {
@@ -773,7 +693,7 @@ export const crmRouter = router({
             // Wait a few seconds for recording to be available
             await new Promise((r) => setTimeout(r, 5000));
             const callResp = await axios.get(
-              `${RC_BASE}/restapi/v1.0/account/~/call-log/${input.callId}`,
+              `${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${input.callId}`,
               { headers: { Authorization: `Bearer ${accessToken}` } }
             );
             const recordingUrl: string | null = callResp.data?.recording?.contentUri ?? null;
@@ -928,19 +848,11 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
           .filter(Boolean).map((p) => p!.replace(/\D/g, ""));
         if (phones.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No phone numbers on this facility." });
         const dateFrom = new Date(Date.now() - input.daysBack * 24 * 60 * 60 * 1000).toISOString();
-        let records: any[] = [];
-        try {
-          const callLogResp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/call-log`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            params: { dateFrom, perPage: 250, view: "Detailed" },
-          });
-          records = callLogResp.data.records ?? [];
-        } catch (err: any) {
-          if (err?.response?.status === 403) {
-            return { success: false, synced: 0, error: "RingCentral API returned 403 — your token may lack ReadCallLog permission." };
-          }
-          throw err;
-        }
+        const callLogResp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          params: { dateFrom, perPage: 250, view: "Detailed" },
+        });
+        const records: any[] = callLogResp.data.records ?? [];
         let synced = 0;
         for (const record of records) {
           const fromNum = (record.from?.phoneNumber ?? "").replace(/\D/g, "");
@@ -1113,16 +1025,6 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
     topFacilities: protectedProcedure
       .input(z.object({ limit: z.number().min(1).max(100).default(20) }))
       .query(async ({ input }) => getBdrTopFacilities(input.limit)),
-
-    /** Daily calls to facilities per agent. Goal: > 15 calls/day. */
-    dailyFacilityCalls: protectedProcedure
-      .input(z.object({ repName: z.string().optional() }))
-      .query(async ({ input }) => getDailyFacilityCallsKPI(input)),
-
-    /** Unique facilities called per agent per month. Goal: > 4 facilities/month. */
-    monthlyFacilitiesCalled: protectedProcedure
-      .input(z.object({ repName: z.string().optional() }))
-      .query(async ({ input }) => getMonthlyFacilitiesCalledKPI(input)),
   }),
 
   // ─── Management Dashboard ────────────────────────────────────────────────────

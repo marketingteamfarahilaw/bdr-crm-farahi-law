@@ -2,8 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Users, MapPin, Clock, DollarSign, Gift, CheckCircle, AlertCircle } from "lucide-react";
+import { Users, MapPin, Clock, DollarSign, Gift, CheckCircle } from "lucide-react";
 
 const AGENT_COLORS: Record<string, string> = {
   "Gracel": "#6366f1",
@@ -40,18 +39,7 @@ function KpiCard({ icon: Icon, label, value, sub, color }: {
 }
 
 export default function AgentDashboard() {
-  const { data: kpis, isLoading, error, refetch } = trpc.bdr.dashboardKpis.useQuery(undefined, { retry: 2 });
-
-  if (error) {
-    return (
-      <div className="p-8 text-center">
-        <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
-        <p className="text-lg font-semibold">Failed to load dashboard</p>
-        <p className="text-muted-foreground text-sm mt-1 mb-4">The server took too long to respond. Please try again.</p>
-        <Button variant="outline" onClick={() => refetch()}>Retry</Button>
-      </div>
-    );
-  }
+  const { data: kpis, isLoading } = trpc.bdr.dashboardKpis.useQuery();
 
   return (
     <div className="p-6 space-y-6">

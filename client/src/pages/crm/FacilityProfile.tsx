@@ -640,13 +640,9 @@ export default function FacilityProfile() {
   });
   const syncCalls = trpc.crm.ringcentral.syncCalls.useMutation({
     onSuccess: (data) => {
-      if (data.success === false && data.error) {
-        toast.error(data.error);
-      } else {
-        toast.success(`Synced ${data.synced} calls from RingCentral`);
-        utils.crm.contactLogs.list.invalidate({ facilityId });
-        utils.crm.facilities.get.invalidate({ id: facilityId });
-      }
+      toast.success(`Synced ${data.synced} calls from RingCentral`);
+      utils.crm.contactLogs.list.invalidate({ facilityId });
+      utils.crm.facilities.get.invalidate({ id: facilityId });
     },
     onError: (e) => toast.error(e.message),
   });
