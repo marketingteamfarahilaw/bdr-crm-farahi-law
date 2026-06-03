@@ -107,6 +107,8 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   const triggerCall = useCallback((phoneNumber: string) => {
     setIsOpen(true);
     setIsMinimised(false);
+    // Always store the dialed number so we have it when the call ends
+    activeCallPhoneRef.current = phoneNumber;
     if (isConnected) {
       postToWidget({ type: "rc-adapter-new-call", phoneNumber, toCall: true });
     } else {
@@ -143,10 +145,16 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
           break;
 
         case "rc-active-call-notify": {
-          // Track phone number from active call updates
+          // Track phone number from active call updates — direction-aware
           const activeCall = data.call ?? {};
-          const activePhone = activeCall.toNumber ?? activeCall.fromNumber ?? activeCall.phoneNumber ?? null;
-          if (activePhone) activeCallPhoneRef.current = activePhone;
+          let activePhone: string | null = null;
+          if (activeCall.direction === "Outbound" || activeCall.direction === "outbound") {
+            activePhone = activeCall.toNumber ?? activeCall.phoneNumber ?? null;
+          } else {
+            activePhone = activeCall.fromNumber ?? activeCall.phoneNumber ?? null;
+          }
+          // Only overwrite if we got a valid phone and don't already have one from triggerCall
+          if (activePhone && !activeCallPhoneRef.current) activeCallPhoneRef.current = activePhone;
           break;
         }
         case "rc-telephony-session-notify": {
@@ -183,10 +191,15 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
         case "rc-call-init-notify":
         case "rc-call-start-notify": {
           setActiveCalls((n) => n + 1);
-          // Capture phone number as early as possible
+          // Capture phone number — direction-aware, don't overwrite triggerCall value
           const initCall = data.call ?? {};
-          const initPhone = initCall.toNumber ?? initCall.fromNumber ?? initCall.phoneNumber ?? null;
-          if (initPhone) activeCallPhoneRef.current = initPhone;
+          let initPhone: string | null = null;
+          if (initCall.direction === "Outbound" || initCall.direction === "outbound") {
+            initPhone = initCall.toNumber ?? initCall.phoneNumber ?? null;
+          } else {
+            initPhone = initCall.fromNumber ?? initCall.phoneNumber ?? null;
+          }
+          if (initPhone && !activeCallPhoneRef.current) activeCallPhoneRef.current = initPhone;
           break;
         }
 
@@ -196,8 +209,18 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
             const call = data.call ?? {};
             const durationSecs = call.duration ?? 0;
             const durationStr = `${Math.floor(durationSecs / 60)}:${(durationSecs % 60).toString().padStart(2, "0")}`;
-            // Use phone from call object; fall back to the number we captured at call init
-            const phoneNumber = call.toNumber ?? call.fromNumber ?? call.phoneNumber ?? activeCallPhoneRef.current ?? undefined;
+            // For outbound calls, the facility number is toNumber (never fromNumber — that's our caller ID).
+            // For inbound calls, the facility number is fromNumber.
+            // Always prefer activeCallPhoneRef (set by triggerCall from facility page) as the most reliable source.
+            let phoneNumber: string | undefined;
+            if (call.direction === "Outbound" || call.direction === "outbound") {
+              phoneNumber = activeCallPhoneRef.current ?? call.toNumber ?? call.phoneNumber ?? undefined;
+            } else if (call.direction === "Inbound" || call.direction === "inbound") {
+              phoneNumber = call.fromNumber ?? call.phoneNumber ?? activeCallPhoneRef.current ?? undefined;
+            } else {
+              // Unknown direction — prefer activeCallPhoneRef, then toNumber
+              phoneNumber = activeCallPhoneRef.current ?? call.toNumber ?? call.phoneNumber ?? undefined;
+            }
             activeCallPhoneRef.current = null; // clear after use
             console.log("[RC] rc-call-end-notify call data:", JSON.stringify({ toNumber: call.toNumber, fromNumber: call.fromNumber, phoneNumber: call.phoneNumber, sessionId: call.sessionId, id: call.id, direction: call.direction, result: call.result, duration: durationSecs }));
             onCallEnd({

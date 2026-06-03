@@ -917,11 +917,19 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
           .filter(Boolean).map((p) => p!.replace(/\D/g, ""));
         if (phones.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No phone numbers on this facility." });
         const dateFrom = new Date(Date.now() - input.daysBack * 24 * 60 * 60 * 1000).toISOString();
-        const callLogResp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/call-log`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          params: { dateFrom, perPage: 250, view: "Detailed" },
-        });
-        const records: any[] = callLogResp.data.records ?? [];
+        let records: any[] = [];
+        try {
+          const callLogResp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/call-log`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: { dateFrom, perPage: 250, view: "Detailed" },
+          });
+          records = callLogResp.data.records ?? [];
+        } catch (err: any) {
+          if (err?.response?.status === 403) {
+            return { success: false, synced: 0, error: "RingCentral API returned 403 — your token may lack ReadCallLog permission." };
+          }
+          throw err;
+        }
         let synced = 0;
         for (const record of records) {
           const fromNum = (record.from?.phoneNumber ?? "").replace(/\D/g, "");
