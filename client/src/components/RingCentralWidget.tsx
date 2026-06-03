@@ -30,10 +30,11 @@ export interface CallEndData {
   direction?: string;
   result?: string;
   startTime?: string;
+  facilityId?: number;
 }
 
 interface RingCentralContextValue {
-  triggerCall: (phoneNumber: string) => void;
+  triggerCall: (phoneNumber: string, facilityId?: number) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   isConnected: boolean;
@@ -69,6 +70,8 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   // Track active call phone number from rc-active-call-notify / rc-call-init-notify
   // so we have it available when rc-call-end-notify fires (which sometimes lacks toNumber)
   const activeCallPhoneRef = useRef<string | null>(null);
+  // Track the facilityId from which the call was initiated (for exact matching with duplicates)
+  const activeCallFacilityRef = useRef<number | null>(null);
 
   // Fetch widget config (clientId, clientSecret, jwt) from backend
   const { data: widgetConfig } = trpc.crm.ringcentral.getWidgetConfig.useQuery(undefined, {
@@ -104,11 +107,13 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   }, []);
 
   // Trigger a call — opens the widget and dials
-  const triggerCall = useCallback((phoneNumber: string) => {
+  const triggerCall = useCallback((phoneNumber: string, facilityId?: number) => {
     setIsOpen(true);
     setIsMinimised(false);
     // Always store the dialed number so we have it when the call ends
     activeCallPhoneRef.current = phoneNumber;
+    // Store the facilityId so we log to the exact facility the user clicked from
+    activeCallFacilityRef.current = facilityId ?? null;
     if (isConnected) {
       postToWidget({ type: "rc-adapter-new-call", phoneNumber, toCall: true });
     } else {
@@ -221,8 +226,10 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
               // Unknown direction — prefer activeCallPhoneRef, then toNumber
               phoneNumber = activeCallPhoneRef.current ?? call.toNumber ?? call.phoneNumber ?? undefined;
             }
+            const facilityId = activeCallFacilityRef.current ?? undefined;
             activeCallPhoneRef.current = null; // clear after use
-            console.log("[RC] rc-call-end-notify call data:", JSON.stringify({ toNumber: call.toNumber, fromNumber: call.fromNumber, phoneNumber: call.phoneNumber, sessionId: call.sessionId, id: call.id, direction: call.direction, result: call.result, duration: durationSecs }));
+            activeCallFacilityRef.current = null; // clear after use
+            console.log("[RC] rc-call-end-notify call data:", JSON.stringify({ toNumber: call.toNumber, fromNumber: call.fromNumber, phoneNumber: call.phoneNumber, sessionId: call.sessionId, id: call.id, direction: call.direction, result: call.result, duration: durationSecs, facilityId }));
             onCallEnd({
               callId: call.sessionId ?? call.id,
               duration: durationSecs,
@@ -231,6 +238,7 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
               direction: call.direction,
               result: call.result,
               startTime: call.startTime,
+              facilityId,
             });
           }
           break;
@@ -399,11 +407,12 @@ export const RingCentralWidget = RingCentralProvider;
 
 interface ClickToCallButtonProps {
   phoneNumber: string;
+  facilityId?: number;
   className?: string;
   children?: React.ReactNode;
 }
 
-export function ClickToCallButton({ phoneNumber, className, children }: ClickToCallButtonProps) {
+export function ClickToCallButton({ phoneNumber, facilityId, className, children }: ClickToCallButtonProps) {
   const { triggerCall } = useRingCentral();
 
   if (!phoneNumber) return null;
@@ -414,7 +423,7 @@ export function ClickToCallButton({ phoneNumber, className, children }: ClickToC
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        triggerCall(phoneNumber);
+        triggerCall(phoneNumber, facilityId);
       }}
       className={cn(
         "inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors",

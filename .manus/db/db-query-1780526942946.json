@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, name, phone FROM facilities WHERE name LIKE '%AV Chiro%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NLuybDd1Z2YoG9.root --database mD5oQ9mnwHpgnRSzNG9WvW --execute SELECT id, name, phone FROM facilities WHERE name LIKE '%AV Chiro%';",
+  "rows": [
+    {
+      "id": "330041",
+      "name": "AV Chiropractic Health Center (Lancaster) Dr. Hodges and Dr. Ball",
+      "phone": "6619406302"
+    },
+    {
+      "id": "330138",
+      "name": "AV Chiropractic Health Center",
+      "phone": "6619406302"
+    },
+    {
+      "id": "330265",
+      "name": "AV Chiropractic Lancaster",
+      "phone": "6619406302"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tphone\n330041\tAV Chiropractic Health Center (Lancaster) Dr. Hodges and Dr. Ball\t6619406302\n330138\tAV Chiropractic Health Center\t6619406302\n330265\tAV Chiropractic Lancaster\t6619406302\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

@@ -58,7 +58,7 @@ import {
   getMonthlyFacilitiesCalledKPI,
 } from "./crmDb";
 import { getDb } from "./db";
-import { users } from "../drizzle/schema";
+import { users, facilities } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 const RC_BASE = "https://platform.ringcentral.com";
@@ -722,10 +722,21 @@ export const crmRouter = router({
         durationStr: z.string().optional(),
         startTime: z.union([z.string(), z.number()]).optional(),
         agentName: z.string().optional(),
+        facilityId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        // 1. Match facility by phone number
-        const facility = await findFacilityByPhone(input.phone);
+        // 1. Match facility: prefer explicit facilityId (from click-to-call), fall back to phone lookup
+        let facility: Awaited<ReturnType<typeof findFacilityByPhone>> = null;
+        if (input.facilityId) {
+          const db = await getDb();
+          if (db) {
+            const row = await db.select().from(facilities).where(eq(facilities.id, input.facilityId)).then((r: any[]) => r[0] ?? null);
+            if (row) facility = row;
+          }
+        }
+        if (!facility) {
+          facility = await findFacilityByPhone(input.phone);
+        }
         const agentName = input.agentName ?? ctx.user.name ?? ctx.user.email ?? "Unknown";
         const callDate = input.startTime ? new Date(input.startTime) : new Date();
         const durationStr = input.durationStr ?? (input.duration ? `${Math.floor(input.duration / 60)}:${(input.duration % 60).toString().padStart(2, "0")}` : "0:00");

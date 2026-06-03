@@ -122,6 +122,7 @@ function AppWithPhone() {
           duration: data.duration,
           durationStr: data.durationStr,
           startTime: data.startTime,
+          facilityId: data.facilityId,
         },
         {
           onSuccess: (result) => {
