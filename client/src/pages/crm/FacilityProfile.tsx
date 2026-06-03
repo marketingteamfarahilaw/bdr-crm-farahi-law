@@ -15,7 +15,7 @@ import {
   ArrowLeft, Phone, Globe, MapPin, User, Mail, AlertTriangle,
   Plus, CheckCircle2, Circle, Trash2, PhoneCall, Car, MessageSquare,
   Calendar, Clock, Star, Edit, RefreshCw, Building2, Gift, FileText,
-  TrendingUp, Flag, ExternalLink
+  TrendingUp, Flag, ExternalLink, ListChecks, Zap, ChevronDown, ChevronUp
 } from "lucide-react";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { formatDistanceToNow, format } from "date-fns";
@@ -510,6 +510,73 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                   <div className={`rounded-lg p-3 mb-2 ${upd.updateType === "transcript" ? "bg-blue-500/10" : "bg-muted/30"}`}>
                     {upd.updateType === "transcript" && <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">AI Summary</p>}
                     <p className="text-sm text-foreground leading-relaxed">{upd.summary}</p>
+                    {/* Relationship tone + commitment badges */}
+                    {upd.updateType === "transcript" && upd.extractedData && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {upd.extractedData.relationshipTone && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${
+                            upd.extractedData.relationshipTone === "warm" ? "bg-green-500/10 text-green-400 border-green-500/20"
+                            : upd.extractedData.relationshipTone === "cold" ? "bg-blue-500/10 text-blue-300 border-blue-500/20"
+                            : upd.extractedData.relationshipTone === "hostile" ? "bg-red-500/10 text-red-400 border-red-500/20"
+                            : "bg-muted text-muted-foreground border-border"
+                          }`}>
+                            Tone: {upd.extractedData.relationshipTone}
+                          </span>
+                        )}
+                        {upd.extractedData.leadsDiscussed && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-amber-500/10 text-amber-400 border-amber-500/20">Leads discussed</span>
+                        )}
+                        {upd.extractedData.contactPerson && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-muted text-muted-foreground border-border">Spoke with: {upd.extractedData.contactPerson}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Action Items */}
+                {upd.updateType === "transcript" && upd.extractedData?.actionItems?.length > 0 && (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 mb-2">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                      <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Action Items</p>
+                    </div>
+                    <ul className="space-y-1">
+                      {(upd.extractedData.actionItems as string[]).map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+                          <span className="text-amber-400 mt-0.5 shrink-0">▸</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {/* Follow-Up Tasks */}
+                {upd.updateType === "transcript" && upd.extractedData?.followUpTasks?.length > 0 && (
+                  <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 mb-2">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <ListChecks className="w-3.5 h-3.5 text-purple-400" />
+                      <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Follow-Up Tasks Created</p>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {(upd.extractedData.followUpTasks as Array<{title:string;priority:string;dueInDays:number}>).map((task, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs">
+                          <span className={`shrink-0 mt-0.5 text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                            task.priority === "high" ? "bg-red-500/20 text-red-400"
+                            : task.priority === "medium" ? "bg-amber-500/20 text-amber-400"
+                            : "bg-muted text-muted-foreground"
+                          }`}>{task.priority.toUpperCase()}</span>
+                          <span className="text-foreground flex-1">{task.title}</span>
+                          <span className="text-muted-foreground shrink-0">due in {task.dueInDays}d</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {/* Commitment made */}
+                {upd.updateType === "transcript" && upd.extractedData?.commitmentMade && (
+                  <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-2.5 mb-2 flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-green-300"><span className="font-semibold">Commitment: </span>{upd.extractedData.commitmentMade}</p>
                   </div>
                 )}
                 {upd.rawText && upd.rawText.trim() && !upd.rawText.startsWith("[") && (

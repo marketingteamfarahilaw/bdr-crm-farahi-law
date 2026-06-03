@@ -120,12 +120,21 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
       switch (data.type) {
         case "rc-login-status-notify":
           setIsConnected(!!data.loggedIn);
-          if (data.loggedIn && pendingCallRef.current) {
-            const num = pendingCallRef.current;
-            pendingCallRef.current = null;
+          if (data.loggedIn) {
+            // Switch calling mode to RingOut after login so calls go through desk/cell phone
             setTimeout(() => {
-              postToWidget({ type: "rc-adapter-new-call", phoneNumber: num, toCall: true });
-            }, 800);
+              postToWidget({
+                type: "rc-adapter-update-calling-settings",
+                callWith: "ringout",
+              });
+            }, 1200);
+            if (pendingCallRef.current) {
+              const num = pendingCallRef.current;
+              pendingCallRef.current = null;
+              setTimeout(() => {
+                postToWidget({ type: "rc-adapter-new-call", phoneNumber: num, toCall: true });
+              }, 1800);
+            }
           }
           break;
 
@@ -287,6 +296,13 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
               </button>
             </div>
           </div>
+
+          {/* RingOut mode hint */}
+          {!isMinimised && isConnected && (
+            <div className="px-3 py-1.5 bg-blue-950/40 border-b border-blue-500/20 flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] text-blue-300">📞 RingOut mode: your phone rings first, then connects to the facility.</span>
+            </div>
+          )}
 
           {/* Iframe or not-configured message */}
           {!isMinimised && (

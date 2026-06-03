@@ -352,3 +352,13 @@
 - [x] Update RingCentralWidget: defaultCallWith=ringout (agents log in via widget UI)
 - [x] Display call logs with transcript + AI summary on Facility Profile Updates tab
 - [x] Update RingCentralSettings page to reflect per-agent widget login flow
+
+## AI Summary Enhancement — Action Items & Follow-Up Tasks
+- [x] Update logFacilityCall LLM prompt to return structured JSON (summary, actionItems[], followUpTasks[], contactPerson, relationshipTone, leadsDiscussed, commitmentMade)
+- [x] Store structured data in existing facility_updates.extractedData JSON column (no migration needed)
+- [x] Auto-create facility_tasks entries from extracted followUpTasks after each call
+- [x] Update UpdatesTab UI to display action items (amber), follow-up tasks (purple), commitment (green), tone badges
+- [x] Update success toast to mention action items count and tasks created
+- [x] Fix widget: stop passing JWT/clientSecret to frontend (agents log in via widget OAuth)
+- [x] Add postMessage to switch calling mode to RingOut after login
+- [x] Add RingOut mode hint banner in widget panel

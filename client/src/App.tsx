@@ -128,11 +128,13 @@ function AppWithPhone() {
             toast.dismiss(processingId);
             if (result.facilityId) {
               if (result.hasTranscript && result.hasAiSummary) {
+                const taskNote = result.followUpTasksCreated ? ` · ${result.followUpTasksCreated} task${result.followUpTasksCreated !== 1 ? "s" : ""} created` : "";
+                const actionNote = result.actionItemsCount ? ` · ${result.actionItemsCount} action item${result.actionItemsCount !== 1 ? "s" : ""}` : "";
                 toast.success(
-                  `Call logged & summarised for ${result.facilityName}`,
+                  `Call logged & analysed for ${result.facilityName}`,
                   {
-                    description: `${dur} · ${data.direction ?? ""} · transcript + AI summary saved`,
-                    duration: 8000,
+                    description: `${dur} · transcript + AI summary${actionNote}${taskNote}`,
+                    duration: 10000,
                   }
                 );
               } else if (result.hasTranscript) {

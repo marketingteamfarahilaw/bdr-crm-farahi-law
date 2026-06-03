@@ -558,13 +558,13 @@ export const crmRouter = router({
 
     getWidgetConfig: protectedProcedure.query(async () => {
       const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
-      const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
-      const jwt = process.env.RINGCENTRAL_JWT ?? "";
+      // Only return clientId — agents log in via the widget UI (OAuth).
+      // Do NOT return clientSecret or jwt to the frontend; those are server-side only.
       return {
         clientId,
-        clientSecret,
-        jwt,
-        configured: !!(clientId && clientSecret && jwt),
+        clientSecret: "",
+        jwt: "",
+        configured: !!clientId,
       };
     }),
 
@@ -694,20 +694,93 @@ export const crmRouter = router({
           } catch { /* recording not yet available */ }
         }
 
-        // 4. Generate AI summary if we have a transcript
+        // 4. Generate structured AI analysis if we have a transcript
+        let actionItems: string[] = [];
+        let followUpTasks: Array<{ title: string; priority: "high" | "medium" | "low"; dueInDays?: number }> = [];
+        let extractedData: Record<string, unknown> = {};
+
         if (transcriptText) {
           try {
             const llmResp = await invokeLLM({
               messages: [
-                { role: "system", content: "You are a business development assistant for a law firm. Summarize the following phone call transcript between a BD rep and a facility partner (chiropractor, body shop, etc.) in 2-3 sentences. Focus on: what was discussed, any commitments made, leads mentioned, and next steps. Be concise and professional." },
+                {
+                  role: "system",
+                  content: `You are a business development assistant for a personal injury law firm. Analyze this phone call transcript between a BD rep and a facility partner (chiropractor, body shop, physical therapist, etc.).
+
+Return a JSON object with EXACTLY these fields:
+{
+  "summary": "2-3 sentence summary of what was discussed, tone of the conversation, and outcome",
+  "actionItems": ["string", ...],
+  "followUpTasks": [
+    { "title": "string", "priority": "high|medium|low", "dueInDays": number }
+  ],
+  "contactPerson": "name of person spoken to if mentioned, else null",
+  "relationshipTone": "warm|neutral|cold|hostile",
+  "leadsDiscussed": true or false,
+  "commitmentMade": "brief description of any commitment made, else null"
+}
+
+For actionItems: list concrete things the BD rep needs to do (e.g. "Send referral package to Dr. Smith", "Follow up on 3 pending cases").
+For followUpTasks: list tasks that should be scheduled (e.g. check-in calls, sending materials, visiting the facility). Set dueInDays based on urgency (1-3 for urgent, 7 for this week, 14 for next 2 weeks, 30 for next month).
+Be specific and actionable. If nothing was discussed, return empty arrays.`,
+                },
                 { role: "user", content: transcriptText },
               ],
+              response_format: {
+                type: "json_schema",
+                json_schema: {
+                  name: "call_analysis",
+                  strict: true,
+                  schema: {
+                    type: "object",
+                    properties: {
+                      summary: { type: "string" },
+                      actionItems: { type: "array", items: { type: "string" } },
+                      followUpTasks: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            title: { type: "string" },
+                            priority: { type: "string", enum: ["high", "medium", "low"] },
+                            dueInDays: { type: "number" },
+                          },
+                          required: ["title", "priority", "dueInDays"],
+                          additionalProperties: false,
+                        },
+                      },
+                      contactPerson: { type: ["string", "null"] },
+                      relationshipTone: { type: "string", enum: ["warm", "neutral", "cold", "hostile"] },
+                      leadsDiscussed: { type: "boolean" },
+                      commitmentMade: { type: ["string", "null"] },
+                    },
+                    required: ["summary", "actionItems", "followUpTasks", "contactPerson", "relationshipTone", "leadsDiscussed", "commitmentMade"],
+                    additionalProperties: false,
+                  },
+                },
+              },
             });
-            aiSummary = (llmResp.choices[0]?.message?.content as string) ?? "";
-          } catch { /* LLM unavailable — skip summary */ }
+
+            const raw = llmResp.choices[0]?.message?.content as string;
+            const parsed = JSON.parse(raw);
+            aiSummary = parsed.summary ?? "";
+            actionItems = parsed.actionItems ?? [];
+            followUpTasks = parsed.followUpTasks ?? [];
+            extractedData = {
+              contactPerson: parsed.contactPerson,
+              relationshipTone: parsed.relationshipTone,
+              leadsDiscussed: parsed.leadsDiscussed,
+              commitmentMade: parsed.commitmentMade,
+              actionItems,
+              followUpTasks,
+            };
+          } catch (e) {
+            // LLM unavailable or JSON parse error — skip structured analysis
+            console.warn("[logFacilityCall] LLM analysis failed:", e);
+          }
         }
 
-        // 5. Save to facility_updates if we have a facility match
+        // 5. Save to facility_updates and auto-create follow-up tasks
         if (facility) {
           const rawText = transcriptText || `[Call on ${callDate.toISOString()}${input.phone ? ` to ${input.phone}` : ""}${durationStr ? `, duration: ${durationStr}` : ""}]`;
           const summary = aiSummary || (transcriptText ? transcriptText.slice(0, 300) : `${input.direction ?? "Outbound"} call — ${input.result ?? ""} (${durationStr})`);
@@ -719,7 +792,24 @@ export const crmRouter = router({
             updateType: "transcript",
             repId: ctx.user.id,
             repName: agentName,
+            extractedData: Object.keys(extractedData).length > 0 ? extractedData : null,
           });
+
+          // Auto-create follow-up tasks extracted from the call
+          for (const task of followUpTasks) {
+            const dueDate = new Date(callDate);
+            dueDate.setDate(dueDate.getDate() + (task.dueInDays ?? 7));
+            await createTask({
+              facilityId: facility.id,
+              title: task.title,
+              description: `Auto-created from call on ${callDate.toLocaleDateString()} with ${agentName}`,
+              dueDate,
+              priority: task.priority,
+              assignedToId: ctx.user.id,
+              assignedToName: agentName,
+              status: "open",
+            });
+          }
         }
 
         return {
@@ -730,6 +820,8 @@ export const crmRouter = router({
           hasAiSummary: !!aiSummary,
           transcriptText: transcriptText || null,
           aiSummary: aiSummary || null,
+          actionItemsCount: actionItems.length,
+          followUpTasksCreated: followUpTasks.length,
         };
       }),
 
