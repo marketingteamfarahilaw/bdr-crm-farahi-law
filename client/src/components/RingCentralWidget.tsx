@@ -80,14 +80,19 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   const widgetUrl = widgetConfig?.clientId
     ? (() => {
         const base = `https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/app.html`;
-        const params = new URLSearchParams({
+        const params: Record<string, string> = {
           clientId: widgetConfig.clientId,
           appServer: "https://platform.ringcentral.com",
           redirectUri: officialRedirectUri,
           defaultCallWith: "ringout",
           enableRingOut: "true",
-        });
-        return `${base}?${params.toString()}`;
+        };
+        // If JWT credentials are available, pass them for auto-login (bypasses OAuth popup)
+        if (widgetConfig.clientSecret && widgetConfig.jwt) {
+          params.clientSecret = widgetConfig.clientSecret;
+          params.jwt = widgetConfig.jwt;
+        }
+        return `${base}?${new URLSearchParams(params).toString()}`;
       })()
     : null;
 

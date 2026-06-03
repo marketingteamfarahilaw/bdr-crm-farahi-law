@@ -563,6 +563,8 @@ export const crmRouter = router({
 
     getWidgetConfig: protectedProcedure.query(async ({ ctx }) => {
       const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
+      const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
+      const jwt = process.env.RINGCENTRAL_JWT ?? "";
       // Fetch the user's RingOut myLocation number from DB
       const db = await getDb();
       const userRow = db ? await db.select({ ringoutMyLocation: users.ringoutMyLocation })
@@ -571,9 +573,9 @@ export const crmRouter = router({
         .then((r: { ringoutMyLocation: string | null }[]) => r[0] ?? null) : null;
       return {
         clientId,
-        clientSecret: "",
-        jwt: "",
-        configured: !!clientId,
+        clientSecret,
+        jwt,
+        configured: !!clientId && !!clientSecret,
         myLocation: userRow?.ringoutMyLocation ?? "",
       };
     }),
