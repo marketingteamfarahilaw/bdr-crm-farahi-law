@@ -66,6 +66,9 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   const [activeCalls, setActiveCalls] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const pendingCallRef = useRef<string | null>(null);
+  // Track active call phone number from rc-active-call-notify / rc-call-init-notify
+  // so we have it available when rc-call-end-notify fires (which sometimes lacks toNumber)
+  const activeCallPhoneRef = useRef<string | null>(null);
 
   // Fetch widget config (clientId, clientSecret, jwt) from backend
   const { data: widgetConfig } = trpc.crm.ringcentral.getWidgetConfig.useQuery(undefined, {
@@ -139,6 +142,26 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
           }
           break;
 
+        case "rc-active-call-notify": {
+          // Track phone number from active call updates
+          const activeCall = data.call ?? {};
+          const activePhone = activeCall.toNumber ?? activeCall.fromNumber ?? activeCall.phoneNumber ?? null;
+          if (activePhone) activeCallPhoneRef.current = activePhone;
+          break;
+        }
+        case "rc-telephony-session-notify": {
+          // Telephony session event fires for all call modes — capture phone number
+          const session = data.telephonySession ?? {};
+          const parties: any[] = session.parties ?? [];
+          for (const party of parties) {
+            const p = party.to?.phoneNumber ?? party.from?.phoneNumber ?? null;
+            if (p && p !== session.extensionId) {
+              activeCallPhoneRef.current = p;
+              break;
+            }
+          }
+          break;
+        }
         case "rc-adapter-pushAdapterState":
           if (pendingCallRef.current && isConnected) {
             const num = pendingCallRef.current;
@@ -157,9 +180,15 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
           break;
 
         case "rc-call-ring-notify":
-        case "rc-call-start-notify":
+        case "rc-call-init-notify":
+        case "rc-call-start-notify": {
           setActiveCalls((n) => n + 1);
+          // Capture phone number as early as possible
+          const initCall = data.call ?? {};
+          const initPhone = initCall.toNumber ?? initCall.fromNumber ?? initCall.phoneNumber ?? null;
+          if (initPhone) activeCallPhoneRef.current = initPhone;
           break;
+        }
 
         case "rc-call-end-notify": {
           setActiveCalls((n) => Math.max(0, n - 1));
@@ -167,11 +196,15 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
             const call = data.call ?? {};
             const durationSecs = call.duration ?? 0;
             const durationStr = `${Math.floor(durationSecs / 60)}:${(durationSecs % 60).toString().padStart(2, "0")}`;
+            // Use phone from call object; fall back to the number we captured at call init
+            const phoneNumber = call.toNumber ?? call.fromNumber ?? call.phoneNumber ?? activeCallPhoneRef.current ?? undefined;
+            activeCallPhoneRef.current = null; // clear after use
+            console.log("[RC] rc-call-end-notify call data:", JSON.stringify({ toNumber: call.toNumber, fromNumber: call.fromNumber, phoneNumber: call.phoneNumber, sessionId: call.sessionId, id: call.id, direction: call.direction, result: call.result, duration: durationSecs }));
             onCallEnd({
               callId: call.sessionId ?? call.id,
               duration: durationSecs,
               durationStr,
-              phoneNumber: call.toNumber ?? call.fromNumber,
+              phoneNumber,
               direction: call.direction,
               result: call.result,
               startTime: call.startTime,

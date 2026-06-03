@@ -161,6 +161,24 @@ export const appRouter = router({
           placeId: p.place_id,
         }));
       }),
+    geocode: protectedProcedure
+      .input(z.object({ placeId: z.string() }))
+      .query(async ({ input }) => {
+        if (!GOOGLE_MAPS_API_KEY) return null;
+        const resp = await axios.get(
+          `https://maps.googleapis.com/maps/api/geocode/json`,
+          { params: { place_id: input.placeId, key: GOOGLE_MAPS_API_KEY }, timeout: 8000 }
+        );
+        const data = resp.data as {
+          status: string;
+          results: Array<{ geometry: { location: { lat: number; lng: number } } }>;
+        };
+        if (data.status !== "OK" || !data.results[0]) return null;
+        return {
+          lat: data.results[0].geometry.location.lat,
+          lng: data.results[0].geometry.location.lng,
+        };
+      }),
   }),
 
   savedLeads: router({
