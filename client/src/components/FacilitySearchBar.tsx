@@ -96,14 +96,18 @@ export function FacilitySearchBar({ isCollapsed }: { isCollapsed: boolean }) {
             "transition-colors"
           )}
         />
-        {query && (
+        {isFetching && query.length >= 2 ? (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            <div className="h-3 w-3 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground animate-spin" />
+          </div>
+        ) : query ? (
           <button
             onClick={handleClear}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-3 w-3" />
           </button>
-        )}
+        ) : null}
       </div>
 
       {open && (
