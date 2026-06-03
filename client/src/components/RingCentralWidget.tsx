@@ -74,22 +74,19 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   });
 
   // Build the embeddable URL.
-  const redirectUri = `${window.location.origin}/ringcentral-callback`;
+  // IMPORTANT: redirectUri must be the official RC embeddable redirect page.
+  // The widget handles the OAuth popup internally using this URI.
+  const officialRedirectUri = "https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/redirect.html";
   const widgetUrl = widgetConfig?.clientId
     ? (() => {
         const base = `https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/app.html`;
         const params = new URLSearchParams({
           clientId: widgetConfig.clientId,
           appServer: "https://platform.ringcentral.com",
+          redirectUri: officialRedirectUri,
           defaultCallWith: "ringout",
           enableRingOut: "true",
         });
-        if (widgetConfig.clientSecret && widgetConfig.jwt) {
-          params.set("clientSecret", widgetConfig.clientSecret);
-          params.set("jwt", widgetConfig.jwt);
-        } else {
-          params.set("redirectUri", redirectUri);
-        }
         return `${base}?${params.toString()}`;
       })()
     : null;
