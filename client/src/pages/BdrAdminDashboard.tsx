@@ -60,7 +60,18 @@ export default function BdrAdminDashboard() {
     );
   }
 
-  const { data, isLoading } = trpc.bdr.adminDashboard.useQuery();
+  const { data, isLoading, error, refetch } = trpc.bdr.adminDashboard.useQuery(undefined, { retry: 2 });
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
+        <p className="text-lg font-semibold">Failed to load dashboard</p>
+        <p className="text-muted-foreground text-sm mt-1 mb-4">The server took too long to respond. Please try again.</p>
+        <Button variant="outline" onClick={() => refetch()}>Retry</Button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
