@@ -23,6 +23,7 @@ import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
+import { FacilitySearchBar } from "./FacilitySearchBar";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -217,6 +218,12 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 overflow-y-auto">
+            {/* Global Facility Search */}
+            <div className="pt-2">
+              <FacilitySearchBar isCollapsed={isCollapsed} />
+            </div>
+            {/* Divider */}
+            <div className="mx-3 mb-1 border-t border-border/40" />
             {/* Lead Scraper Section */}
             <div className="px-3 pt-3 pb-1">
               {!isCollapsed && (

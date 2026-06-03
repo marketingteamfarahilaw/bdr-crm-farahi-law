@@ -186,6 +186,21 @@ export const crmRouter = router({
         return enriched;
       }),
 
+    quickSearch: protectedProcedure
+      .input(z.object({ query: z.string().min(1) }))
+      .query(async ({ input }) => {
+        const rows = await listFacilities({ search: input.query, sortBy: "name", sortDir: "asc" });
+        return rows.slice(0, 10).map((f: any) => ({
+          id: f.id,
+          name: f.name,
+          category: f.category,
+          address: f.address ?? "",
+          city: f.city ?? "",
+          phone: f.phone ?? "",
+          relationshipStatus: f.relationshipStatus ?? "",
+        }));
+      }),
+
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
