@@ -78,7 +78,20 @@ async function getValidRCToken(): Promise<string> {
   const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
   const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
   if (stored.tokenExpiry.getTime() - Date.now() < 5 * 60 * 1000) {
-    const refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
+    let refreshed: { access_token: string; refresh_token: string; expires_in: number };
+    try {
+      refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
+    } catch (err: any) {
+      // 400/401 from RC means the refresh token is expired or revoked — user must re-connect
+      const status = err?.response?.status;
+      if (status === 400 || status === 401) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "RingCentral session expired. Please go to RingCentral Settings and reconnect your account.",
+        });
+      }
+      throw err;
+    }
     await upsertRingcentralToken({
       accountId: stored.accountId,
       accessToken: refreshed.access_token,

@@ -16,10 +16,9 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Phone, PhoneOff, Minimize2, Maximize2, X, AlertTriangle } from "lucide-react";
+import { Phone, PhoneOff, Minimize2, Maximize2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
-import { Link } from "wouter";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -85,8 +84,7 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
           clientId: widgetConfig.clientId,
           appServer: "https://platform.ringcentral.com",
           redirectUri: officialRedirectUri,
-          defaultCallWith: "ringout",
-          enableRingOut: "true",
+          defaultCallWith: "browser",
         };
         // If JWT credentials are available, pass them for auto-login (bypasses OAuth popup)
         if (widgetConfig.clientSecret && widgetConfig.jwt) {
@@ -124,24 +122,12 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
         case "rc-login-status-notify":
           setIsConnected(!!data.loggedIn);
           if (data.loggedIn) {
-            // Switch calling mode to RingOut after login so calls go through desk/cell phone.
-            // myLocation is required for RingOut — user sets it in RingCentral Settings page.
-            const myLoc = widgetConfig?.myLocation;
+            // Switch calling mode to Browser (WebRTC) so calls go through computer mic/speaker
             setTimeout(() => {
-              const msg: Record<string, unknown> = {
+              postToWidget({
                 type: "rc-calling-settings-update",
-                callWith: "ringout",
-              };
-              if (myLoc) {
-                // myLocation is set — disable the prompt so calls go through immediately
-                msg.myLocation = myLoc;
-                msg.ringoutPrompt = false;
-              } else {
-                // No myLocation set — enable the RC prompt so the widget asks the user
-                // which phone to ring first (instead of silently failing with a 400 error)
-                msg.ringoutPrompt = true;
-              }
-              postToWidget(msg);
+                callWith: "browser",
+              });
             }, 1500);
             if (pendingCallRef.current) {
               const num = pendingCallRef.current;
@@ -312,26 +298,10 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
             </div>
           </div>
 
-          {/* RingOut mode hint */}
-          {!isMinimised && isConnected && widgetConfig?.myLocation && (
+          {/* Browser mode hint */}
+          {!isMinimised && isConnected && (
             <div className="px-3 py-1.5 bg-blue-950/40 border-b border-blue-500/20 flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] text-blue-300">📞 RingOut mode: your phone rings first, then connects to the facility.</span>
-            </div>
-          )}
-          {/* Warning: myLocation not set */}
-          {!isMinimised && isConnected && !widgetConfig?.myLocation && (
-            <div className="px-3 py-2 bg-amber-950/40 border-b border-amber-500/30 flex items-start gap-2 shrink-0">
-              <AlertTriangle size={12} className="text-amber-400 mt-0.5 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-amber-300 font-medium">RingOut phone not set</p>
-                <p className="text-[10px] text-amber-400/80 mt-0.5">
-                  Set your phone number in{" "}
-                  <Link href="/crm/ringcentral-settings" className="underline text-amber-300 hover:text-amber-200">
-                    RingCentral Settings
-                  </Link>
-                  {" "}so calls ring your phone first.
-                </p>
-              </div>
+              <span className="text-[10px] text-blue-300">🎧 Browser mode: calls use your computer’s microphone and speaker.</span>
             </div>
           )}
 
