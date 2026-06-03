@@ -720,7 +720,7 @@ export const crmRouter = router({
         result: z.string().optional(),
         duration: z.number().optional(),
         durationStr: z.string().optional(),
-        startTime: z.string().optional(),
+        startTime: z.union([z.string(), z.number()]).optional(),
         agentName: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
