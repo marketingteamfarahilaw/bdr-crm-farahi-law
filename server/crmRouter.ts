@@ -72,35 +72,66 @@ async function refreshRCToken(refreshToken: string, clientId: string, clientSecr
   return resp.data as { access_token: string; refresh_token: string; expires_in: number };
 }
 
-async function getValidRCToken(): Promise<string> {
-  const stored = await getRingcentralToken();
-  if (!stored) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral not connected" });
+async function exchangeJwtForToken(): Promise<string> {
   const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
   const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
+  const jwt = process.env.RINGCENTRAL_JWT ?? "";
+  if (!clientId || !clientSecret || !jwt) throw new Error("RC credentials not configured");
+  const tokenResp = await axios.post(
+    `${RC_BASE}/restapi/oauth/token`,
+    new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }),
+    { auth: { username: clientId, password: clientSecret }, headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+  );
+  const { access_token, refresh_token, expires_in } = tokenResp.data;
+  // Persist so subsequent calls can reuse this token
+  const stored = await getRingcentralToken();
+  await upsertRingcentralToken({
+    accountId: stored?.accountId ?? "default",
+    accessToken: access_token,
+    refreshToken: refresh_token ?? "",
+    tokenExpiry: new Date(Date.now() + (expires_in ?? 3600) * 1000),
+    ownerExtensionId: stored?.ownerExtensionId ?? undefined,
+    ownerName: stored?.ownerName ?? undefined,
+  });
+  return access_token;
+}
+
+async function getValidRCToken(): Promise<string> {
+  const stored = await getRingcentralToken();
+  const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
+  const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
+  // If no stored token, try JWT exchange first
+  if (!stored) {
+    try { return await exchangeJwtForToken(); } catch {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral not connected" });
+    }
+  }
   if (stored.tokenExpiry.getTime() - Date.now() < 5 * 60 * 1000) {
-    let refreshed: { access_token: string; refresh_token: string; expires_in: number };
+    // First try refresh token
     try {
-      refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
+      const refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
+      await upsertRingcentralToken({
+        accountId: stored.accountId,
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        tokenExpiry: new Date(Date.now() + refreshed.expires_in * 1000),
+        ownerExtensionId: stored.ownerExtensionId ?? undefined,
+        ownerName: stored.ownerName ?? undefined,
+      });
+      return refreshed.access_token;
     } catch (err: any) {
-      // 400/401 from RC means the refresh token is expired or revoked — user must re-connect
+      // Refresh token expired/revoked — fall back to JWT exchange
       const status = err?.response?.status;
       if (status === 400 || status === 401) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "RingCentral session expired. Please go to RingCentral Settings and reconnect your account.",
-        });
+        try { return await exchangeJwtForToken(); } catch {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "RingCentral session expired. Please go to RingCentral Settings and reconnect your account.",
+          });
+        }
       }
       throw err;
     }
-    await upsertRingcentralToken({
-      accountId: stored.accountId,
-      accessToken: refreshed.access_token,
-      refreshToken: refreshed.refresh_token,
-      tokenExpiry: new Date(Date.now() + refreshed.expires_in * 1000),
-      ownerExtensionId: stored.ownerExtensionId ?? undefined,
-      ownerName: stored.ownerName ?? undefined,
-    });
-    return refreshed.access_token;
   }
   return stored.accessToken;
 }
