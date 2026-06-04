@@ -844,6 +844,7 @@ export const crmRouter = router({
 Return a JSON object with EXACTLY these fields:
 {
   "summary": "2-3 sentence summary of what was discussed, tone of the conversation, and outcome",
+  "keyPoints": ["3-5 short bullet points recapping the key things discussed and the outcome — this is the 'Recap'", ...],
   "actionItems": ["string", ...],
   "followUpTasks": [
     { "title": "string", "priority": "high|medium|low", "dueInDays": number }
@@ -869,6 +870,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
                     type: "object",
                     properties: {
                       summary: { type: "string" },
+                      keyPoints: { type: "array", items: { type: "string" } },
                       actionItems: { type: "array", items: { type: "string" } },
                       followUpTasks: {
                         type: "array",
@@ -888,7 +890,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
                       leadsDiscussed: { type: "boolean" },
                       commitmentMade: { type: ["string", "null"] },
                     },
-                    required: ["summary", "actionItems", "followUpTasks", "contactPerson", "relationshipTone", "leadsDiscussed", "commitmentMade"],
+                    required: ["summary", "keyPoints", "actionItems", "followUpTasks", "contactPerson", "relationshipTone", "leadsDiscussed", "commitmentMade"],
                     additionalProperties: false,
                   },
                 },
@@ -902,6 +904,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
             actionItems = parsed.actionItems ?? [];
             followUpTasks = parsed.followUpTasks ?? [];
             extractedData = {
+              keyPoints: parsed.keyPoints ?? [],
               contactPerson: parsed.contactPerson,
               relationshipTone: parsed.relationshipTone,
               leadsDiscussed: parsed.leadsDiscussed,
