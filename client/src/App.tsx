@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import SavedLeadsPage from "./pages/SavedLeads";
 import SavedSearchesPage from "./pages/SavedSearches";
 import FacilitiesPage from "./pages/crm/Facilities";
+import PipelinePage from "./pages/crm/Pipeline";
 import FacilityProfilePage from "./pages/crm/FacilityProfile";
 import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
@@ -53,6 +54,7 @@ function Router() {
         <Route path="/saved-searches" component={SavedSearchesPage} />
 
         {/* Facility Partner CRM */}
+        <Route path="/crm/pipeline" component={PipelinePage} />
         <Route path="/crm/facilities" component={FacilitiesPage} />
         <Route path="/crm/facilities/new" component={FacilityFormPage} />
         <Route path="/crm/facilities/:id/edit" component={FacilityFormPage} />
