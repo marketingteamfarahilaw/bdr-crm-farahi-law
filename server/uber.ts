@@ -16,8 +16,11 @@ import { eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { facilities, frExpenses, uberReceipts } from "../drizzle/schema";
 
-const AUTH_URL = "https://auth.uber.com/oauth/v2/token";
 const API_BASE = process.env.UBER_API_BASE || "https://api.uber.com";
+// Sandbox apps must mint tokens at sandbox-login.uber.com; prod uses auth.uber.com.
+const AUTH_URL =
+  process.env.UBER_AUTH_URL ||
+  (API_BASE.includes("sandbox") ? "https://sandbox-login.uber.com/oauth/v2/token" : "https://auth.uber.com/oauth/v2/token");
 
 export function uberConfigured(): boolean {
   return !!(process.env.UBER_CLIENT_ID && process.env.UBER_CLIENT_SECRET && process.env.UBER_ORG_ID);
