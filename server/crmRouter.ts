@@ -11,6 +11,7 @@ import { seesAllData, canManage } from "@shared/permissions";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
 import { syncRecentCalls } from "./rcSync";
+import { uberConfigured, importOrderReceipt } from "./uber";
 import {
   completeTask,
   createContactLog,
@@ -59,8 +60,8 @@ import {
   findFacilityByPhone,
 } from "./crmDb";
 import { getDb } from "./db";
-import { facilities } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { facilities, uberReceipts } from "../drizzle/schema";
+import { eq, desc, sql } from "drizzle-orm";
 const RC_BASE = "https://platform.ringcentral.com";
 
 async function refreshRCToken(refreshToken: string, clientId: string, clientSecret: string) {
@@ -1020,6 +1021,34 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   }),
 
   // ─── Facility Leads V3 ─────────────────────────────────────────────────────
+
+  // ─── Uber Eats (Uber for Business Receipt API) ──────────────────────────────
+  uber: router({
+    status: protectedProcedure.query(async () => {
+      const db = await getDb();
+      let imported = 0;
+      let lastAt: Date | null = null;
+      if (db) {
+        const all = await db.select({ id: uberReceipts.id, createdAt: uberReceipts.createdAt }).from(uberReceipts).orderBy(desc(uberReceipts.createdAt));
+        imported = all.length;
+        lastAt = all[0]?.createdAt ?? null;
+      }
+      return { configured: uberConfigured(), webhookPath: "/api/uber/webhook", imported, lastAt };
+    }),
+    recent: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(uberReceipts).orderBy(desc(uberReceipts.createdAt)).limit(50);
+    }),
+    // Manual fetch+import of one order (for testing / backfilling a missed order).
+    importOrder: protectedProcedure
+      .input(z.object({ orderId: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
+        if (!uberConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Uber credentials are not configured on the server." });
+        return importOrderReceipt(input.orderId.trim());
+      }),
+  }),
 
   facilityLeads: router({
     list: protectedProcedure

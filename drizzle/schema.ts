@@ -586,6 +586,32 @@ export const referralTracker = mysqlTable("referral_tracker", {
 export type ReferralTracker = typeof referralTracker.$inferSelect;
 export type InsertReferralTracker = typeof referralTracker.$inferInsert;
 
+/**
+ * Uber Eats receipts pulled from the Uber for Business Receipt API.
+ * Each completed order becomes an expense; this row tracks the source order
+ * (dedupe by orderId) and links to the created expense.
+ */
+export const uberReceipts = mysqlTable("uber_receipts", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: varchar("orderId", { length: 128 }).notNull(),
+  status: varchar("status", { length: 32 }),
+  amount: decimal("amount", { precision: 10, scale: 2 }),
+  currency: varchar("currency", { length: 8 }),
+  orderDate: timestamp("orderDate"),
+  requesterName: varchar("requesterName", { length: 255 }),
+  requesterEmail: varchar("requesterEmail", { length: 320 }),
+  storeName: varchar("storeName", { length: 255 }),
+  deliveryAddress: text("deliveryAddress"),
+  facilityId: int("facilityId"),
+  facilityName: varchar("facilityName", { length: 255 }),
+  expenseId: int("expenseId"),
+  expenseTable: varchar("expenseTable", { length: 32 }),
+  raw: json("raw"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type UberReceipt = typeof uberReceipts.$inferSelect;
+export type InsertUberReceipt = typeof uberReceipts.$inferInsert;
+
 // ─── Partner Lead Referral Workflow ───────────────────────────────────────────
 
 /**

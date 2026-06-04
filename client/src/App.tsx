@@ -12,6 +12,7 @@ import SavedLeadsPage from "./pages/SavedLeads";
 import SavedSearchesPage from "./pages/SavedSearches";
 import FacilitiesPage from "./pages/crm/Facilities";
 import PipelinePage from "./pages/crm/Pipeline";
+import UberEatsPage from "./pages/crm/UberEats";
 import FacilityProfilePage from "./pages/crm/FacilityProfile";
 import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/crm/dashboard" component={ManagementDashboardPage} />
         <Route path="/team" component={TeamRolesPage} />
         <Route path="/crm/ringcentral" component={RingCentralSettingsPage} />
+        <Route path="/crm/uber-eats" component={UberEatsPage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
 
         {/* BDR Reports */}
