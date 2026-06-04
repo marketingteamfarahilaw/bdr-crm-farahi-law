@@ -16,7 +16,7 @@ import { seesAllData, normalizeRole } from "@shared/permissions";
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   active_partner: { label: "Active Partner", color: "#34d399" },
-  priority_partner: { label: "Priority Partner", color: "#e8c468" },
+  priority_partner: { label: "Priority Partner", color: "#6a9bd8" },
   prospect: { label: "Prospect", color: "#7dd3fc" },
   warm_lead: { label: "Warm Lead", color: "#fbbf24" },
   cold: { label: "Cold", color: "#64748b" },
@@ -37,7 +37,7 @@ const PRIORITY_META: Record<string, string> = {
 const ACTIVITY_META: Record<string, { icon: any; color: string; bg: string }> = {
   call: { icon: Phone, color: "#22d3ee", bg: "rgba(34,211,238,0.12)" },
   update: { icon: FileText, color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
-  referral: { icon: Star, color: "#e8c468", bg: "rgba(232,196,104,0.12)" },
+  referral: { icon: Star, color: "#6a9bd8", bg: "rgba(106,155,216,0.12)" },
 };
 
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
@@ -78,7 +78,7 @@ export default function Dashboard() {
   const hero = (
     <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="relative overflow-hidden rounded-2xl premium-card p-6 lg:p-8">
-      <div className="absolute -right-12 -top-12 w-52 h-52 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(232,196,104,0.16), transparent 70%)" }} />
+      <div className="absolute -right-12 -top-12 w-52 h-52 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(106,155,216,0.16), transparent 70%)" }} />
       <div className="relative flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-primary/80 text-[11px] font-semibold tracking-[0.2em] uppercase mb-3">
@@ -131,7 +131,7 @@ export default function Dashboard() {
     const focus = [
       ...followUp.map((f: any) => ({ f, reason: "Follow-up due", tint: "#fb923c", pr: 0, days: lastDays(f) ?? 999 })),
       ...untouched.map((f: any) => ({ f, reason: `New prospect — first ${verbLower}`, tint: "#7dd3fc", pr: 1, days: 999 })),
-      ...cold.map((f: any) => ({ f, reason: lastDays(f) === null ? "No contact logged yet" : `${lastDays(f)}d since last contact`, tint: "#e8c468", pr: 2, days: lastDays(f) ?? 999 })),
+      ...cold.map((f: any) => ({ f, reason: lastDays(f) === null ? "No contact logged yet" : `${lastDays(f)}d since last contact`, tint: "#6a9bd8", pr: 2, days: lastDays(f) ?? 999 })),
       ...dormant.map((f: any) => ({ f, reason: "Dormant — reactivate", tint: "#94a3b8", pr: 3, days: lastDays(f) ?? 999 })),
     ].sort((a, b) => a.pr - b.pr || b.days - a.days).slice(0, 14);
 
@@ -144,7 +144,7 @@ export default function Dashboard() {
       { label: "Active", value: activeCount, tint: "#34d399", icon: Handshake },
       { label: "Need Attention", value: attentionCount, tint: "#fb923c", icon: AlertTriangle },
       { label: "Open Tasks", value: myOpen.length, tint: "#a78bfa", icon: ListChecks },
-      { label: "Leads Sent", value: leadsSent, tint: "#e8c468", icon: Send },
+      { label: "Leads Sent", value: leadsSent, tint: "#6a9bd8", icon: Send },
     ];
 
     const agentActions = isFR
@@ -258,7 +258,7 @@ export default function Dashboard() {
   const kpis = [
     { label: "Facilities", value: stats?.totalFacilities, icon: Building2, tint: "#7dd3fc" },
     { label: "Active Partners", value: stats?.activePartners, icon: Handshake, tint: "#34d399" },
-    { label: "Signed Cases", value: stats?.totalSignedCases, icon: Scale, tint: "#e8c468", hero: true },
+    { label: "Signed Cases", value: stats?.totalSignedCases, icon: Scale, tint: "#6a9bd8", hero: true },
     { label: "Referrals", value: stats?.totalReferrals, icon: Star, tint: "#fbbf24" },
     { label: "Calls Logged", value: stats?.totalContactLogs, icon: Phone, tint: "#22d3ee" },
     { label: "Open Tasks", value: stats?.openTasks, icon: ClipboardList, tint: "#fb923c", badge: stats?.overdueTasks },
@@ -274,7 +274,7 @@ export default function Dashboard() {
             const Icon = k.icon;
             return (
               <motion.div key={k.label} variants={item}
-                className="premium-card group rounded-2xl p-4 hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(232,196,104,0.30)]">
+                className="premium-card group rounded-2xl p-4 hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(106,155,216,0.30)]">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${k.tint}1a`, border: `1px solid ${k.tint}33` }}>
                     <Icon className="w-[18px] h-[18px]" style={{ color: k.tint }} />
@@ -333,7 +333,7 @@ export default function Dashboard() {
                           <span className="text-sm font-medium text-foreground truncate">{p.name}</span>
                           <span className="text-sm font-bold text-foreground shrink-0">{p.totalSignedCases}</span>
                         </div>
-                        <div className="mt-1.5 h-1.5 rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, background: "linear-gradient(90deg, #b8902f, #e8c468)" }} /></div>
+                        <div className="mt-1.5 h-1.5 rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, background: "linear-gradient(90deg, #2c4a73, #6a9bd8)" }} /></div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>

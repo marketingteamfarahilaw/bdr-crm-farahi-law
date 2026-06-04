@@ -161,7 +161,7 @@ export default function AgentsPage() {
             <div
               style={{
                 width: 36, height: 36, borderRadius: 10,
-                background: "linear-gradient(135deg, #D4AF37 0%, #c9a227 100%)",
+                background: "linear-gradient(135deg, #2c4a73 0%, #4a73a8 100%)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 boxShadow: "0 0 16px rgba(212,175,55,0.4)",
               }}
@@ -185,7 +185,7 @@ export default function AgentsPage() {
             style={{
               display: "flex", alignItems: "center", gap: 8,
               padding: "10px 20px",
-              background: "linear-gradient(135deg, #D4AF37 0%, #c9a227 100%)",
+              background: "linear-gradient(135deg, #2c4a73 0%, #4a73a8 100%)",
               border: "none",
               borderRadius: 10,
               color: "#07101f",
@@ -242,7 +242,7 @@ export default function AgentsPage() {
                 value={form.firstName}
                 onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
                 placeholder="e.g. Miguel"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
               />
             </div>
 
@@ -255,7 +255,7 @@ export default function AgentsPage() {
                 value={form.lastName}
                 onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
                 placeholder="e.g. Flores"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
               />
             </div>
 
@@ -268,7 +268,7 @@ export default function AgentsPage() {
                 value={form.employer}
                 onChange={e => setForm(f => ({ ...f, employer: e.target.value }))}
                 placeholder="e.g. Farahi Law"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
               />
             </div>
 
@@ -281,7 +281,7 @@ export default function AgentsPage() {
                 value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                 placeholder="e.g. Business Development Representative"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
               />
             </div>
 
@@ -295,7 +295,7 @@ export default function AgentsPage() {
                 onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="e.g. (213) 555-0100"
                 type="tel"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
               />
             </div>
 
@@ -309,7 +309,7 @@ export default function AgentsPage() {
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 placeholder="e.g. miguel@farahilaw.com"
                 type="email"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
               />
             </div>
           </div>
@@ -378,7 +378,7 @@ export default function AgentsPage() {
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               placeholder="Any notes about this agent's territory, performance, or contact preferences..."
               rows={3}
-              className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#D4AF37] focus:ring-[#D4AF37]/20 resize-none"
+              className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20 resize-none"
             />
           </div>
 
@@ -390,7 +390,7 @@ export default function AgentsPage() {
               style={{
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "10px 24px",
-                background: "linear-gradient(135deg, #D4AF37 0%, #c9a227 100%)",
+                background: "linear-gradient(135deg, #2c4a73 0%, #4a73a8 100%)",
                 border: "none",
                 borderRadius: 9,
                 color: "#07101f",
@@ -428,7 +428,7 @@ export default function AgentsPage() {
       {/* ── Summary stats ── */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
-          { label: "Total Agents", value: agents.length, icon: <Users size={16} />, color: "#D4AF37" },
+          { label: "Total Agents", value: agents.length, icon: <Users size={16} />, color: "#2c4a73" },
           { label: "Active Agents", value: agents.filter((a: any) => a.active !== false).length, icon: <UserCheck size={16} />, color: "#22c55e" },
           { label: "Leads Assigned", value: savedLeads.filter((l: any) => l.assignedAgent).length, icon: <MapPin size={16} />, color: "#60a5fa" },
         ].map((stat, i) => (
@@ -492,7 +492,7 @@ export default function AgentsPage() {
             onClick={() => setShowForm(true)}
             style={{
               padding: "10px 24px",
-              background: "linear-gradient(135deg, #D4AF37 0%, #c9a227 100%)",
+              background: "linear-gradient(135deg, #2c4a73 0%, #4a73a8 100%)",
               border: "none", borderRadius: 9,
               color: "#07101f", fontSize: 13, fontWeight: 700, cursor: "pointer",
               boxShadow: "0 4px 16px rgba(212,175,55,0.3)",
@@ -616,11 +616,11 @@ export default function AgentsPage() {
                       {agent.email && (
                         <div className="flex items-center gap-3">
                           <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Mail size={12} color="#D4AF37" />
+                            <Mail size={12} color="#2c4a73" />
                           </div>
                           <div>
                             <div style={{ fontSize: 9, color: "rgba(148,163,184,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 1 }}>Email</div>
-                            <a href={`mailto:${agent.email}`} style={{ fontSize: 12, color: "#D4AF37", fontWeight: 600, textDecoration: "none" }}>{agent.email}</a>
+                            <a href={`mailto:${agent.email}`} style={{ fontSize: 12, color: "#2c4a73", fontWeight: 600, textDecoration: "none" }}>{agent.email}</a>
                           </div>
                         </div>
                       )}

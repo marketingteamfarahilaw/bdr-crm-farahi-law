@@ -278,7 +278,7 @@ export default function BdrReports() {
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? "bg-[var(--gold)]/20 text-[var(--gold)]" : i < 3 ? "bg-secondary text-foreground" : "text-muted-foreground"}`}>{i + 1}</span>
                   <span className="w-28 truncate text-sm font-medium text-foreground">{a.repName}</span>
                   <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${Math.round((a.connected / max) * 100)}%`, background: "linear-gradient(90deg,#b8902f,#e8c468)" }} />
+                    <div className="h-full rounded-full" style={{ width: `${Math.round((a.connected / max) * 100)}%`, background: "linear-gradient(90deg,#2c4a73,#6a9bd8)" }} />
                   </div>
                   <span className="w-24 text-right text-xs text-muted-foreground"><span className="font-bold text-foreground">{a.connected}</span> connected</span>
                 </div>
