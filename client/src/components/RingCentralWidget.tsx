@@ -90,9 +90,9 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
           defaultCallWith: "browser",
           enableRingOut: "true",
         };
-        // Add clientSecret and jwt for auto-login if available
-        if (widgetConfig.clientSecret) params.clientSecret = widgetConfig.clientSecret;
-        if (widgetConfig.jwt) params.jwt = widgetConfig.jwt;
+        // Sign in via RingCentral's OAuth ("Sign In" button) — do NOT pass the
+        // client secret / JWT into the browser. The JWT auto-login was rejected
+        // with "Access denied" and exposed the secret in the page.
         return `${base}?${new URLSearchParams(params).toString()}`;
       })()
     : null;

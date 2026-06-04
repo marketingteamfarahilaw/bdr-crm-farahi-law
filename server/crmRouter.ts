@@ -637,15 +637,12 @@ export const crmRouter = router({
     }),
 
     getWidgetConfig: protectedProcedure.query(async () => {
+      // Only the public clientId is sent to the browser. The phone widget signs
+      // in via RingCentral OAuth (the "Sign In" button) — we deliberately do NOT
+      // expose the client secret or JWT to the client. The old JWT auto-login
+      // was rejected by RingCentral as "Access denied" and leaked the secret.
       const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
-      const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
-      const jwt = process.env.RINGCENTRAL_JWT ?? "";
-      return {
-        clientId,
-        clientSecret,
-        jwt,
-        configured: !!clientId,
-      };
+      return { clientId, configured: !!clientId };
     }),
 
     transcribeCall: protectedProcedure
