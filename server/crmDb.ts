@@ -2,7 +2,7 @@
  * CRM database helpers — Facility Partner CRM V3
  */
 
-import { and, desc, eq, like, or, sql, asc } from "drizzle-orm";
+import { and, desc, eq, like, or, sql, asc, inArray } from "drizzle-orm";
 import {
   contactLogs,
   facilities,
@@ -202,6 +202,18 @@ export async function createContactLog(data: InsertContactLog) {
     })
     .where(eq(facilities.id, data.facilityId));
   return result[0];
+}
+
+// Which of these RingCentral call-log ids are already logged — used to dedupe
+// the account-wide auto-sync so a call is never processed twice.
+export async function getExistingRcCallIds(ids: string[]): Promise<Set<string>> {
+  const db = await getDb();
+  if (!db || ids.length === 0) return new Set();
+  const rows = await db
+    .select({ rcCallId: contactLogs.rcCallId })
+    .from(contactLogs)
+    .where(inArray(contactLogs.rcCallId, ids));
+  return new Set(rows.map((r) => r.rcCallId).filter((x): x is string => !!x));
 }
 
 export async function deleteContactLog(id: number) {

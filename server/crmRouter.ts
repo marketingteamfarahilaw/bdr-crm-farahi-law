@@ -10,6 +10,7 @@ import { protectedProcedure, router } from "./_core/trpc";
 import { seesAllData, canManage } from "@shared/permissions";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
+import { syncRecentCalls } from "./rcSync";
 import {
   completeTask,
   createContactLog,
@@ -110,7 +111,7 @@ async function mintRCTokenFromJwt(clientId: string, clientSecret: string): Promi
   return access_token;
 }
 
-async function getValidRCToken(): Promise<string> {
+export async function getValidRCToken(): Promise<string> {
   const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
   const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
   if (!clientId || !clientSecret) {
@@ -1001,6 +1002,17 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
           synced++;
         }
         return { success: true, synced };
+      }),
+
+    // Account-wide sync: pull recent calls from RingCentral (placed on the desk
+    // phone / desktop app / mobile), match them to facilities, and transcribe +
+    // summarize + auto-task the new recorded ones. Deduped by call id.
+    syncRecent: protectedProcedure
+      .input(z.object({ lookbackMinutes: z.number().min(5).max(43200).optional() }).optional())
+      .mutation(async ({ input }) => {
+        const accessToken = await getValidRCToken();
+        const res = await syncRecentCalls(accessToken, { lookbackMinutes: input?.lookbackMinutes ?? 1440 });
+        return { success: true as const, ...res };
       }),
   }),
 

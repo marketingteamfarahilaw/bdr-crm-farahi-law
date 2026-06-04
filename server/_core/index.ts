@@ -10,6 +10,8 @@ import { registerMapsProxy } from "./mapsProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { getValidRCToken } from "../crmRouter";
+import { syncRecentCalls } from "../rcSync";
 // Note: RingCentral auto-connect via JWT has been removed.
 // Agents now log in to RingCentral directly through the embedded widget UI.
 // The server still stores tokens when agents connect via OAuth through the widget.
@@ -67,7 +69,41 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    startRingCentralAutoSync();
   });
+}
+
+// ─── Background: auto-sync RingCentral calls every few minutes ───────────────
+// The team calls from the RingCentral desktop app / desk phone; this pulls new
+// calls, matches them to facilities, and transcribes + summarizes the recorded
+// ones. Deduped by call id, so re-runs are cheap and safe.
+let rcSyncRunning = false;
+function startRingCentralAutoSync() {
+  const configured =
+    process.env.RINGCENTRAL_JWT && process.env.RINGCENTRAL_CLIENT_ID && process.env.RINGCENTRAL_CLIENT_SECRET;
+  if (!configured) {
+    console.log("[rcSync] RingCentral not configured — auto-sync disabled.");
+    return;
+  }
+  const INTERVAL_MS = 5 * 60 * 1000;
+  const tick = async () => {
+    if (rcSyncRunning) return; // never overlap runs
+    rcSyncRunning = true;
+    try {
+      const token = await getValidRCToken();
+      const res = await syncRecentCalls(token, { lookbackMinutes: 90 });
+      if (res.logged > 0 || res.transcribed > 0) {
+        console.log(`[rcSync] synced ${res.logged} new call(s), transcribed ${res.transcribed} (matched ${res.matched}/${res.scanned}).`);
+      }
+    } catch (e: any) {
+      console.warn("[rcSync] auto-sync error:", e?.response?.status ?? e?.message ?? e);
+    } finally {
+      rcSyncRunning = false;
+    }
+  };
+  setTimeout(tick, 30 * 1000); // first pass shortly after boot
+  setInterval(tick, INTERVAL_MS);
+  console.log(`[rcSync] auto-sync enabled — every ${INTERVAL_MS / 60000} min.`);
 }
 
 startServer().catch(console.error);
