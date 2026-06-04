@@ -63,6 +63,7 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimised, setIsMinimised] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [micStatus, setMicStatus] = useState<"unknown" | "granted" | "denied">("unknown");
   const [activeCalls, setActiveCalls] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const pendingCallRef = useRef<string | null>(null);
@@ -243,6 +244,22 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
     return () => window.removeEventListener("storage", handleStorage);
   }, [postToWidget]);
 
+  // Proactively request microphone access when the phone panel opens. Browser
+  // (WebRTC) calls silently drop at 0:00 if the mic is blocked — this triggers
+  // the permission prompt early and lets us warn the user when it's denied.
+  // The RingCentral iframe inherits this grant via allow="microphone".
+  useEffect(() => {
+    if (!isOpen || micStatus === "granted") return;
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        stream.getTracks().forEach((t) => t.stop());
+        setMicStatus("granted");
+      })
+      .catch(() => setMicStatus("denied"));
+  }, [isOpen, micStatus]);
+
   return (
     <RingCentralContext.Provider value={{ triggerCall, isOpen, setIsOpen, isConnected }}>
       {/* Render children (the rest of the app) */}
@@ -318,10 +335,19 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
             </div>
           </div>
 
-          {/* Calling mode hint */}
-          {!isMinimised && isConnected && (
+          {/* Mic blocked — the usual reason browser calls drop at 0:00 */}
+          {!isMinimised && micStatus === "denied" && (
+            <div className="px-3 py-2 bg-red-950/50 border-b border-red-500/30 shrink-0">
+              <p className="text-[10px] text-red-300 leading-relaxed">
+                🎤 <strong>Microphone is blocked</strong> — browser calls can't connect (they end at 0:00).
+                Click the lock / camera icon in your browser's address bar, allow the microphone for this site, then reopen this panel.
+              </p>
+            </div>
+          )}
+          {/* Calling hint */}
+          {!isMinimised && isConnected && micStatus !== "denied" && (
             <div className="px-3 py-1.5 bg-blue-950/40 border-b border-blue-500/20 flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] text-blue-300">📞 Calls connect directly from your computer — allow the microphone when prompted.</span>
+              <span className="text-[10px] text-blue-300">📞 Calls connect from your computer — allow the microphone when prompted. Test with a US (+1) number.</span>
             </div>
           )}
 
