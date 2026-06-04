@@ -36,15 +36,11 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 shadow-lg shadow-primary/5">
-            <Scale className="w-7 h-7 text-primary" />
-          </div>
-          <h1
-            className="text-3xl font-bold text-foreground tracking-tight"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            Farahi Law
-          </h1>
+          <img
+            src="/farahi-logo-darkmode.jpg"
+            alt="Farahi Law Firm"
+            className="w-28 h-28 rounded-2xl object-cover mb-4 shadow-xl ring-1 ring-border"
+          />
           <p className="text-sm text-muted-foreground mt-1">BD Partner CRM</p>
         </div>
 

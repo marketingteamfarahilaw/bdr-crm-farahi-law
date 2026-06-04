@@ -203,7 +203,7 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <Scale className="h-4 w-4 text-primary shrink-0" />
+                  <img src="/farahi-logo-darkmode.jpg" alt="Farahi Law Firm" className="h-9 w-9 rounded-lg object-cover shrink-0 ring-1 ring-border" />
                   <div className="min-w-0">
                     <span className="font-semibold tracking-tight truncate text-foreground block" style={{ fontFamily: "'Playfair Display', serif" }}>
                       Farahi Law
@@ -212,7 +212,7 @@ function DashboardLayoutContent({
                   </div>
                 </div>
               ) : (
-                <Scale className="h-4 w-4 text-primary" />
+                <img src="/farahi-logo-darkmode.jpg" alt="Farahi Law Firm" className="h-7 w-7 rounded-md object-cover" />
               )}
             </div>
           </SidebarHeader>
