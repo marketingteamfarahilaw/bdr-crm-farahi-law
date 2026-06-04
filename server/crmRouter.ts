@@ -915,8 +915,11 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
           }
         }
 
-        // 5. Save to facility_updates and auto-create follow-up tasks
-        if (facility) {
+        // 5. Save the transcript + AI summary as a "Call Recap" — ONLY when we
+        // actually have a transcript. Don't create empty recap cards for
+        // unanswered / 0:00 / unrecorded calls (they still log as a touchpoint
+        // in the Contact Log).
+        if (facility && transcriptText) {
           const rawText = transcriptText || `[Call on ${callDate.toISOString()}${input.phone ? ` to ${input.phone}` : ""}${durationStr ? `, duration: ${durationStr}` : ""}]`;
           const summary = aiSummary || (transcriptText ? transcriptText.slice(0, 300) : `${input.direction ?? "Outbound"} call — ${input.result ?? ""} (${durationStr})`);
           await createFacilityUpdate({
