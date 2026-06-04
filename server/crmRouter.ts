@@ -11,7 +11,8 @@ import { seesAllData, canManage } from "@shared/permissions";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
 import { syncRecentCalls } from "./rcSync";
-import { uberConfigured, importOrderReceipt } from "./uber";
+import { uberConfigured, importOrderReceipt, matchFacilityByAddress } from "./uber";
+import { frExpenses } from "../drizzle/schema";
 import {
   completeTask,
   createContactLog,
@@ -1040,6 +1041,44 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
       if (!db) return [];
       return db.select().from(uberReceipts).orderBy(desc(uberReceipts.createdAt)).limit(50);
     }),
+    // Import Uber Eats expenses from a parsed CSV export (client parses + maps;
+    // server matches each to a facility by delivery address and files it).
+    importExpenses: protectedProcedure
+      .input(z.object({
+        rows: z.array(z.object({
+          date: z.string().optional(),
+          amount: z.number(),
+          restaurant: z.string().optional(),
+          address: z.string().optional(),
+          requester: z.string().optional(),
+        })).max(5000),
+        cardType: z.enum(["Company", "Personal"]).default("Company"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Database unavailable." });
+        let inserted = 0, matched = 0;
+        for (const r of input.rows) {
+          const fac = r.address ? await matchFacilityByAddress(r.address, "") : null;
+          if (fac) matched++;
+          const d = r.date ? new Date(r.date) : null;
+          await db.insert(frExpenses).values({
+            expenseDate: d && !isNaN(+d) ? d : new Date(),
+            agentName: (r.requester || "Uber Eats").slice(0, 255),
+            facilityId: fac?.id ?? null,
+            facilityName: fac?.name ?? null,
+            store: "Uber Eats",
+            reason: (r.restaurant ? `Partner meal — ${r.restaurant}` : "Partner meal (Uber Eats)").slice(0, 500),
+            amount: Math.max(0, Math.min(99999999.99, r.amount)).toFixed(2),
+            cardType: input.cardType,
+            notes: r.address ? r.address.slice(0, 4000) : null,
+          });
+          inserted++;
+        }
+        return { inserted, matched };
+      }),
+
     // Manual fetch+import of one order (for testing / backfilling a missed order).
     importOrder: protectedProcedure
       .input(z.object({ orderId: z.string().min(1) }))

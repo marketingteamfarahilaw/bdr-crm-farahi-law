@@ -69,7 +69,7 @@ export async function fetchOrderReceipt(orderId: string): Promise<any> {
 
 const money = (v: any): number => (typeof v?.value === "number" ? v.value / 100000 : 0);
 
-async function matchFacilityByAddress(address: string, city: string): Promise<{ id: number; name: string } | null> {
+export async function matchFacilityByAddress(address: string, city: string): Promise<{ id: number; name: string } | null> {
   const db = await getDb();
   if (!db || !address) return null;
   const num = (address.match(/\d+/) || [])[0];
