@@ -9,9 +9,10 @@ import {
   AlertTriangle, ArrowUpRight, Search, Map, BarChart3,
   Flag, Clock, TrendingUp, ChevronRight, Sparkles, Award,
   CalendarClock, CheckCircle2, ListChecks, Activity, FileText,
+  MapPin, Send, PhoneCall, Workflow,
 } from "lucide-react";
 import { format, isToday, formatDistanceToNow } from "date-fns";
-import { seesAllData } from "@shared/permissions";
+import { seesAllData, normalizeRole } from "@shared/permissions";
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   active_partner: { label: "Active Partner", color: "#34d399" },
@@ -60,6 +61,8 @@ export default function Dashboard() {
   const { data: overdue } = trpc.crm.tasks.listOverdue.useQuery(undefined, { retry: false, enabled: isAdmin });
   const { data: activity } = trpc.crm.activity.recent.useQuery(undefined, { enabled: isAdmin });
   const { data: myTasks, isLoading: myTasksLoading } = trpc.crm.tasks.listMine.useQuery({ status: "open" }, { enabled: !!user });
+  // Agent's own partners (server already scopes to assignedRepId) — drives the cadence queue.
+  const { data: myFacilities, isLoading: myFacLoading } = trpc.crm.facilities.list.useQuery(undefined, { enabled: !isAdmin && !!user, retry: false });
 
   const firstName = (user?.name ?? "there").split(" ")[0];
   const today = format(new Date(), "EEEE, MMMM d");
@@ -104,32 +107,129 @@ export default function Dashboard() {
 
   // ─────────────── Rep view: "My Day" ───────────────
   if (!isAdmin) {
+    const role = normalizeRole(user?.role);
+    const isFR = role === "fr_agent";
+    const verbLower = isFR ? "visit" : "reach out to";
+    const VerbIcon = isFR ? MapPin : PhoneCall;
+
     const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
     const tomorrow = new Date(startToday.getTime() + 86400000);
     const overdueMine = myOpen.filter((t) => t.dueDate && new Date(t.dueDate) < startToday);
     const todayMine = myOpen.filter((t) => t.dueDate && isToday(new Date(t.dueDate)));
     const upcomingMine = myOpen.filter((t) => !t.dueDate || new Date(t.dueDate) >= tomorrow);
 
+    // ── Cadence: computed live from the agent's own partners (always current,
+    //    no stale auto-created rows). This is the "what to do next" engine. ──
+    const facs = myFacilities ?? [];
+    const lastDays = (f: any) => (f.lastContact?.contactDate ? Math.floor((Date.now() - new Date(f.lastContact.contactDate).getTime()) / 86400000) : null);
+    const COLD = 30;
+    const untouched = facs.filter((f: any) => f.partnerStatus === "prospect" && !f.lastContact?.contactDate);
+    const followUp = facs.filter((f: any) => f.partnerStatus === "needs_follow_up");
+    const cold = facs.filter((f: any) => ["active_partner", "priority_partner"].includes(f.partnerStatus) && (lastDays(f) === null || (lastDays(f) as number) >= COLD));
+    const dormant = facs.filter((f: any) => f.partnerStatus === "dormant");
+
+    const focus = [
+      ...followUp.map((f: any) => ({ f, reason: "Follow-up due", tint: "#fb923c", pr: 0, days: lastDays(f) ?? 999 })),
+      ...untouched.map((f: any) => ({ f, reason: `New prospect — first ${verbLower}`, tint: "#7dd3fc", pr: 1, days: 999 })),
+      ...cold.map((f: any) => ({ f, reason: lastDays(f) === null ? "No contact logged yet" : `${lastDays(f)}d since last contact`, tint: "#e8c468", pr: 2, days: lastDays(f) ?? 999 })),
+      ...dormant.map((f: any) => ({ f, reason: "Dormant — reactivate", tint: "#94a3b8", pr: 3, days: lastDays(f) ?? 999 })),
+    ].sort((a, b) => a.pr - b.pr || b.days - a.days).slice(0, 14);
+
+    const attentionCount = followUp.length + untouched.length + cold.length + dormant.length;
+    const activeCount = facs.filter((f: any) => ["active_partner", "priority_partner"].includes(f.partnerStatus)).length;
+    const leadsSent = facs.reduce((s: number, f: any) => s + (f.totalLeadsSent ?? 0), 0);
+
+    const repKpis = [
+      { label: "My Partners", value: facs.length, tint: "#7dd3fc", icon: Building2 },
+      { label: "Active", value: activeCount, tint: "#34d399", icon: Handshake },
+      { label: "Need Attention", value: attentionCount, tint: "#fb923c", icon: AlertTriangle },
+      { label: "Open Tasks", value: myOpen.length, tint: "#a78bfa", icon: ListChecks },
+      { label: "Leads Sent", value: leadsSent, tint: "#e8c468", icon: Send },
+    ];
+
+    const agentActions = isFR
+      ? [{ label: "Pipeline", icon: Workflow, path: "/crm/pipeline" }, { label: "Facilities", icon: Building2, path: "/crm/facilities" }, { label: "Field Visits", icon: MapPin, path: "/bdr/field-visits" }, { label: "FR Errands", icon: ClipboardList, path: "/bdr/fr-errands" }]
+      : [{ label: "Pipeline", icon: Workflow, path: "/crm/pipeline" }, { label: "Facilities", icon: Building2, path: "/crm/facilities" }, { label: "Search Leads", icon: Search, path: "/search" }, { label: "Lead Map", icon: Map, path: "/map" }];
+
+    const tasksDue = [...overdueMine, ...todayMine];
+
     return (
       <div className="dashboard-mesh min-h-full">
-        <div className="max-w-[1100px] mx-auto p-6 lg:p-8 space-y-8">
+        <div className="max-w-[1200px] mx-auto p-6 lg:p-8 space-y-8">
           {hero}
-          {myTasksLoading ? (
-            <div className="grid md:grid-cols-3 gap-6">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-2xl" />)}</div>
-          ) : myOpen.length === 0 ? (
-            <motion.div variants={item} initial="hidden" animate="show" className="premium-card rounded-2xl p-12 text-center">
-              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3 opacity-80" />
-              <p className="font-display text-xl font-semibold text-foreground">You're all caught up 🎉</p>
-              <p className="text-muted-foreground text-sm mt-1">No open tasks assigned to you right now.</p>
-            </motion.div>
-          ) : (
-            <motion.div variants={container} initial="hidden" animate="show" className="grid md:grid-cols-3 gap-6">
-              <TaskColumn title="Overdue" icon={AlertTriangle} tint="#f87171" tasks={overdueMine} navigate={navigate} emptyText="Nothing overdue 👍" />
-              <TaskColumn title="Due Today" icon={CalendarClock} tint="#e8c468" tasks={todayMine} navigate={navigate} emptyText="Nothing due today" />
-              <TaskColumn title="Upcoming" icon={Clock} tint="#7dd3fc" tasks={upcomingMine} navigate={navigate} emptyText="Nothing upcoming" />
-            </motion.div>
-          )}
-          <QuickActions actions={quickActions} navigate={navigate} />
+
+          {/* KPI strip */}
+          <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {repKpis.map((k) => {
+              const Icon = k.icon;
+              return (
+                <motion.div key={k.label} variants={item} className="premium-card rounded-2xl p-4">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: `${k.tint}1a`, border: `1px solid ${k.tint}33` }}>
+                    <Icon className="w-[18px] h-[18px]" style={{ color: k.tint }} />
+                  </div>
+                  <div className="font-display text-2xl font-bold text-foreground">{k.value.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{k.label}</div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Today's Focus — the cadence queue */}
+            <motion.section variants={item} initial="hidden" animate="show" className="lg:col-span-2 premium-card rounded-2xl p-6">
+              <SectionTitle icon={VerbIcon} title={isFR ? "Who to visit" : "Who to call today"} subtitle={`${attentionCount} partner${attentionCount !== 1 ? "s" : ""} need attention · highest priority first`} />
+              <div className="mt-5 space-y-2">
+                {myFacLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)
+                ) : focus.length === 0 ? (
+                  <div className="text-center py-10">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2 opacity-80" />
+                    <p className="text-sm text-foreground font-medium">Nothing needs chasing right now 🎉</p>
+                    <p className="text-xs text-muted-foreground mt-1">Every partner's been touched recently.</p>
+                  </div>
+                ) : focus.map(({ f, reason, tint }) => (
+                  <button key={f.id} onClick={() => navigate(`/crm/facilities/${f.id}`)} className="w-full text-left flex items-center gap-3 rounded-xl px-3 py-2.5 bg-secondary/40 hover:bg-secondary border border-transparent hover:border-border transition-all group">
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${tint}1a`, border: `1px solid ${tint}33` }}>
+                      <VerbIcon className="w-4 h-4" style={{ color: tint }} />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{reason}{f.phone ? ` · ${f.phone}` : ""}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </motion.section>
+
+            {/* Right rail: tasks + quick actions */}
+            <div className="space-y-6">
+              <motion.section variants={item} initial="hidden" animate="show" className="premium-card rounded-2xl p-6">
+                <SectionTitle icon={ListChecks} title="Your Tasks" subtitle={`${overdueMine.length} overdue · ${todayMine.length} due today`} />
+                <div className="mt-4 space-y-2">
+                  {tasksDue.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-6 text-center">No tasks due.{upcomingMine.length > 0 ? ` ${upcomingMine.length} upcoming.` : ""}</p>
+                  ) : tasksDue.slice(0, 6).map((t) => {
+                    const od = t.dueDate && new Date(t.dueDate) < startToday;
+                    return (
+                      <button key={t.id} onClick={() => navigate(`/crm/facilities/${t.facilityId}`)} className="w-full text-left rounded-xl px-3 py-2 bg-secondary/40 hover:bg-secondary border border-transparent hover:border-border transition-all">
+                        <div className="flex items-start gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${od ? "bg-red-400" : "bg-amber-400"}`} />
+                          <div className="min-w-0">
+                            <p className="text-sm text-foreground leading-snug truncate">{t.title}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{t.facilityName ?? "Facility"}{t.dueDate ? ` · ${format(new Date(t.dueDate), "MMM d")}` : ""}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {tasksDue.length > 6 && <p className="text-[11px] text-muted-foreground text-center pt-1">+{tasksDue.length - 6} more due</p>}
+                </div>
+              </motion.section>
+
+              <QuickActions actions={agentActions} navigate={navigate} />
+            </div>
+          </div>
         </div>
       </div>
     );
