@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import axios from "axios";
-import { syncRecentCalls } from "../../server/rcSync";
+// Dynamic import AFTER dotenv so env.ts (which reads process.env at import time)
+// sees the loaded .env — otherwise transcription's forge config is empty.
+const { syncRecentCalls } = await import("../../server/rcSync");
 
 const RC = "https://platform.ringcentral.com";
 const token = (
