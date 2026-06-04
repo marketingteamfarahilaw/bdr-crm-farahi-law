@@ -21,12 +21,12 @@ const CATEGORIES = [
 ];
 
 const STATUSES = [
+  { value: "prospect", label: "Prospect" },
   { value: "active_partner", label: "Active Partner" },
-  { value: "warm_lead", label: "Warm Lead" },
-  { value: "cold", label: "Cold" },
-  { value: "churned", label: "Churned" },
-  { value: "do_not_contact", label: "Do Not Contact" },
-  { value: "needs_agent", label: "Needs Agent" },
+  { value: "priority_partner", label: "Priority Partner" },
+  { value: "needs_follow_up", label: "Needs Follow-Up" },
+  { value: "dormant", label: "Dormant" },
+  { value: "do_not_use", label: "Do Not Use" },
 ];
 
 const BD_REPS = ["Ally", "Genysys", "Grace", "Jezel", "Lupe", "Malvin", "Queenie", "Miguel", "Zulema"];
@@ -35,7 +35,7 @@ interface FormState {
   name: string; category: string; address: string; city: string;
   phone: string; phone2: string; phone3: string; website: string;
   contactName: string; contactTitle: string; contactPhone: string; contactEmail: string;
-  relationshipStatus: string; assignedRepName: string; notes: string;
+  partnerStatus: string; assignedRepName: string; notes: string;
   managementNote: string; managementFlag: boolean;
 }
 
@@ -43,7 +43,7 @@ const EMPTY: FormState = {
   name: "", category: "body_shop", address: "", city: "",
   phone: "", phone2: "", phone3: "", website: "",
   contactName: "", contactTitle: "", contactPhone: "", contactEmail: "",
-  relationshipStatus: "warm_lead", assignedRepName: "", notes: "",
+  partnerStatus: "prospect", assignedRepName: "", notes: "",
   managementNote: "", managementFlag: false,
 };
 
@@ -76,7 +76,7 @@ export default function FacilityForm() {
         contactTitle: existing.contactTitle ?? "",
         contactPhone: existing.contactPhone ?? "",
         contactEmail: existing.contactEmail ?? "",
-        relationshipStatus: existing.relationshipStatus ?? "warm_lead",
+        partnerStatus: existing.partnerStatus ?? "prospect",
         assignedRepName: existing.assignedRepName ?? "",
         notes: existing.notes ?? "",
         managementNote: existing.managementNote ?? "",
@@ -122,7 +122,7 @@ export default function FacilityForm() {
       contactTitle: form.contactTitle || undefined,
       contactPhone: form.contactPhone || undefined,
       contactEmail: form.contactEmail || undefined,
-      relationshipStatus: form.relationshipStatus as any,
+      partnerStatus: form.partnerStatus as any,
       assignedRepName: form.assignedRepName || undefined,
       notes: form.notes || undefined,
       managementNote: form.managementNote || undefined,
@@ -244,7 +244,7 @@ export default function FacilityForm() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Relationship Status</label>
-              <Select value={form.relationshipStatus} onValueChange={(v) => setForm((f) => ({ ...f, relationshipStatus: v }))}>
+              <Select value={form.partnerStatus} onValueChange={(v) => setForm((f) => ({ ...f, partnerStatus: v }))}>
                 <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}

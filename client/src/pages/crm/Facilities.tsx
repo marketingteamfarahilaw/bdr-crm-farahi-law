@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -18,12 +19,12 @@ import { BulkImportDialog } from "./BulkImportDialog";
 import FacilitiesMap from "@/components/FacilitiesMap";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  prospect: { label: "Prospect", color: "bg-sky-500/20 text-sky-400 border-sky-500/30" },
   active_partner: { label: "Active Partner", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-  warm_lead: { label: "Warm Lead", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
-  cold: { label: "Cold", color: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
-  churned: { label: "Churned", color: "bg-red-500/20 text-red-400 border-red-500/30" },
-  do_not_contact: { label: "Do Not Contact", color: "bg-red-900/30 text-red-300 border-red-900/50" },
-  needs_agent: { label: "Needs Agent", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+  priority_partner: { label: "Priority Partner", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+  needs_follow_up: { label: "Needs Follow-Up", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+  dormant: { label: "Dormant", color: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
+  do_not_use: { label: "Do Not Use", color: "bg-red-900/30 text-red-300 border-red-900/50" },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -52,7 +53,7 @@ export default function Facilities() {
 
   const { data: facilities, isLoading } = trpc.crm.facilities.list.useQuery({
     search: search || undefined,
-    status: statusFilter !== "all" ? statusFilter : undefined,
+    partnerStatus: statusFilter !== "all" ? statusFilter : undefined,
     category: categoryFilter !== "all" ? categoryFilter : undefined,
   });
 
@@ -61,6 +62,28 @@ export default function Facilities() {
     undefined,
     { enabled: viewMode === "map" }
   );
+
+  const utils = trpc.useUtils();
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [bulkRep, setBulkRep] = useState("");
+  const [bulkStatus, setBulkStatus] = useState("");
+  const bulkUpdate = trpc.crm.facilities.bulkUpdate.useMutation({
+    onSuccess: (r) => {
+      toast.success(`Updated ${r.updated} facilit${r.updated === 1 ? "y" : "ies"}`);
+      setSelected(new Set()); setBulkRep(""); setBulkStatus("");
+      utils.crm.facilities.list.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const toggleSelect = (id: number) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const applyBulk = () => {
+    if (selected.size === 0 || (!bulkRep && !bulkStatus)) return;
+    bulkUpdate.mutate({
+      ids: [...selected],
+      ...(bulkStatus ? { partnerStatus: bulkStatus as any } : {}),
+      ...(bulkRep ? { assignedRepName: bulkRep } : {}),
+    });
+  };
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -76,7 +99,7 @@ export default function Facilities() {
     let bv: string | number = "";
     if (sortKey === "name") { av = a.name ?? ""; bv = b.name ?? ""; }
     else if (sortKey === "category") { av = CATEGORY_LABELS[a.category] ?? ""; bv = CATEGORY_LABELS[b.category] ?? ""; }
-    else if (sortKey === "relationshipStatus") { av = a.relationshipStatus ?? ""; bv = b.relationshipStatus ?? ""; }
+    else if (sortKey === "relationshipStatus") { av = a.partnerStatus ?? ""; bv = b.partnerStatus ?? ""; }
     else if (sortKey === "assignedRepName") { av = a.assignedRepName ?? ""; bv = b.assignedRepName ?? ""; }
     else if (sortKey === "totalLeadsSent") { av = a.totalLeadsSent ?? 0; bv = b.totalLeadsSent ?? 0; }
     else if (sortKey === "lastContact") {
@@ -188,6 +211,25 @@ export default function Facilities() {
         </Select>
       </div>
 
+      {/* Bulk actions bar */}
+      {viewMode === "list" && selected.size > 0 && (
+        <div className="flex items-center gap-3 flex-wrap rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 px-4 py-2.5">
+          <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
+          <Select value={bulkStatus} onValueChange={setBulkStatus}>
+            <SelectTrigger className="w-[170px] h-8 bg-card border-border text-xs"><SelectValue placeholder="Set status…" /></SelectTrigger>
+            <SelectContent>{Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={bulkRep} onValueChange={setBulkRep}>
+            <SelectTrigger className="w-[160px] h-8 bg-card border-border text-xs"><SelectValue placeholder="Reassign rep…" /></SelectTrigger>
+            <SelectContent>{[...new Set((facilities ?? []).map((f) => f.assignedRepName).filter(Boolean))].sort().map((r) => <SelectItem key={r as string} value={r as string}>{r as string}</SelectItem>)}</SelectContent>
+          </Select>
+          <Button size="sm" onClick={applyBulk} disabled={bulkUpdate.isPending || (!bulkRep && !bulkStatus)} style={{ background: "var(--gold)", color: "#0a0f1e" }}>
+            {bulkUpdate.isPending ? "Applying…" : "Apply"}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+        </div>
+      )}
+
       {/* ── MAP VIEW ─────────────────────────────────────────────────────────── */}
       {viewMode === "map" && (
         <div className="rounded-xl border border-border overflow-hidden">
@@ -240,10 +282,15 @@ export default function Facilities() {
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-border overflow-hidden">
+            <div className="rounded-xl border border-border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-card hover:bg-card border-border">
+                    <TableHead className="w-10">
+                      <input type="checkbox" className="accent-[var(--gold)] cursor-pointer"
+                        checked={sorted.length > 0 && sorted.every((f) => selected.has(f.id))}
+                        onChange={(e) => setSelected(e.target.checked ? new Set(sorted.map((f) => f.id)) : new Set())} />
+                    </TableHead>
                     <TableHead
                       className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("name")}
@@ -286,7 +333,7 @@ export default function Facilities() {
                 </TableHeader>
                 <TableBody>
                   {sorted.map((facility) => {
-                    const status = STATUS_LABELS[facility.relationshipStatus] ?? STATUS_LABELS.warm_lead;
+                    const status = STATUS_LABELS[facility.partnerStatus] ?? STATUS_LABELS.prospect;
                     const lastContactDate = facility.lastContact?.contactDate
                       ? new Date(facility.lastContact.contactDate)
                       : null;
@@ -296,7 +343,11 @@ export default function Facilities() {
                         className="border-border hover:bg-card/60 cursor-pointer transition-colors"
                         onClick={() => navigate(`/crm/facilities/${facility.id}`)}
                       >
-                        <TableCell className="py-3">
+                        <TableCell className="py-1.5" onClick={(e) => e.stopPropagation()}>
+                          <input type="checkbox" className="accent-[var(--gold)] cursor-pointer"
+                            checked={selected.has(facility.id)} onChange={() => toggleSelect(facility.id)} />
+                        </TableCell>
+                        <TableCell className="py-1.5">
                           <div className="flex items-center gap-2">
                             {facility.managementFlag === 1 && (
                               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
@@ -310,10 +361,10 @@ export default function Facilities() {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="py-3 text-xs text-muted-foreground">
+                        <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {CATEGORY_LABELS[facility.category] ?? facility.category}
                         </TableCell>
-                        <TableCell className="py-3 text-xs text-muted-foreground">
+                        <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {facility.contactName ? (
                             <div className="flex items-center gap-1">
                               <User className="w-3 h-3 flex-shrink-0" />
@@ -323,7 +374,7 @@ export default function Facilities() {
                             <span className="opacity-40">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-3 text-xs text-muted-foreground">
+                        <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {facility.city ? (
                             <div className="flex items-center gap-1">
                               <MapPin className="w-3 h-3 flex-shrink-0" />
@@ -333,18 +384,18 @@ export default function Facilities() {
                             <span className="opacity-40">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-3">
+                        <TableCell className="py-1.5">
                           <Badge className={`text-xs border ${status.color}`}>
                             {status.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-3 text-xs text-muted-foreground">
+                        <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {facility.assignedRepName ?? <span className="opacity-40">—</span>}
                         </TableCell>
-                        <TableCell className="py-3 text-xs text-right font-medium text-foreground">
+                        <TableCell className="py-1.5 text-xs text-right font-medium text-foreground">
                           {facility.totalLeadsSent ?? 0}
                         </TableCell>
-                        <TableCell className="py-3 text-xs text-muted-foreground">
+                        <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {lastContactDate ? (
                             <div className="flex items-center gap-1">
                               <Clock className="w-3 h-3 flex-shrink-0" />

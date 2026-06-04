@@ -71,7 +71,10 @@ import {
   deleteInboundLead,
   getReferralStats,
   getBdrAdminDashboard,
+  listUsers,
+  setUserRole,
 } from "./db";
+import { canManage, canAssignRoles } from "@shared/permissions";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -85,6 +88,23 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+  }),
+
+  team: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
+      return listUsers();
+    }),
+    setRole: protectedProcedure
+      .input(z.object({ userId: z.number(), role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canAssignRoles(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only the super admin can assign roles." });
+        if (input.userId === ctx.user.id && input.role !== "super_admin") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "You can't remove your own super-admin access." });
+        }
+        await setUserRole(input.userId, input.role);
+        return { success: true };
+      }),
   }),
 
   leads: router({

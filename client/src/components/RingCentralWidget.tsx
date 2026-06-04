@@ -132,7 +132,7 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
             setTimeout(() => {
               postToWidget({
                 type: "rc-calling-settings-update",
-                callWith: "ringout",
+                callWith: "browser",
               });
             }, 1500);
             if (pendingCallRef.current) {
@@ -318,10 +318,10 @@ export function RingCentralProvider({ onCallEnd, children }: RingCentralProvider
             </div>
           </div>
 
-          {/* RingOut mode hint */}
+          {/* Calling mode hint */}
           {!isMinimised && isConnected && (
             <div className="px-3 py-1.5 bg-blue-950/40 border-b border-blue-500/20 flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] text-blue-300">📞 RingOut mode: your phone rings first, then connects to the facility.</span>
+              <span className="text-[10px] text-blue-300">📞 Calls connect directly from your computer — allow the microphone when prompted.</span>
             </div>
           )}
 

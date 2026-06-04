@@ -64,6 +64,7 @@
   --border: oklch(0.24 0.018 255);
   --input: oklch(0.20 0.018 255);
   --ring: oklch(0.78 0.12 75);
+  --gold: oklch(0.82 0.12 78);
   --sidebar: oklch(0.10 0.015 255);
   --sidebar-foreground: oklch(0.90 0.008 60);
   --sidebar-border: oklch(0.20 0.018 255);
@@ -82,7 +83,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Manrope', sans-serif;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -161,3 +162,24 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: oklch(0.30 0.018 255); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: oklch(0.40 0.018 255); }
+
+/* ── Premium utilities ─────────────────────────────────────── */
+.font-display { font-family: 'Playfair Display', serif; letter-spacing: -0.01em; }
+.gold-text {
+  background: linear-gradient(115deg, oklch(0.91 0.08 88), oklch(0.74 0.13 70));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dashboard-mesh {
+  background:
+    radial-gradient(70% 55% at 88% -8%, oklch(0.78 0.12 75 / 0.10), transparent 70%),
+    radial-gradient(55% 45% at -8% 108%, oklch(0.55 0.10 255 / 0.12), transparent 70%);
+}
+.premium-card {
+  background: linear-gradient(158deg, oklch(0.175 0.018 255), oklch(0.135 0.016 255));
+  border: 1px solid oklch(0.26 0.020 255);
+  box-shadow: inset 0 1px 0 0 oklch(0.32 0.02 255 / 0.35);
+  transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+}
+.premium-card:hover { border-color: oklch(0.46 0.07 78 / 0.45); }

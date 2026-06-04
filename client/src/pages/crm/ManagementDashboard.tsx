@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { seesAllData } from "@shared/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,16 +26,16 @@ export default function ManagementDashboard() {
   const [, navigate] = useLocation();
 
   const { data: stats, isLoading: statsLoading } = trpc.crm.management.dashboard.useQuery(undefined, {
-    enabled: user?.role === "admin",
+    enabled: seesAllData(user?.role),
   });
   const { data: flagged, isLoading: flaggedLoading } = trpc.crm.management.flaggedFacilities.useQuery(undefined, {
-    enabled: user?.role === "admin",
+    enabled: seesAllData(user?.role),
   });
   const { data: overdueTasks } = trpc.crm.tasks.listOverdue.useQuery(undefined, {
-    enabled: user?.role === "admin",
+    enabled: seesAllData(user?.role),
   });
 
-  if (user?.role !== "admin") {
+  if (!seesAllData(user?.role)) {
     return (
       <div className="p-6 text-center py-20">
         <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4 opacity-60" />

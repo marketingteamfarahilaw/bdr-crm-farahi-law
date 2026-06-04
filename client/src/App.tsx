@@ -7,12 +7,14 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import SearchPage from "./pages/Search";
 import CaliforniaMapPage from "./pages/CaliforniaMap";
+import Dashboard from "./pages/Dashboard";
 import SavedLeadsPage from "./pages/SavedLeads";
 import SavedSearchesPage from "./pages/SavedSearches";
 import FacilitiesPage from "./pages/crm/Facilities";
 import FacilityProfilePage from "./pages/crm/FacilityProfile";
 import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
+import TeamRolesPage from "./pages/crm/TeamRoles";
 import RingCentralSettingsPage from "./pages/crm/RingCentralSettings";
 import BdrReportsPage from "./pages/crm/BdrReports";
 import AgentDashboardPage from "./pages/AgentDashboard";
@@ -38,8 +40,9 @@ function Router() {
   return (
     <DashboardLayout>
       <Switch>
-        {/* Home: California Map Dashboard */}
-        <Route path="/" component={CaliforniaMapPage} />
+        {/* Home: Command Center dashboard */}
+        <Route path="/" component={Dashboard} />
+        <Route path="/map" component={CaliforniaMapPage} />
 
         {/* Lead Scraper */}
         <Route path="/search" component={SearchPage} />
@@ -52,6 +55,7 @@ function Router() {
         <Route path="/crm/facilities/:id/edit" component={FacilityFormPage} />
         <Route path="/crm/facilities/:id" component={FacilityProfilePage} />
         <Route path="/crm/dashboard" component={ManagementDashboardPage} />
+        <Route path="/team" component={TeamRolesPage} />
         <Route path="/crm/ringcentral" component={RingCentralSettingsPage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
 
@@ -96,6 +100,10 @@ function AppWithPhone() {
       if (result.facilityId) {
         utils.crm.contactLogs.list.invalidate();
         utils.crm.facilities.get.invalidate();
+        utils.crm.updates.list.invalidate();          // transcript + AI summary
+        utils.crm.tasks.listByFacility.invalidate();  // auto-created follow-up tasks
+        utils.crm.tasks.listMine.invalidate();
+        utils.crm.tasks.listOverdue.invalidate();
       }
     },
   });

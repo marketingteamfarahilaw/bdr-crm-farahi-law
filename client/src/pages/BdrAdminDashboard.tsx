@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { seesAllData } from "@shared/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,7 +51,12 @@ function KpiCard({
 
 export default function BdrAdminDashboard() {
   const { user } = useAuth();
-  if (user && user.role !== "admin") {
+  const isAdmin = seesAllData(user?.role);
+  // NOTE: hook must run on every render (Rules of Hooks) — gate with `enabled`,
+  // not by returning early before the hook.
+  const { data, isLoading } = trpc.bdr.adminDashboard.useQuery(undefined, { enabled: isAdmin });
+
+  if (user && !isAdmin) {
     return (
       <div className="p-8 text-center">
         <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
@@ -59,8 +65,6 @@ export default function BdrAdminDashboard() {
       </div>
     );
   }
-
-  const { data, isLoading } = trpc.bdr.adminDashboard.useQuery();
 
   if (isLoading) {
     return (

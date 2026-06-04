@@ -106,6 +106,10 @@ temp/
 *.sqlite
 *.sqlite3
 
+# Local DB backups / dumps (may contain production data — never commit)
+backups/
+*.sql.gz
+
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
 

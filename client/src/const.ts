@@ -4,6 +4,11 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 export const getLoginUrl = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
+  // Offline/local mode: with no Manus OAuth portal configured, sign in via the
+  // server-side local login route instead of the Manus sign-in page.
+  if (!oauthPortalUrl) {
+    return "/api/local-login";
+  }
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
   const state = btoa(redirectUri);
 

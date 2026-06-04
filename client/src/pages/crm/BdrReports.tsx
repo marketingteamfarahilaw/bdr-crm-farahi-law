@@ -7,10 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Phone, PhoneCall, Users, TrendingUp, CheckCircle2, AlertCircle,
-  BarChart3, Building2, Calendar
+  BarChart3, Building2, Calendar, Download, Trophy
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
-const AGENTS = ["All", "Ally", "Grace", "Queenie", "Miguel"];
+const AGENTS = ["All", "Ally", "Gracel", "Queenie", "Miguel", "Rupert"];
 
 const CALL_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   partner_checkin: { label: "Partner Check-In", color: "bg-emerald-500/20 text-emerald-400" },
@@ -178,6 +180,22 @@ export default function BdrReports() {
     return map;
   }, [callActivity]);
 
+  const agentRows = Object.values(byAgent).sort((a, b) => b.connected - a.connected);
+
+  function exportCsv() {
+    const headers = ["Agent", "Total Calls", "Connected", "Voicemail", "No Answer", "Check-ins", "Potential Leads", "Connect %"];
+    const rows = agentRows.map((a) => [a.repName, a.total, a.connected, a.voicemail, a.noAnswer, a.partnerCheckin + a.bdrCheckin + a.frCheckin, a.potentialLead, a.total ? Math.round((a.connected / a.total) * 100) + "%" : "0%"]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bdr-report-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} agent${rows.length !== 1 ? "s" : ""}`);
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-6xl">
       {/* Header */}
@@ -214,6 +232,9 @@ export default function BdrReports() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1.5" disabled={agentRows.length === 0}>
+            <Download className="w-4 h-4" /> Export CSV
+          </Button>
         </div>
       </div>
 
@@ -236,6 +257,33 @@ export default function BdrReports() {
           <CardContent className="p-8 text-center text-muted-foreground">
             <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p>No call activity data yet. Log calls from facility profiles to see reports here.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Agent Leaderboard */}
+      {agentRows.length > 0 && (
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-[var(--gold)]" /> Agent Leaderboard
+              <span className="text-xs font-normal text-muted-foreground">· ranked by connected calls</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {agentRows.map((a, i) => {
+              const max = agentRows[0]?.connected || 1;
+              return (
+                <div key={a.repName} className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? "bg-[var(--gold)]/20 text-[var(--gold)]" : i < 3 ? "bg-secondary text-foreground" : "text-muted-foreground"}`}>{i + 1}</span>
+                  <span className="w-28 truncate text-sm font-medium text-foreground">{a.repName}</span>
+                  <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${Math.round((a.connected / max) * 100)}%`, background: "linear-gradient(90deg,#b8902f,#e8c468)" }} />
+                  </div>
+                  <span className="w-24 text-right text-xs text-muted-foreground"><span className="font-bold text-foreground">{a.connected}</span> connected</span>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       )}

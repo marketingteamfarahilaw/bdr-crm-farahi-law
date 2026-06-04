@@ -46,12 +46,14 @@ export async function listFacilities(filters?: {
   const conditions: any[] = [];
 
   if (filters?.search) {
+    // Case-insensitive search (TiDB's default collation is case-sensitive).
+    const s = `%${filters.search.toLowerCase()}%`;
     conditions.push(
       or(
-        like(facilities.name, `%${filters.search}%`),
-        like(facilities.address, `%${filters.search}%`),
-        like(facilities.contactName, `%${filters.search}%`),
-        like(facilities.city, `%${filters.search}%`)
+        sql`LOWER(${facilities.name}) LIKE ${s}`,
+        sql`LOWER(${facilities.address}) LIKE ${s}`,
+        sql`LOWER(${facilities.contactName}) LIKE ${s}`,
+        sql`LOWER(${facilities.city}) LIKE ${s}`
       )
     );
   }
@@ -360,8 +362,19 @@ export async function listTasksByUser(userId: number, statusFilter?: "open" | "c
   const conditions: any[] = [eq(facilityTasks.assignedToId, userId)];
   if (statusFilter) conditions.push(eq(facilityTasks.status, statusFilter));
   return db
-    .select()
+    .select({
+      id: facilityTasks.id,
+      facilityId: facilityTasks.facilityId,
+      facilityName: facilities.name,
+      title: facilityTasks.title,
+      description: facilityTasks.description,
+      dueDate: facilityTasks.dueDate,
+      status: facilityTasks.status,
+      priority: facilityTasks.priority,
+      assignedToName: facilityTasks.assignedToName,
+    })
     .from(facilityTasks)
+    .leftJoin(facilities, eq(facilityTasks.facilityId, facilities.id))
     .where(and(...conditions))
     .orderBy(asc(facilityTasks.dueDate), desc(facilityTasks.createdAt));
 }
@@ -370,8 +383,18 @@ export async function listOverdueTasks() {
   const db = await getDb();
   if (!db) return [];
   return db
-    .select()
+    .select({
+      id: facilityTasks.id,
+      facilityId: facilityTasks.facilityId,
+      facilityName: facilities.name,
+      title: facilityTasks.title,
+      dueDate: facilityTasks.dueDate,
+      status: facilityTasks.status,
+      priority: facilityTasks.priority,
+      assignedToName: facilityTasks.assignedToName,
+    })
     .from(facilityTasks)
+    .leftJoin(facilities, eq(facilityTasks.facilityId, facilities.id))
     .where(and(eq(facilityTasks.status, "open"), sql`${facilityTasks.dueDate} < NOW()`))
     .orderBy(asc(facilityTasks.dueDate));
 }
@@ -606,6 +629,39 @@ export async function getDashboardStats() {
     totalContactLogs: Number(totalContactLogsRow[0]?.count ?? 0),
     lowReciprocity,
   };
+}
+
+export async function getRecentActivity(limit = 18) {
+  const db = await getDb();
+  if (!db) return [];
+  const per = Math.max(limit, 12);
+  const [calls, updates, referrals] = await Promise.all([
+    db.select({
+      id: contactLogs.id, facilityId: contactLogs.facilityId, facilityName: facilities.name,
+      date: contactLogs.contactDate, summary: contactLogs.summary, callResult: contactLogs.callResult,
+      contactType: contactLogs.contactType, repName: contactLogs.repName,
+    }).from(contactLogs).leftJoin(facilities, eq(contactLogs.facilityId, facilities.id))
+      .orderBy(desc(contactLogs.contactDate)).limit(per),
+    db.select({
+      id: facilityUpdates.id, facilityId: facilityUpdates.facilityId, facilityName: facilities.name,
+      date: facilityUpdates.updateDate, summary: facilityUpdates.summary, updateType: facilityUpdates.updateType,
+      repName: facilityUpdates.repName,
+    }).from(facilityUpdates).leftJoin(facilities, eq(facilityUpdates.facilityId, facilities.id))
+      .orderBy(desc(facilityUpdates.updateDate)).limit(per),
+    db.select({
+      id: facilityReferrals.id, facilityId: facilityReferrals.facilityId, facilityName: facilities.name,
+      date: facilityReferrals.referralDate, clientName: facilityReferrals.clientName,
+      caseValue: facilityReferrals.caseValue, repName: facilityReferrals.repName,
+    }).from(facilityReferrals).leftJoin(facilities, eq(facilityReferrals.facilityId, facilities.id))
+      .orderBy(desc(facilityReferrals.referralDate)).limit(per),
+  ]);
+  const items = [
+    ...calls.map((c) => ({ kind: "call" as const, id: `c${c.id}`, facilityId: c.facilityId, facilityName: c.facilityName, date: c.date, title: c.summary || `${c.contactType} call${c.callResult ? ` — ${c.callResult}` : ""}`, repName: c.repName, tag: c.callResult ?? c.contactType })),
+    ...updates.map((u) => ({ kind: "update" as const, id: `u${u.id}`, facilityId: u.facilityId, facilityName: u.facilityName, date: u.date, title: u.summary || "Note added", repName: u.repName, tag: u.updateType })),
+    ...referrals.map((r) => ({ kind: "referral" as const, id: `r${r.id}`, facilityId: r.facilityId, facilityName: r.facilityName, date: r.date, title: `Referral — ${r.clientName}`, repName: r.repName, tag: r.caseValue })),
+  ];
+  items.sort((a, b) => new Date(b.date as any).getTime() - new Date(a.date as any).getTime());
+  return items.slice(0, limit);
 }
 
 export async function getRelationshipBalance() {

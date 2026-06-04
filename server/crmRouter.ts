@@ -7,6 +7,7 @@ import { TRPCError } from "@trpc/server";
 import axios from "axios";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
+import { seesAllData, canManage } from "@shared/permissions";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
 import {
@@ -28,6 +29,7 @@ import {
   deleteTask,
   getAllFacilitiesForMap,
   getDashboardStats,
+  getRecentActivity,
   getRelationshipBalance,
   getFacilityById,
   getLastContactLog,
@@ -69,25 +71,84 @@ async function refreshRCToken(refreshToken: string, clientId: string, clientSecr
   return resp.data as { access_token: string; refresh_token: string; expires_in: number };
 }
 
+// Mint a brand-new access token from the long-lived RINGCENTRAL_JWT.
+// This is the reliable fallback when no stored token exists or the stored
+// refresh token has gone stale (e.g. after a migration / long idle period).
+async function mintRCTokenFromJwt(clientId: string, clientSecret: string): Promise<string> {
+  const jwt = process.env.RINGCENTRAL_JWT ?? "";
+  if (!jwt) {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral not connected and no RINGCENTRAL_JWT is configured." });
+  }
+  const tokenResp = await axios.post(
+    `${RC_BASE}/restapi/oauth/token`,
+    new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }),
+    { auth: { username: clientId, password: clientSecret }, headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+  );
+  const { access_token, refresh_token, expires_in } = tokenResp.data;
+  // Look up account/owner so the stored row matches OAuth-created ones (same unique accountId).
+  let accountId = "default";
+  let ownerName: string | undefined;
+  let ownerExtensionId: string | undefined;
+  try {
+    const meResp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/extension/~`, {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+    accountId = meResp.data.account?.id?.toString() ?? "default";
+    ownerName = meResp.data.name ?? undefined;
+    ownerExtensionId = meResp.data.id?.toString();
+  } catch {
+    /* non-fatal — store the token even if the owner lookup fails */
+  }
+  await upsertRingcentralToken({
+    accountId,
+    accessToken: access_token,
+    refreshToken: refresh_token ?? "",
+    tokenExpiry: new Date(Date.now() + (expires_in ?? 3600) * 1000),
+    ownerName,
+    ownerExtensionId,
+  });
+  return access_token;
+}
+
 async function getValidRCToken(): Promise<string> {
-  const stored = await getRingcentralToken();
-  if (!stored) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral not connected" });
   const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
   const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
-  if (stored.tokenExpiry.getTime() - Date.now() < 5 * 60 * 1000) {
-    const refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
-    await upsertRingcentralToken({
-      accountId: stored.accountId,
-      accessToken: refreshed.access_token,
-      refreshToken: refreshed.refresh_token,
-      tokenExpiry: new Date(Date.now() + refreshed.expires_in * 1000),
-      ownerExtensionId: stored.ownerExtensionId ?? undefined,
-      ownerName: stored.ownerName ?? undefined,
-    });
-    return refreshed.access_token;
+  if (!clientId || !clientSecret) {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral credentials not configured." });
   }
-  return stored.accessToken;
+
+  const stored = await getRingcentralToken();
+
+  // Fast path: stored token still has more than 5 minutes of life.
+  if (stored && stored.tokenExpiry.getTime() - Date.now() >= 5 * 60 * 1000) {
+    return stored.accessToken;
+  }
+
+  // Near expiry / present: try the refresh_token grant first.
+  if (stored?.refreshToken) {
+    try {
+      const refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
+      await upsertRingcentralToken({
+        accountId: stored.accountId,
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        tokenExpiry: new Date(Date.now() + refreshed.expires_in * 1000),
+        ownerExtensionId: stored.ownerExtensionId ?? undefined,
+        ownerName: stored.ownerName ?? undefined,
+      });
+      return refreshed.access_token;
+    } catch (err: any) {
+      // RC returns 400 invalid_grant once a refresh token goes stale (common
+      // after a migration). Fall back to the long-lived JWT below.
+      console.warn("[RingCentral] refresh_token failed, minting from JWT:", err?.response?.status ?? err?.message ?? err);
+    }
+  }
+
+  // Robust fallback: mint a fresh token from the long-lived RINGCENTRAL_JWT.
+  return mintRCTokenFromJwt(clientId, clientSecret);
 }
+
+const PARTNER_STATUSES = ["prospect", "active_partner", "priority_partner", "needs_follow_up", "dormant", "do_not_use"] as const;
 
 const RELATIONSHIP_STATUSES = [
   "active_partner",
@@ -126,8 +187,10 @@ export const crmRouter = router({
           sortDir: z.enum(["asc", "desc"]).optional(),
         }).optional()
       )
-      .query(async ({ input }) => {
-        const rows = await listFacilities(input ?? {});
+      .query(async ({ ctx, input }) => {
+        // Agents see only their assigned facilities; managers/super admin see all.
+        const scoped = seesAllData(ctx.user.role) ? (input ?? {}) : { ...(input ?? {}), assignedRepId: ctx.user.id };
+        const rows = await listFacilities(scoped);
         // Enrich with last contact and total leads sent
         const enriched = await Promise.all(
           rows.map(async (f: typeof rows[number]) => {
@@ -168,6 +231,7 @@ export const crmRouter = router({
           contactPhone: z.string().optional(),
           contactEmail: z.string().optional(),
           relationshipStatus: z.enum(RELATIONSHIP_STATUSES).default("warm_lead"),
+          partnerStatus: z.enum(PARTNER_STATUSES).optional(),
           notes: z.string().optional(),
           placeId: z.string().optional(),
           latitude: z.number().optional(),
@@ -197,6 +261,7 @@ export const crmRouter = router({
           contactPhone: z.string().optional(),
           contactEmail: z.string().optional(),
           relationshipStatus: z.enum(RELATIONSHIP_STATUSES).optional(),
+          partnerStatus: z.enum(PARTNER_STATUSES).optional(),
           assignedRepId: z.number().optional(),
           assignedRepName: z.string().optional(),
           notes: z.string().optional(),
@@ -211,6 +276,18 @@ export const crmRouter = router({
           ...(managementFlag !== undefined ? { managementFlag: managementFlag ? 1 : 0 } : {}),
         });
         return { success: true };
+      }),
+
+    bulkUpdate: protectedProcedure
+      .input(z.object({
+        ids: z.array(z.number()).min(1),
+        partnerStatus: z.enum(PARTNER_STATUSES).optional(),
+        assignedRepName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { ids, ...changes } = input;
+        for (const id of ids) await updateFacility(id, changes);
+        return { success: true, updated: ids.length };
       }),
 
     delete: protectedProcedure
@@ -641,7 +718,8 @@ export const crmRouter = router({
         result: z.string().optional(),
         duration: z.number().optional(),
         durationStr: z.string().optional(),
-        startTime: z.string().optional(),
+        // Browser-mode RC widget sends startTime as a Unix-timestamp number; accept both.
+        startTime: z.union([z.string(), z.number()]).optional(),
         agentName: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -660,6 +738,7 @@ export const crmRouter = router({
         const agentName = input.agentName ?? ctx.user.name ?? ctx.user.email ?? "Unknown";
         const callDate = input.startTime ? new Date(input.startTime) : new Date();
         const durationStr = input.durationStr ?? (input.duration ? `${Math.floor(input.duration / 60)}:${(input.duration % 60).toString().padStart(2, "0")}` : "0:00");
+        console.log(`[logFacilityCall] call=${input.callId ?? "?"} phone=${input.phone} dur=${durationStr} → facility ${facility?.id ?? "NONE"} (${facility?.name ?? ""})`);
 
         // 2. Create a contact log entry (always, even without a match)
         if (facility) {
@@ -686,25 +765,65 @@ export const crmRouter = router({
         let aiSummary = "";
 
         let accessToken: string | null = null;
-        try { accessToken = await getValidRCToken(); } catch { /* no stored token */ }
+        try { accessToken = await getValidRCToken(); } catch (e) { console.warn("[logFacilityCall] no RC token:", (e as any)?.message ?? e); }
 
-        if (accessToken && input.callId) {
-          try {
-            // Wait a few seconds for recording to be available
+        // Only connected calls (duration > 0) can have a recording. Skip the
+        // whole fetch for unanswered / 0:00 calls so they log instantly.
+        const connected = (input.duration ?? 0) > 0;
+        if (accessToken && input.callId && connected) {
+          console.log(`[logFacilityCall] looking for recording of call ${input.callId}…`);
+          let noRecordingStreak = 0;
+          // RC needs a little time to attach a recording — retry up to ~30s,
+          // but bail early once we know the call simply wasn't recorded.
+          for (let attempt = 1; attempt <= 6 && !transcriptText; attempt++) {
             await new Promise((r) => setTimeout(r, 5000));
-            const callResp = await axios.get(
-              `${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${input.callId}`,
-              { headers: { Authorization: `Bearer ${accessToken}` } }
-            );
-            const recordingUrl: string | null = callResp.data?.recording?.contentUri ?? null;
-            if (recordingUrl) {
-              const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
-              const result = await transcribeAudio({ audioUrl: authedUrl });
-              if (!('error' in result)) {
-                transcriptText = result.text ?? "";
+            try {
+              let record: any = null;
+              // Browser calls: look up the call-log record by telephony session id.
+              try {
+                const bySession = await axios.get(
+                  `${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log`,
+                  { headers: { Authorization: `Bearer ${accessToken}` }, params: { telephonySessionId: input.callId, view: "Detailed", perPage: 5 } }
+                );
+                record = bySession.data?.records?.[0] ?? null;
+              } catch { /* fall through to direct id lookup */ }
+              if (!record) {
+                const byId = await axios.get(
+                  `${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${input.callId}`,
+                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                ).catch(() => null);
+                record = byId?.data ?? null;
               }
+              const recordingUrl: string | null = record?.recording?.contentUri ?? null;
+              if (recordingUrl) {
+                console.log(`[logFacilityCall] recording ready (attempt ${attempt}); transcribing…`);
+                const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
+                const result = await transcribeAudio({ audioUrl: authedUrl });
+                if (!('error' in result)) {
+                  transcriptText = result.text ?? "";
+                  console.log(`[logFacilityCall] transcript: ${transcriptText.length} chars`);
+                } else {
+                  console.warn("[logFacilityCall] transcription error:", result.error, result.details ?? "");
+                  break;
+                }
+              } else if (record) {
+                // Call is in the log but no recording attached — if that holds for
+                // ~10s, the call wasn't recorded, so stop waiting.
+                if (++noRecordingStreak >= 2) {
+                  console.log("[logFacilityCall] call logged but not recorded — stopping.");
+                  break;
+                }
+                console.log(`[logFacilityCall] recording not attached yet (attempt ${attempt}/6)`);
+              } else {
+                console.log(`[logFacilityCall] call not in call-log yet (attempt ${attempt}/6)`);
+              }
+            } catch (e: any) {
+              console.warn(`[logFacilityCall] recording attempt ${attempt} failed:`, e?.response?.status ?? e?.message);
             }
-          } catch { /* recording not yet available */ }
+          }
+          if (!transcriptText) console.log("[logFacilityCall] no transcript (call not recorded or recording unavailable).");
+        } else if (!connected) {
+          console.log("[logFacilityCall] call did not connect (0:00) — skipping recording/transcription.");
         }
 
         // 4. Generate structured AI analysis if we have a transcript
@@ -714,6 +833,7 @@ export const crmRouter = router({
 
         if (transcriptText) {
           try {
+            console.log("[logFacilityCall] generating AI summary from transcript…");
             const llmResp = await invokeLLM({
               messages: [
                 {
@@ -777,6 +897,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
             const raw = llmResp.choices[0]?.message?.content as string;
             const parsed = JSON.parse(raw);
             aiSummary = parsed.summary ?? "";
+            console.log("[logFacilityCall] AI summary:", JSON.stringify(aiSummary).slice(0, 120));
             actionItems = parsed.actionItems ?? [];
             followUpTasks = parsed.followUpTasks ?? [];
             extractedData = {
@@ -857,7 +978,12 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         for (const record of records) {
           const fromNum = (record.from?.phoneNumber ?? "").replace(/\D/g, "");
           const toNum = (record.to?.phoneNumber ?? "").replace(/\D/g, "");
-          const matched = phones.some((p) => fromNum.endsWith(p) || toNum.endsWith(p) || p.endsWith(fromNum) || p.endsWith(toNum));
+          const matched = phones.some((p) => {
+            if (p.length < 7) return false; // ignore junk/short numbers
+            const matchFrom = fromNum.length >= 7 && (fromNum.endsWith(p) || p.endsWith(fromNum));
+            const matchTo = toNum.length >= 7 && (toNum.endsWith(p) || p.endsWith(toNum));
+            return matchFrom || matchTo;
+          });
           if (!matched) continue;
           const durationSecs = record.duration ?? 0;
           const durationStr = `${Math.floor(durationSecs / 60)}:${(durationSecs % 60).toString().padStart(2, "0")}`;
@@ -1027,18 +1153,23 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
       .query(async ({ input }) => getBdrTopFacilities(input.limit)),
   }),
 
+  // ─── Cross-facility activity feed ───────────────────────────────────────────
+  activity: router({
+    recent: protectedProcedure.query(async () => getRecentActivity(18)),
+  }),
+
   // ─── Management Dashboard ────────────────────────────────────────────────────
   management: router({
     dashboard: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required." });
+      if (!canManage(ctx.user.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Manager access required." });
       }
       return getDashboardStats();
     }),
 
     flaggedFacilities: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required." });
+      if (!canManage(ctx.user.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Manager access required." });
       }
       return listFacilities({ managementFlag: true, sortBy: "updatedAt", sortDir: "desc" });
     }),

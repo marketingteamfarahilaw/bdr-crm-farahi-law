@@ -21,47 +21,64 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { CommandPalette } from "./CommandPalette";
+import { QuickAdd } from "./QuickAdd";
+import { canSeeBDR, canSeeFR, canManage, canAssignRoles } from "@shared/permissions";
 
-const leadScraper = [
-  { icon: Map, label: "CA Lead Map", path: "/" },
-  { icon: Search, label: "Lead Search", path: "/search" },
-  { icon: Bookmark, label: "Saved Leads", path: "/saved-leads" },
-  { icon: History, label: "Saved Searches", path: "/saved-searches" },
+type NavLevel = "all" | "bdr" | "fr" | "manage" | "super";
+
+const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: string; level: NavLevel }[] }[] = [
+  { title: "Lead Scraper", items: [
+    { icon: Map, label: "CA Lead Map", path: "/map", level: "bdr" },
+    { icon: Search, label: "Lead Search", path: "/search", level: "bdr" },
+    { icon: Bookmark, label: "Saved Leads", path: "/saved-leads", level: "bdr" },
+    { icon: History, label: "Saved Searches", path: "/saved-searches", level: "bdr" },
+  ] },
+  { title: "Facility Partner CRM", items: [
+    { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr" },
+    { icon: LayoutDashboard, label: "Mgmt Dashboard", path: "/crm/dashboard", level: "manage" },
+    { icon: Phone, label: "RingCentral", path: "/crm/ringcentral", level: "bdr" },
+    { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
+  ] },
+  { title: "Agent Tools", items: [
+    { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
+    { icon: Activity, label: "Agent Dashboard", path: "/bdr/dashboard", level: "all" },
+    { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
+    { icon: Receipt, label: "FR Expenses", path: "/bdr/fr-expenses", level: "fr" },
+    { icon: CreditCard, label: "BDR Expenses", path: "/bdr/bdr-expenses", level: "bdr" },
+    { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards", level: "bdr" },
+    { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },
+    { icon: Network, label: "Referral Tracker", path: "/bdr/referral-tracker", level: "bdr" },
+  ] },
+  { title: "Partner Referrals", items: [
+    { icon: ArrowLeftRight, label: "Referral Tracker", path: "/referral/tracker", level: "manage" },
+    { icon: FileBarChart2, label: "Referral Reports", path: "/referral/reports", level: "manage" },
+  ] },
+  { title: "Team & Integrations", items: [
+    { icon: Shield, label: "Team & Roles", path: "/team", level: "manage" },
+    { icon: Users, label: "Agent Zones", path: "/agents", level: "manage" },
+    { icon: UserRound, label: "PI Clients", path: "/pi-clients", level: "manage" },
+    { icon: Link2, label: "Filevine", path: "/filevine", level: "manage" },
+  ] },
 ];
 
-const crmItems = [
-  { icon: Building2, label: "Facilities", path: "/crm/facilities" },
-  { icon: LayoutDashboard, label: "Mgmt Dashboard", path: "/crm/dashboard" },
-  { icon: Phone, label: "RingCentral", path: "/crm/ringcentral" },
-  { icon: BarChart3, label: "BDR Reports", path: "/crm/reports" },
-];
+const ALL_NAV = NAV_SECTIONS.flatMap((s) => s.items);
 
-const bdrItems = [
-  { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", adminOnly: true },
-  { icon: Activity, label: "Agent Dashboard", path: "/bdr/dashboard" },
-  { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits" },
-  { icon: Receipt, label: "FR Expenses", path: "/bdr/fr-expenses" },
-  { icon: CreditCard, label: "BDR Expenses", path: "/bdr/bdr-expenses" },
-  { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards" },
-  { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands" },
-  { icon: Network, label: "Referral Tracker", path: "/bdr/referral-tracker" },
-];
-
-const referralItems = [
-  { icon: ArrowLeftRight, label: "Referral Tracker", path: "/referral/tracker" },
-  { icon: FileBarChart2, label: "Referral Reports", path: "/referral/reports" },
-];
-
-const teamItems = [
-  { icon: Users, label: "Agents", path: "/agents" },
-  { icon: UserRound, label: "PI Clients", path: "/pi-clients" },
-  { icon: Link2, label: "Filevine", path: "/filevine" },
-];
+function canShow(level: NavLevel, role?: string | null) {
+  switch (level) {
+    case "all": return true;
+    case "bdr": return canSeeBDR(role);
+    case "fr": return canSeeFR(role);
+    case "manage": return canManage(role);
+    case "super": return canAssignRoles(role);
+    default: return false;
+  }
+}
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
@@ -143,7 +160,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const allMenuItems = [...leadScraper, ...crmItems, ...bdrItems, ...referralItems, ...teamItems];
+  const allMenuItems = ALL_NAV;
   const activeMenuItem = allMenuItems.find(item => item.path === location || (item.path !== "/" && location.startsWith(item.path)));
   const isMobile = useIsMobile();
 
@@ -185,6 +202,8 @@ function DashboardLayoutContent({
 
   return (
     <>
+      <CommandPalette />
+      <QuickAdd />
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
@@ -217,139 +236,76 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 overflow-y-auto">
-            {/* Lead Scraper Section */}
+            {/* Quick search + quick add */}
+            {!isCollapsed && (
+              <div className="px-3 pt-3 space-y-2">
+                <button
+                  onClick={() => document.dispatchEvent(new CustomEvent("open-command-palette"))}
+                  className="w-full flex items-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                >
+                  <Search className="h-4 w-4" />
+                  <span>Search…</span>
+                  <kbd className="ml-auto text-[10px] font-mono bg-background/60 border border-border rounded px-1.5 py-0.5">⌘K</kbd>
+                </button>
+                <button
+                  onClick={() => document.dispatchEvent(new CustomEvent("open-quick-add"))}
+                  className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+                  style={{ background: "var(--gold)", color: "#0a0f1e" }}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Quick Add</span>
+                </button>
+              </div>
+            )}
+            {/* Command Center */}
             <div className="px-3 pt-3 pb-1">
-              {!isCollapsed && (
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">Lead Scraper</p>
-              )}
               <SidebarMenu>
-                {leadScraper.map(item => {
-                  const isActive = location === item.path;
-                  return (
-                    <SidebarMenuItem key={item.path}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => setLocation(item.path)}
-                        tooltip={item.label}
-                        className="h-9 transition-all font-normal"
-                      >
-                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={location === "/"}
+                    onClick={() => setLocation("/")}
+                    tooltip="Command Center"
+                    className="h-10 transition-all font-medium"
+                  >
+                    <LayoutDashboard className={`h-4 w-4 ${location === "/" ? "text-primary" : ""}`} />
+                    <span>Command Center</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </div>
 
-            {/* Divider */}
-            <div className="mx-3 my-1 border-t border-border/40" />
-
-            {/* Facility Partner CRM Section */}
-            <div className="px-3 pt-1 pb-3">
-              {!isCollapsed && (
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">Facility Partner CRM</p>
-              )}
-              <SidebarMenu>
-                {crmItems.map(item => {
-                  const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
-                  return (
-                    <SidebarMenuItem key={item.path}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => setLocation(item.path)}
-                        tooltip={item.label}
-                        className="h-9 transition-all font-normal"
-                      >
-                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </div>
-            {/* Divider */}
-            <div className="mx-3 my-1 border-t border-border/40" />
-
-            {/* BDR Intelligence Section */}
-            <div className="px-3 pt-1 pb-3">
-              {!isCollapsed && (
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">BDR Intelligence</p>
-              )}
-              <SidebarMenu>
-                {bdrItems.filter(item => !(item as any).adminOnly || user?.role === 'admin').map(item => {
-                  const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
-                  return (
-                    <SidebarMenuItem key={item.path}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => setLocation(item.path)}
-                        tooltip={item.label}
-                        className="h-9 transition-all font-normal"
-                      >
-                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </div>
-            {/* Divider */}
-            <div className="mx-3 my-1 border-t border-border/40" />
-
-            {/* Partner Referral Workflow Section */}
-            <div className="px-3 pt-1 pb-3">
-              {!isCollapsed && (
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">Partner Referrals</p>
-              )}
-              <SidebarMenu>
-                {referralItems.map(item => {
-                  const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
-                  return (
-                    <SidebarMenuItem key={item.path}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => setLocation(item.path)}
-                        tooltip={item.label}
-                        className="h-9 transition-all font-normal"
-                      >
-                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </div>
-            {/* Divider */}
-            <div className="mx-3 my-1 border-t border-border/40" />
-
-            {/* Team & Integrations Section */}
-            <div className="px-3 pt-1 pb-3">
-              {!isCollapsed && (
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">Team & Integrations</p>
-              )}
-              <SidebarMenu>
-                {teamItems.map(item => {
-                  const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
-                  return (
-                    <SidebarMenuItem key={item.path}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => setLocation(item.path)}
-                        tooltip={item.label}
-                        className="h-9 transition-all font-normal"
-                      >
-                        <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </div>
+            {NAV_SECTIONS.map((section) => {
+              const items = section.items.filter((it) => canShow(it.level, user?.role));
+              if (items.length === 0) return null;
+              return (
+                <div key={section.title}>
+                  <div className="mx-3 my-1 border-t border-border/40" />
+                  <div className="px-3 pt-1 pb-3">
+                    {!isCollapsed && (
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">{section.title}</p>
+                    )}
+                    <SidebarMenu>
+                      {items.map((item) => {
+                        const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+                        return (
+                          <SidebarMenuItem key={item.path}>
+                            <SidebarMenuButton
+                              isActive={isActive}
+                              onClick={() => setLocation(item.path)}
+                              tooltip={item.label}
+                              className="h-9 transition-all font-normal"
+                            >
+                              <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+                              <span>{item.label}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </div>
+                </div>
+              );
+            })}
           </SidebarContent>
 
           <SidebarFooter className="p-3">
