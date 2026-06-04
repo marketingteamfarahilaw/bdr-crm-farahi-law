@@ -92,7 +92,14 @@ export async function getUserByOpenId(openId: string) {
 export async function getUserByEmail(email: string) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  // If duplicate rows share an email, prefer the one that has a password set
+  // (the account an admin configured for login), then the most recent row.
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .orderBy(sql`(${users.passwordHash} is not null) desc`, desc(users.id))
+    .limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -106,6 +113,24 @@ export async function setUserRole(id: number, role: string) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   await db.update(users).set({ role: role as any }).where(eq(users.id, id));
+}
+
+export async function setUserPassword(id: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(users).set({ passwordHash }).where(eq(users.id, id));
+}
+
+export async function createUserAccount(data: { openId: string; name: string; email: string; role: string; passwordHash: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(users).values({
+    openId: data.openId,
+    name: data.name,
+    email: data.email,
+    role: data.role as any,
+    passwordHash: data.passwordHash,
+  });
 }
 
 export async function mergeUserByEmail(openId: string, email: string): Promise<void> {

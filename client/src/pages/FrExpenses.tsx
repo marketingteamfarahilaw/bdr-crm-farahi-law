@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { seesAllData } from "@shared/permissions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +43,7 @@ const defaultForm: FormData = {
 
 export default function FrExpenses() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = seesAllData(user?.role);
   const utils = trpc.useUtils();
   const [filters, setFilters] = useState<BdrFilterValues>({});
 

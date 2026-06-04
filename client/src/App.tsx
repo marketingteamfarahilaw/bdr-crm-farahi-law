@@ -35,6 +35,9 @@ import { RingCentralProvider } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
 import { trpc } from "./lib/trpc";
 import { toast } from "sonner";
+import { useAuth } from "./_core/hooks/useAuth";
+import Login from "./pages/Login";
+import { Scale, Loader2 } from "lucide-react";
 
 function Router() {
   return (
@@ -198,13 +201,40 @@ function AppWithPhone() {
   );
 }
 
+/**
+ * Auth gate. Shows the login screen when no session exists, so that NO protected
+ * query (or the RingCentral widget) mounts until the user is authenticated.
+ * This is what makes per-user password login secure — there is no path into the
+ * app without a valid session.
+ */
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="dashboard-mesh min-h-screen flex flex-col items-center justify-center gap-3">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+          <Scale className="w-6 h-6 text-primary" />
+        </div>
+        <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) return <Login />;
+
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          <AppWithPhone />
+          <AuthGate>
+            <AppWithPhone />
+          </AuthGate>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

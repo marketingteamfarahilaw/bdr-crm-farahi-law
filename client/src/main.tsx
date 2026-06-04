@@ -5,20 +5,24 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl } from "./const";
 import "./index.css";
 
 const queryClient = new QueryClient();
 
+// When a session expires mid-use a protected request fails with UNAUTHED_ERR_MSG.
+// Reload once so the AuthGate takes over and shows the password login screen.
+// We deliberately do NOT redirect to a password-less login route. The guard +
+// AuthGate (which blocks protected queries pre-auth) prevent a reload loop.
+let handlingUnauthorized = false;
 const redirectToLoginIfUnauthorized = (error: unknown) => {
+  if (handlingUnauthorized) return;
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  if (error.message !== UNAUTHED_ERR_MSG) return;
 
-  if (!isUnauthorized) return;
-
-  window.location.href = getLoginUrl();
+  handlingUnauthorized = true;
+  window.location.reload();
 };
 
 queryClient.getQueryCache().subscribe(event => {

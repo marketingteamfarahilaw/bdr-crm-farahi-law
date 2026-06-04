@@ -15,6 +15,11 @@ export async function createContext(
 
   try {
     user = await sdk.authenticateRequest(opts.req);
+    // Never let the password hash reach the client. ctx.user is serialized to
+    // the browser by auth.me and any procedure that returns it.
+    if (user && (user as { passwordHash?: unknown }).passwordHash != null) {
+      (user as { passwordHash?: unknown }).passwordHash = null;
+    }
   } catch (error) {
     // Authentication is optional for public procedures.
     user = null;

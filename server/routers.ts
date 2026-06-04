@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { sdk } from "./_core/sdk";
+import { hashPassword, verifyPassword } from "./_core/password";
+import { nanoid } from "nanoid";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -73,6 +76,9 @@ import {
   getBdrAdminDashboard,
   listUsers,
   setUserRole,
+  getUserByEmail,
+  setUserPassword,
+  createUserAccount,
 } from "./db";
 import { canManage, canAssignRoles } from "@shared/permissions";
 
@@ -83,6 +89,22 @@ export const appRouter = router({
 
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await getUserByEmail(input.email.toLowerCase().trim());
+        if (!user || !verifyPassword(input.password, user.passwordHash)) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+        }
+        const token = await sdk.createSessionToken(user.openId, {
+          name: user.name || user.email || "User",
+          expiresInMs: ONE_YEAR_MS,
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        const { passwordHash: _pw, ...safeUser } = user;
+        return { success: true as const, user: safeUser };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -93,7 +115,9 @@ export const appRouter = router({
   team: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
-      return listUsers();
+      const all = await listUsers();
+      // Never expose password hashes to the client — just whether one is set.
+      return all.map(({ passwordHash, ...u }) => ({ ...u, hasPassword: Boolean(passwordHash) }));
     }),
     setRole: protectedProcedure
       .input(z.object({ userId: z.number(), role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]) }))
@@ -103,6 +127,27 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "You can't remove your own super-admin access." });
         }
         await setUserRole(input.userId, input.role);
+        return { success: true };
+      }),
+    setPassword: protectedProcedure
+      .input(z.object({ userId: z.number(), password: z.string().min(6) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canAssignRoles(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only the super admin can set passwords." });
+        await setUserPassword(input.userId, hashPassword(input.password));
+        return { success: true };
+      }),
+    createUser: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]),
+        password: z.string().min(6),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canAssignRoles(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only the super admin can add users." });
+        const email = input.email.toLowerCase().trim();
+        if (await getUserByEmail(email)) throw new TRPCError({ code: "BAD_REQUEST", message: "A user with that email already exists." });
+        await createUserAccount({ openId: `local_${nanoid()}`, name: input.name, email, role: input.role, passwordHash: hashPassword(input.password) });
         return { success: true };
       }),
   }),

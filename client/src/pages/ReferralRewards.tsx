@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { seesAllData } from "@shared/permissions";
 import { toast } from "sonner";
 import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,7 @@ const statusColors: Record<string, string> = {
 
 export default function ReferralRewards() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = seesAllData(user?.role);
   const utils = trpc.useUtils();
   const [filters, setFilters] = useState<BdrFilterValues>({});
 
