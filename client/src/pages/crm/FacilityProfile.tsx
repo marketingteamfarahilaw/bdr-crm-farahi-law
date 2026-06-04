@@ -484,8 +484,8 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
       {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : (updates as any[]).length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <Phone className="w-10 h-10 mx-auto mb-3 opacity-30"/>
-          <p className="font-medium">No call logs yet</p>
-          <p className="text-xs mt-1 max-w-xs mx-auto">Call this facility using the phone widget — transcripts and AI summaries will appear here automatically after each call.</p>
+          <p className="font-medium">No call recaps yet</p>
+          <p className="text-xs mt-1 max-w-xs mx-auto">Call this facility from RingCentral (desk phone or app). Within a few minutes the call appears here automatically with a transcript and an AI recap.</p>
         </div>
       ) : (
         <div className="space-y-3">{(updates as any[]).map((upd)=>(
@@ -746,7 +746,7 @@ export default function FacilityProfile() {
           </TabsTrigger>
           <TabsTrigger value="leads">Leads</TabsTrigger>
           <TabsTrigger value="gratitude">Gratitude</TabsTrigger>
-          <TabsTrigger value="updates">Updates</TabsTrigger>
+          <TabsTrigger value="updates">Call Recaps</TabsTrigger>
           <TabsTrigger value="tasks">
             Tasks {openTasks.length > 0 && <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full">{openTasks.length}</span>}
           </TabsTrigger>
