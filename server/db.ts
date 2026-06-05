@@ -126,9 +126,13 @@ export async function setSetting(key: string, value: string | null): Promise<voi
 }
 
 /** Branding logos (small resized data URLs) for light + dark mode. */
-export async function getBranding(): Promise<{ logoLight: string | null; logoDark: string | null }> {
-  const [logoLight, logoDark] = await Promise.all([getSetting("logo_light"), getSetting("logo_dark")]);
-  return { logoLight, logoDark };
+export async function getBranding(): Promise<{ logoLight: string | null; logoDark: string | null; slogan: string | null }> {
+  const [logoLight, logoDark, slogan] = await Promise.all([
+    getSetting("logo_light"),
+    getSetting("logo_dark"),
+    getSetting("brand_slogan"),
+  ]);
+  return { logoLight, logoDark, slogan };
 }
 
 export async function listUsers() {

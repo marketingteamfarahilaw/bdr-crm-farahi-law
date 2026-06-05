@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { canManage } from "@shared/permissions";
 import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock } from "lucide-react";
@@ -118,12 +119,14 @@ export default function SettingsPage() {
 
   const [dark, setDark] = useState<string | null>(null);
   const [light, setLight] = useState<string | null>(null);
+  const [slogan, setSlogan] = useState("");
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (branding) {
       setDark(branding.logoDark ?? null);
       setLight(branding.logoLight ?? null);
+      setSlogan(branding.slogan ?? "");
     }
   }, [branding]);
 
@@ -176,6 +179,21 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {/* Slogan / tagline */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-4">
+        <label htmlFor="slogan" className="text-sm font-semibold text-foreground">Slogan / Tagline</label>
+        <p className="text-xs text-muted-foreground mt-0.5 mb-3">Shown beside the logo on the sign-in screen and in the sidebar.</p>
+        <Input
+          id="slogan"
+          value={slogan}
+          disabled={!isManager}
+          maxLength={200}
+          onChange={(e) => { setSlogan(e.target.value); setDirty(true); }}
+          placeholder="e.g. Business Development · Partner CRM"
+          className="bg-card border-border max-w-lg"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <LogoField
           title="Logo — Dark mode"
@@ -204,7 +222,7 @@ export default function SettingsPage() {
           <Button
             className="gap-2"
             disabled={!dirty || save.isPending}
-            onClick={() => save.mutate({ logoDark: dark, logoLight: light })}
+            onClick={() => save.mutate({ logoDark: dark, logoLight: light, slogan })}
           >
             {save.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save changes

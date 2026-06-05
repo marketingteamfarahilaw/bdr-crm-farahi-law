@@ -170,11 +170,13 @@ export const appRouter = router({
         // data URL string to set, null to clear (reset to default), undefined to leave unchanged
         logoDark: z.string().max(8_000_000).nullable().optional(),
         logoLight: z.string().max(8_000_000).nullable().optional(),
+        slogan: z.string().max(200).nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         if (input.logoDark !== undefined) await setSetting("logo_dark", input.logoDark);
         if (input.logoLight !== undefined) await setSetting("logo_light", input.logoLight);
+        if (input.slogan !== undefined) await setSetting("brand_slogan", input.slogan);
         return { success: true };
       }),
   }),

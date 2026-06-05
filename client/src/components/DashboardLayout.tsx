@@ -28,7 +28,7 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { CommandPalette } from "./CommandPalette";
 import { QuickAdd } from "./QuickAdd";
 import { NotificationBell } from "./NotificationBell";
-import { useBrandLogo } from "@/hooks/useBranding";
+import { useBrand } from "@/hooks/useBranding";
 import { useTheme } from "@/contexts/ThemeContext";
 import { canSeeBDR, canSeeFR, canManage, canAssignRoles } from "@shared/permissions";
 
@@ -139,7 +139,7 @@ function DashboardLayoutContent({
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const logo = useBrandLogo();
+  const { logo, slogan } = useBrand();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -205,17 +205,12 @@ function DashboardLayoutContent({
                 <PanelLeft className="h-4 w-4 text-muted-foreground" />
               </button>
               {!isCollapsed ? (
-                <div className="flex items-center gap-2 min-w-0">
-                  <img src={logo} alt="Farahi Law Firm" className="h-9 w-9 rounded-lg object-contain bg-card shrink-0 ring-1 ring-border" />
-                  <div className="min-w-0">
-                    <span className="font-semibold tracking-tight truncate text-foreground block" style={{ fontFamily: "'Playfair Display', serif" }}>
-                      Farahi Law
-                    </span>
-                    <span className="text-xs text-muted-foreground block -mt-0.5">BD Lead Tool</span>
-                  </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <img src={logo} alt="Farahi Law Firm" className="h-12 w-auto max-w-[130px] object-contain shrink-0" />
+                  <span className="text-xs text-muted-foreground leading-tight truncate min-w-0">{slogan}</span>
                 </div>
               ) : (
-                <img src={logo} alt="Farahi Law Firm" className="h-7 w-7 rounded-md object-contain bg-card" />
+                <img src={logo} alt="Farahi Law Firm" className="h-9 w-9 object-contain" />
               )}
             </div>
           </SidebarHeader>
