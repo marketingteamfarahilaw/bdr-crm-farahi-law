@@ -2,7 +2,7 @@
  * CRM database helpers — Facility Partner CRM V3
  */
 
-import { and, desc, eq, like, or, sql, asc, inArray } from "drizzle-orm";
+import { and, desc, eq, like, or, sql, asc, inArray, gte, lte } from "drizzle-orm";
 import {
   contactLogs,
   facilities,
@@ -695,6 +695,179 @@ export async function getRelationshipBalance() {
         ? Math.round(((f.totalSignedCases ?? 0) / (f.totalLeadsReceived ?? 0)) * 100)
         : 0,
   }));
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export type NotificationItem = {
+  id: string;
+  type: "followup" | "recap" | "lead" | "imbalance";
+  title: string;
+  description: string;
+  timestamp: string | null;
+  facilityId: number | null;
+  link: string;
+};
+
+/**
+ * Aggregates the in-app notification feed for a single user from existing data:
+ *   1. Follow-ups due today / overdue (the user's own open tasks)
+ *   2. New call recaps + activity notes (recent facility_updates)
+ *   3. New referrals received from partners (recent inbound facility_leads)
+ *   4. Referral imbalance flags (sent vs received gap on the user's facilities)
+ * Managers (seesAll) see these across all reps; everyone else sees only their own.
+ * Each source is isolated in try/catch so one failure can't break the bell.
+ */
+export async function getNotificationsForUser(
+  userId: number,
+  seesAll: boolean,
+): Promise<NotificationItem[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const items: NotificationItem[] = [];
+  const now = new Date();
+  const endOfToday = new Date(now); endOfToday.setHours(23, 59, 59, 999);
+  const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
+  const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const iso = (d: Date | string | null | undefined) => (d ? new Date(d).toISOString() : null);
+
+  // 1) Follow-ups due today or overdue
+  try {
+    const tasks = await db
+      .select({
+        id: facilityTasks.id,
+        facilityId: facilityTasks.facilityId,
+        facilityName: facilities.name,
+        title: facilityTasks.title,
+        dueDate: facilityTasks.dueDate,
+      })
+      .from(facilityTasks)
+      .leftJoin(facilities, eq(facilityTasks.facilityId, facilities.id))
+      .where(and(
+        eq(facilityTasks.assignedToId, userId),
+        eq(facilityTasks.status, "open"),
+        lte(facilityTasks.dueDate, endOfToday),
+      ))
+      .orderBy(asc(facilityTasks.dueDate))
+      .limit(25);
+    for (const t of tasks) {
+      const overdue = t.dueDate ? new Date(t.dueDate) < startOfToday : false;
+      items.push({
+        id: `followup-${t.id}`,
+        type: "followup",
+        title: overdue ? "Follow-up overdue" : "Follow-up due today",
+        description: `${t.title}${t.facilityName ? ` · ${t.facilityName}` : ""}`,
+        timestamp: iso(t.dueDate),
+        facilityId: t.facilityId,
+        link: t.facilityId ? `/crm/facilities/${t.facilityId}` : "/",
+      });
+    }
+  } catch (e) { console.warn("[notifications] follow-ups failed:", e); }
+
+  // 2) New call recaps / activity notes
+  try {
+    const conds: any[] = [gte(facilityUpdates.createdAt, since)];
+    if (!seesAll) conds.push(eq(facilityUpdates.repId, userId));
+    const recaps = await db
+      .select({
+        id: facilityUpdates.id,
+        facilityId: facilityUpdates.facilityId,
+        facilityName: facilities.name,
+        summary: facilityUpdates.summary,
+        updateType: facilityUpdates.updateType,
+        createdAt: facilityUpdates.createdAt,
+      })
+      .from(facilityUpdates)
+      .leftJoin(facilities, eq(facilityUpdates.facilityId, facilities.id))
+      .where(and(...conds))
+      .orderBy(desc(facilityUpdates.createdAt))
+      .limit(25);
+    for (const r of recaps) {
+      items.push({
+        id: `recap-${r.id}`,
+        type: "recap",
+        title: r.updateType === "transcript" ? "New call recap" : "New activity note",
+        description: `${r.summary || "Update added"}${r.facilityName ? ` · ${r.facilityName}` : ""}`,
+        timestamp: iso(r.createdAt),
+        facilityId: r.facilityId,
+        link: r.facilityId ? `/crm/facilities/${r.facilityId}` : "/",
+      });
+    }
+  } catch (e) { console.warn("[notifications] recaps failed:", e); }
+
+  // 3) New referrals received from partners (inbound leads)
+  try {
+    const conds: any[] = [
+      gte(facilityLeads.createdAt, since),
+      eq(facilityLeads.direction, "received_from_facility"),
+    ];
+    if (!seesAll) conds.push(eq(facilityLeads.repId, userId));
+    const leads = await db
+      .select({
+        id: facilityLeads.id,
+        facilityId: facilityLeads.facilityId,
+        facilityName: facilities.name,
+        contactPerson: facilityLeads.contactPerson,
+        createdAt: facilityLeads.createdAt,
+      })
+      .from(facilityLeads)
+      .leftJoin(facilities, eq(facilityLeads.facilityId, facilities.id))
+      .where(and(...conds))
+      .orderBy(desc(facilityLeads.createdAt))
+      .limit(25);
+    for (const l of leads) {
+      items.push({
+        id: `lead-${l.id}`,
+        type: "lead",
+        title: "New referral received",
+        description: `${l.facilityName || "A partner"} sent a lead${l.contactPerson ? ` · ${l.contactPerson}` : ""}`,
+        timestamp: iso(l.createdAt),
+        facilityId: l.facilityId,
+        link: l.facilityId ? `/crm/facilities/${l.facilityId}` : "/crm/leads",
+      });
+    }
+  } catch (e) { console.warn("[notifications] leads failed:", e); }
+
+  // 4) Referral imbalance flags
+  try {
+    const conds: any[] = [
+      sql`abs(coalesce(${facilities.totalLeadsReceived}, 0) - coalesce(${facilities.totalLeadsSent}, 0)) >= 3`,
+    ];
+    if (!seesAll) conds.push(eq(facilities.assignedRepId, userId));
+    const facs = await db
+      .select({
+        id: facilities.id,
+        name: facilities.name,
+        sent: facilities.totalLeadsSent,
+        received: facilities.totalLeadsReceived,
+      })
+      .from(facilities)
+      .where(and(...conds))
+      .limit(15);
+    for (const f of facs) {
+      const sent = f.sent ?? 0;
+      const received = f.received ?? 0;
+      const owedToUs = received - sent;
+      items.push({
+        id: `imbalance-${f.id}`,
+        type: "imbalance",
+        title: "Referral imbalance",
+        description: owedToUs > 0
+          ? `${f.name}: ${received} received vs ${sent} sent — reciprocate to keep the partner warm`
+          : `${f.name}: ${sent} sent vs ${received} received — partner isn't reciprocating yet`,
+        timestamp: null,
+        facilityId: f.id,
+        link: `/crm/facilities/${f.id}`,
+      });
+    }
+  } catch (e) { console.warn("[notifications] imbalance failed:", e); }
+
+  items.sort((a, b) => {
+    const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return tb - ta;
+  });
+  return items.slice(0, 50);
 }
 
 // ─── BDR Reports ─────────────────────────────────────────────────────────────

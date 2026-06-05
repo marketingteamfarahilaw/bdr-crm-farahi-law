@@ -289,7 +289,7 @@ export default function FacilityForm() {
           onClick={handleSubmit}
           disabled={isPending}
           className="gap-2"
-          style={{ background: "var(--gold)", color: "#0a0f1e" }}
+          style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
         >
           <Save className="w-4 h-4" />
           {isPending ? "Saving..." : isEdit ? "Save Changes" : "Create Facility"}

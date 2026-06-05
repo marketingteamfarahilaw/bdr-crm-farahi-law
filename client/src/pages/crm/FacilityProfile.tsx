@@ -75,7 +75,7 @@ function AddContactLogDialog({ facilityId, onSuccess }: { facilityId: number; on
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5" style={{ background: "var(--gold)", color: "#0a0f1e" }}>
+        <Button size="sm" className="gap-1.5" style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}>
           <Plus className="w-3.5 h-3.5" /> Log Contact
         </Button>
       </DialogTrigger>
@@ -149,7 +149,7 @@ function AddContactLogDialog({ facilityId, onSuccess }: { facilityId: number; on
           </div>
           <Button
             className="w-full"
-            style={{ background: "var(--gold)", color: "#0a0f1e" }}
+            style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
             disabled={createLog.isPending}
             onClick={() => createLog.mutate({
               facilityId,
@@ -223,7 +223,7 @@ function AddTaskDialog({ facilityId, onSuccess }: { facilityId: number; onSucces
           </div>
           <Button
             className="w-full"
-            style={{ background: "var(--gold)", color: "#0a0f1e" }}
+            style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
             disabled={!title || createTask.isPending}
             onClick={() => createTask.mutate({
               facilityId,
@@ -298,7 +298,7 @@ function AddReferralDialog({ facilityId, onSuccess }: { facilityId: number; onSu
           </div>
           <Button
             className="w-full"
-            style={{ background: "var(--gold)", color: "#0a0f1e" }}
+            style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
             disabled={!clientName || createReferral.isPending}
             onClick={() => createReferral.mutate({
               facilityId,
@@ -387,7 +387,7 @@ function LeadsTab({ facilityId }: { facilityId: number }) {
             <div className="flex items-center gap-2"><input type="checkbox" id="signed-cb" checked={form.signedCase===1} onChange={e=>setForm(f=>({...f,signedCase:e.target.checked?1:0,outcome:e.target.checked?"signed":f.outcome}))} className="rounded"/><label htmlFor="signed-cb" className="text-sm">Signed Case</label></div>
             <div><label className="text-xs text-muted-foreground mb-1 block">BD Rep</label><Input value={form.repName} onChange={e=>setForm(f=>({...f,repName:e.target.value}))} className="bg-background border-border"/></div>
             <div><label className="text-xs text-muted-foreground mb-1 block">Notes</label><Textarea rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} className="bg-background border-border resize-none"/></div>
-            <Button className="w-full" style={{background:"var(--gold)",color:"#0a0f1e"}} disabled={createLead.isPending} onClick={()=>createLead.mutate({facilityId,...form,method:form.method as any,outcome:form.outcome as any})}>{createLead.isPending?"Saving...":"Save Lead"}</Button>
+            <Button className="w-full" style={{background:"var(--gold)",color:"var(--gold-foreground)"}} disabled={createLead.isPending} onClick={()=>createLead.mutate({facilityId,...form,method:form.method as any,outcome:form.outcome as any})}>{createLead.isPending?"Saving...":"Save Lead"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -453,7 +453,7 @@ function GratitudeTab({ facilityId }: { facilityId: number }) {
             <div><label className="text-xs text-muted-foreground mb-1 block">Amount Spent ($)</label><Input type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} className="bg-background border-border"/></div>
             <div><label className="text-xs text-muted-foreground mb-1 block">BD Rep</label><Input value={form.repName} onChange={e=>setForm(f=>({...f,repName:e.target.value}))} className="bg-background border-border"/></div>
             <div><label className="text-xs text-muted-foreground mb-1 block">Notes</label><Textarea rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} className="bg-background border-border resize-none"/></div>
-            <Button className="w-full" style={{background:"var(--gold)",color:"#0a0f1e"}} disabled={createAction.isPending} onClick={()=>createAction.mutate({facilityId,...form})}>{createAction.isPending?"Saving...":"Save Action"}</Button>
+            <Button className="w-full" style={{background:"var(--gold)",color:"var(--gold-foreground)"}} disabled={createAction.isPending} onClick={()=>createAction.mutate({facilityId,...form})}>{createAction.isPending?"Saving...":"Save Action"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -604,7 +604,7 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
             <div><label className="text-xs text-muted-foreground mb-1 block">Summary <span className="text-muted-foreground/60">(shown at top)</span></label><Input placeholder="Brief summary..." value={form.summary} onChange={e=>setForm(f=>({...f,summary:e.target.value}))} className="bg-background border-border"/></div>
             <div><label className="text-xs text-muted-foreground mb-1 block">Full Text / Transcript <span className="text-muted-foreground/60">(optional)</span></label><Textarea rows={6} placeholder="Paste transcript or full notes here..." value={form.rawText} onChange={e=>setForm(f=>({...f,rawText:e.target.value}))} className="bg-background border-border resize-none"/></div>
             <div><label className="text-xs text-muted-foreground mb-1 block">BD Rep</label><Input value={form.repName} onChange={e=>setForm(f=>({...f,repName:e.target.value}))} className="bg-background border-border"/></div>
-            <Button className="w-full" style={{background:"var(--gold)",color:"#0a0f1e"}} disabled={createUpdate.isPending} onClick={()=>createUpdate.mutate({facilityId,...form})}>{createUpdate.isPending?"Saving...":"Save Update"}</Button>
+            <Button className="w-full" style={{background:"var(--gold)",color:"var(--gold-foreground)"}} disabled={createUpdate.isPending} onClick={()=>createUpdate.mutate({facilityId,...form})}>{createUpdate.isPending?"Saving...":"Save Update"}</Button>
           </div>
         </DialogContent>
       </Dialog>

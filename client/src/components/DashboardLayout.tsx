@@ -27,6 +27,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { CommandPalette } from "./CommandPalette";
 import { QuickAdd } from "./QuickAdd";
+import { NotificationBell } from "./NotificationBell";
 import { useTheme } from "@/contexts/ThemeContext";
 import { canSeeBDR, canSeeFR, canManage, canAssignRoles } from "@shared/permissions";
 
@@ -231,7 +232,7 @@ function DashboardLayoutContent({
                 <button
                   onClick={() => document.dispatchEvent(new CustomEvent("open-quick-add"))}
                   className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
-                  style={{ background: "var(--gold)", color: "#0a0f1e" }}
+                  style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
                 >
                   <Plus className="h-4 w-4" />
                   <span>Quick Add</span>
@@ -290,6 +291,7 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
+            <NotificationBell />
             {toggleTheme && (
               <button
                 onClick={toggleTheme}

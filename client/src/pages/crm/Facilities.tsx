@@ -72,7 +72,7 @@ export default function Facilities() {
   const applyBulk = () => {
     if (selected.size === 0 || (!bulkRep && !bulkStatus)) return;
     bulkUpdate.mutate({
-      ids: [...selected],
+      ids: Array.from(selected),
       ...(bulkStatus ? { partnerStatus: bulkStatus as any } : {}),
       ...(bulkRep ? { assignedRepName: bulkRep } : {}),
     });
@@ -130,7 +130,7 @@ export default function Facilities() {
               onClick={() => setViewMode("list")}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
                 viewMode === "list"
-                  ? "bg-[var(--gold)] text-[#0a0f1e]"
+                  ? "bg-[var(--gold)] text-[var(--gold-foreground)]"
                   : "bg-card text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -141,7 +141,7 @@ export default function Facilities() {
               onClick={() => setViewMode("map")}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
                 viewMode === "map"
-                  ? "bg-[var(--gold)] text-[#0a0f1e]"
+                  ? "bg-[var(--gold)] text-[var(--gold-foreground)]"
                   : "bg-card text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -161,7 +161,7 @@ export default function Facilities() {
           <Button
             onClick={() => navigate("/crm/facilities/new")}
             className="gap-2"
-            style={{ background: "var(--gold)", color: "#0a0f1e" }}
+            style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
           >
             <Plus className="w-4 h-4" />
             Add Facility
@@ -214,9 +214,9 @@ export default function Facilities() {
           </Select>
           <Select value={bulkRep} onValueChange={setBulkRep}>
             <SelectTrigger className="w-[160px] h-8 bg-card border-border text-xs"><SelectValue placeholder="Reassign rep…" /></SelectTrigger>
-            <SelectContent>{[...new Set((facilities ?? []).map((f) => f.assignedRepName).filter(Boolean))].sort().map((r) => <SelectItem key={r as string} value={r as string}>{r as string}</SelectItem>)}</SelectContent>
+            <SelectContent>{Array.from(new Set((facilities ?? []).map((f) => f.assignedRepName).filter(Boolean))).sort().map((r) => <SelectItem key={r as string} value={r as string}>{r as string}</SelectItem>)}</SelectContent>
           </Select>
-          <Button size="sm" onClick={applyBulk} disabled={bulkUpdate.isPending || (!bulkRep && !bulkStatus)} style={{ background: "var(--gold)", color: "#0a0f1e" }}>
+          <Button size="sm" onClick={applyBulk} disabled={bulkUpdate.isPending || (!bulkRep && !bulkStatus)} style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}>
             {bulkUpdate.isPending ? "Applying…" : "Apply"}
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
@@ -268,7 +268,7 @@ export default function Facilities() {
                 <Button
                   className="gap-2"
                   onClick={() => navigate("/crm/facilities/new")}
-                  style={{ background: "var(--gold)", color: "#0a0f1e" }}
+                  style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
                 >
                   <Plus className="w-4 h-4" /> Add Facility
                 </Button>

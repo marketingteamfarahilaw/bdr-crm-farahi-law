@@ -291,7 +291,7 @@ export function BulkImportDialog({ open, onClose }: BulkImportDialogProps) {
             <Button
               onClick={handleImport}
               disabled={bulkCreate.isPending}
-              style={{ background: "var(--gold)", color: "#0a0f1e" }}
+              style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
             >
               {bulkCreate.isPending ? "Importing..." : `Import ${preview.length} Facilities`}
             </Button>

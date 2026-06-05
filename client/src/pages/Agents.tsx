@@ -15,7 +15,6 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Star,
   UserCheck,
   UserX,
   Briefcase,
@@ -24,8 +23,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 
 const AGENT_COLOR_OPTIONS = [
   { label: "Orange",  value: "#FF6B35" },
@@ -62,6 +59,10 @@ const EMPTY_FORM: AgentFormData = {
   color: "#4ECDC4",
   active: true,
 };
+
+const LABEL_CLS =
+  "block text-xs font-semibold mb-1.5 text-muted-foreground uppercase tracking-wider";
+const INPUT_CLS = "bg-card border-border";
 
 export default function AgentsPage() {
   const utils = trpc.useUtils();
@@ -146,196 +147,123 @@ export default function AgentsPage() {
   const getHotCount = (agentName: string) =>
     savedLeads.filter((l: any) => l.assignedAgent === agentName && l.scoreTier === "hot").length;
 
+  const stats = [
+    {
+      label: "Total Agents",
+      value: agents.length,
+      icon: Users,
+      numCls: "text-primary",
+      badgeCls: "bg-primary/10 text-primary border-primary/20",
+    },
+    {
+      label: "Active Agents",
+      value: agents.filter((a: any) => a.active !== false).length,
+      icon: UserCheck,
+      numCls: "text-green-600 dark:text-green-400",
+      badgeCls: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+    },
+    {
+      label: "Leads Assigned",
+      value: savedLeads.filter((l: any) => l.assignedAgent).length,
+      icon: MapPin,
+      numCls: "text-blue-600 dark:text-blue-400",
+      badgeCls: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    },
+  ];
+
   return (
-    <div
-      className="min-h-full"
-      style={{
-        background: "linear-gradient(160deg, #060b16 0%, #080f1e 50%, #060b16 100%)",
-        padding: "28px 32px",
-      }}
-    >
+    <div className="min-h-full bg-background p-6 md:p-8">
       {/* ── Page header ── */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div
-              style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: "linear-gradient(135deg, #2c4a73 0%, #4a73a8 100%)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 0 16px rgba(212,175,55,0.4)",
-              }}
-            >
-              <Users size={18} color="#07101f" strokeWidth={2.5} />
+            <div className="w-9 h-9 rounded-[10px] bg-primary flex items-center justify-center shrink-0">
+              <Users size={18} className="text-primary-foreground" strokeWidth={2.5} />
             </div>
-            <h1
-              className="text-2xl font-bold"
-              style={{ color: "#f1f5f9", fontFamily: "'Playfair Display', serif" }}
-            >
+            <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
               Agent Management
             </h1>
           </div>
-          <p className="text-sm" style={{ color: "rgba(148,163,184,0.6)", marginLeft: 48 }}>
+          <p className="text-sm text-muted-foreground ml-12">
             Manage your Business Development Representatives and their territories
           </p>
         </div>
         {!showForm && (
-          <button
+          <Button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); }}
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "10px 20px",
-              background: "linear-gradient(135deg, #2c4a73 0%, #4a73a8 100%)",
-              border: "none",
-              borderRadius: 10,
-              color: "#07101f",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow: "0 4px 20px rgba(212,175,55,0.35)",
-              transition: "all 0.2s ease",
-              letterSpacing: "0.02em",
-            }}
+            className="gap-2"
           >
             <Plus size={15} strokeWidth={2.5} />
             Add Agent
-          </button>
+          </Button>
         )}
       </div>
 
       {/* ── Create / Edit Form ── */}
       {showForm && (
-        <div
-          className="mb-8"
-          style={{
-            background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
-            backdropFilter: "blur(28px) saturate(180%)",
-            border: "1px solid rgba(212,175,55,0.25)",
-            borderRadius: 18,
-            padding: "24px 28px",
-            boxShadow: "0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 40px rgba(212,175,55,0.06)",
-          }}
-        >
-          {/* Form header */}
+        <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="text-base font-bold" style={{ color: "#f1f5f9" }}>
+              <div className="text-base font-bold text-foreground">
                 {editingId !== null ? "Edit Agent" : "New Agent"}
               </div>
-              <div className="text-xs mt-0.5" style={{ color: "rgba(148,163,184,0.5)" }}>
+              <div className="text-xs mt-0.5 text-muted-foreground">
                 {editingId !== null ? "Update agent profile information" : "Fill in the agent's profile details"}
               </div>
             </div>
-            <button onClick={handleCancel} style={{ color: "rgba(148,163,184,0.5)", cursor: "pointer", background: "none", border: "none" }}>
+            <button
+              onClick={handleCancel}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Close form"
+            >
               <X size={18} />
             </button>
           </div>
 
-          {/* Form grid */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            {/* First Name */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-600 mb-1.5" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                First Name <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <Input
-                value={form.firstName}
-                onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
-                placeholder="e.g. Miguel"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
-              />
+              <label className={LABEL_CLS}>First Name <span className="text-destructive">*</span></label>
+              <Input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} placeholder="e.g. Miguel" className={INPUT_CLS} />
             </div>
-
-            {/* Last Name */}
             <div>
-              <label className="block text-xs font-600 mb-1.5" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Last Name <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <Input
-                value={form.lastName}
-                onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
-                placeholder="e.g. Flores"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
-              />
+              <label className={LABEL_CLS}>Last Name <span className="text-destructive">*</span></label>
+              <Input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} placeholder="e.g. Flores" className={INPUT_CLS} />
             </div>
-
-            {/* Employer */}
             <div>
-              <label className="block text-xs font-600 mb-1.5" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Employer
-              </label>
-              <Input
-                value={form.employer}
-                onChange={e => setForm(f => ({ ...f, employer: e.target.value }))}
-                placeholder="e.g. Farahi Law"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
-              />
+              <label className={LABEL_CLS}>Employer</label>
+              <Input value={form.employer} onChange={e => setForm(f => ({ ...f, employer: e.target.value }))} placeholder="e.g. Farahi Law" className={INPUT_CLS} />
             </div>
-
-            {/* Title */}
             <div>
-              <label className="block text-xs font-600 mb-1.5" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Job Title
-              </label>
-              <Input
-                value={form.title}
-                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="e.g. Business Development Representative"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
-              />
+              <label className={LABEL_CLS}>Job Title</label>
+              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Business Development Representative" className={INPUT_CLS} />
             </div>
-
-            {/* Phone */}
             <div>
-              <label className="block text-xs font-600 mb-1.5" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Phone Number
-              </label>
-              <Input
-                value={form.phone}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                placeholder="e.g. (213) 555-0100"
-                type="tel"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
-              />
+              <label className={LABEL_CLS}>Phone Number</label>
+              <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="e.g. (213) 555-0100" type="tel" className={INPUT_CLS} />
             </div>
-
-            {/* Email */}
             <div>
-              <label className="block text-xs font-600 mb-1.5" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Email Address
-              </label>
-              <Input
-                value={form.email}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                placeholder="e.g. miguel@farahilaw.com"
-                type="email"
-                className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20"
-              />
+              <label className={LABEL_CLS}>Email Address</label>
+              <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="e.g. miguel@farahilaw.com" type="email" className={INPUT_CLS} />
             </div>
           </div>
 
           {/* Territory Color */}
           <div className="mb-4">
-            <label className="block text-xs font-600 mb-2" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Territory Color
-            </label>
+            <label className={`${LABEL_CLS} mb-2`}>Territory Color</label>
             <div className="flex flex-wrap gap-2">
               {AGENT_COLOR_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => setForm(f => ({ ...f, color: opt.value }))}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
                   style={{
-                    width: 32, height: 32, borderRadius: "50%",
                     background: opt.value,
-                    border: form.color === opt.value ? `3px solid #fff` : `2px solid transparent`,
-                    cursor: "pointer",
+                    border: form.color === opt.value ? `3px solid var(--foreground)` : `2px solid transparent`,
                     boxShadow: form.color === opt.value ? `0 0 12px ${opt.value}80` : "none",
-                    transition: "all 0.15s",
-                    display: "flex", alignItems: "center", justifyContent: "center",
                   }}
                   title={opt.label}
                 >
-                  {form.color === opt.value && <Check size={14} color="#07101f" strokeWidth={3} />}
+                  {form.color === opt.value && <Check size={14} color="#fff" strokeWidth={3} />}
                 </button>
               ))}
             </div>
@@ -343,123 +271,67 @@ export default function AgentsPage() {
 
           {/* Active toggle */}
           <div className="mb-5">
-            <label className="block text-xs font-600 mb-2" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Status
-            </label>
+            <label className={`${LABEL_CLS} mb-2`}>Status</label>
             <div className="flex gap-3">
-              {[{ v: true, label: "Active", icon: <UserCheck size={13} /> }, { v: false, label: "Inactive", icon: <UserX size={13} /> }].map(opt => (
-                <button
-                  key={String(opt.v)}
-                  onClick={() => setForm(f => ({ ...f, active: opt.v }))}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "7px 16px",
-                    borderRadius: 8,
-                    border: `1px solid ${form.active === opt.v ? (opt.v ? "#22c55e50" : "#ef444450") : "rgba(255,255,255,0.08)"}`,
-                    background: form.active === opt.v ? (opt.v ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)") : "rgba(255,255,255,0.03)",
-                    color: form.active === opt.v ? (opt.v ? "#22c55e" : "#ef4444") : "rgba(148,163,184,0.5)",
-                    fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                  }}
-                >
-                  {opt.icon}
-                  {opt.label}
-                </button>
-              ))}
+              {[{ v: true, label: "Active", icon: <UserCheck size={13} /> }, { v: false, label: "Inactive", icon: <UserX size={13} /> }].map(opt => {
+                const selected = form.active === opt.v;
+                const cls = selected
+                  ? (opt.v
+                      ? "bg-green-500/12 border-green-500/40 text-green-600 dark:text-green-400"
+                      : "bg-destructive/12 border-destructive/40 text-destructive")
+                  : "bg-secondary/40 border-border text-muted-foreground hover:text-foreground";
+                return (
+                  <button
+                    key={String(opt.v)}
+                    onClick={() => setForm(f => ({ ...f, active: opt.v }))}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg border text-xs font-semibold transition-all ${cls}`}
+                  >
+                    {opt.icon}
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Notes */}
           <div className="mb-6">
-            <label className="block text-xs font-600 mb-1.5" style={{ color: "rgba(148,163,184,0.7)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Notes
-            </label>
+            <label className={LABEL_CLS}>Notes</label>
             <Textarea
               value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               placeholder="Any notes about this agent's territory, performance, or contact preferences..."
               rows={3}
-              className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#2c4a73] focus:ring-[#2c4a73]/20 resize-none"
+              className={`${INPUT_CLS} resize-none`}
             />
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleSubmit}
-              disabled={createMutation.isPending || updateMutation.isPending}
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "10px 24px",
-                background: "linear-gradient(135deg, #2c4a73 0%, #4a73a8 100%)",
-                border: "none",
-                borderRadius: 9,
-                color: "#07101f",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(212,175,55,0.3)",
-                opacity: (createMutation.isPending || updateMutation.isPending) ? 0.6 : 1,
-                transition: "all 0.2s ease",
-              }}
-            >
+            <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="gap-2">
               <Check size={14} strokeWidth={2.5} />
               {editingId !== null ? "Save Changes" : "Create Agent"}
-            </button>
-            <button
-              onClick={handleCancel}
-              style={{
-                padding: "10px 20px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 9,
-                color: "rgba(148,163,184,0.7)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.15s",
-              }}
-            >
+            </Button>
+            <Button variant="outline" onClick={handleCancel} className="border-border">
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* ── Summary stats ── */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        {[
-          { label: "Total Agents", value: agents.length, icon: <Users size={16} />, color: "#2c4a73" },
-          { label: "Active Agents", value: agents.filter((a: any) => a.active !== false).length, icon: <UserCheck size={16} />, color: "#22c55e" },
-          { label: "Leads Assigned", value: savedLeads.filter((l: any) => l.assignedAgent).length, icon: <MapPin size={16} />, color: "#60a5fa" },
-        ].map((stat, i) => (
-          <div
-            key={i}
-            style={{
-              background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
-              backdropFilter: "blur(20px)",
-              border: `1px solid ${stat.color}25`,
-              borderRadius: 14,
-              padding: "18px 20px",
-              boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 20px ${stat.color}08`,
-            }}
-          >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {stats.map((stat) => (
+          <div key={stat.label} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: `${stat.color}18`,
-                border: `1px solid ${stat.color}30`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: stat.color,
-              }}>
-                {stat.icon}
+              <div className={`w-9 h-9 rounded-[10px] border flex items-center justify-center ${stat.badgeCls}`}>
+                <stat.icon size={16} />
               </div>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: stat.color, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                <div className={`text-2xl font-extrabold leading-none tracking-tight ${stat.numCls}`}>
                   {stat.value}
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(148,163,184,0.55)", marginTop: 2, fontWeight: 500 }}>
-                  {stat.label}
-                </div>
+                <div className="text-[11px] text-muted-foreground mt-1 font-medium">{stat.label}</div>
               </div>
             </div>
           </div>
@@ -468,38 +340,17 @@ export default function AgentsPage() {
 
       {/* ── Agent cards ── */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div style={{ color: "rgba(148,163,184,0.4)", fontSize: 14 }}>Loading agents...</div>
-        </div>
+        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">Loading agents...</div>
       ) : agents.length === 0 ? (
-        <div
-          style={{
-            background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
-            border: "1px solid rgba(212,175,55,0.15)",
-            borderRadius: 18,
-            padding: "48px 32px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: 48, marginBottom: 16 }}>👥</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#f1f5f9", marginBottom: 8, fontFamily: "'Playfair Display', serif" }}>
+        <div className="rounded-2xl border border-border bg-card px-8 py-12 text-center shadow-sm">
+          <div className="text-5xl mb-4">👥</div>
+          <div className="text-lg font-bold text-foreground mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
             No Agents Yet
           </div>
-          <div style={{ fontSize: 13, color: "rgba(148,163,184,0.5)", marginBottom: 20 }}>
+          <div className="text-sm text-muted-foreground mb-5">
             Add your first Business Development Representative to get started.
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            style={{
-              padding: "10px 24px",
-              background: "linear-gradient(135deg, #2c4a73 0%, #4a73a8 100%)",
-              border: "none", borderRadius: 9,
-              color: "#07101f", fontSize: 13, fontWeight: 700, cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(212,175,55,0.3)",
-            }}
-          >
-            Add First Agent
-          </button>
+          <Button onClick={() => setShowForm(true)}>Add First Agent</Button>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -513,86 +364,62 @@ export default function AgentsPage() {
             return (
               <div
                 key={agent.id}
-                style={{
-                  background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
-                  backdropFilter: "blur(28px)",
-                  border: `1px solid ${agent.color}25`,
-                  borderRadius: 16,
-                  overflow: "hidden",
-                  boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 20px ${agent.color}08`,
-                  transition: "all 0.2s ease",
-                }}
+                className="rounded-2xl border bg-card overflow-hidden shadow-sm transition-all"
+                style={{ borderColor: `${agent.color}40` }}
               >
                 {/* Card header */}
                 <div
                   className="flex items-center gap-4 p-5 cursor-pointer"
                   onClick={() => setExpandedId(isExpanded ? null : agent.id)}
                   style={{
-                    background: isExpanded ? `linear-gradient(90deg, ${agent.color}10 0%, transparent 100%)` : "transparent",
-                    borderBottom: isExpanded ? `1px solid ${agent.color}18` : "none",
+                    background: isExpanded ? `linear-gradient(90deg, ${agent.color}12 0%, transparent 100%)` : "transparent",
+                    borderBottom: isExpanded ? `1px solid ${agent.color}20` : "none",
                   }}
                 >
                   {/* Avatar */}
-                  <div style={{
-                    width: 48, height: 48, borderRadius: "50%",
-                    background: `linear-gradient(135deg, ${agent.color}, ${agent.color}aa)`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 16, fontWeight: 800, color: "#07101f",
-                    flexShrink: 0,
-                    boxShadow: `0 0 20px ${agent.color}50`,
-                  }}>
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-base font-extrabold shrink-0 text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${agent.color}, ${agent.color}aa)`,
+                      boxShadow: `0 0 18px ${agent.color}50`,
+                    }}
+                  >
                     {initials}
                   </div>
 
                   {/* Name & title */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span style={{ fontSize: 15, fontWeight: 700, color: "#f1f5f9" }}>
-                        {agent.agentName}
-                      </span>
+                      <span className="text-[15px] font-bold text-foreground">{agent.agentName}</span>
                       {!isActive && (
-                        <span style={{
-                          fontSize: 10, fontWeight: 700, color: "#ef4444",
-                          background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)",
-                          borderRadius: 999, padding: "1px 8px", letterSpacing: "0.06em",
-                        }}>INACTIVE</span>
+                        <span className="text-[10px] font-bold text-destructive bg-destructive/12 border border-destructive/25 rounded-full px-2 py-0.5 tracking-wider">
+                          INACTIVE
+                        </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: "rgba(148,163,184,0.55)", marginTop: 2 }}>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
                       {agent.title || "Business Development Representative"}
                       {agent.employer ? ` · ${agent.employer}` : ""}
                     </div>
                   </div>
 
                   {/* Stats */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {/* Lead count */}
-                    <div style={{
-                      display: "flex", alignItems: "center", gap: 5,
-                      background: `${agent.color}14`,
-                      border: `1px solid ${agent.color}30`,
-                      borderRadius: 999,
-                      padding: "4px 12px",
-                    }}>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div
+                      className="flex items-center gap-1.5 rounded-full px-3 py-1 border"
+                      style={{ background: `${agent.color}14`, borderColor: `${agent.color}33` }}
+                    >
                       <MapPin size={10} color={agent.color} />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: agent.color }}>{leadCount}</span>
-                      <span style={{ fontSize: 10, color: "rgba(148,163,184,0.5)" }}>leads</span>
+                      <span className="text-[11px] font-bold" style={{ color: agent.color }}>{leadCount}</span>
+                      <span className="text-[10px] text-muted-foreground">leads</span>
                     </div>
                     {hotCount > 0 && (
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: 4,
-                        background: "rgba(239,68,68,0.1)",
-                        border: "1px solid rgba(239,68,68,0.25)",
-                        borderRadius: 999,
-                        padding: "4px 10px",
-                      }}>
-                        <span style={{ fontSize: 10 }}>🔥</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#ef4444" }}>{hotCount}</span>
+                      <div className="flex items-center gap-1 rounded-full px-2.5 py-1 bg-destructive/10 border border-destructive/25">
+                        <span className="text-[10px]">🔥</span>
+                        <span className="text-[11px] font-bold text-destructive">{hotCount}</span>
                       </div>
                     )}
-
-                    {/* Expand toggle */}
-                    <div style={{ color: "rgba(148,163,184,0.4)", marginLeft: 4 }}>
+                    <div className="text-muted-foreground ml-1">
                       {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </div>
                   </div>
@@ -600,49 +427,49 @@ export default function AgentsPage() {
 
                 {/* Expanded detail */}
                 {isExpanded && (
-                  <div style={{ padding: "16px 20px 20px" }}>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-5">
+                  <div className="px-5 pb-5 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mb-5">
                       {agent.phone && (
                         <div className="flex items-center gap-3">
-                          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Phone size={12} color="#60a5fa" />
+                          <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                            <Phone size={12} className="text-blue-600 dark:text-blue-400" />
                           </div>
                           <div>
-                            <div style={{ fontSize: 9, color: "rgba(148,163,184,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 1 }}>Phone</div>
-                            <ClickToCallButton phoneNumber={agent.phone} className="text-[#60a5fa] hover:text-[#93c5fd] font-semibold text-xs" />
+                            <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-0.5">Phone</div>
+                            <ClickToCallButton phoneNumber={agent.phone} className="text-primary hover:text-primary/80 font-semibold text-xs" />
                           </div>
                         </div>
                       )}
                       {agent.email && (
                         <div className="flex items-center gap-3">
-                          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Mail size={12} color="#2c4a73" />
+                          <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                            <Mail size={12} className="text-primary" />
                           </div>
-                          <div>
-                            <div style={{ fontSize: 9, color: "rgba(148,163,184,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 1 }}>Email</div>
-                            <a href={`mailto:${agent.email}`} style={{ fontSize: 12, color: "#2c4a73", fontWeight: 600, textDecoration: "none" }}>{agent.email}</a>
+                          <div className="min-w-0">
+                            <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-0.5">Email</div>
+                            <a href={`mailto:${agent.email}`} className="text-xs text-primary font-semibold hover:underline truncate block">{agent.email}</a>
                           </div>
                         </div>
                       )}
                       {agent.employer && (
                         <div className="flex items-center gap-3">
-                          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Building2 size={12} color="#a855f7" />
+                          <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
+                            <Building2 size={12} className="text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
-                            <div style={{ fontSize: 9, color: "rgba(148,163,184,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 1 }}>Employer</div>
-                            <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600 }}>{agent.employer}</div>
+                            <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-0.5">Employer</div>
+                            <div className="text-xs text-foreground font-semibold">{agent.employer}</div>
                           </div>
                         </div>
                       )}
                       {agent.title && (
                         <div className="flex items-center gap-3">
-                          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Briefcase size={12} color="#22c55e" />
+                          <div className="w-7 h-7 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
+                            <Briefcase size={12} className="text-green-600 dark:text-green-400" />
                           </div>
                           <div>
-                            <div style={{ fontSize: 9, color: "rgba(148,163,184,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 1 }}>Title</div>
-                            <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600 }}>{agent.title}</div>
+                            <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-0.5">Title</div>
+                            <div className="text-xs text-foreground font-semibold">{agent.title}</div>
                           </div>
                         </div>
                       )}
@@ -650,39 +477,25 @@ export default function AgentsPage() {
 
                     {/* Notes */}
                     {agent.notes && (
-                      <div style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: 10,
-                        padding: "10px 14px",
-                        marginBottom: 16,
-                      }}>
+                      <div className="rounded-xl bg-secondary/40 border border-border px-4 py-3 mb-4">
                         <div className="flex items-center gap-2 mb-1.5">
-                          <StickyNote size={11} color="rgba(148,163,184,0.4)" />
-                          <span style={{ fontSize: 9, color: "rgba(148,163,184,0.4)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Notes</span>
+                          <StickyNote size={11} className="text-muted-foreground" />
+                          <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Notes</span>
                         </div>
-                        <p style={{ fontSize: 12, color: "rgba(148,163,184,0.7)", lineHeight: 1.6, margin: 0 }}>{agent.notes}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed m-0">{agent.notes}</p>
                       </div>
                     )}
 
                     {/* Territory cities */}
                     {Array.isArray(agent.cities) && agent.cities.length > 0 && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 9, color: "rgba(148,163,184,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
-                          Territory Cities
-                        </div>
+                      <div className="mb-4">
+                        <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-2">Territory Cities</div>
                         <div className="flex flex-wrap gap-1.5">
                           {(agent.cities as string[]).map((city: string) => (
                             <span
                               key={city}
-                              style={{
-                                fontSize: 10, fontWeight: 600,
-                                background: `${agent.color}14`,
-                                border: `1px solid ${agent.color}30`,
-                                color: agent.color,
-                                borderRadius: 999,
-                                padding: "2px 9px",
-                              }}
+                              className="text-[10px] font-semibold rounded-full px-2.5 py-0.5 border"
+                              style={{ background: `${agent.color}14`, borderColor: `${agent.color}33`, color: agent.color }}
                             >
                               {city}
                             </span>
@@ -695,16 +508,8 @@ export default function AgentsPage() {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => handleEdit(agent)}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 6,
-                          padding: "8px 16px",
-                          background: `${agent.color}18`,
-                          border: `1px solid ${agent.color}35`,
-                          borderRadius: 8,
-                          color: agent.color,
-                          fontSize: 12, fontWeight: 600, cursor: "pointer",
-                          transition: "all 0.15s",
-                        }}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg border text-xs font-semibold transition-all"
+                        style={{ background: `${agent.color}18`, borderColor: `${agent.color}38`, color: agent.color }}
                       >
                         <Edit2 size={12} />
                         Edit Agent
@@ -712,28 +517,16 @@ export default function AgentsPage() {
 
                       {deleteConfirmId === agent.id ? (
                         <div className="flex items-center gap-2">
-                          <span style={{ fontSize: 11, color: "rgba(239,68,68,0.8)" }}>Confirm delete?</span>
+                          <span className="text-[11px] text-destructive">Confirm delete?</span>
                           <button
                             onClick={() => deleteMutation.mutate({ id: agent.id })}
-                            style={{
-                              padding: "6px 14px",
-                              background: "rgba(239,68,68,0.15)",
-                              border: "1px solid rgba(239,68,68,0.35)",
-                              borderRadius: 7,
-                              color: "#ef4444", fontSize: 11, fontWeight: 700, cursor: "pointer",
-                            }}
+                            className="px-3.5 py-1.5 rounded-md bg-destructive/15 border border-destructive/40 text-destructive text-[11px] font-bold"
                           >
                             Yes, Delete
                           </button>
                           <button
                             onClick={() => setDeleteConfirmId(null)}
-                            style={{
-                              padding: "6px 14px",
-                              background: "rgba(255,255,255,0.04)",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: 7,
-                              color: "rgba(148,163,184,0.6)", fontSize: 11, fontWeight: 600, cursor: "pointer",
-                            }}
+                            className="px-3.5 py-1.5 rounded-md bg-secondary/40 border border-border text-muted-foreground text-[11px] font-semibold hover:text-foreground transition-colors"
                           >
                             Cancel
                           </button>
@@ -741,15 +534,7 @@ export default function AgentsPage() {
                       ) : (
                         <button
                           onClick={() => setDeleteConfirmId(agent.id)}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 6,
-                            padding: "8px 14px",
-                            background: "rgba(239,68,68,0.08)",
-                            border: "1px solid rgba(239,68,68,0.2)",
-                            borderRadius: 8,
-                            color: "rgba(239,68,68,0.7)", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                            transition: "all 0.15s",
-                          }}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-destructive/8 border border-destructive/20 text-destructive/80 text-xs font-semibold hover:bg-destructive/12 hover:text-destructive transition-all"
                         >
                           <Trash2 size={12} />
                           Delete

@@ -59,6 +59,7 @@ import {
   getBdrPartnerCheckins,
   getBdrTopFacilities,
   findFacilityByPhone,
+  getNotificationsForUser,
 } from "./crmDb";
 import { getDb } from "./db";
 import { facilities, uberReceipts, users, leadIntake } from "../drizzle/schema";
@@ -1282,6 +1283,14 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         await deleteFacilityUpdate(input.id);
         return { success: true };
       }),
+  }),
+
+  // ─── Notifications ────────────────────────────────────────────────────────────
+
+  notifications: router({
+    list: protectedProcedure.query(async ({ ctx }) =>
+      getNotificationsForUser(ctx.user.id, seesAllData(ctx.user.role)),
+    ),
   }),
 
   // ─── Map View ─────────────────────────────────────────────────────────────────

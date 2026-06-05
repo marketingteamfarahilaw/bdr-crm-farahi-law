@@ -65,6 +65,7 @@
   --input: oklch(0.92 0.006 260);
   --ring: oklch(0.45 0.09 257);
   --gold: oklch(0.40 0.09 257);
+  --gold-foreground: oklch(0.99 0.004 90);
   --sidebar: oklch(0.97 0.005 90);
   --sidebar-foreground: oklch(0.26 0.018 260);
   --sidebar-border: oklch(0.90 0.006 260);
@@ -98,6 +99,7 @@
   --input: oklch(0.20 0.018 255);
   --ring: oklch(0.62 0.12 250);
   --gold: oklch(0.72 0.10 248);
+  --gold-foreground: oklch(0.14 0.018 255);
   --sidebar: oklch(0.10 0.015 255);
   --sidebar-foreground: oklch(0.90 0.008 60);
   --sidebar-border: oklch(0.20 0.018 255);
