@@ -87,7 +87,7 @@ function startRingCentralAutoSync() {
     console.log("[rcSync] RingCentral not configured — auto-sync disabled.");
     return;
   }
-  const INTERVAL_MS = 5 * 60 * 1000;
+  const INTERVAL_MS = 2 * 60 * 1000;
   const tick = async () => {
     if (rcSyncRunning) return; // never overlap runs
     rcSyncRunning = true;

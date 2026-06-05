@@ -25,6 +25,7 @@ import FieldVisitsPage from "./pages/FieldVisits";
 import FrExpensesPage from "./pages/FrExpenses";
 import BdrExpensesPage from "./pages/BdrExpenses";
 import ExpensesPage from "./pages/Expenses";
+import LeadCapturePage from "./pages/LeadCapture";
 import ReferralRewardsPage from "./pages/ReferralRewards";
 import FrErrandsPage from "./pages/FrErrands";
 import ReferralTrackerPage from "./pages/ReferralTracker";
@@ -66,6 +67,7 @@ function Router() {
         <Route path="/team" component={TeamRolesPage} />
         <Route path="/crm/ringcentral" component={RingCentralSettingsPage} />
         <Route path="/crm/uber-eats" component={UberEatsPage} />
+        <Route path="/crm/leads" component={LeadCapturePage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
 
         {/* BDR Reports */}

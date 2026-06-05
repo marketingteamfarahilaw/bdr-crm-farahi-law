@@ -701,3 +701,28 @@ export const inboundLeads = mysqlTable("inbound_leads", {
 
 export type InboundLead = typeof inboundLeads.$inferSelect;
 export type InsertInboundLead = typeof inboundLeads.$inferInsert;
+
+// Lead capture / intake sheet (mirrors the team's Excel columns).
+export const leadIntake = mysqlTable("lead_intake", {
+  id: int("id").autoincrement().primaryKey(),
+  leadDate: timestamp("leadDate"),
+  role: varchar("role", { length: 80 }),
+  member: varchar("member", { length: 120 }),
+  leadName: varchar("leadName", { length: 255 }).notNull(),
+  value: varchar("value", { length: 60 }),
+  outcome: varchar("outcome", { length: 120 }),
+  classification: varchar("classification", { length: 120 }),
+  sud: varchar("sud", { length: 120 }),
+  liability: varchar("liability", { length: 120 }),
+  disposition: varchar("disposition", { length: 120 }),
+  facility: varchar("facility", { length: 255 }),
+  typeOfFacility: varchar("typeOfFacility", { length: 120 }),
+  clientLocation: varchar("clientLocation", { length: 255 }),
+  fvDocumentation: text("fvDocumentation"),
+  createdById: int("createdById"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LeadIntake = typeof leadIntake.$inferSelect;
+export type InsertLeadIntake = typeof leadIntake.$inferInsert;

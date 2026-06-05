@@ -61,7 +61,7 @@ import {
   findFacilityByPhone,
 } from "./crmDb";
 import { getDb } from "./db";
-import { facilities, uberReceipts, users } from "../drizzle/schema";
+import { facilities, uberReceipts, users, leadIntake } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
 const RC_BASE = "https://platform.ringcentral.com";
 
@@ -1326,5 +1326,54 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
       }
       return listFacilities({ managementFlag: true, sortBy: "updatedAt", sortDir: "desc" });
     }),
+  }),
+
+  // ─── Lead Capture / Intake ───────────────────────────────────────────────────
+  leadIntake: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db.select().from(leadIntake).orderBy(desc(leadIntake.createdAt));
+      if (seesAllData(ctx.user.role)) return rows;
+      const mine = (ctx.user.name ?? "").toLowerCase().trim();
+      return rows.filter((r) => r.createdById === ctx.user.id || (r.member ?? "").toLowerCase().trim() === mine);
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        leadName: z.string().min(1),
+        leadDate: z.string().optional(),
+        role: z.string().optional(),
+        member: z.string().optional(),
+        value: z.string().optional(),
+        outcome: z.string().optional(),
+        classification: z.string().optional(),
+        sud: z.string().optional(),
+        liability: z.string().optional(),
+        disposition: z.string().optional(),
+        facility: z.string().optional(),
+        typeOfFacility: z.string().optional(),
+        clientLocation: z.string().optional(),
+        fvDocumentation: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        const { leadDate, ...rest } = input;
+        await db.insert(leadIntake).values({
+          ...rest,
+          leadDate: leadDate ? new Date(leadDate) : null,
+          member: input.member || ctx.user.name || ctx.user.email || undefined,
+          createdById: ctx.user.id,
+        });
+        return { success: true as const };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (db) await db.delete(leadIntake).where(eq(leadIntake.id, input.id));
+        return { success: true as const };
+      }),
   }),
 });

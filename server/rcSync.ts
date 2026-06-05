@@ -168,7 +168,7 @@ export async function syncRecentCalls(
   opts: { lookbackMinutes?: number; settleMinutes?: number; transcribe?: boolean; perPage?: number; dryRun?: boolean } = {}
 ): Promise<SyncResult> {
   const lookbackMinutes = opts.lookbackMinutes ?? 90;
-  const settleMs = (opts.settleMinutes ?? 3) * 60 * 1000;
+  const settleMs = (opts.settleMinutes ?? 2) * 60 * 1000;
   const transcribe = opts.transcribe ?? true;
   const perPage = opts.perPage ?? 250;
   const dryRun = opts.dryRun ?? false;
