@@ -51,6 +51,17 @@ const CASE_VALUE_LABELS: Record<string, { label: string; color: string }> = {
   na: { label: "N/A", color: "text-muted-foreground" },
 };
 
+// Per-category accent used for the facility identity avatar + header trim.
+const CATEGORY_ACCENT: Record<string, string> = {
+  orthopedic_doctor: "#6366f1",
+  chiropractor: "#0ea5e9",
+  physical_therapist: "#14b8a6",
+  medical_clinic: "#22c55e",
+  imaging_center: "#a855f7",
+  body_shop: "#f97316",
+  other: "#64748b",
+};
+
 function AddContactLogDialog({ facilityId, onSuccess }: { facilityId: number; onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState("call");
@@ -670,68 +681,99 @@ export default function FacilityProfile() {
   const status = STATUS_LABELS[facility.partnerStatus] ?? STATUS_LABELS.prospect;
   const openTasks = tasks?.filter((t) => t.status === "open") ?? [];
   const completedTasks = tasks?.filter((t) => t.status === "completed") ?? [];
+  const accent = CATEGORY_ACCENT[facility.category] ?? CATEGORY_ACCENT.other;
+  const initial = (facility.name?.trim()?.[0] ?? "?").toUpperCase();
 
   return (
     <div className="p-6 space-y-6 max-w-5xl">
-      {/* Back + Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <button
-            onClick={() => navigate("/crm/facilities")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Facilities
-          </button>
-          <div className="flex items-center gap-3">
-            {facility.managementFlag === 1 && <AlertTriangle className="w-5 h-5 text-amber-400" />}
-            <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
-              {facility.name}
-            </h1>
-            <Badge className={`border ${status.color}`}>{status.label}</Badge>
+      {/* Back + Header hero */}
+      <div className="space-y-3">
+        <button
+          onClick={() => navigate("/crm/facilities")}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Facilities
+        </button>
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div
+            className="absolute inset-x-0 top-0 h-1"
+            style={{ background: `linear-gradient(90deg, ${accent}, ${accent}55 45%, transparent)` }}
+          />
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 p-6">
+            <div className="flex items-start gap-4 min-w-0">
+              <div
+                className="h-14 w-14 rounded-2xl flex items-center justify-center text-2xl text-white shrink-0"
+                style={{
+                  background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
+                  boxShadow: `0 8px 24px ${accent}40`,
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 700,
+                }}
+              >
+                {initial}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    {facility.name}
+                  </h1>
+                  <Badge className={`border ${status.color}`}>{status.label}</Badge>
+                  {facility.managementFlag === 1 && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
+                      <AlertTriangle className="w-3 h-3" /> Flagged
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-x-2 gap-y-1 flex-wrap">
+                  <span className="inline-flex items-center gap-1"><Building2 className="w-3.5 h-3.5" />{CATEGORY_LABELS[facility.category] ?? facility.category}</span>
+                  {facility.city && <><span className="text-border">•</span><span className="inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{facility.city}</span></>}
+                  {facility.assignedRepName && <><span className="text-border">•</span><span className="inline-flex items-center gap-1"><User className="w-3.5 h-3.5" />{facility.assignedRepName}</span></>}
+                </p>
+                {(facility.phone || facility.website) && (
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                    {facility.phone && (
+                      <ClickToCallButton phoneNumber={facility.phone} facilityId={facilityId} className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 bg-primary/10 border border-primary/20 rounded-lg px-2.5 py-1.5 transition-colors">
+                        <Phone className="w-3.5 h-3.5" /> {facility.phone}
+                      </ClickToCallButton>
+                    )}
+                    {facility.website && (
+                      <a href={facility.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 transition-colors">
+                        <Globe className="w-3.5 h-3.5" /> Website <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button variant="outline" size="sm" className="gap-1.5 border-border" onClick={() => toggleFlag.mutate({ id: facilityId, managementFlag: facility.managementFlag !== 1 })}>
+                <Flag className="w-3.5 h-3.5" /> {facility.managementFlag === 1 ? "Clear Flag" : "Flag"}
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5 border-border" onClick={() => navigate(`/crm/facilities/${facilityId}/edit`)}>
+                <Edit className="w-3.5 h-3.5" /> Edit
+              </Button>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {CATEGORY_LABELS[facility.category] ?? facility.category}
-            {facility.city ? ` · ${facility.city}` : ""}
-          </p>
-        </div>
-        <div className="flex gap-2 flex-shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 border-border"
-            onClick={() => toggleFlag.mutate({ id: facilityId, managementFlag: facility.managementFlag !== 1 })}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            {facility.managementFlag === 1 ? "Clear Flag" : "Flag"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 border-border"
-            onClick={() => navigate(`/crm/facilities/${facilityId}/edit`)}
-          >
-            <Edit className="w-3.5 h-3.5" /> Edit
-          </Button>
         </div>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {[
-          { label: "Total Leads Sent", value: facility.totalLeads ?? 0, icon: Star },
-          { label: "Referrals Received", value: facility.totalReferrals ?? 0, icon: Building2 },
-          { label: "Open Tasks", value: openTasks.length, icon: Circle },
-          { label: "Contact Logs", value: contactLogs?.length ?? 0, icon: PhoneCall },
-        ].map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="bg-card border-border">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Icon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{label}</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{value}</p>
-            </CardContent>
-          </Card>
+          { label: "Leads Sent", value: facility.totalLeads ?? 0, icon: Star, chip: "bg-primary/10 text-primary" },
+          { label: "Referrals Received", value: facility.totalReferrals ?? 0, icon: Building2, chip: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+          { label: "Open Tasks", value: openTasks.length, icon: ListChecks, chip: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+          { label: "Contact Logs", value: contactLogs?.length ?? 0, icon: PhoneCall, chip: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
+        ].map(({ label, value, icon: Icon, chip }) => (
+          <div key={label} className="rounded-2xl border border-border bg-card p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${chip}`}>
+              <Icon className="w-[18px] h-[18px]" />
+            </div>
+            <div className="mt-3">
+              <div className="text-3xl font-bold text-foreground leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>{value}</div>
+              <div className="text-xs text-muted-foreground mt-1.5 font-medium">{label}</div>
+            </div>
+          </div>
         ))}
       </div>
 
@@ -748,19 +790,19 @@ export default function FacilityProfile() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="overview">
-        <TabsList className="bg-card border border-border flex-wrap h-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="contacts">
-            Contact Log {contactLogs && contactLogs.length > 0 && <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">{contactLogs.length}</span>}
+        <TabsList className="bg-muted/60 border border-border rounded-xl p-1 flex-wrap h-auto gap-0.5">
+          <TabsTrigger value="overview" className="rounded-lg">Overview</TabsTrigger>
+          <TabsTrigger value="contacts" className="rounded-lg">
+            Contact Log {contactLogs && contactLogs.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-foreground/10 px-1.5 py-0.5 rounded-full">{contactLogs.length}</span>}
           </TabsTrigger>
-          <TabsTrigger value="leads">Leads</TabsTrigger>
-          <TabsTrigger value="gratitude">Gratitude</TabsTrigger>
-          <TabsTrigger value="updates">Call Recaps</TabsTrigger>
-          <TabsTrigger value="tasks">
-            Tasks {openTasks.length > 0 && <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full">{openTasks.length}</span>}
+          <TabsTrigger value="leads" className="rounded-lg">Leads</TabsTrigger>
+          <TabsTrigger value="gratitude" className="rounded-lg">Gratitude</TabsTrigger>
+          <TabsTrigger value="updates" className="rounded-lg">Call Recaps</TabsTrigger>
+          <TabsTrigger value="tasks" className="rounded-lg">
+            Tasks {openTasks.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full">{openTasks.length}</span>}
           </TabsTrigger>
-          <TabsTrigger value="referrals">
-            Referrals {referrals && referrals.length > 0 && <span className="ml-1.5 text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full">{referrals.length}</span>}
+          <TabsTrigger value="referrals" className="rounded-lg">
+            Referrals {referrals && referrals.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full">{referrals.length}</span>}
           </TabsTrigger>
         </TabsList>
 
@@ -827,46 +869,34 @@ export default function FacilityProfile() {
               <p>No contact logs yet. Log your first contact above.</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {contactLogs?.map((log) => (
-                <Card key={log.id} className="bg-card border-border">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
-                          {CONTACT_TYPE_ICONS[log.contactType]}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium capitalize">{log.contactType}</span>
-                            {log.callResult && (
-                              <Badge variant="outline" className="text-xs capitalize border-border">
-                                {log.callResult.replace("_", " ")}
-                              </Badge>
-                            )}
-                            {log.callType && (
-                              <Badge variant="outline" className="text-xs border-border text-muted-foreground">
-                                {log.callType.replace(/_/g, " ")}
-                              </Badge>
-                            )}
-                            {log.callDuration && <span className="text-xs text-muted-foreground">{log.callDuration}</span>}
-                          </div>
-                          {log.summary && <p className="text-sm text-muted-foreground mt-1">{log.summary}</p>}
-                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                            <span>{format(new Date(log.contactDate), "MMM d, yyyy h:mm a")}</span>
-                            {log.repName && <span>· {log.repName}</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => deleteLog.mutate({ id: log.id })}
-                        className="text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                <div key={log.id} className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      {CONTACT_TYPE_ICONS[log.contactType]}
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold capitalize text-foreground">{log.contactType}</span>
+                        {log.callResult && <span className="text-[10px] font-semibold capitalize px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{log.callResult.replace("_", " ")}</span>}
+                        {log.callType && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{log.callType.replace(/_/g, " ")}</span>}
+                        {log.callDuration && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />{log.callDuration}</span>}
+                      </div>
+                      {log.summary && <p className="text-sm text-foreground/80 mt-1.5 leading-relaxed">{log.summary}</p>}
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(log.contactDate), "MMM d, yyyy h:mm a")}</span>
+                        {log.repName && <span className="flex items-center gap-1"><User className="w-3 h-3" />{log.repName}</span>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteLog.mutate({ id: log.id })}
+                      className="text-muted-foreground/40 hover:text-red-500 transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -881,52 +911,58 @@ export default function FacilityProfile() {
         {/* Tasks Tab */}
         <TabsContent value="tasks" className="mt-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-sm text-muted-foreground">{openTasks.length} open · {completedTasks.length} completed</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              Tasks <span className="font-normal text-muted-foreground">· {openTasks.length} open · {completedTasks.length} done</span>
+            </h3>
             <AddTaskDialog facilityId={facilityId} onSuccess={() => {}} />
           </div>
           {tasks?.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <CheckCircle2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>No tasks yet. Add a follow-up task above.</p>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 text-center py-14 text-muted-foreground">
+              <ListChecks className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="font-medium text-foreground">No tasks yet</p>
+              <p className="text-xs mt-1">Add a follow-up task to stay on cadence.</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {tasks?.map((task) => (
-                <Card key={task.id} className={`bg-card border-border ${task.status === "completed" ? "opacity-60" : ""}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
+            <div className="space-y-2.5">
+              {tasks?.map((task) => {
+                const isDone = task.status === "completed";
+                const overdue = !isDone && !!task.dueDate && new Date(task.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
+                const prio = task.priority === "high"
+                  ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+                  : task.priority === "low"
+                  ? "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+                return (
+                  <div key={task.id} className={`group rounded-xl border bg-card p-4 transition-all ${isDone ? "border-border opacity-60" : "border-border hover:border-primary/30 hover:shadow-sm"}`}>
+                    <div className="flex items-start gap-3.5">
                       <button
                         onClick={() => task.status === "open" ? completeTask.mutate({ id: task.id }) : undefined}
-                        className="mt-0.5 flex-shrink-0"
+                        className="mt-0.5 shrink-0"
+                        aria-label={isDone ? "Completed" : "Mark complete"}
                       >
-                        {task.status === "completed"
-                          ? <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                          : <Circle className="w-5 h-5 text-muted-foreground hover:text-emerald-400 transition-colors" />
-                        }
+                        {isDone
+                          ? <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                          : <Circle className="w-5 h-5 text-muted-foreground hover:text-emerald-500 transition-colors" />}
                       </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-medium ${task.status === "completed" ? "line-through text-muted-foreground" : ""}`}>{task.title}</span>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs border-border ${task.priority === "high" ? "text-red-400 border-red-400/30" : task.priority === "low" ? "text-slate-400" : "text-amber-400 border-amber-400/30"}`}
-                          >
-                            {task.priority}
-                          </Badge>
+                          <span className={`text-sm font-semibold ${isDone ? "line-through text-muted-foreground" : "text-foreground"}`}>{task.title}</span>
+                          <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${prio}`}>{task.priority}</span>
+                          {overdue && <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">Overdue</span>}
                         </div>
-                        {task.description && <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>}
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          {task.dueDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Due {format(new Date(task.dueDate), "MMM d, yyyy")}</span>}
-                          {task.assignedToName && <span>· {task.assignedToName}</span>}
+                        {task.description && <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{task.description}</p>}
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                          {task.dueDate && <span className={`flex items-center gap-1 ${overdue ? "text-red-600 dark:text-red-400 font-medium" : ""}`}><Calendar className="w-3 h-3" /> {format(new Date(task.dueDate), "MMM d, yyyy")}</span>}
+                          {task.assignedToName && <span className="flex items-center gap-1"><User className="w-3 h-3" /> {task.assignedToName}</span>}
                         </div>
                       </div>
-                      <button onClick={() => deleteTask.mutate({ id: task.id })} className="text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0">
+                      <button onClick={() => deleteTask.mutate({ id: task.id })} className="text-muted-foreground/40 hover:text-red-500 transition-colors shrink-0">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -943,30 +979,31 @@ export default function FacilityProfile() {
               <p>No referrals recorded yet.</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {referrals?.map((ref) => {
                 const cv = CASE_VALUE_LABELS[ref.caseValue] ?? CASE_VALUE_LABELS.medium;
                 return (
-                  <Card key={ref.id} className="bg-card border-border">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{ref.clientName}</span>
-                            <span className={`text-xs font-medium ${cv.color}`}>{cv.label}</span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span>{format(new Date(ref.referralDate), "MMM d, yyyy")}</span>
-                            {ref.repName && <span>· {ref.repName}</span>}
-                          </div>
-                          {ref.notes && <p className="text-xs text-muted-foreground mt-1">{ref.notes}</p>}
-                        </div>
-                        <button onClick={() => deleteReferral.mutate({ id: ref.id })} className="text-muted-foreground hover:text-red-400 transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                  <div key={ref.id} className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <Star className="w-4 h-4" />
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-foreground">{ref.clientName}</span>
+                          <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-secondary ${cv.color}`}>{cv.label}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(ref.referralDate), "MMM d, yyyy")}</span>
+                          {ref.repName && <span className="flex items-center gap-1"><User className="w-3 h-3" />{ref.repName}</span>}
+                        </div>
+                        {ref.notes && <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{ref.notes}</p>}
+                      </div>
+                      <button onClick={() => deleteReferral.mutate({ id: ref.id })} className="text-muted-foreground/40 hover:text-red-500 transition-colors shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
