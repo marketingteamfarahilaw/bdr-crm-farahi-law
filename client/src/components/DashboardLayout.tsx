@@ -44,7 +44,6 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   { title: "Facility Partner CRM", items: [
     { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
     { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr" },
-    { icon: ClipboardList, label: "Lead Capture", path: "/crm/leads", level: "all" },
     { icon: Phone, label: "RingCentral", path: "/crm/ringcentral", level: "bdr" },
     { icon: UtensilsCrossed, label: "Uber Eats", path: "/crm/uber-eats", level: "all" },
     { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },

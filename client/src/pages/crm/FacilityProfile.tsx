@@ -15,7 +15,8 @@ import {
   ArrowLeft, Phone, Globe, MapPin, User, Mail, AlertTriangle,
   Plus, CheckCircle2, Circle, Trash2, PhoneCall, Car, MessageSquare,
   Calendar, Clock, Star, Edit, RefreshCw, Building2, Gift, FileText,
-  TrendingUp, Flag, ExternalLink, ListChecks, Zap, ChevronDown, ChevronUp
+  TrendingUp, Flag, ExternalLink, ListChecks, Zap, ChevronDown, ChevronUp,
+  Flame, Snowflake, ThermometerSun, Loader2, Download, ClipboardList
 } from "lucide-react";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { formatDistanceToNow, format } from "date-fns";
@@ -61,6 +62,46 @@ const CATEGORY_ACCENT: Record<string, string> = {
   body_shop: "#f97316",
   other: "#64748b",
 };
+
+type Temp = { key: "hot" | "warm" | "cold"; label: string; reason: string; cls: string; Icon: any };
+
+/**
+ * Relationship "temperature" — a quick health read on a partner, blending recency
+ * of contact, partner status, referrals received, and open follow-ups.
+ *   Hot  🔥 — engaged & recently touched (keep nurturing)
+ *   Warm ☀️ — alive but cooling (a touch is due)
+ *   Cold ❄️ — gone quiet / dormant (re-engage or retire)
+ */
+function facilityTemperature(facility: any, contactLogs: any[] | undefined, openTasksCount: number): Temp {
+  const times = (contactLogs ?? []).map((l) => new Date(l.contactDate).getTime()).filter((n) => !isNaN(n));
+  const last = times.length ? Math.max(...times) : null;
+  const daysSince = last !== null ? Math.floor((Date.now() - last) / 86400000) : null;
+
+  let score = 0;
+  if (daysSince === null) score -= 1;
+  else if (daysSince <= 14) score += 2;
+  else if (daysSince <= 30) score += 1;
+  else if (daysSince > 45) score -= 2;
+
+  const ps = facility.partnerStatus;
+  if (ps === "priority_partner") score += 2;
+  else if (ps === "active_partner") score += 1;
+  else if (ps === "dormant") score -= 2;
+  else if (ps === "do_not_use") score -= 3;
+
+  if ((facility.totalReferrals ?? 0) > 0) score += 1;
+  if (openTasksCount > 0) score += 1;
+
+  const reason =
+    daysSince === null ? "No contact logged yet"
+    : daysSince === 0 ? "Contacted today"
+    : daysSince === 1 ? "Last contact yesterday"
+    : `Last contact ${daysSince}d ago`;
+
+  if (score >= 3) return { key: "hot", label: "Hot", reason, Icon: Flame, cls: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30" };
+  if (score >= 1) return { key: "warm", label: "Warm", reason, Icon: ThermometerSun, cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" };
+  return { key: "cold", label: "Cold", reason, Icon: Snowflake, cls: "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30" };
+}
 
 function AddContactLogDialog({ facilityId, onSuccess }: { facilityId: number; onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
@@ -406,6 +447,152 @@ function LeadsTab({ facilityId }: { facilityId: number }) {
   );
 }
 
+// ─── Lead Capture Tab (per-facility intake → lead_intake) ────────────────────
+const LEAD_FIELDS = [
+  { key: "leadName", label: "Lead Name", required: true },
+  { key: "leadDate", label: "Date", type: "date" },
+  { key: "value", label: "Value" },
+  { key: "outcome", label: "Outcome" },
+  { key: "classification", label: "Classification" },
+  { key: "disposition", label: "Disposition" },
+  { key: "sud", label: "SUD" },
+  { key: "liability", label: "Liability" },
+  { key: "clientLocation", label: "Client's Location" },
+  { key: "role", label: "Role" },
+  { key: "member", label: "Member" },
+  { key: "fvDocumentation", label: "FV Documentation" },
+] as const;
+
+function LeadCaptureTab({ facility }: { facility: any }) {
+  const utils = trpc.useUtils();
+  const { data: all = [], isLoading } = trpc.crm.leadIntake.list.useQuery();
+  const facilityName = (facility.name ?? "").trim();
+  const leads = (all as any[]).filter(
+    (l) => (l.facility ?? "").trim().toLowerCase() === facilityName.toLowerCase(),
+  );
+  const signed = leads.filter((l) => /sign/i.test(l.outcome ?? "")).length;
+
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
+
+  const openForm = () => {
+    setForm({
+      leadDate: new Date().toISOString().slice(0, 10),
+      typeOfFacility: CATEGORY_LABELS[facility.category] ?? facility.category ?? "",
+      clientLocation: facility.city ?? "",
+    });
+    setOpen(true);
+  };
+
+  const create = trpc.crm.leadIntake.create.useMutation({
+    onSuccess: () => { toast.success("Lead captured"); utils.crm.leadIntake.list.invalidate(); setOpen(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const del = trpc.crm.leadIntake.delete.useMutation({
+    onSuccess: () => { utils.crm.leadIntake.list.invalidate(); toast.success("Lead removed"); },
+  });
+
+  const submit = () => {
+    if (!form.leadName?.trim()) { toast.error("Lead Name is required."); return; }
+    const payload: Record<string, string> = { facility: facilityName };
+    if (form.typeOfFacility?.trim()) payload.typeOfFacility = form.typeOfFacility.trim();
+    for (const f of LEAD_FIELDS) { const v = form[f.key]?.trim(); if (v) payload[f.key] = v; }
+    create.mutate(payload as any);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Captured", value: leads.length, cls: "text-primary" },
+          { label: "Signed", value: signed, cls: "text-emerald-600 dark:text-emerald-400" },
+          { label: "Pending", value: leads.length - signed, cls: "text-amber-600 dark:text-amber-400" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-xl border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+            <p className={`text-2xl font-bold ${s.cls}`} style={{ fontFamily: "'Playfair Display', serif" }}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground">
+          Captured Leads <span className="font-normal text-muted-foreground">· this facility</span>
+        </h3>
+        <Button size="sm" className="gap-1.5" onClick={openForm}><Plus className="w-3.5 h-3.5" /> Add Lead</Button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : leads.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 text-center py-14 text-muted-foreground">
+          <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="font-medium text-foreground">No leads captured here yet</p>
+          <p className="text-xs mt-1">Click "Add Lead" to log a lead for {facilityName || "this facility"}.</p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {leads.map((l) => (
+            <div key={l.id} className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all">
+              <div className="flex items-start gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <ClipboardList className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-foreground">{l.leadName}</span>
+                    {l.outcome && <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${/sign/i.test(l.outcome) ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-secondary text-muted-foreground"}`}>{l.outcome}</span>}
+                    {l.value && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{l.value}</span>}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
+                    {l.leadDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(l.leadDate).toLocaleDateString()}</span>}
+                    {l.classification && <span>{l.classification}</span>}
+                    {l.disposition && <span>· {l.disposition}</span>}
+                    {l.member && <span className="flex items-center gap-1"><User className="w-3 h-3" />{l.member}</span>}
+                  </div>
+                  {l.clientLocation && <p className="text-xs text-muted-foreground mt-1">Location: {l.clientLocation}</p>}
+                </div>
+                <button onClick={() => del.mutate({ id: l.id })} className="text-muted-foreground/40 hover:text-red-500 transition-colors shrink-0"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-card border-border max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Capture a lead — {facilityName}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">Facility</label>
+              <Input value={facilityName} disabled className="bg-background border-border" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">Type of Facility</label>
+              <Input value={form.typeOfFacility ?? ""} onChange={(e) => setForm((s) => ({ ...s, typeOfFacility: e.target.value }))} className="bg-background border-border" />
+            </div>
+            {LEAD_FIELDS.map((f) => (
+              <div key={f.key} className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">{f.label}{(f as any).required && <span className="text-destructive"> *</span>}</label>
+                <Input
+                  type={(f as any).type === "date" ? "date" : "text"}
+                  value={form[f.key] ?? ""}
+                  onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+                  className="bg-background border-border"
+                  placeholder={f.label}
+                />
+              </div>
+            ))}
+          </div>
+          <Button className="w-full mt-3 gap-2" disabled={create.isPending} onClick={submit}>
+            {create.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Save lead
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ─── Gratitude Tab ────────────────────────────────────────────────────────────
 function GratitudeTab({ facilityId }: { facilityId: number }) {
   const utils = trpc.useUtils();
@@ -683,6 +870,7 @@ export default function FacilityProfile() {
   const completedTasks = tasks?.filter((t) => t.status === "completed") ?? [];
   const accent = CATEGORY_ACCENT[facility.category] ?? CATEGORY_ACCENT.other;
   const initial = (facility.name?.trim()?.[0] ?? "?").toUpperCase();
+  const temp = facilityTemperature(facility, contactLogs, openTasks.length);
 
   return (
     <div className="p-6 space-y-6 max-w-5xl">
@@ -718,6 +906,12 @@ export default function FacilityProfile() {
                     {facility.name}
                   </h1>
                   <Badge className={`border ${status.color}`}>{status.label}</Badge>
+                  <span
+                    className={`inline-flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-0.5 border ${temp.cls}`}
+                    title={`${temp.label} partner — ${temp.reason}`}
+                  >
+                    <temp.Icon className="w-3 h-3" /> {temp.label}
+                  </span>
                   {facility.managementFlag === 1 && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
                       <AlertTriangle className="w-3 h-3" /> Flagged
@@ -902,8 +1096,8 @@ export default function FacilityProfile() {
           )}
         </TabsContent>
 
-        {/* Leads Tab */}
-        <TabsContent value="leads" className="mt-4"><LeadsTab facilityId={facilityId} /></TabsContent>
+        {/* Leads Tab — per-facility lead capture */}
+        <TabsContent value="leads" className="mt-4"><LeadCaptureTab facility={facility} /></TabsContent>
         {/* Gratitude Tab */}
         <TabsContent value="gratitude" className="mt-4"><GratitudeTab facilityId={facilityId} /></TabsContent>
         {/* Updates Tab */}
@@ -1010,6 +1204,39 @@ export default function FacilityProfile() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* ── Location map ── */}
+      {(facility.address || facility.city || (facility.latitude && facility.longitude)) && (() => {
+        const q = facility.latitude && facility.longitude
+          ? `${facility.latitude},${facility.longitude}`
+          : [facility.address, facility.city].filter(Boolean).join(", ");
+        return (
+          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-border">
+              <MapPin className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-sm font-semibold text-foreground">Location</span>
+              {(facility.address || facility.city) && (
+                <span className="text-xs text-muted-foreground truncate">{[facility.address, facility.city].filter(Boolean).join(", ")}</span>
+              )}
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-xs text-primary hover:underline flex items-center gap-1 shrink-0"
+              >
+                Open in Maps <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            <iframe
+              title="Facility location"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=14&output=embed`}
+              className="w-full h-72 border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }
