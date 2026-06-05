@@ -80,6 +80,8 @@ import {
   setUserPassword,
   setUserAgentName,
   createUserAccount,
+  getBranding,
+  setSetting,
 } from "./db";
 import { canManage, canAssignRoles } from "@shared/permissions";
 
@@ -156,6 +158,23 @@ export const appRouter = router({
         const email = input.email.toLowerCase().trim();
         if (await getUserByEmail(email)) throw new TRPCError({ code: "BAD_REQUEST", message: "A user with that email already exists." });
         await createUserAccount({ openId: `local_${nanoid()}`, name: input.name, email, role: input.role, passwordHash: hashPassword(input.password) });
+        return { success: true };
+      }),
+  }),
+
+  settings: router({
+    // Public so the login screen can show the branded logo before sign-in.
+    getBranding: publicProcedure.query(async () => getBranding()),
+    updateBranding: protectedProcedure
+      .input(z.object({
+        // data URL string to set, null to clear (reset to default), undefined to leave unchanged
+        logoDark: z.string().max(8_000_000).nullable().optional(),
+        logoLight: z.string().max(8_000_000).nullable().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
+        if (input.logoDark !== undefined) await setSetting("logo_dark", input.logoDark);
+        if (input.logoLight !== undefined) await setSetting("logo_light", input.logoLight);
         return { success: true };
       }),
   }),

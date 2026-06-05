@@ -1,6 +1,6 @@
 import { eq, and, desc, sql, gte, lte, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead } from "../drizzle/schema";
+import { InsertUser, users, appSettings, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -101,6 +101,34 @@ export async function getUserByEmail(email: string) {
     .orderBy(sql`(${users.passwordHash} is not null) desc`, desc(users.id))
     .limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+// ─── App settings (key-value) ────────────────────────────────────────────────
+export async function getSetting(key: string): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const r = await db.select().from(appSettings).where(eq(appSettings.settingKey, key)).limit(1);
+    return r.length ? (r[0].settingValue ?? null) : null;
+  } catch (e) {
+    console.warn("[Database] getSetting failed:", e);
+    return null;
+  }
+}
+
+export async function setSetting(key: string, value: string | null): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db
+    .insert(appSettings)
+    .values({ settingKey: key, settingValue: value })
+    .onDuplicateKeyUpdate({ set: { settingValue: value } });
+}
+
+/** Branding logos (small resized data URLs) for light + dark mode. */
+export async function getBranding(): Promise<{ logoLight: string | null; logoDark: string | null }> {
+  const [logoLight, logoDark] = await Promise.all([getSetting("logo_light"), getSetting("logo_dark")]);
+  return { logoLight, logoDark };
 }
 
 export async function listUsers() {

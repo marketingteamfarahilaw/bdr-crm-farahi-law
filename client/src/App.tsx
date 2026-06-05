@@ -35,6 +35,7 @@ import BdrAdminDashboardPage from "./pages/BdrAdminDashboard";
 import AgentsPage from "./pages/Agents";
 import PiClientsPage from "./pages/PiClients";
 import FilevineSettingsPage from "./pages/FilevineSettings";
+import SettingsPage from "./pages/Settings";
 import RingCentralCallback from "./pages/RingCentralCallback";
 import { RingCentralProvider } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
@@ -93,6 +94,9 @@ function Router() {
 
         {/* Filevine Integration */}
         <Route path="/filevine" component={FilevineSettingsPage} />
+
+        {/* App settings / branding */}
+        <Route path="/settings" component={SettingsPage} />
 
         <Route path="/ringcentral-callback" component={RingCentralCallback} />
         <Route path="/404" component={NotFound} />

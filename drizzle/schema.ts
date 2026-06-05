@@ -3,6 +3,7 @@ import {
   mysqlEnum,
   mysqlTable,
   text,
+  longtext,
   timestamp,
   varchar,
   float,
@@ -153,6 +154,17 @@ export const filevineSettings = mysqlTable("filevine_settings", {
 });
 export type FilevineSettings = typeof filevineSettings.$inferSelect;
 export type InsertFilevineSettings = typeof filevineSettings.$inferInsert;
+
+/**
+ * Generic key-value application settings (singleton-style).
+ * Used for branding — logo_light / logo_dark hold small resized data URLs.
+ */
+export const appSettings = mysqlTable("app_settings", {
+  settingKey: varchar("settingKey", { length: 100 }).primaryKey(),
+  settingValue: longtext("settingValue"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AppSetting = typeof appSettings.$inferSelect;
 
 /**
  * Call logs for PI clients — auto-created when a RingCentral call ends

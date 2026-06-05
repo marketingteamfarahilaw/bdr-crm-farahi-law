@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Scale, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useBrandLogo } from "@/hooks/useBranding";
 
 export default function Login() {
   const utils = trpc.useUtils();
@@ -12,6 +13,7 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const logo = useBrandLogo();
 
   useEffect(() => {
     fetch("/api/auth/google/status")
@@ -45,9 +47,9 @@ export default function Login() {
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
           <img
-            src="/farahi-logo-darkmode.jpg"
+            src={logo}
             alt="Farahi Law Firm"
-            className="w-28 h-28 rounded-2xl object-cover mb-4 shadow-xl ring-1 ring-border"
+            className="w-28 h-28 rounded-2xl object-contain bg-card p-2 mb-4 shadow-xl ring-1 ring-border"
           />
           <p className="text-sm text-muted-foreground mt-1">BD Partner CRM</p>
         </div>

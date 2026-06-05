@@ -21,13 +21,14 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import Login from "@/pages/Login";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { CommandPalette } from "./CommandPalette";
 import { QuickAdd } from "./QuickAdd";
 import { NotificationBell } from "./NotificationBell";
+import { useBrandLogo } from "@/hooks/useBranding";
 import { useTheme } from "@/contexts/ThemeContext";
 import { canSeeBDR, canSeeFR, canManage, canAssignRoles } from "@shared/permissions";
 
@@ -65,6 +66,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Users, label: "Agent Zones", path: "/agents", level: "manage" },
     { icon: UserRound, label: "PI Clients", path: "/pi-clients", level: "manage" },
     { icon: Link2, label: "Filevine", path: "/filevine", level: "manage" },
+    { icon: Settings, label: "Settings", path: "/settings", level: "manage" },
   ] },
 ];
 
@@ -137,6 +139,7 @@ function DashboardLayoutContent({
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const logo = useBrandLogo();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -203,7 +206,7 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <img src="/farahi-logo-darkmode.jpg" alt="Farahi Law Firm" className="h-9 w-9 rounded-lg object-cover shrink-0 ring-1 ring-border" />
+                  <img src={logo} alt="Farahi Law Firm" className="h-9 w-9 rounded-lg object-contain bg-card shrink-0 ring-1 ring-border" />
                   <div className="min-w-0">
                     <span className="font-semibold tracking-tight truncate text-foreground block" style={{ fontFamily: "'Playfair Display', serif" }}>
                       Farahi Law
@@ -212,7 +215,7 @@ function DashboardLayoutContent({
                   </div>
                 </div>
               ) : (
-                <img src="/farahi-logo-darkmode.jpg" alt="Farahi Law Firm" className="h-7 w-7 rounded-md object-cover" />
+                <img src={logo} alt="Farahi Law Firm" className="h-7 w-7 rounded-md object-contain bg-card" />
               )}
             </div>
           </SidebarHeader>
