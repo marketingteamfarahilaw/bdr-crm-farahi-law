@@ -42,23 +42,20 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   { title: "Facility Partner CRM", items: [
     { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
     { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr" },
-    { icon: LayoutDashboard, label: "Mgmt Dashboard", path: "/crm/dashboard", level: "manage" },
     { icon: Phone, label: "RingCentral", path: "/crm/ringcentral", level: "bdr" },
     { icon: UtensilsCrossed, label: "Uber Eats", path: "/crm/uber-eats", level: "all" },
     { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
   ] },
   { title: "Agent Tools", items: [
     { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
-    { icon: Activity, label: "Agent Dashboard", path: "/bdr/dashboard", level: "all" },
     { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
-    { icon: Receipt, label: "FR Expenses", path: "/bdr/fr-expenses", level: "fr" },
-    { icon: CreditCard, label: "BDR Expenses", path: "/bdr/bdr-expenses", level: "bdr" },
+    { icon: Receipt, label: "Expenses", path: "/bdr/expenses", level: "all" },
     { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards", level: "bdr" },
     { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },
-    { icon: Network, label: "Referral Tracker", path: "/bdr/referral-tracker", level: "bdr" },
+    { icon: Network, label: "Referral-Friendly List", path: "/bdr/referral-tracker", level: "bdr" },
   ] },
   { title: "Partner Referrals", items: [
-    { icon: ArrowLeftRight, label: "Referral Tracker", path: "/referral/tracker", level: "manage" },
+    { icon: ArrowLeftRight, label: "Partner Referrals", path: "/referral/tracker", level: "manage" },
     { icon: FileBarChart2, label: "Referral Reports", path: "/referral/reports", level: "manage" },
   ] },
   { title: "Team & Integrations", items: [

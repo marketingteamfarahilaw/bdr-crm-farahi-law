@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
+import { useEffect, useRef } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
@@ -23,6 +24,7 @@ import AgentDashboardPage from "./pages/AgentDashboard";
 import FieldVisitsPage from "./pages/FieldVisits";
 import FrExpensesPage from "./pages/FrExpenses";
 import BdrExpensesPage from "./pages/BdrExpenses";
+import ExpensesPage from "./pages/Expenses";
 import ReferralRewardsPage from "./pages/ReferralRewards";
 import FrErrandsPage from "./pages/FrErrands";
 import ReferralTrackerPage from "./pages/ReferralTracker";
@@ -70,6 +72,7 @@ function Router() {
         <Route path="/bdr/admin" component={BdrAdminDashboardPage} />
         <Route path="/bdr/dashboard" component={AgentDashboardPage} />
         <Route path="/bdr/field-visits" component={FieldVisitsPage} />
+        <Route path="/bdr/expenses" component={ExpensesPage} />
         <Route path="/bdr/fr-expenses" component={FrExpensesPage} />
         <Route path="/bdr/bdr-expenses" component={BdrExpensesPage} />
         <Route path="/bdr/referral-rewards" component={ReferralRewardsPage} />
@@ -95,6 +98,43 @@ function Router() {
       </Switch>
     </DashboardLayout>
   );
+}
+
+/**
+ * Once-per-session follow-up digest. On load, surfaces how many of the rep's
+ * own tasks are due today / overdue and links straight to My Day — so cadence
+ * pulls reps back instead of relying on them to go looking.
+ */
+function FollowUpDigest() {
+  const [, navigate] = useLocation();
+  const { data: myTasks } = trpc.crm.tasks.listMine.useQuery({ status: "open" });
+  const shownRef = useRef(false);
+
+  useEffect(() => {
+    if (shownRef.current || !myTasks) return;
+    if (sessionStorage.getItem("followup-digest-shown")) { shownRef.current = true; return; }
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    let overdue = 0, dueToday = 0;
+    for (const t of (myTasks as Array<{ dueDate?: string | Date | null; status?: string }>)) {
+      if (!t.dueDate || t.status === "completed") continue;
+      const d = new Date(t.dueDate);
+      if (d < today) overdue++;
+      else if (d < tomorrow) dueToday++;
+    }
+    const total = overdue + dueToday;
+    if (total > 0) {
+      toast(`${total} follow-up${total > 1 ? "s" : ""} need attention`, {
+        description: `${dueToday} due today · ${overdue} overdue`,
+        action: { label: "My Day", onClick: () => navigate("/") },
+        duration: 9000,
+      });
+    }
+    sessionStorage.setItem("followup-digest-shown", "1");
+    shownRef.current = true;
+  }, [myTasks, navigate]);
+
+  return null;
 }
 
 function AppWithPhone() {
@@ -200,6 +240,7 @@ function AppWithPhone() {
 
   return (
     <RingCentralProvider onCallEnd={handleCallEnd}>
+      <FollowUpDigest />
       <Router />
     </RingCentralProvider>
   );

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { format, isToday, formatDistanceToNow } from "date-fns";
 import { seesAllData, normalizeRole } from "@shared/permissions";
+import { LogOutcomeDialog } from "@/components/LogOutcomeDialog";
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   active_partner: { label: "Active Partner", color: "#34d399" },
@@ -188,7 +189,7 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground mt-1">Every partner's been touched recently.</p>
                   </div>
                 ) : focus.map(({ f, reason, tint }) => (
-                  <button key={f.id} onClick={() => navigate(`/crm/facilities/${f.id}`)} className="w-full text-left flex items-center gap-3 rounded-xl px-3 py-2.5 bg-secondary/40 hover:bg-secondary border border-transparent hover:border-border transition-all group">
+                  <div key={f.id} onClick={() => navigate(`/crm/facilities/${f.id}`)} className="w-full text-left flex items-center gap-3 rounded-xl px-3 py-2.5 bg-secondary/40 hover:bg-secondary border border-transparent hover:border-border transition-all group cursor-pointer">
                     <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${tint}1a`, border: `1px solid ${tint}33` }}>
                       <VerbIcon className="w-4 h-4" style={{ color: tint }} />
                     </span>
@@ -196,8 +197,17 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
                       <p className="text-xs text-muted-foreground truncate">{reason}{f.phone ? ` · ${f.phone}` : ""}</p>
                     </div>
+                    <LogOutcomeDialog
+                      facilityId={f.id}
+                      facilityName={f.name}
+                      trigger={
+                        <button onClick={(e) => e.stopPropagation()} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-[11px] font-medium px-2 py-1 rounded-md border border-border bg-card hover:bg-accent">
+                          Log
+                        </button>
+                      }
+                    />
                     <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                  </button>
+                  </div>
                 ))}
               </div>
             </motion.section>
@@ -259,7 +269,7 @@ export default function Dashboard() {
     { label: "Facilities", value: stats?.totalFacilities, icon: Building2, tint: "#7dd3fc" },
     { label: "Active Partners", value: stats?.activePartners, icon: Handshake, tint: "#34d399" },
     { label: "Signed Cases", value: stats?.totalSignedCases, icon: Scale, tint: "#6a9bd8", hero: true },
-    { label: "Referrals", value: stats?.totalReferrals, icon: Star, tint: "#fbbf24" },
+    { label: "Referrals", value: stats?.totalReferrals, icon: Star, tint: "#a78bfa" },
     { label: "Calls Logged", value: stats?.totalContactLogs, icon: Phone, tint: "#22d3ee" },
     { label: "Open Tasks", value: stats?.openTasks, icon: ClipboardList, tint: "#fb923c", badge: stats?.overdueTasks },
   ];

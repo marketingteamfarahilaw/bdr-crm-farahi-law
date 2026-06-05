@@ -121,6 +121,12 @@ export async function setUserPassword(id: number, passwordHash: string) {
   await db.update(users).set({ passwordHash }).where(eq(users.id, id));
 }
 
+export async function setUserAgentName(id: number, agentName: string | null) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(users).set({ agentName: agentName || null }).where(eq(users.id, id));
+}
+
 export async function createUserAccount(data: { openId: string; name: string; email: string; role: string; passwordHash: string }) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");

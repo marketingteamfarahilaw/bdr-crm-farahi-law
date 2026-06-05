@@ -78,6 +78,7 @@ import {
   setUserRole,
   getUserByEmail,
   setUserPassword,
+  setUserAgentName,
   createUserAccount,
 } from "./db";
 import { canManage, canAssignRoles } from "@shared/permissions";
@@ -134,6 +135,13 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (!canAssignRoles(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only the super admin can set passwords." });
         await setUserPassword(input.userId, hashPassword(input.password));
+        return { success: true };
+      }),
+    setAgentName: protectedProcedure
+      .input(z.object({ userId: z.number(), agentName: z.string().max(80) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
+        await setUserAgentName(input.userId, input.agentName.trim() || null);
         return { success: true };
       }),
     createUser: protectedProcedure
@@ -628,7 +636,7 @@ export const appRouter = router({
   bdr: router({
     dashboardKpis: protectedProcedure.query(async () => getAgentDashboardKpis()),
     adminDashboard: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin only' });
+      if (!canManage(ctx.user.role)) throw new TRPCError({ code: 'FORBIDDEN', message: 'Managers only' });
       return getBdrAdminDashboard();
     }),
 

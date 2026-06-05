@@ -64,7 +64,7 @@ export default function FrErrands() {
 
   const queryInput = isAdmin
     ? (Object.keys(filters).length > 0 ? filters : undefined)
-    : { agent: (user as any)?.agentName ?? undefined };
+    : { agent: ((user as any)?.agentName || (user as any)?.name) ?? undefined };
 
   const { data: errands, isLoading } = trpc.bdr.frErrands.list.useQuery(queryInput);
   const createMutation = trpc.bdr.frErrands.create.useMutation({
@@ -84,7 +84,7 @@ export default function FrErrands() {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState<FormData>(defaultForm);
 
-  function openCreate() { setEditing(null); setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName ?? "") }); setOpen(true); }
+  function openCreate() { setEditing(null); setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName || (user as any)?.name || "") }); setOpen(true); }
 
   function openEdit(e: NonNullable<typeof errands>[0]) {
     setEditing(e.id);

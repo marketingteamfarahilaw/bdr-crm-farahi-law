@@ -31,7 +31,7 @@ const AGENT_COLOR_OPTIONS = [
   { label: "Orange",  value: "#FF6B35" },
   { label: "Teal",    value: "#4ECDC4" },
   { label: "Purple",  value: "#A855F7" },
-  { label: "Gold",    value: "#F59E0B" },
+  { label: "Steel",   value: "#6a9bd8" },
   { label: "Blue",    value: "#3B82F6" },
   { label: "Green",   value: "#22C55E" },
   { label: "Pink",    value: "#EC4899" },

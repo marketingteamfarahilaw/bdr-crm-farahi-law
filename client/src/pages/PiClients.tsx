@@ -32,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 const CASE_STATUSES = [
   { value: "intake",   label: "Intake",   color: "#60a5fa" },
   { value: "active",   label: "Active",   color: "#22c55e" },
-  { value: "settled",  label: "Settled",  color: "#D4AF37" },
+  { value: "settled",  label: "Settled",  color: "#6a9bd8" },
   { value: "closed",   label: "Closed",   color: "#94a3b8" },
   { value: "lost",     label: "Lost",     color: "#ef4444" },
 ] as const;
@@ -537,7 +537,7 @@ export default function PiClientsPage() {
           { label:"Total Clients", value:clients.length, color:"#ef4444" },
           { label:"Active Cases",  value:clients.filter((c:any)=>c.caseStatus==="active").length, color:"#22c55e" },
           { label:"Intake",        value:clients.filter((c:any)=>c.caseStatus==="intake").length, color:"#60a5fa" },
-          { label:"Settled",       value:clients.filter((c:any)=>c.caseStatus==="settled").length, color:"#D4AF37" },
+          { label:"Settled",       value:clients.filter((c:any)=>c.caseStatus==="settled").length, color:"#6a9bd8" },
         ].map((s,i) => (
           <div key={i} style={{ background:"linear-gradient(160deg,rgba(8,18,36,0.97),rgba(5,12,24,0.97))",backdropFilter:"blur(20px)",border:`1px solid ${s.color}25`,borderRadius:14,padding:"16px 18px" }}>
             <div style={{ fontSize:22,fontWeight:800,color:s.color,lineHeight:1,letterSpacing:"-0.02em" }}>{s.value}</div>
@@ -599,7 +599,7 @@ export default function PiClientsPage() {
                           />
                         </div>
                       )}
-                      {client.email && <div style={{ fontSize:12,color:"#D4AF37" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>EMAIL</span><a href={`mailto:${client.email}`} style={{ textDecoration:"none",color:"#D4AF37",fontWeight:600 }}>{client.email}</a></div>}
+                      {client.email && <div style={{ fontSize:12,color:"#6a9bd8" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>EMAIL</span><a href={`mailto:${client.email}`} style={{ textDecoration:"none",color:"#6a9bd8",fontWeight:600 }}>{client.email}</a></div>}
                       {client.address && <div className="col-span-2" style={{ fontSize:12,color:"rgba(148,163,184,0.7)" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>ADDRESS</span>{client.address}{client.city ? `, ${client.city}` : ""}{client.zipCode ? ` ${client.zipCode}` : ""}</div>}
                       {client.incidentDate && <div style={{ fontSize:12,color:"rgba(148,163,184,0.7)" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>INCIDENT DATE</span>{new Date(client.incidentDate).toLocaleDateString()}</div>}
                       {client.assignedAgentName && <div style={{ fontSize:12,color:"rgba(148,163,184,0.7)" }}><span style={{ color:"rgba(148,163,184,0.4)",fontSize:10,display:"block",marginBottom:2 }}>ASSIGNED AGENT</span>{client.assignedAgentName}</div>}

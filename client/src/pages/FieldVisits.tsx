@@ -45,7 +45,7 @@ export default function FieldVisits() {
   // Build query input — non-admins are locked to their own agent name
   const queryInput = isAdmin
     ? (Object.keys(filters).length > 0 ? filters : undefined)
-    : { agent: (user as any)?.agentName ?? undefined };
+    : { agent: ((user as any)?.agentName || (user as any)?.name) ?? undefined };
 
   const { data: visits, isLoading } = trpc.bdr.fieldVisits.list.useQuery(queryInput);
 
@@ -68,7 +68,7 @@ export default function FieldVisits() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName ?? "") });
+    setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName || (user as any)?.name || "") });
     setOpen(true);
   }
 

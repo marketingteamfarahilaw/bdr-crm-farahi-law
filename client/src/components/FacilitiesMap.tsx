@@ -6,7 +6,7 @@ import { MapPin } from "lucide-react";
 
 // ── Status → pin color mapping ────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, { bg: string; border: string; label: string }> = {
-  active_partner:   { bg: "#D4AF37", border: "#B8960C", label: "Active Partner" },
+  active_partner:   { bg: "#2c4a73", border: "#1a2c50", label: "Active Partner" },
   warm_lead:        { bg: "#F59E0B", border: "#D97706", label: "Warm Lead" },
   cold:             { bg: "#60A5FA", border: "#3B82F6", label: "Cold" },
   churned:          { bg: "#6B7280", border: "#4B5563", label: "Churned" },
@@ -153,7 +153,7 @@ function createInfoWindowContent(facility: MapFacility, onOpen: () => void): HTM
     </div>
     <div style="display:flex;gap:6px;margin-bottom:2px;">
       <div style="flex:1;background:#1e2d4a;border-radius:6px;padding:6px 8px;text-align:center;">
-        <div style="font-size:18px;font-weight:700;color:#D4AF37;">${facility.totalLeadsReceived ?? 0}</div>
+        <div style="font-size:18px;font-weight:700;color:#2c4a73;">${facility.totalLeadsReceived ?? 0}</div>
         <div style="font-size:9px;color:#64748b;margin-top:1px;">Leads Received</div>
       </div>
       <div style="flex:1;background:#1e2d4a;border-radius:6px;padding:6px 8px;text-align:center;">
@@ -165,7 +165,7 @@ function createInfoWindowContent(facility: MapFacility, onOpen: () => void): HTM
       margin-top:10px;
       width:100%;
       padding:7px 0;
-      background:#D4AF37;
+      background:#2c4a73;
       color:#0a0f1e;
       border:none;
       border-radius:6px;
@@ -179,8 +179,8 @@ function createInfoWindowContent(facility: MapFacility, onOpen: () => void): HTM
 
   const btn = container.querySelector("#iw-open-btn") as HTMLElement;
   if (btn) {
-    btn.onmouseenter = () => { btn.style.background = "#c9a227"; };
-    btn.onmouseleave = () => { btn.style.background = "#D4AF37"; };
+    btn.onmouseenter = () => { btn.style.background = "#5588c4"; };
+    btn.onmouseleave = () => { btn.style.background = "#2c4a73"; };
     btn.onclick = onOpen;
   }
 
@@ -304,7 +304,7 @@ export default function FacilitiesMap({ facilities, onFacilityClick, className }
       {/* Stats overlay */}
       <div className="absolute top-3 right-3 z-10 bg-[#0d1526]/90 backdrop-blur-sm border border-[#1e2d4a] rounded-lg px-3 py-2 shadow-xl">
         <div className="text-xs text-[#94a3b8]">
-          <span className="font-semibold text-[#D4AF37]">{withCoords.length}</span> mapped
+          <span className="font-semibold text-[#2c4a73]">{withCoords.length}</span> mapped
           {withoutCoords > 0 && (
             <span className="ml-2 text-amber-400">
               · {withoutCoords} missing location

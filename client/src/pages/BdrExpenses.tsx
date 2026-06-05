@@ -50,7 +50,7 @@ export default function BdrExpenses() {
 
   const queryInput = isAdmin
     ? (Object.keys(filters).length > 0 ? filters : undefined)
-    : { agent: (user as any)?.agentName ?? undefined };
+    : { agent: ((user as any)?.agentName || (user as any)?.name) ?? undefined };
 
   const { data: expenses, isLoading } = trpc.bdr.bdrExpenses.list.useQuery(queryInput);
   const createMutation = trpc.bdr.bdrExpenses.create.useMutation({
@@ -75,7 +75,7 @@ export default function BdrExpenses() {
   const [exportFrom, setExportFrom] = useState("");
   const [exportTo, setExportTo] = useState("");
 
-  function openCreate() { setEditing(null); setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName ?? "") }); setOpen(true); }
+  function openCreate() { setEditing(null); setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName || (user as any)?.name || "") }); setOpen(true); }
 
   function openEdit(e: NonNullable<typeof expenses>[0]) {
     setEditing(e.id);

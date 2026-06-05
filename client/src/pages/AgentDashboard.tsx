@@ -25,7 +25,7 @@ function KpiCard({ icon: Icon, label, value, sub, color }: {
   color: string;
 }) {
   return (
-    <div className="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/10">
+    <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3 border border-border">
       <div className="rounded-lg p-2" style={{ backgroundColor: color + "22" }}>
         <Icon className="w-4 h-4" style={{ color }} />
       </div>

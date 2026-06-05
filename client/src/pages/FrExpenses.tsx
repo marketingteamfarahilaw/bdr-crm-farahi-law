@@ -49,7 +49,7 @@ export default function FrExpenses() {
 
   const queryInput = isAdmin
     ? (Object.keys(filters).length > 0 ? filters : undefined)
-    : { agent: (user as any)?.agentName ?? undefined };
+    : { agent: ((user as any)?.agentName || (user as any)?.name) ?? undefined };
 
   const { data: expenses, isLoading } = trpc.bdr.frExpenses.list.useQuery(queryInput);
 
@@ -75,7 +75,7 @@ export default function FrExpenses() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName ?? "") });
+    setForm({ ...defaultForm, agentName: isAdmin ? "" : ((user as any)?.agentName || (user as any)?.name || "") });
     setOpen(true);
   }
 

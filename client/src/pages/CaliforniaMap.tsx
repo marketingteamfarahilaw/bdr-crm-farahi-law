@@ -126,7 +126,7 @@ function createLeadPin(lead: PinLead): HTMLElement {
       transform: rotate(45deg);
       width: 12px;
       height: 12px;
-      background: #D4AF37;
+      background: #6a9bd8;
       border-radius: 50%;
       border: 1.5px solid #0a0f1e;
       display: flex;
@@ -251,8 +251,8 @@ function createInfoWindowContent(
           border-radius:8px;padding:6px 10px;margin-bottom:10px;
           box-shadow: 0 0 10px rgba(212,175,55,0.08);
         ">
-          <span style="color:#D4AF37;font-size:13px;">★</span>
-          <span style="font-size:11px;color:#D4AF37;font-weight:600;letter-spacing:0.02em;">Added to CRM</span>
+          <span style="color:#6a9bd8;font-size:13px;">★</span>
+          <span style="font-size:11px;color:#6a9bd8;font-weight:600;letter-spacing:0.02em;">Added to CRM</span>
         </div>
       ` : ""}
 
@@ -269,7 +269,7 @@ function createInfoWindowContent(
         ${!lead.inCrm ? `
           <div id="iw-save" style="
             flex:1;padding:8px 0;
-            background:linear-gradient(135deg,#D4AF37 0%,#c9a227 100%);
+            background:linear-gradient(135deg,#6a9bd8 0%,#5588c4 100%);
             color:#07101f;
             border:none;border-radius:8px;font-size:11px;font-weight:800;
             cursor:pointer;text-align:center;transition:all 0.15s;
@@ -279,7 +279,7 @@ function createInfoWindowContent(
         ` : `
           <div id="iw-crm" style="
             flex:1;padding:8px 0;
-            background:rgba(212,175,55,0.1);color:#D4AF37;
+            background:rgba(212,175,55,0.1);color:#6a9bd8;
             border:1px solid rgba(212,175,55,0.3);border-radius:8px;font-size:11px;font-weight:700;
             cursor:pointer;text-align:center;transition:all 0.15s;
             letter-spacing:0.03em;
@@ -564,7 +564,7 @@ export default function CaliforniaMapPage() {
               lng: lead.longitude,
               radiusMiles: 10,
             }));
-            navigate("/");
+            navigate("/search");
           }
         );
 
@@ -737,11 +737,11 @@ export default function CaliforniaMapPage() {
             <!-- CRM row -->
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <div style="display:flex;align-items:center;gap:7px;">
-                <span style="font-size:12px;color:#D4AF37;">★</span>
+                <span style="font-size:12px;color:#6a9bd8;">★</span>
                 <span style="font-size:11px;color:rgba(148,163,184,0.8);">In CRM</span>
               </div>
               <span style="
-                font-size:11px;font-weight:700;color:#D4AF37;
+                font-size:11px;font-weight:700;color:#6a9bd8;
                 background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.25);
                 border-radius:999px;padding:2px 10px;
               ">${crmCount}</span>
@@ -888,7 +888,7 @@ export default function CaliforniaMapPage() {
         <div className="flex items-center gap-2 mr-3 flex-shrink-0">
           <div style={{
             width: 28, height: 28, borderRadius: 8,
-            background: "linear-gradient(135deg, #D4AF37 0%, #c9a227 100%)",
+            background: "linear-gradient(135deg, #6a9bd8 0%, #5588c4 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 0 12px rgba(212,175,55,0.4)",
           }}>
@@ -909,7 +909,7 @@ export default function CaliforniaMapPage() {
             { icon: <span style={{fontSize:11}}>🔥</span>, val: stats.hot, label: "hot", bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.25)", color: "#ef4444", valColor: "#ef4444" },
             { icon: <span style={{fontSize:11}}>♨️</span>, val: stats.warm, label: "warm", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.25)", color: "#f59e0b", valColor: "#f59e0b" },
             { icon: <span style={{fontSize:11}}>❄️</span>, val: stats.cold, label: "cold", bg: "rgba(96,165,250,0.1)", border: "rgba(96,165,250,0.25)", color: "#60a5fa", valColor: "#60a5fa" },
-            { icon: <span style={{fontSize:11}}>★</span>, val: stats.inCrm, label: "in CRM", bg: "rgba(212,175,55,0.1)", border: "rgba(212,175,55,0.3)", color: "#D4AF37", valColor: "#D4AF37" },
+            { icon: <span style={{fontSize:11}}>★</span>, val: stats.inCrm, label: "in CRM", bg: "rgba(212,175,55,0.1)", border: "rgba(212,175,55,0.3)", color: "#6a9bd8", valColor: "#6a9bd8" },
           ] as const).map((s, i) => (
             <div key={i} style={{
               display: "flex", alignItems: "center", gap: 5,
@@ -962,7 +962,7 @@ export default function CaliforniaMapPage() {
               : "rgba(255,255,255,0.04)",
             border: `1px solid ${showFilters ? "rgba(212,175,55,0.5)" : "rgba(255,255,255,0.1)"}`,
             borderRadius: 8,
-            color: showFilters ? "#D4AF37" : "#94a3b8",
+            color: showFilters ? "#6a9bd8" : "#94a3b8",
             fontSize: 11,
             fontWeight: 600,
             cursor: "pointer",
@@ -1072,7 +1072,7 @@ export default function CaliforniaMapPage() {
                     else setActiveCats(new Set(CATEGORIES.map(c => c.value)));
                   }}
                   style={{
-                    fontSize: 10, fontWeight: 800, color: "#D4AF37",
+                    fontSize: 10, fontWeight: 800, color: "#6a9bd8",
                     background: "linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))",
                     border: "1px solid rgba(212,175,55,0.3)",
                     borderRadius: 7, padding: "3px 10px", cursor: "pointer",
@@ -1156,7 +1156,7 @@ export default function CaliforniaMapPage() {
                       background: agentFilter === "all"
                         ? "linear-gradient(100deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.08) 100%)"
                         : "rgba(255,255,255,0.025)",
-                      color: agentFilter === "all" ? "#D4AF37" : "rgba(148,163,184,0.55)",
+                      color: agentFilter === "all" ? "#6a9bd8" : "rgba(148,163,184,0.55)",
                       fontSize: 12, fontWeight: agentFilter === "all" ? 700 : 500,
                       cursor: "pointer", transition: "all 0.2s ease", width: "100%", textAlign: "left",
                       boxShadow: agentFilter === "all" ? "0 2px 16px rgba(212,175,55,0.2), 0 0 0 1px rgba(212,175,55,0.12) inset" : "none",
@@ -1167,7 +1167,7 @@ export default function CaliforniaMapPage() {
                     <span style={{
                       fontSize: 10, fontWeight: 800,
                       background: agentFilter === "all" ? "rgba(212,175,55,0.2)" : "rgba(255,255,255,0.06)",
-                      color: agentFilter === "all" ? "#D4AF37" : "rgba(148,163,184,0.45)",
+                      color: agentFilter === "all" ? "#6a9bd8" : "rgba(148,163,184,0.45)",
                       borderRadius: 999, padding: "2px 8px",
                       border: `1px solid ${agentFilter === "all" ? "rgba(212,175,55,0.3)" : "rgba(255,255,255,0.06)"}`,
                       minWidth: 28, textAlign: "center",
@@ -1260,7 +1260,7 @@ export default function CaliforniaMapPage() {
                   letterSpacing: "0.01em",
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLButtonElement).style.color = "#D4AF37";
+                  (e.currentTarget as HTMLButtonElement).style.color = "#6a9bd8";
                   (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(100deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05))";
                   (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(212,175,55,0.28)";
                   (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 10px rgba(212,175,55,0.1)";
@@ -1272,7 +1272,7 @@ export default function CaliforniaMapPage() {
                   (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
                 }}
               >
-                <span style={{ fontSize: 8, opacity: 0.4, color: "#D4AF37" }}>◆</span>
+                <span style={{ fontSize: 8, opacity: 0.4, color: "#6a9bd8" }}>◆</span>
                 {city.name}
               </button>
             ))}
@@ -1290,7 +1290,7 @@ export default function CaliforniaMapPage() {
             padding: "8px 20px",
             boxShadow: "0 6px 28px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 20px rgba(212,175,55,0.06)",
           }}>
-            <MapPin size={12} color="#D4AF37" />
+            <MapPin size={12} color="#6a9bd8" />
             <span style={{ fontSize: 12, color: "rgba(148,163,184,0.8)" }}>
               Showing{" "}
               <span style={{ fontWeight: 700, color: "#f1f5f9" }}>{visiblePins.length}</span>
@@ -1316,8 +1316,8 @@ export default function CaliforniaMapPage() {
                 Search for leads in any California city, save them, and they'll appear as pins on this map — color-coded by temperature.
               </div>
               <button
-                onClick={() => navigate("/")}
-                className="bg-[#D4AF37] text-[#0a0f1e] font-bold text-sm px-5 py-2.5 rounded-lg hover:bg-[#c9a227] transition-colors cursor-pointer"
+                onClick={() => navigate("/search")}
+                className="bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
               >
                 Start Prospecting →
               </button>

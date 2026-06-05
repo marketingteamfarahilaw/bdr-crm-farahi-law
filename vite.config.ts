@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+import { VitePWA } from "vite-plugin-pwa";
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -150,7 +151,45 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+  VitePWA({
+    registerType: "autoUpdate",
+    injectRegister: "auto",
+    includeAssets: ["icons/apple-touch-icon.png", "icons/favicon-32.png"],
+    manifest: {
+      name: "Farahi Law · BD Command Center",
+      short_name: "Farahi CRM",
+      description: "Farahi Law BD partner CRM — pipeline, calls, visits, expenses, and referrals.",
+      theme_color: "#16264a",
+      background_color: "#0f1b33",
+      display: "standalone",
+      start_url: "/",
+      scope: "/",
+      icons: [
+        { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
+        { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },
+        { src: "icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ],
+    },
+    workbox: {
+      globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+      maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      navigateFallback: "/index.html",
+      navigateFallbackDenylist: [/^\/api/],
+      // CRM data must always be fresh — never cache the API.
+      runtimeCaching: [{ urlPattern: /\/api\//, handler: "NetworkOnly" }],
+      cleanupOutdatedCaches: true,
+      clientsClaim: true,
+      skipWaiting: true,
+    },
+    devOptions: { enabled: false },
+  }),
+];
 
 export default defineConfig({
   plugins,

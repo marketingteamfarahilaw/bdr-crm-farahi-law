@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { seesAllData } from "@shared/permissions";
+import { LogOutcomeDialog } from "@/components/LogOutcomeDialog";
 import { formatDistanceToNow } from "date-fns";
 import { Building2, User, Search, GripVertical, Send, Workflow, ArrowRight } from "lucide-react";
 
@@ -231,6 +232,17 @@ export default function Pipeline() {
                               <span className="text-[10px] text-muted-foreground ml-auto">
                                 {last ? formatDistanceToNow(last, { addSuffix: true }) : "no contact yet"}
                               </span>
+                            </div>
+                            <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <LogOutcomeDialog
+                                facilityId={f.id}
+                                facilityName={f.name}
+                                trigger={
+                                  <button onClick={(e) => e.stopPropagation()} className="w-full text-[11px] font-medium px-2 py-1 rounded-md border border-border bg-card hover:bg-accent">
+                                    Log call / visit
+                                  </button>
+                                }
+                              />
                             </div>
                           </div>
                         </div>

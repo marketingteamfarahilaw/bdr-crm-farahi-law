@@ -12,14 +12,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active_partner: { label: "Active Partner", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-  warm_lead: { label: "Warm Lead", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
-  cold: { label: "Cold", color: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
-  churned: { label: "Churned", color: "bg-red-500/20 text-red-400 border-red-500/30" },
-  do_not_contact: { label: "Do Not Contact", color: "bg-red-900/30 text-red-300 border-red-900/50" },
-  needs_agent: { label: "Needs Agent", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
-};
+import { STATUS_LABELS } from "@/lib/crmMeta";
 
 export default function ManagementDashboard() {
   const { user } = useAuth();

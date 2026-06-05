@@ -19,6 +19,34 @@ const ROLE_COLOR: Record<string, string> = {
   fr_agent: "text-orange-400",
 };
 
+// Inline editor for a user's canonical agent name (used to scope BDR/FR records).
+function AgentNameCell({ u, canEdit }: { u: any; canEdit: boolean }) {
+  const utils = trpc.useUtils();
+  const [val, setVal] = useState<string>(u.agentName ?? "");
+  const save = trpc.team.setAgentName.useMutation({
+    onSuccess: () => { toast.success("Agent name saved"); utils.team.list.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+  if (!canEdit) return <span className="text-xs text-muted-foreground">{u.agentName || "—"}</span>;
+  const dirty = val.trim() !== (u.agentName || "");
+  return (
+    <div className="flex items-center gap-1.5">
+      <Input
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        placeholder="—"
+        className="h-8 w-36 text-xs bg-card border-border"
+        onKeyDown={(e) => { if (e.key === "Enter" && dirty) save.mutate({ userId: u.id, agentName: val.trim() }); }}
+      />
+      {dirty && (
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" disabled={save.isPending} onClick={() => save.mutate({ userId: u.id, agentName: val.trim() })}>
+          {save.isPending ? "…" : "Save"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function TeamRoles() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
@@ -113,16 +141,17 @@ export default function TeamRoles() {
           )}
         </div>
 
-        <div className="premium-card rounded-2xl overflow-hidden">
+        <div className="premium-card rounded-2xl overflow-x-auto">
           {isLoading ? (
             <div className="p-6 space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}</div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-foreground">
                   <th className="px-4 py-2.5 font-medium">Name</th>
                   <th className="px-4 py-2.5 font-medium">Email</th>
                   <th className="px-4 py-2.5 font-medium">Role</th>
+                  <th className="px-4 py-2.5 font-medium">Agent Name</th>
                   <th className="px-4 py-2.5 font-medium">Password</th>
                 </tr>
               </thead>
@@ -146,6 +175,9 @@ export default function TeamRoles() {
                         )}
                       </td>
                       <td className="px-4 py-2.5">
+                        <AgentNameCell u={u} canEdit={isManager} />
+                      </td>
+                      <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           {u.hasPassword ? (
                             <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400"><Check className="w-3 h-3" /> Set</span>
@@ -163,7 +195,7 @@ export default function TeamRoles() {
                   );
                 })}
                 {(users ?? []).length === 0 && (
-                  <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">No team members yet.</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No team members yet.</td></tr>
                 )}
               </tbody>
             </table>

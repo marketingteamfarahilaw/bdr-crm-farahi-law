@@ -44,7 +44,7 @@
 
 :root {
   --radius: 0.625rem;
-  /* Light theme — warm ivory + champagne gold */
+  /* Light theme — clean white + navy accent (Farahi brand) */
   --background: oklch(0.985 0.004 90);
   --foreground: oklch(0.22 0.018 260);
   --card: oklch(1 0 0);
@@ -75,7 +75,8 @@
   --sidebar-ring: oklch(0.45 0.09 257);
 }
 
-/* Dark theme — Farahi brand: deep navy + champagne gold */
+/* Dark theme — Farahi brand: deep navy + steel-blue accent.
+   NOTE: the --gold token name is legacy; its value is now the navy/steel brand accent. */
 .dark {
   --background: oklch(0.12 0.015 255);
   --foreground: oklch(0.95 0.008 60);

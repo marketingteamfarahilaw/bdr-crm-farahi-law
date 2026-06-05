@@ -18,14 +18,7 @@ import { formatDistanceToNow } from "date-fns";
 import { BulkImportDialog } from "./BulkImportDialog";
 import FacilitiesMap from "@/components/FacilitiesMap";
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  prospect: { label: "Prospect", color: "bg-sky-500/20 text-sky-400 border-sky-500/30" },
-  active_partner: { label: "Active Partner", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-  priority_partner: { label: "Priority Partner", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
-  needs_follow_up: { label: "Needs Follow-Up", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
-  dormant: { label: "Dormant", color: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
-  do_not_use: { label: "Do Not Use", color: "bg-red-900/30 text-red-300 border-red-900/50" },
-};
+import { STATUS_LABELS } from "@/lib/crmMeta";
 
 const CATEGORY_LABELS: Record<string, string> = {
   body_shop: "Body Shop",

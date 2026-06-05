@@ -28,7 +28,7 @@ export default function SavedSearchesPage() {
       lat: search.lat ?? undefined,
       lng: search.lng ?? undefined,
     }));
-    navigate("/");
+    navigate("/search");
     toast.info("Search loaded — click Search to run it.");
   };
 

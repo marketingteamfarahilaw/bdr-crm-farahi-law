@@ -735,6 +735,17 @@ export default function FacilityProfile() {
         ))}
       </div>
 
+      {/* Reciprocity nudge — we've sent leads but received none back */}
+      {(facility.totalLeads ?? 0) >= 3 && (facility.totalReferrals ?? 0) === 0 && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+          <span className="text-base leading-none">⚠️</span>
+          <div>
+            <span className="font-medium text-amber-600 dark:text-amber-400">One-sided so far.</span>{" "}
+            <span className="text-muted-foreground">You've sent <strong className="text-foreground">{facility.totalLeads}</strong> leads here but received <strong className="text-foreground">0</strong> referrals back — a good moment to ask for reciprocity on your next touch.</span>
+          </div>
+        </div>
+      )}
+
       {/* Main Tabs */}
       <Tabs defaultValue="overview">
         <TabsList className="bg-card border border-border flex-wrap h-auto">

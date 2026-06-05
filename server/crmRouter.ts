@@ -61,7 +61,7 @@ import {
   findFacilityByPhone,
 } from "./crmDb";
 import { getDb } from "./db";
-import { facilities, uberReceipts } from "../drizzle/schema";
+import { facilities, uberReceipts, users } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
 const RC_BASE = "https://platform.ringcentral.com";
 
@@ -184,6 +184,7 @@ export const crmRouter = router({
         z.object({
           search: z.string().optional(),
           status: z.string().optional(),
+          partnerStatus: z.string().optional(),
           category: z.string().optional(),
           managementFlag: z.boolean().optional(),
           sortBy: z.enum(["name", "updatedAt", "createdAt"]).optional(),
@@ -227,7 +228,10 @@ export const crmRouter = router({
           name: z.string().min(1),
           category: z.enum(CATEGORIES),
           address: z.string().optional(),
+          city: z.string().optional(),
           phone: z.string().optional(),
+          phone2: z.string().optional(),
+          phone3: z.string().optional(),
           website: z.string().optional(),
           contactName: z.string().optional(),
           contactTitle: z.string().optional(),
@@ -257,7 +261,10 @@ export const crmRouter = router({
           name: z.string().min(1).optional(),
           category: z.enum(CATEGORIES).optional(),
           address: z.string().optional(),
+          city: z.string().optional(),
           phone: z.string().optional(),
+          phone2: z.string().optional(),
+          phone3: z.string().optional(),
           website: z.string().optional(),
           contactName: z.string().optional(),
           contactTitle: z.string().optional(),
@@ -296,8 +303,8 @@ export const crmRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can delete facilities." });
+        if (!canManage(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can delete facilities." });
         }
         await deleteFacility(input.id);
         return { success: true };
@@ -639,12 +646,17 @@ export const crmRouter = router({
     }),
 
     getWidgetConfig: protectedProcedure.query(async () => {
-      // Only the public clientId is sent to the browser. The phone widget signs
-      // in via RingCentral OAuth (the "Sign In" button) — we deliberately do NOT
-      // expose the client secret or JWT to the client. The old JWT auto-login
-      // was rejected by RingCentral as "Access denied" and leaked the secret.
+      // JWT auto-login for the embeddable phone widget. The OAuth "Sign In" popup
+      // flow is broken on this RingCentral account (returns "Access denied"), so
+      // the widget auto-authenticates with the JWT credential instead — this is
+      // the proven working path the team used before.
+      // SECURITY NOTE: this sends the client secret + JWT to logged-in users'
+      // browsers. Acceptable for an internal, login-gated tool; revisit with a
+      // server-minted short-lived token if the widget is ever exposed publicly.
       const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
-      return { clientId, configured: !!clientId };
+      const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
+      const jwt = process.env.RINGCENTRAL_JWT ?? "";
+      return { clientId, clientSecret, jwt, configured: !!clientId };
     }),
 
     transcribeCall: protectedProcedure
@@ -1018,6 +1030,64 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         const accessToken = await getValidRCToken();
         const res = await syncRecentCalls(accessToken, { lookbackMinutes: input?.lookbackMinutes ?? 1440 });
         return { success: true as const, ...res };
+      }),
+
+    // ─── Click-to-call via RingOut ────────────────────────────────────────────
+    // Reliable in-CRM calling WITHOUT the browser widget. RingCentral rings the
+    // agent's own phone (their saved callback number) first, then bridges it to
+    // the facility. The recorded call is then picked up by the call sync →
+    // transcript + recap, exactly like a desk-phone call. No mic, no WebRTC.
+    getMyCallback: protectedProcedure.query(async ({ ctx }) => {
+      return { number: (ctx.user as any).ringoutMyLocation ?? null };
+    }),
+
+    setMyCallback: protectedProcedure
+      .input(z.object({ number: z.string().max(30) }))
+      .mutation(async ({ ctx, input }) => {
+        const n = input.number.replace(/[^\d+]/g, "").slice(0, 30);
+        const db = await getDb();
+        if (db) await db.update(users).set({ ringoutMyLocation: n || null }).where(eq(users.id, ctx.user.id));
+        return { success: true as const, number: n || null };
+      }),
+
+    ringOut: protectedProcedure
+      .input(z.object({ toNumber: z.string().min(7), facilityId: z.number().optional(), fromNumber: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const from = (input.fromNumber?.trim() || (ctx.user as any).ringoutMyLocation || "").trim();
+        if (!from) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Set your callback number first — that's the phone RingCentral will ring." });
+        }
+        const accessToken = await getValidRCToken();
+        try {
+          const resp = await axios.post(
+            `${RC_BASE}/restapi/v1.0/account/~/extension/~/ring-out`,
+            { from: { phoneNumber: from }, to: { phoneNumber: input.toNumber }, playPrompt: false },
+            { headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" } }
+          );
+          return { success: true as const, id: String(resp.data?.id ?? ""), status: resp.data?.status?.callStatus ?? "InProgress", from, to: input.toNumber };
+        } catch (e: any) {
+          const code = e?.response?.status;
+          if (code === 403) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Your RingCentral app is missing the 'RingOut' permission. Add it in the RingCentral developer console (Auth & Permissions → RingOut), then try again." });
+          }
+          const detail = e?.response?.data?.message ?? e?.response?.data?.error_description ?? e?.message ?? "unknown error";
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `RingOut failed: ${detail}` });
+        }
+      }),
+
+    ringOutStatus: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .query(async ({ input }) => {
+        if (!input.id) return { status: "Unknown", caller: null as string | null, callee: null as string | null };
+        const accessToken = await getValidRCToken();
+        const resp = await axios
+          .get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/ring-out/${input.id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+          .catch(() => null);
+        return {
+          status: resp?.data?.status?.callStatus ?? "Unknown",
+          caller: resp?.data?.status?.callerStatus ?? null,
+          callee: resp?.data?.status?.calleeStatus ?? null,
+        };
       }),
   }),
 

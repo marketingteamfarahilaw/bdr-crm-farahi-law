@@ -102,8 +102,8 @@ function ActivePartnersTable({ agentFilter }: { agentFilter?: string }) {
                   </Badge>
                 </td>
                 <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">
-                  {f.lastContactDate
-                    ? new Date(f.lastContactDate).toLocaleDateString()
+                  {f.lastContact?.contactDate
+                    ? new Date(f.lastContact.contactDate).toLocaleDateString()
                     : <span className="text-amber-400">Never</span>}
                 </td>
               </tr>
