@@ -8,6 +8,7 @@ import { registerLocalLoginRoutes } from "./localLogin";
 import { registerStorageProxy } from "./storageProxy";
 import { registerMapsProxy } from "./mapsProxy";
 import { registerUberWebhook } from "./uberWebhook";
+import { registerGoogleAuth } from "./googleAuth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -47,6 +48,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerLocalLoginRoutes(app);
   registerUberWebhook(app);
+  registerGoogleAuth(app);
   // tRPC API
   app.use(
     "/api/trpc",
