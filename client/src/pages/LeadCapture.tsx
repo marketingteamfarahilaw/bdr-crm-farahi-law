@@ -11,8 +11,54 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ClipboardList, Plus, Download, Trash2, Loader2 } from "lucide-react";
+import { ClipboardList, Plus, Download, Trash2, Loader2, Mail, CheckCircle2, Clock, XCircle, Circle } from "lucide-react";
 import { LeadFormFields } from "@/components/LeadFormFields";
+import { ClickToCallButton } from "@/components/RingCentralWidget";
+
+// Theme-aware status pill for outcome/disposition-style text.
+const PILL_BASE = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium";
+function statusTone(value: string): { className: string; Icon: typeof CheckCircle2 } {
+  const v = value.toLowerCase();
+  if (/(accept|sign|signed|complete|success|won|active|qualified|hot|retained)/.test(v))
+    return { className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30", Icon: CheckCircle2 };
+  if (/(pending|progress|follow|callback|warm|review|waiting|hold)/.test(v))
+    return { className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30", Icon: Clock };
+  if (/(deni|reject|declin|fail|lost|not\b|no\b|dead|disqualif|unqualif|cold|dnq)/.test(v))
+    return { className: "bg-destructive/15 text-destructive border-destructive/30", Icon: XCircle };
+  return { className: "bg-muted text-muted-foreground border-border", Icon: Circle };
+}
+function StatusPill({ value }: { value: string }) {
+  const { className, Icon } = statusTone(value);
+  return (
+    <span className={`${PILL_BASE} ${className}`}>
+      <Icon className="w-3 h-3" />
+      <span className="truncate max-w-[160px]" title={value}>{value}</span>
+    </span>
+  );
+}
+
+// Render a single cell value with the right premium treatment per field.
+function renderCell(key: string, value: string) {
+  if (key === "phone") return <ClickToCallButton phoneNumber={value} />;
+  if (key === "email")
+    return (
+      <a href={`mailto:${value}`} className="inline-flex items-center gap-1 text-primary hover:underline" title={value}>
+        <Mail className="w-3.5 h-3.5" />
+        <span className="truncate max-w-[180px]">{value}</span>
+      </a>
+    );
+  if (key === "outcome" || key === "disposition" || key === "classification" || key === "liability")
+    return <StatusPill value={value} />;
+  if (key === "value") {
+    const num = Number(String(value).replace(/[^0-9.-]/g, ""));
+    const display = Number.isFinite(num) && String(value).trim() !== "" && /\d/.test(value)
+      ? `$${num.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+      : value;
+    return <span className="whitespace-nowrap font-medium text-foreground">{display}</span>;
+  }
+  // Long free-text fields: keep rows single-line and compact.
+  return <span className="block truncate max-w-[220px]" title={value}>{value}</span>;
+}
 
 const FIELDS = [
   { key: "leadDate", label: "Date", type: "date" },
@@ -107,11 +153,19 @@ export default function LeadCapture() {
               <tbody>
                 {(leads ?? []).map((l: any) => (
                   <tr key={l.id} className="border-b border-border/50 hover:bg-secondary/30">
-                    {FIELDS.map((f) => (
-                      <td key={f.key} className="px-3 py-2 whitespace-nowrap text-foreground/90">
-                        {f.key === "leadDate" ? (l.leadDate ? new Date(l.leadDate).toLocaleDateString() : "—") : (l[f.key] || "—")}
-                      </td>
-                    ))}
+                    {FIELDS.map((f) => {
+                      const raw = f.key === "leadDate"
+                        ? (l.leadDate ? new Date(l.leadDate).toLocaleDateString() : "")
+                        : (l[f.key] ?? "");
+                      const value = String(raw).trim();
+                      return (
+                        <td key={f.key} className="px-3 py-2 align-middle text-foreground/90">
+                          {value
+                            ? (f.key === "leadDate" ? <span className="whitespace-nowrap">{value}</span> : renderCell(f.key, value))
+                            : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      );
+                    })}
                     <td className="px-3 py-2">
                       <button onClick={() => del.mutate({ id: l.id })} className="text-muted-foreground hover:text-destructive" title="Delete">
                         <Trash2 className="w-3.5 h-3.5" />
@@ -120,7 +174,17 @@ export default function LeadCapture() {
                   </tr>
                 ))}
                 {(leads ?? []).length === 0 && (
-                  <tr><td colSpan={FIELDS.length + 1} className="px-4 py-10 text-center text-muted-foreground">No leads yet. Click "Add Lead" to capture one.</td></tr>
+                  <tr>
+                    <td colSpan={FIELDS.length + 1} className="p-4">
+                      <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+                        <div className="mx-auto mb-3 w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                          <ClipboardList className="w-5 h-5 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium text-foreground">No leads yet</p>
+                        <p className="text-xs text-muted-foreground mt-1">Click "Add Lead" to capture your first intake.</p>
+                      </div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

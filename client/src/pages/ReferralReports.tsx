@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownLeft, CheckCircle, AlertCircle, Building2, User } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, CheckCircle, AlertCircle, Building2, User, CheckCircle2, Clock, XCircle, Inbox } from "lucide-react";
 
 export default function ReferralReports() {
   const { data: stats, isLoading } = trpc.referralWorkflow.stats.useQuery();
@@ -35,6 +35,39 @@ export default function ReferralReports() {
   const signRate = summary.totalInbound > 0
     ? Math.round((summary.totalSigned / summary.totalInbound) * 100)
     : 0;
+
+  // Theme-aware status pill styling derived from the status text
+  const statusPill = (status: string) => {
+    const s = status.toLowerCase();
+    const positive = /(accept|sign|complet|success|active|won|approv|retain)/.test(s);
+    const pending = /(pending|progress|review|sent|open|awaiting|follow)/.test(s);
+    const negative = /(den|reject|fail|declin|lost|not|closed|inactive|dead)/.test(s);
+    if (positive) {
+      return {
+        className:
+          "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+        Icon: CheckCircle2,
+      };
+    }
+    if (negative) {
+      return {
+        className:
+          "bg-destructive/15 text-destructive dark:text-red-400 border-destructive/30",
+        Icon: XCircle,
+      };
+    }
+    if (pending) {
+      return {
+        className:
+          "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+        Icon: Clock,
+      };
+    }
+    return {
+      className: "bg-muted text-muted-foreground border-border",
+      Icon: AlertCircle,
+    };
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -95,7 +128,11 @@ export default function ReferralReports() {
           </CardHeader>
           <CardContent className="p-0">
             {byFacility.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">No data yet.</p>
+              <div className="m-4 rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+                <Building2 className="w-8 h-8 mx-auto text-muted-foreground" />
+                <p className="mt-3 text-sm font-medium text-foreground">No facility activity yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">Lead balance appears once referrals are tracked.</p>
+              </div>
             ) : (
               <Table>
                 <TableHeader>
@@ -114,7 +151,7 @@ export default function ReferralReports() {
                       const balance = f.received - f.sent;
                       return (
                         <TableRow key={f.facility}>
-                          <TableCell className="font-medium max-w-[160px] truncate">{f.facility}</TableCell>
+                          <TableCell className="font-medium max-w-[180px] truncate" title={f.facility}>{f.facility}</TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline" className="text-indigo-600 border-indigo-200">{f.sent}</Badge>
                           </TableCell>
@@ -147,7 +184,11 @@ export default function ReferralReports() {
           </CardHeader>
           <CardContent className="p-0">
             {byAgent.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">No data yet.</p>
+              <div className="m-4 rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+                <User className="w-8 h-8 mx-auto text-muted-foreground" />
+                <p className="mt-3 text-sm font-medium text-foreground">No agent activity yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">Per-agent referral activity appears here once logged.</p>
+              </div>
             ) : (
               <Table>
                 <TableHeader>
@@ -163,7 +204,7 @@ export default function ReferralReports() {
                     .sort((a, b) => (b.sent + b.received) - (a.sent + a.received))
                     .map(a => (
                       <TableRow key={a.agent}>
-                        <TableCell><Badge variant="outline">{a.agent}</Badge></TableCell>
+                        <TableCell className="max-w-[200px]"><Badge variant="outline" className="max-w-full truncate" title={a.agent}>{a.agent}</Badge></TableCell>
                         <TableCell className="text-center text-indigo-600 font-medium">{a.sent}</TableCell>
                         <TableCell className="text-center text-emerald-600 font-medium">{a.received}</TableCell>
                         <TableCell className="text-center font-bold">{a.sent + a.received}</TableCell>
@@ -186,12 +227,18 @@ export default function ReferralReports() {
             <div className="flex flex-wrap gap-3">
               {Object.entries(statusCounts)
                 .sort((a, b) => b[1] - a[1])
-                .map(([status, count]) => (
-                  <div key={status} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
-                    <span className="text-sm font-medium">{status}</span>
-                    <Badge>{count}</Badge>
-                  </div>
-                ))}
+                .map(([status, count]) => {
+                  const { className, Icon } = statusPill(status);
+                  return (
+                    <div key={status} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}>
+                        <Icon className="w-3.5 h-3.5" />
+                        <span className="max-w-[160px] truncate" title={status}>{status}</span>
+                      </span>
+                      <Badge>{count}</Badge>
+                    </div>
+                  );
+                })}
             </div>
           </CardContent>
         </Card>
@@ -216,16 +263,21 @@ export default function ReferralReports() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lowActivity.map(f => (
-                  <TableRow key={f.facility}>
-                    <TableCell className="font-medium">{f.facility}</TableCell>
-                    <TableCell className="text-center">{f.sent}</TableCell>
-                    <TableCell className="text-center">{f.received}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {f.sent === 0 ? "Receiving leads but not sending referrals back" : "Sent referrals but no leads received yet"}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {lowActivity.map(f => {
+                  const note = f.sent === 0
+                    ? "Receiving leads but not sending referrals back"
+                    : "Sent referrals but no leads received yet";
+                  return (
+                    <TableRow key={f.facility}>
+                      <TableCell className="font-medium max-w-[180px] truncate" title={f.facility}>{f.facility}</TableCell>
+                      <TableCell className="text-center">{f.sent}</TableCell>
+                      <TableCell className="text-center">{f.received}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[260px] truncate" title={note}>
+                        {note}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
@@ -233,9 +285,10 @@ export default function ReferralReports() {
       )}
 
       {summary.totalOutbound === 0 && summary.totalInbound === 0 && (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-lg font-medium">No referral data yet</p>
-          <p className="text-sm mt-1">Start by adding outbound referrals or inbound leads in the Partner Referral Tracker.</p>
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+          <Inbox className="w-10 h-10 mx-auto text-muted-foreground" />
+          <p className="mt-3 text-lg font-medium text-foreground">No referral data yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">Start by adding outbound referrals or inbound leads in the Partner Referral Tracker.</p>
         </div>
       )}
     </div>

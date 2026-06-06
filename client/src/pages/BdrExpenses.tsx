@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, DollarSign, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, DollarSign, Download, Receipt } from "lucide-react";
 import { DatePickerField } from "@/components/DatePickerField";
+import { ClickToCallButton } from "@/components/RingCentralWidget";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 
@@ -209,7 +210,11 @@ export default function BdrExpenses() {
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !expenses || expenses.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No expenses found. Adjust filters or click "Add Expense".</p>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <Receipt className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+              <p className="text-foreground font-medium">No expenses found</p>
+              <p className="text-muted-foreground text-sm mt-1">Adjust your filters or click "Add Expense" to log one.</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -228,14 +233,14 @@ export default function BdrExpenses() {
               <TableBody>
                 {expenses.map((e) => (
                   <TableRow key={e.id}>
-                    <TableCell className="text-muted-foreground">{e.month ?? "—"}</TableCell>
-                    <TableCell>{e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{e.month ?? "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "—"}</TableCell>
                     <TableCell><Badge variant="outline">{e.agentName}</Badge></TableCell>
-                    <TableCell className="max-w-[120px] truncate">{e.facilityName ?? "—"}</TableCell>
-                    <TableCell>{e.facilityPhone ?? "—"}</TableCell>
-                    <TableCell>{(e as any).store ?? "—"}</TableCell>
-                    <TableCell className="max-w-[140px] truncate text-muted-foreground">{e.reason ?? "—"}</TableCell>
-                    <TableCell className="font-medium text-emerald-600">${parseFloat(String(e.amount ?? 0)).toFixed(2)}</TableCell>
+                    <TableCell className="max-w-[160px] truncate" title={e.facilityName ?? undefined}>{e.facilityName ?? "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{e.facilityPhone ? <ClickToCallButton phoneNumber={e.facilityPhone} /> : "—"}</TableCell>
+                    <TableCell className="max-w-[120px] truncate" title={(e as any).store ?? undefined}>{(e as any).store ?? "—"}</TableCell>
+                    <TableCell className="max-w-[160px] truncate text-muted-foreground" title={e.reason ?? undefined}>{e.reason ?? "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap font-medium text-emerald-600 dark:text-emerald-400">${parseFloat(String(e.amount ?? 0)).toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" onClick={() => openEdit(e)}><Pencil className="w-3.5 h-3.5" /></Button>

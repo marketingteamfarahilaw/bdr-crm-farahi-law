@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, ClipboardList } from "lucide-react";
+import { Plus, Pencil, Trash2, ClipboardList, CheckCircle2, Clock, XCircle, Inbox } from "lucide-react";
 import { DatePickerField } from "@/components/DatePickerField";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
@@ -51,10 +51,27 @@ const defaultForm: FormData = {
 };
 
 const statusColors: Record<string, string> = {
-  Completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  "In Progress": "bg-amber-100 text-amber-800 border-amber-200",
-  "Not Completed": "bg-red-100 text-red-800 border-red-200",
+  Completed: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+  "In Progress": "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+  "Not Completed": "bg-destructive/15 text-destructive border-destructive/30",
 };
+
+const statusIcons: Record<string, typeof CheckCircle2> = {
+  Completed: CheckCircle2,
+  "In Progress": Clock,
+  "Not Completed": XCircle,
+};
+
+function StatusPill({ status }: { status: string }) {
+  const Icon = statusIcons[status];
+  const color = statusColors[status] ?? "bg-muted text-muted-foreground border-border";
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}>
+      {Icon && <Icon className="w-3 h-3" />}
+      {status}
+    </span>
+  );
+}
 
 export default function FrErrands() {
   const { user } = useAuth();
@@ -136,7 +153,7 @@ export default function FrErrands() {
         <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-4 flex items-center gap-3">
-              <ClipboardList className="w-8 h-8 text-emerald-500" />
+              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
               <div>
                 <p className="text-2xl font-bold">{completed}</p>
                 <p className="text-xs text-muted-foreground">Completed</p>
@@ -145,7 +162,7 @@ export default function FrErrands() {
           </Card>
           <Card>
             <CardContent className="pt-4 flex items-center gap-3">
-              <ClipboardList className="w-8 h-8 text-amber-500" />
+              <Clock className="w-8 h-8 text-amber-500" />
               <div>
                 <p className="text-2xl font-bold">{inProgress}</p>
                 <p className="text-xs text-muted-foreground">In Progress</p>
@@ -170,7 +187,11 @@ export default function FrErrands() {
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !errands || errands.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No errands found. Adjust filters or click "Add Errand".</p>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <Inbox className="w-10 h-10 mx-auto text-muted-foreground/60" />
+              <p className="mt-3 text-sm font-medium text-foreground">No errands found</p>
+              <p className="mt-1 text-xs text-muted-foreground">Adjust your filters or click "Add Errand" to log a field errand.</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -189,16 +210,14 @@ export default function FrErrands() {
                 {errands.map((e) => (
                   <TableRow key={e.id} className="h-8">
                     <TableCell className="py-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColors[e.status] ?? ""}`}>
-                        {e.status}
-                      </span>
+                      <StatusPill status={e.status} />
                     </TableCell>
-                    <TableCell className="py-1 text-sm">{e.errandDate ? new Date(e.errandDate).toLocaleDateString() : "—"}</TableCell>
-                    <TableCell className="py-1 font-medium text-sm">{e.clientName}</TableCell>
+                    <TableCell className="py-1 text-sm whitespace-nowrap">{e.errandDate ? new Date(e.errandDate).toLocaleDateString() : "—"}</TableCell>
+                    <TableCell className="py-1 font-medium text-sm max-w-[160px] truncate" title={e.clientName}>{e.clientName}</TableCell>
                     <TableCell className="py-1"><Badge variant="secondary" className="text-xs">{e.clientTier}</Badge></TableCell>
-                    <TableCell className="py-1 max-w-[140px] truncate text-sm">{e.taskType}</TableCell>
+                    <TableCell className="py-1 max-w-[140px] truncate text-sm" title={e.taskType}>{e.taskType}</TableCell>
                     <TableCell className="py-1"><Badge variant="outline" className="text-xs">{e.agentName ?? "—"}</Badge></TableCell>
-                    <TableCell className="py-1 max-w-[120px] truncate text-muted-foreground text-sm">{e.address ?? "—"}</TableCell>
+                    <TableCell className="py-1 max-w-[160px] truncate text-muted-foreground text-sm" title={e.address ?? undefined}>{e.address ?? "—"}</TableCell>
                     <TableCell className="py-1">
                       <div className="flex gap-0.5">
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openEdit(e)}><Pencil className="w-3 h-3" /></Button>

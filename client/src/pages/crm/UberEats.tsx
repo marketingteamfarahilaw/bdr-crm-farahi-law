@@ -110,7 +110,7 @@ export default function UberEats() {
         <div className="premium-card rounded-2xl p-5">
           {status?.configured ? (
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <div>
                 <p className="text-sm font-medium text-foreground">Connected to Uber for Business</p>
                 <p className="text-xs text-muted-foreground">{status.imported} order{status.imported !== 1 ? "s" : ""} imported{status.lastAt ? ` · last ${formatDistanceToNow(new Date(status.lastAt), { addSuffix: true })}` : ""}</p>
@@ -118,7 +118,7 @@ export default function UberEats() {
             </div>
           ) : (
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-foreground">Awaiting credentials</p>
                 <p className="text-xs text-muted-foreground mt-1">Add your Uber for Business app credentials to the server <code className="text-foreground">.env</code> and point the webhook here (see Setup below). Orders will then import automatically.</p>
@@ -139,12 +139,12 @@ export default function UberEats() {
             <div className="space-y-3">
               <div className="rounded-lg bg-secondary/40 border border-border px-3 py-2 text-xs text-muted-foreground">
                 Found <strong className="text-foreground">{csvRows.length}</strong> orders · total <strong className="text-foreground">${csvTotal.toFixed(2)}</strong>
-                <div className="mt-1">Mapped: {Object.keys(COL).map((k) => <span key={k} className={csvMap[k] !== undefined ? "text-emerald-400" : "text-amber-400"}>{k}{csvMap[k] === undefined ? "✕" : "✓"}&nbsp; </span>)}</div>
+                <div className="mt-1">Mapped: {Object.keys(COL).map((k) => <span key={k} className={csvMap[k] !== undefined ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>{k}{csvMap[k] === undefined ? "✕" : "✓"}&nbsp; </span>)}</div>
               </div>
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-xs">
                   <thead><tr className="text-left text-muted-foreground border-b border-border"><th className="px-3 py-1.5">Date</th><th className="px-3 py-1.5">Restaurant</th><th className="px-3 py-1.5">Address</th><th className="px-3 py-1.5 text-right">Amount</th></tr></thead>
-                  <tbody>{csvRows.slice(0, 4).map((r, i) => (<tr key={i} className="border-b border-border/40"><td className="px-3 py-1.5 text-muted-foreground">{r.date || "—"}</td><td className="px-3 py-1.5 text-foreground">{r.restaurant || "—"}</td><td className="px-3 py-1.5 text-muted-foreground truncate max-w-[220px]">{r.address || "—"}</td><td className="px-3 py-1.5 text-right text-foreground">${r.amount.toFixed(2)}</td></tr>))}</tbody>
+                  <tbody>{csvRows.slice(0, 4).map((r, i) => (<tr key={i} className="border-b border-border/40"><td className="px-3 py-1.5 text-muted-foreground whitespace-nowrap">{r.date || "—"}</td><td className="px-3 py-1.5 text-foreground"><span className="block max-w-[160px] truncate" title={r.restaurant || undefined}>{r.restaurant || "—"}</span></td><td className="px-3 py-1.5 text-muted-foreground"><span className="block max-w-[220px] truncate" title={r.address || undefined}>{r.address || "—"}</span></td><td className="px-3 py-1.5 text-right text-foreground whitespace-nowrap font-medium">${r.amount.toFixed(2)}</td></tr>))}</tbody>
                 </table>
               </div>
               <p className="text-[11px] text-muted-foreground">Check the columns mapped correctly. If something's off, tell me your CSV's column names and I'll tune the parser.</p>
@@ -162,7 +162,11 @@ export default function UberEats() {
             <Button variant="ghost" size="sm" onClick={() => refetch()} className="gap-1.5"><RefreshCw className="w-3.5 h-3.5" />Refresh</Button>
           </div>
           {(recent ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-10 px-4">No Uber Eats orders imported yet. Completed orders on your Uber for Business profile appear here automatically.</p>
+            <div className="m-4 rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <UtensilsCrossed className="w-8 h-8 mx-auto text-muted-foreground/60" />
+              <p className="mt-3 text-sm font-medium text-foreground">No Uber Eats orders yet</p>
+              <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">Completed orders on your Uber for Business profile appear here automatically once your webhook is connected.</p>
+            </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -177,11 +181,15 @@ export default function UberEats() {
               <tbody>
                 {(recent as any[]).map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-secondary/30">
-                    <td className="px-4 py-2 text-muted-foreground text-xs">{r.orderDate ? new Date(r.orderDate).toLocaleDateString() : "—"}</td>
-                    <td className="px-4 py-2 text-foreground">{r.storeName || "—"}</td>
-                    <td className="px-4 py-2">{r.facilityName ? <span className="inline-flex items-center gap-1 text-foreground text-xs"><Building2 className="w-3 h-3 text-emerald-400" />{r.facilityName}</span> : <span className="text-amber-400 text-xs">unmatched</span>}</td>
-                    <td className="px-4 py-2 text-muted-foreground text-xs">{r.requesterName || "—"}</td>
-                    <td className="px-4 py-2 text-right font-medium text-foreground">{r.amount ? `$${r.amount}` : "—"}</td>
+                    <td className="px-4 py-2 text-muted-foreground text-xs whitespace-nowrap">{r.orderDate ? new Date(r.orderDate).toLocaleDateString() : "—"}</td>
+                    <td className="px-4 py-2 text-foreground"><span className="block max-w-[180px] truncate" title={r.storeName || undefined}>{r.storeName || "—"}</span></td>
+                    <td className="px-4 py-2">{r.facilityName ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 max-w-[200px]"><Building2 className="w-3 h-3 shrink-0" /><span className="truncate" title={r.facilityName}>{r.facilityName}</span></span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400"><AlertTriangle className="w-3 h-3 shrink-0" />unmatched</span>
+                    )}</td>
+                    <td className="px-4 py-2 text-muted-foreground text-xs"><span className="block max-w-[140px] truncate" title={r.requesterName || undefined}>{r.requesterName || "—"}</span></td>
+                    <td className="px-4 py-2 text-right font-medium text-foreground whitespace-nowrap">{r.amount ? `$${Number(r.amount).toFixed(2)}` : "—"}</td>
                   </tr>
                 ))}
               </tbody>

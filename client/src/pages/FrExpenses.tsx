@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, DollarSign, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, DollarSign, Download, Receipt, Building2, CreditCard } from "lucide-react";
 import { BdrFilterBar, BdrFilterValues } from "@/components/BdrFilterBar";
 import { DatePickerField } from "@/components/DatePickerField";
 
@@ -188,7 +188,11 @@ export default function FrExpenses() {
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !expenses || expenses.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No expenses found. Adjust filters or click "Add Expense".</p>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <Receipt className="mx-auto h-8 w-8 text-muted-foreground/60" />
+              <p className="mt-3 text-sm font-medium text-foreground">No expenses found</p>
+              <p className="mt-1 text-xs text-muted-foreground">Adjust your filters or click "Add Expense" to log a field rep expense.</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
             <Table>
@@ -209,12 +213,20 @@ export default function FrExpenses() {
                   <TableRow key={e.id}>
                     <TableCell className="whitespace-nowrap">{e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "—"}</TableCell>
                     <TableCell><Badge variant="outline">{e.agentName}</Badge></TableCell>
-                    <TableCell className="max-w-[144px] truncate">{e.facilityName ?? "—"}</TableCell>
-                    <TableCell className="max-w-[112px] truncate">{(e as any).store ?? "—"}</TableCell>
-                    <TableCell className="max-w-[180px] truncate text-muted-foreground">{e.reason ?? "—"}</TableCell>
-                    <TableCell className="font-medium text-emerald-600 whitespace-nowrap">${parseFloat(String(e.amount ?? 0)).toFixed(2)}</TableCell>
+                    <TableCell className="max-w-[144px] truncate" title={e.facilityName ?? undefined}>{e.facilityName ?? "—"}</TableCell>
+                    <TableCell className="max-w-[112px] truncate" title={(e as any).store ?? undefined}>{(e as any).store ?? "—"}</TableCell>
+                    <TableCell className="max-w-[180px] truncate text-muted-foreground" title={e.reason ?? undefined}>{e.reason ?? "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap font-medium text-emerald-600 dark:text-emerald-400">${parseFloat(String(e.amount ?? 0)).toFixed(2)}</TableCell>
                     <TableCell>
-                      <Badge variant={e.cardType === "Personal" ? "secondary" : "default"}>{e.cardType}</Badge>
+                      {e.cardType === "Personal" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                          <CreditCard className="w-3 h-3" />Personal
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          <Building2 className="w-3 h-3" />Company
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">

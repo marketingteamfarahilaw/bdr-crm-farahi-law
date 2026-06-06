@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Network } from "lucide-react";
+import { Plus, Pencil, Trash2, Network, CheckCircle2, Clock, XCircle, Send, CircleDashed, Inbox } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 const STATUSES = ["Pending", "In Progress", "Successful Sent", "Demo Sent", "Unsuccessful"] as const;
@@ -45,11 +46,19 @@ const defaultForm: FormData = {
 };
 
 const statusColors: Record<string, string> = {
-  "Successful Sent": "bg-emerald-100 text-emerald-800 border-emerald-200",
-  "Demo Sent": "bg-blue-100 text-blue-800 border-blue-200",
-  "In Progress": "bg-amber-100 text-amber-800 border-amber-200",
-  "Pending": "bg-slate-100 text-slate-700 border-slate-200",
-  "Unsuccessful": "bg-red-100 text-red-800 border-red-200",
+  "Successful Sent": "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+  "Demo Sent": "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+  "In Progress": "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+  "Pending": "bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30",
+  "Unsuccessful": "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
+};
+
+const statusIcons: Record<string, LucideIcon> = {
+  "Successful Sent": CheckCircle2,
+  "Demo Sent": Send,
+  "In Progress": Clock,
+  "Pending": CircleDashed,
+  "Unsuccessful": XCircle,
 };
 
 export default function ReferralTracker() {
@@ -166,7 +175,11 @@ export default function ReferralTracker() {
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !trackers || trackers.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No entries found. Adjust filters or click "Add Entry".</p>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <Inbox className="w-10 h-10 mx-auto text-muted-foreground/60" />
+              <p className="mt-3 text-sm font-medium text-foreground">No referral entries found</p>
+              <p className="mt-1 text-xs text-muted-foreground">Adjust your filters or click "Add Entry" to start tracking referrals.</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -183,13 +196,15 @@ export default function ReferralTracker() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {trackers.map((t) => (
+                {trackers.map((t) => {
+                  const StatusIcon = statusIcons[t.status];
+                  return (
                   <TableRow key={t.id}>
-                    <TableCell className="text-muted-foreground">{t.month ?? "—"}</TableCell>
-                    <TableCell className="font-medium">{t.clientName}</TableCell>
-                    <TableCell>{t.pdCoordinator ?? "—"}</TableCell>
-                    <TableCell className="max-w-[120px] truncate">{t.facilityName ?? "—"}</TableCell>
-                    <TableCell>{t.facilityType ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{t.month ?? "—"}</TableCell>
+                    <TableCell className="font-medium max-w-[160px] truncate" title={t.clientName}>{t.clientName}</TableCell>
+                    <TableCell className="max-w-[120px] truncate" title={t.pdCoordinator ?? undefined}>{t.pdCoordinator ?? "—"}</TableCell>
+                    <TableCell className="max-w-[140px] truncate" title={t.facilityName ?? undefined}>{t.facilityName ?? "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{t.facilityType ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={t.partnerStatus === "Partner" ? "default" : "secondary"}>
                         {t.partnerStatus ?? "—"}
@@ -197,7 +212,8 @@ export default function ReferralTracker() {
                     </TableCell>
                     <TableCell><Badge variant="outline">{t.bdrAssigned ?? "—"}</Badge></TableCell>
                     <TableCell>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColors[t.status] ?? ""}`}>
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${statusColors[t.status] ?? "bg-muted text-muted-foreground border-border"}`}>
+                        {StatusIcon && <StatusIcon className="w-3 h-3" />}
                         {t.status}
                       </span>
                     </TableCell>
@@ -208,7 +224,8 @@ export default function ReferralTracker() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}

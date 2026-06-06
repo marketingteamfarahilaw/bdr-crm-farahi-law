@@ -9,14 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ROLE_LABELS, ASSIGNABLE_ROLES, canAssignRoles, canManage, normalizeRole } from "@shared/permissions";
-import { Shield, AlertTriangle, UserPlus, KeyRound, Check, Loader2 } from "lucide-react";
+import { Shield, AlertTriangle, UserPlus, KeyRound, Loader2, Mail, CheckCircle2, Users } from "lucide-react";
 
 const ROLE_COLOR: Record<string, string> = {
   super_admin: "text-primary",
-  bdr_manager: "text-emerald-400",
-  fr_manager: "text-cyan-400",
-  bdr_agent: "text-sky-400",
-  fr_agent: "text-orange-400",
+  bdr_manager: "text-emerald-600 dark:text-emerald-400",
+  fr_manager: "text-cyan-600 dark:text-cyan-400",
+  bdr_agent: "text-sky-600 dark:text-sky-400",
+  fr_agent: "text-orange-600 dark:text-orange-400",
 };
 
 // Inline editor for a user's canonical agent name (used to scope BDR/FR records).
@@ -27,7 +27,7 @@ function AgentNameCell({ u, canEdit }: { u: any; canEdit: boolean }) {
     onSuccess: () => { toast.success("Agent name saved"); utils.team.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
-  if (!canEdit) return <span className="text-xs text-muted-foreground">{u.agentName || "—"}</span>;
+  if (!canEdit) return <span className="block max-w-[140px] truncate text-xs text-muted-foreground" title={u.agentName || undefined}>{u.agentName || "—"}</span>;
   const dirty = val.trim() !== (u.agentName || "");
   return (
     <div className="flex items-center gap-1.5">
@@ -161,9 +161,25 @@ export default function TeamRoles() {
                   return (
                     <tr key={u.id} className="border-b border-border/50 hover:bg-secondary/30">
                       <td className="px-4 py-2.5 font-medium text-foreground">
-                        {u.name || "—"}{u.id === user?.id && <span className="ml-2 text-[10px] text-primary">(you)</span>}
+                        <span className="inline-flex max-w-[200px] items-center">
+                          <span className="truncate" title={u.name || undefined}>{u.name || "—"}</span>
+                          {u.id === user?.id && <span className="ml-2 shrink-0 text-[10px] text-primary">(you)</span>}
+                        </span>
                       </td>
-                      <td className="px-4 py-2.5 text-muted-foreground text-xs">{u.email || "—"}</td>
+                      <td className="px-4 py-2.5 text-xs">
+                        {u.email ? (
+                          <a
+                            href={`mailto:${u.email}`}
+                            title={u.email}
+                            className="inline-flex max-w-[220px] items-center gap-1 text-primary hover:underline"
+                          >
+                            <Mail className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{u.email}</span>
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-2.5">
                         {canEdit ? (
                           <Select value={r} onValueChange={(v) => setRole.mutate({ userId: u.id, role: v as any })}>
@@ -180,9 +196,13 @@ export default function TeamRoles() {
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           {u.hasPassword ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400"><Check className="w-3 h-3" /> Set</span>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                              <CheckCircle2 className="w-3 h-3" /> Set
+                            </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-amber-400"><AlertTriangle className="w-3 h-3" /> Not set</span>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                              <AlertTriangle className="w-3 h-3" /> Not set
+                            </span>
                           )}
                           {canEdit && (
                             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => openPw(u)}>
@@ -195,7 +215,17 @@ export default function TeamRoles() {
                   );
                 })}
                 {(users ?? []).length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No team members yet.</td></tr>
+                  <tr>
+                    <td colSpan={5} className="p-4">
+                      <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+                        <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground opacity-60" />
+                        <p className="text-sm font-medium text-foreground">No team members yet</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {canEdit ? 'Use "Add user" to invite your first team member.' : "Team members will appear here once added."}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

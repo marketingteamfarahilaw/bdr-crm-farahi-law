@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import {
   Users, MapPin, DollarSign, Gift, ClipboardList, Network,
-  TrendingUp, Award, CheckCircle, AlertCircle, Download,
+  TrendingUp, Award, CheckCircle, CheckCircle2, AlertCircle, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -442,23 +442,28 @@ export default function BdrAdminDashboard() {
                       </td>
                       <td className="text-right py-2.5 px-3">{a.visits}</td>
                       <td className="text-right py-2.5 px-3">{a.facilities}</td>
-                      <td className="text-right py-2.5 px-3">{a.hours.toFixed(1)}</td>
-                      <td className="text-right py-2.5 px-3">{fmt$(a.frExpenses)}</td>
-                      <td className="text-right py-2.5 px-3">{fmt$(a.bdrExpenses)}</td>
-                      <td className="text-right py-2.5 px-3 font-medium">{fmt$(a.totalExpenses)}</td>
-                      <td className="text-right py-2.5 px-3">{fmt$(a.rewardsPaid)}</td>
-                      <td className="text-right py-2.5 px-3">
+                      <td className="text-right py-2.5 px-3 whitespace-nowrap">{a.hours.toFixed(1)}</td>
+                      <td className="text-right py-2.5 px-3 whitespace-nowrap">{fmt$(a.frExpenses)}</td>
+                      <td className="text-right py-2.5 px-3 whitespace-nowrap">{fmt$(a.bdrExpenses)}</td>
+                      <td className="text-right py-2.5 px-3 font-medium whitespace-nowrap">{fmt$(a.totalExpenses)}</td>
+                      <td className="text-right py-2.5 px-3 whitespace-nowrap">{fmt$(a.rewardsPaid)}</td>
+                      <td className="text-right py-2.5 px-3 whitespace-nowrap">
                         {a.errands > 0 ? (
                           <span>{a.errandsCompleted}/{a.errands}</span>
-                        ) : "—"}
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="text-right py-2.5 px-3">{a.referrals}</td>
-                      <td className="text-right py-2.5 pl-3">
+                      <td className="text-right py-2.5 pl-3 whitespace-nowrap">
                         {a.referrals > 0 ? (
-                          <Badge variant="outline" className="text-emerald-600 border-emerald-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                            <CheckCircle2 className="w-3 h-3" />
                             {a.referralsSuccessful} ({Math.round((a.referralsSuccessful / a.referrals) * 100)}%)
-                          </Badge>
-                        ) : "—"}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -468,12 +473,12 @@ export default function BdrAdminDashboard() {
                     <td className="py-2.5 pr-4">Total</td>
                     <td className="text-right py-2.5 px-3">{kpis.totalVisits}</td>
                     <td className="text-right py-2.5 px-3">{kpis.totalFacilities}</td>
-                    <td className="text-right py-2.5 px-3">{byAgent.reduce((s, a) => s + a.hours, 0).toFixed(1)}</td>
-                    <td className="text-right py-2.5 px-3">{fmt$(byAgent.reduce((s, a) => s + a.frExpenses, 0))}</td>
-                    <td className="text-right py-2.5 px-3">{fmt$(byAgent.reduce((s, a) => s + a.bdrExpenses, 0))}</td>
-                    <td className="text-right py-2.5 px-3">{fmt$(kpis.totalExpenses)}</td>
-                    <td className="text-right py-2.5 px-3">{fmt$(kpis.totalRewardsPaid)}</td>
-                    <td className="text-right py-2.5 px-3">{kpis.completedErrands}/{kpis.totalErrands}</td>
+                    <td className="text-right py-2.5 px-3 whitespace-nowrap">{byAgent.reduce((s, a) => s + a.hours, 0).toFixed(1)}</td>
+                    <td className="text-right py-2.5 px-3 whitespace-nowrap">{fmt$(byAgent.reduce((s, a) => s + a.frExpenses, 0))}</td>
+                    <td className="text-right py-2.5 px-3 whitespace-nowrap">{fmt$(byAgent.reduce((s, a) => s + a.bdrExpenses, 0))}</td>
+                    <td className="text-right py-2.5 px-3 whitespace-nowrap">{fmt$(kpis.totalExpenses)}</td>
+                    <td className="text-right py-2.5 px-3 whitespace-nowrap">{fmt$(kpis.totalRewardsPaid)}</td>
+                    <td className="text-right py-2.5 px-3 whitespace-nowrap">{kpis.completedErrands}/{kpis.totalErrands}</td>
                     <td className="text-right py-2.5 px-3">{kpis.totalReferrals}</td>
                     <td className="text-right py-2.5 pl-3">{kpis.successfulReferrals}</td>
                   </tr>

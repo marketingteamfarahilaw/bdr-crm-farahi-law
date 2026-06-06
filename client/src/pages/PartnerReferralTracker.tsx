@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2, ArrowUpRight, ArrowDownLeft, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUpRight, ArrowDownLeft, Download, CheckCircle2, Clock, XCircle, AlertCircle, Send, CircleDot, Inbox } from "lucide-react";
 
 const AGENTS = ["Gracel", "Queenie", "Ally", "Miguel", "Rupert"];
 
@@ -31,17 +31,32 @@ const OUTBOUND_STATUSES = [
 
 type OutboundStatus = typeof OUTBOUND_STATUSES[number];
 
+const PILL_BASE = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium";
+
 const STATUS_COLORS: Record<OutboundStatus, string> = {
-  "Pending Review": "bg-yellow-100 text-yellow-800 border-yellow-200",
-  "Assigned to Agent": "bg-blue-100 text-blue-800 border-blue-200",
-  "Facility Selected": "bg-indigo-100 text-indigo-800 border-indigo-200",
-  "Referral Sent": "bg-purple-100 text-purple-800 border-purple-200",
-  "Facility Confirmed": "bg-cyan-100 text-cyan-800 border-cyan-200",
-  "Client Scheduled": "bg-orange-100 text-orange-800 border-orange-200",
-  "Client Attended": "bg-teal-100 text-teal-800 border-teal-200",
-  "Issue / Needs Follow-Up": "bg-red-100 text-red-800 border-red-200",
-  "Completed": "bg-green-100 text-green-800 border-green-200",
-  "Not Referred": "bg-gray-100 text-gray-700 border-gray-200",
+  "Pending Review": "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+  "Assigned to Agent": "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+  "Facility Selected": "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
+  "Referral Sent": "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30",
+  "Facility Confirmed": "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30",
+  "Client Scheduled": "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30",
+  "Client Attended": "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30",
+  "Issue / Needs Follow-Up": "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
+  "Completed": "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+  "Not Referred": "bg-muted text-muted-foreground border-border",
+};
+
+const STATUS_ICONS: Record<OutboundStatus, typeof CheckCircle2> = {
+  "Pending Review": Clock,
+  "Assigned to Agent": CircleDot,
+  "Facility Selected": CircleDot,
+  "Referral Sent": Send,
+  "Facility Confirmed": CheckCircle2,
+  "Client Scheduled": Clock,
+  "Client Attended": CheckCircle2,
+  "Issue / Needs Follow-Up": AlertCircle,
+  "Completed": CheckCircle2,
+  "Not Referred": XCircle,
 };
 
 // ─── Outbound Form ────────────────────────────────────────────────────────────
@@ -310,25 +325,25 @@ export default function PartnerReferralTracker() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-indigo-600">{outboundList?.length ?? 0}</p>
+            <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{outboundList?.length ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">Outbound Referrals</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-emerald-600">{inboundList?.length ?? 0}</p>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{inboundList?.length ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">Inbound Leads</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-teal-600">{inboundList?.filter(l => l.signed).length ?? 0}</p>
+            <p className="text-2xl font-bold text-teal-600 dark:text-teal-400">{inboundList?.filter(l => l.signed).length ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">Signed from Partners</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-orange-600">
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               {outboundList?.filter(r => r.status === "Issue / Needs Follow-Up" || r.status === "Pending Review").length ?? 0}
             </p>
             <p className="text-xs text-muted-foreground mt-1">Needs Attention</p>
@@ -362,7 +377,11 @@ export default function PartnerReferralTracker() {
               {outboundLoading ? (
                 <p className="text-muted-foreground text-sm p-6">Loading...</p>
               ) : !outboundList?.length ? (
-                <p className="text-muted-foreground text-sm text-center py-10">No outbound referrals yet. Add your first one.</p>
+                <div className="m-4 rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+                  <ArrowUpRight className="mx-auto h-8 w-8 text-muted-foreground/60" />
+                  <p className="mt-3 text-sm font-medium text-foreground">No outbound referrals yet</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Log your first referral sent to a partner facility.</p>
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
@@ -379,24 +398,27 @@ export default function PartnerReferralTracker() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {outboundList.map((r) => (
+                      {outboundList.map((r) => {
+                        const StatusIcon = STATUS_ICONS[r.status as OutboundStatus];
+                        return (
                         <TableRow key={r.id}>
                           <TableCell>
-                            <div className="font-medium">{r.clientName}</div>
+                            <div className="font-medium max-w-[160px] truncate" title={r.clientName}>{r.clientName}</div>
                             {r.filevineLinkOrRef && (
-                              <div className="text-xs text-muted-foreground truncate max-w-[140px]">{r.filevineLinkOrRef}</div>
+                              <div className="text-xs text-muted-foreground truncate max-w-[160px]" title={r.filevineLinkOrRef}>{r.filevineLinkOrRef}</div>
                             )}
                           </TableCell>
-                          <TableCell>{r.clientCity ?? "—"}</TableCell>
+                          <TableCell className="max-w-[120px] truncate" title={r.clientCity ?? undefined}>{r.clientCity ?? "—"}</TableCell>
                           <TableCell><Badge variant="outline">{r.assignedAgent ?? "—"}</Badge></TableCell>
-                          <TableCell className="max-w-[140px] truncate">{r.recommendedFacility ?? "—"}</TableCell>
-                          <TableCell>{r.referralSentDate ? new Date(r.referralSentDate).toLocaleDateString() : "—"}</TableCell>
+                          <TableCell className="max-w-[160px] truncate" title={r.recommendedFacility ?? undefined}>{r.recommendedFacility ?? "—"}</TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">{r.referralSentDate ? new Date(r.referralSentDate).toLocaleDateString() : "—"}</TableCell>
                           <TableCell>
-                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLORS[r.status as OutboundStatus] ?? ""}`}>
+                            <span className={`${PILL_BASE} ${STATUS_COLORS[r.status as OutboundStatus] ?? "bg-muted text-muted-foreground border-border"}`}>
+                              {StatusIcon && <StatusIcon className="w-3 h-3" />}
                               {r.status}
                             </span>
                           </TableCell>
-                          <TableCell>{r.followUpDate ? new Date(r.followUpDate).toLocaleDateString() : "—"}</TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">{r.followUpDate ? new Date(r.followUpDate).toLocaleDateString() : "—"}</TableCell>
                           <TableCell>
                             <div className="flex gap-1">
                               <Button size="icon" variant="ghost" onClick={() => openEditOutbound(r)}><Pencil className="w-3.5 h-3.5" /></Button>
@@ -404,7 +426,8 @@ export default function PartnerReferralTracker() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -429,7 +452,11 @@ export default function PartnerReferralTracker() {
               {inboundLoading ? (
                 <p className="text-muted-foreground text-sm p-6">Loading...</p>
               ) : !inboundList?.length ? (
-                <p className="text-muted-foreground text-sm text-center py-10">No inbound leads yet. Add your first one.</p>
+                <div className="m-4 rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+                  <Inbox className="mx-auto h-8 w-8 text-muted-foreground/60" />
+                  <p className="mt-3 text-sm font-medium text-foreground">No inbound leads yet</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Record your first lead received from a partner.</p>
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
@@ -448,18 +475,30 @@ export default function PartnerReferralTracker() {
                     <TableBody>
                       {inboundList.map((l) => (
                         <TableRow key={l.id}>
-                          <TableCell className="font-medium">{l.leadName}</TableCell>
-                          <TableCell>{l.dateReceived ? new Date(l.dateReceived).toLocaleDateString() : "—"}</TableCell>
-                          <TableCell className="max-w-[140px] truncate">{l.referringFacility ?? "—"}</TableCell>
+                          <TableCell className="font-medium max-w-[160px] truncate" title={l.leadName}>{l.leadName}</TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">{l.dateReceived ? new Date(l.dateReceived).toLocaleDateString() : "—"}</TableCell>
+                          <TableCell className="max-w-[160px] truncate" title={l.referringFacility ?? undefined}>{l.referringFacility ?? "—"}</TableCell>
                           <TableCell><Badge variant="outline">{l.assignedAgent ?? "—"}</Badge></TableCell>
-                          <TableCell>{l.caseType ?? "—"}</TableCell>
+                          <TableCell className="max-w-[140px] truncate" title={l.caseType ?? undefined}>{l.caseType ?? "—"}</TableCell>
                           <TableCell>
-                            <Badge variant={l.signed ? "default" : "secondary"}>{l.signed ? "Signed" : "Not Signed"}</Badge>
+                            {l.signed ? (
+                              <span className={`${PILL_BASE} bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30`}>
+                                <CheckCircle2 className="w-3 h-3" /> Signed
+                              </span>
+                            ) : (
+                              <span className={`${PILL_BASE} bg-muted text-muted-foreground border-border`}>
+                                <XCircle className="w-3 h-3" /> Not Signed
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={l.countsTowardPartnerActivity ? "outline" : "secondary"}>
-                              {l.countsTowardPartnerActivity ? "Yes" : "No"}
-                            </Badge>
+                            {l.countsTowardPartnerActivity ? (
+                              <span className={`${PILL_BASE} bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30`}>
+                                <CheckCircle2 className="w-3 h-3" /> Yes
+                              </span>
+                            ) : (
+                              <span className={`${PILL_BASE} bg-muted text-muted-foreground border-border`}>No</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">

@@ -187,7 +187,11 @@ export default function FieldVisits() {
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : !visits || visits.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No visits found. Adjust filters or click "Log Visit" to add one.</p>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <MapPin className="w-10 h-10 mx-auto text-muted-foreground/60" />
+              <p className="mt-3 text-sm font-medium text-foreground">No field visits yet</p>
+              <p className="mt-1 text-xs text-muted-foreground">Adjust your filters or click "Log Visit" to add one.</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -203,11 +207,11 @@ export default function FieldVisits() {
               <TableBody>
                 {visits.map((v) => (
                   <TableRow key={v.id}>
-                    <TableCell className="font-medium">{v.visitDate ? new Date(v.visitDate).toLocaleDateString() : "—"}</TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{v.visitDate ? new Date(v.visitDate).toLocaleDateString() : "—"}</TableCell>
                     <TableCell><Badge variant="outline">{v.agentName}</Badge></TableCell>
-                    <TableCell>{v.facilityCount ?? 0}</TableCell>
-                    <TableCell>{v.hoursWorked ?? "—"}</TableCell>
-                    <TableCell className="max-w-xs truncate text-muted-foreground">{v.notes ?? "—"}</TableCell>
+                    <TableCell className="tabular-nums">{v.facilityCount ?? 0}</TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{v.hoursWorked ?? "—"}</TableCell>
+                    <TableCell className="max-w-xs truncate text-muted-foreground" title={v.notes ?? undefined}>{v.notes ?? "—"}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" onClick={() => openEdit(v)}><Pencil className="w-3.5 h-3.5" /></Button>

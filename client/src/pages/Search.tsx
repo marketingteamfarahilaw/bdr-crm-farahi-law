@@ -27,14 +27,16 @@ import {
   Download,
   Bookmark,
   Star,
-  Phone,
   Globe,
   ChevronUp,
   ChevronDown,
   SlidersHorizontal,
   Save,
   Building2,
+  SearchX,
+  AlertCircle,
 } from "lucide-react";
+import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { useLocation as useWouter } from "wouter";
 import type { Lead, CategoryValue } from "@/types/lead";
 import { CATEGORIES, getCategoryLabel } from "@/types/lead";
@@ -368,10 +370,11 @@ export default function SearchPage() {
         {/* Table */}
         <div className="flex-1 overflow-auto">
           {error && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-2">
+            <div className="flex items-center justify-center h-full p-6">
+              <div className="w-full max-w-sm rounded-2xl border border-dashed border-destructive/40 bg-card/50 py-12 px-6 text-center">
+                <AlertCircle size={32} className="text-destructive mx-auto mb-3" />
                 <p className="text-destructive font-medium">Search failed</p>
-                <p className="text-sm text-muted-foreground">{error.message}</p>
+                <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
               </div>
             </div>
           )}
@@ -391,10 +394,11 @@ export default function SearchPage() {
           )}
 
           {enabled && !isFetching && leads?.length === 0 && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-2">
+            <div className="flex items-center justify-center h-full p-6">
+              <div className="w-full max-w-sm rounded-2xl border border-dashed border-border bg-card/50 py-12 px-6 text-center">
+                <SearchX size={32} className="text-muted-foreground mx-auto mb-3" />
                 <p className="text-foreground font-medium">No results found</p>
-                <p className="text-sm text-muted-foreground">Try a different location or category.</p>
+                <p className="text-sm text-muted-foreground mt-1">Try a different location or category.</p>
               </div>
             </div>
           )}
@@ -404,6 +408,16 @@ export default function SearchPage() {
               <div className="text-center space-y-3">
                 <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-sm text-muted-foreground">Fetching leads from Google Maps...</p>
+              </div>
+            </div>
+          )}
+
+          {!isFetching && leads && leads.length > 0 && filteredLeads.length === 0 && (
+            <div className="flex items-center justify-center h-full p-6">
+              <div className="w-full max-w-sm rounded-2xl border border-dashed border-border bg-card/50 py-12 px-6 text-center">
+                <SlidersHorizontal size={32} className="text-muted-foreground mx-auto mb-3" />
+                <p className="text-foreground font-medium">No leads match your filters</p>
+                <p className="text-sm text-muted-foreground mt-1">Clear or adjust the filters above to see more results.</p>
               </div>
             </div>
           )}
@@ -438,8 +452,7 @@ export default function SearchPage() {
                   >
                     Score <SortIcon col="qualificationScore" />
                   </TableHead>
-                  <TableHead className="text-muted-foreground text-xs w-16">Save</TableHead>
-                  <TableHead className="text-muted-foreground text-xs w-20">CRM</TableHead>
+                  <TableHead className="text-muted-foreground text-xs w-20 text-center">CRM</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -450,18 +463,18 @@ export default function SearchPage() {
                     onClick={() => { setSelectedLead(lead); setDetailOpen(true); }}
                   >
                     <TableCell className="py-3">
-                      <div className="font-medium text-sm text-foreground leading-tight flex items-center gap-1.5 flex-wrap">
-                        {lead.name}
+                      <div className="font-medium text-sm text-foreground leading-tight flex items-center gap-1.5">
+                        <span className="truncate max-w-[220px]" title={lead.name}>{lead.name}</span>
                         {lead.lienFriendly && (
-                          <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">No Insurance</span>
+                          <span className="inline-flex items-center shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">No Insurance</span>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 max-w-xs truncate">
+                      <div className="text-xs text-muted-foreground mt-0.5 max-w-[260px] truncate" title={lead.address}>
                         {lead.address}
                       </div>
                     </TableCell>
                     <TableCell className="py-3">
-                      <span className="inline-flex items-center gap-1 text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-full px-2 py-0.5">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                         Google
                       </span>
@@ -469,18 +482,22 @@ export default function SearchPage() {
                     <TableCell className="py-3">
                       <div className="space-y-0.5">
                         {lead.phone && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Phone size={10} />
-                            <span>{lead.phone}</span>
-                          </div>
+                          <ClickToCallButton phoneNumber={lead.phone} className="text-xs" />
                         )}
                         {lead.website && (
-                          <div className="flex items-center gap-1 text-xs text-primary">
-                            <Globe size={10} />
+                          <a
+                            href={lead.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1 text-xs text-primary hover:underline"
+                            title={lead.website}
+                          >
+                            <Globe size={10} className="shrink-0" />
                             <span className="truncate max-w-[140px]">
                               {lead.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                             </span>
-                          </div>
+                          </a>
                         )}
                       </div>
                     </TableCell>
@@ -507,37 +524,8 @@ export default function SearchPage() {
                     <TableCell className="py-3">
                       <ScoreBadge score={lead.qualificationScore} tier={lead.scoreTier} size="sm" />
                     </TableCell>
-                    <TableCell className="py-3">
+                    <TableCell className="py-3 text-center">
                       <PromoteToCRMButton lead={lead} onNavigate={() => navigate("/crm/facilities")} />
-                    </TableCell>
-                    <TableCell className="py-3" style={{ display: 'none' }}>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-muted-foreground hover:text-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          saveLeadMutation.mutate({
-                            placeId: lead.placeId,
-                            source: "google",
-                            name: lead.name,
-                            address: lead.address,
-                            phone: lead.phone,
-                            website: lead.website,
-                            email: null,
-                            category: lead.category,
-                            rating: lead.rating,
-                            reviewCount: lead.reviewCount,
-                            latitude: lead.latitude,
-                            longitude: lead.longitude,
-                            qualificationScore: lead.qualificationScore,
-                            scoreTier: lead.scoreTier,
-                            scoreBreakdown: lead.scoreBreakdown,
-                          });
-                        }}
-                      >
-                        <Bookmark size={14} />
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

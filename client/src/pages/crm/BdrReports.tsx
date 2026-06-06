@@ -10,6 +10,7 @@ import {
   BarChart3, Building2, Calendar, Download, Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { toast } from "sonner";
 
 const AGENTS = ["All", "Ally", "Gracel", "Queenie", "Miguel", "Rupert"];
@@ -53,12 +54,11 @@ function ActivePartnersTable({ agentFilter }: { agentFilter?: string }) {
 
   if (!facilities || facilities.length === 0) {
     return (
-      <Card className="bg-card border-border">
-        <CardContent className="p-8 text-center text-muted-foreground">
-          <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>No active partners found. Mark facilities as Active Partner to see them here.</p>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+        <Building2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+        <p className="text-sm font-medium text-foreground">No active partners yet</p>
+        <p className="text-xs text-muted-foreground mt-1">Mark facilities as Active Partner to see them here.</p>
+      </div>
     );
   }
 
@@ -88,23 +88,41 @@ function ActivePartnersTable({ agentFilter }: { agentFilter?: string }) {
                 <td className="px-4 py-2.5 text-muted-foreground text-xs">{f.assignedRepName || "—"}</td>
                 <td className="px-4 py-2.5 text-muted-foreground capitalize text-xs">{(f.category || "").replace(/_/g, " ")}</td>
                 <td className="px-4 py-2.5 font-medium text-foreground">
-                  <a href={`/crm/facilities/${f.id}`} className="hover:text-[var(--gold)] transition-colors">
+                  <a
+                    href={`/crm/facilities/${f.id}`}
+                    title={f.name}
+                    className="block max-w-[14rem] truncate hover:text-primary transition-colors"
+                  >
                     {f.name}
                   </a>
                 </td>
                 <td className="px-4 py-2.5 text-muted-foreground text-xs">
-                  {f.contactName ? <span>{f.contactName}</span> : null}
-                  {f.phone ? <span className="block text-xs">{f.phone}</span> : null}
+                  {f.contactName ? (
+                    <span className="block max-w-[12rem] truncate text-foreground" title={f.contactName}>
+                      {f.contactName}
+                    </span>
+                  ) : null}
+                  {f.phone ? (
+                    <span className="block mt-0.5">
+                      <ClickToCallButton phoneNumber={f.phone} />
+                    </span>
+                  ) : null}
+                  {!f.contactName && !f.phone ? <span>—</span> : null}
                 </td>
                 <td className="px-4 py-2.5">
-                  <Badge className="text-xs border-0 bg-emerald-500/20 text-emerald-400">
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${
+                    f.partnerStatus === "priority_partner"
+                      ? "bg-primary/15 text-primary border-primary/30"
+                      : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                  }`}>
+                    <CheckCircle2 className="w-3 h-3" />
                     {(f.partnerStatus || "").replace(/_/g, " ")}
-                  </Badge>
+                  </span>
                 </td>
                 <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">
                   {f.lastContact?.contactDate
                     ? new Date(f.lastContact.contactDate).toLocaleDateString()
-                    : <span className="text-amber-400">Never</span>}
+                    : <span className="text-amber-600 dark:text-amber-400">Never</span>}
                 </td>
               </tr>
             ))}
@@ -245,20 +263,19 @@ export default function BdrReports() {
         </div>
       ) : totals ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={Phone} label="Total Calls" value={totals.total} color="text-[var(--gold)]" />
+          <StatCard icon={Phone} label="Total Calls" value={totals.total} color="text-primary" />
           <StatCard icon={CheckCircle2} label="Connected" value={totals.connected}
             sub={`${totals.total > 0 ? Math.round((totals.connected / totals.total) * 100) : 0}% connect rate`}
-            color="text-emerald-400" />
+            color="text-emerald-600 dark:text-emerald-400" />
           <StatCard icon={PhoneCall} label="Partner Check-Ins" value={totals.partnerCheckin + totals.bdrCheckin + totals.frCheckin} />
-          <StatCard icon={TrendingUp} label="Potential Leads" value={totals.potentialLead} color="text-amber-400" />
+          <StatCard icon={TrendingUp} label="Potential Leads" value={totals.potentialLead} color="text-amber-600 dark:text-amber-400" />
         </div>
       ) : (
-        <Card className="bg-card border-border">
-          <CardContent className="p-8 text-center text-muted-foreground">
-            <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>No call activity data yet. Log calls from facility profiles to see reports here.</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+          <BarChart3 className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+          <p className="text-sm font-medium text-foreground">No call activity data yet</p>
+          <p className="text-xs text-muted-foreground mt-1">Log calls from facility profiles to see reports here.</p>
+        </div>
       )}
 
       {/* Agent Leaderboard */}
@@ -266,7 +283,7 @@ export default function BdrReports() {
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-[var(--gold)]" /> Agent Leaderboard
+              <Trophy className="w-4 h-4 text-primary" /> Agent Leaderboard
               <span className="text-xs font-normal text-muted-foreground">· ranked by connected calls</span>
             </CardTitle>
           </CardHeader>
@@ -275,7 +292,7 @@ export default function BdrReports() {
               const max = agentRows[0]?.connected || 1;
               return (
                 <div key={a.repName} className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? "bg-[var(--gold)]/20 text-[var(--gold)]" : i < 3 ? "bg-secondary text-foreground" : "text-muted-foreground"}`}>{i + 1}</span>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? "bg-primary/20 text-primary" : i < 3 ? "bg-secondary text-foreground" : "text-muted-foreground"}`}>{i + 1}</span>
                   <span className="w-28 truncate text-sm font-medium text-foreground">{a.repName}</span>
                   <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${Math.round((a.connected / max) * 100)}%`, background: "linear-gradient(90deg,#2c4a73,#6a9bd8)" }} />
@@ -318,19 +335,19 @@ export default function BdrReports() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Connected</span>
-                        <span className="text-emerald-400">{agent.connected}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400">{agent.connected}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Voicemail</span>
-                        <span className="text-amber-400">{agent.voicemail}</span>
+                        <span className="text-amber-600 dark:text-amber-400">{agent.voicemail}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Partner Check-Ins</span>
-                        <span className="text-blue-400">{agent.partnerCheckin + agent.bdrCheckin + agent.frCheckin}</span>
+                        <span className="text-blue-600 dark:text-blue-400">{agent.partnerCheckin + agent.bdrCheckin + agent.frCheckin}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Potential Leads</span>
-                        <span className="text-amber-400">{agent.potentialLead}</span>
+                        <span className="text-amber-600 dark:text-amber-400">{agent.potentialLead}</span>
                       </div>
                       <div className="flex justify-between pt-1 border-t border-border">
                         <span className="text-muted-foreground">Connect Rate</span>
@@ -374,17 +391,19 @@ export default function BdrReports() {
                   <tbody>
                     {callActivity.map((row, i) => (
                       <tr key={i} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-2.5 font-medium text-foreground">{row.repName}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">
+                        <td className="px-4 py-2.5 font-medium text-foreground">
+                          <span className="block max-w-[10rem] truncate" title={row.repName}>{row.repName}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
                           {new Date(row.month + "-01").toLocaleDateString("en-US", { year: "numeric", month: "short" })}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-bold text-[var(--gold)]">{row.total}</td>
-                        <td className="px-4 py-2.5 text-right text-emerald-400">{row.connected}</td>
-                        <td className="px-4 py-2.5 text-right text-amber-400">{row.voicemail}</td>
-                        <td className="px-4 py-2.5 text-right text-blue-400">{row.partnerCheckin}</td>
-                        <td className="px-4 py-2.5 text-right text-purple-400">{row.bdrCheckin}</td>
-                        <td className="px-4 py-2.5 text-right text-indigo-400">{row.frCheckin}</td>
-                        <td className="px-4 py-2.5 text-right text-amber-400">{row.potentialLead}</td>
+                        <td className="px-4 py-2.5 text-right font-bold text-primary">{row.total}</td>
+                        <td className="px-4 py-2.5 text-right text-emerald-600 dark:text-emerald-400">{row.connected}</td>
+                        <td className="px-4 py-2.5 text-right text-amber-600 dark:text-amber-400">{row.voicemail}</td>
+                        <td className="px-4 py-2.5 text-right text-blue-600 dark:text-blue-400">{row.partnerCheckin}</td>
+                        <td className="px-4 py-2.5 text-right text-purple-600 dark:text-purple-400">{row.bdrCheckin}</td>
+                        <td className="px-4 py-2.5 text-right text-indigo-600 dark:text-indigo-400">{row.frCheckin}</td>
+                        <td className="px-4 py-2.5 text-right text-amber-600 dark:text-amber-400">{row.potentialLead}</td>
                         <td className="px-4 py-2.5 text-right text-foreground">
                           {row.total > 0 ? `${Math.round((row.connected / row.total) * 100)}%` : "—"}
                         </td>
@@ -395,12 +414,11 @@ export default function BdrReports() {
               </div>
             </Card>
           ) : (
-            <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center text-muted-foreground">
-                <Phone className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p>No call activity logged yet.</p>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <Phone className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+              <p className="text-sm font-medium text-foreground">No call activity logged yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Logged calls will appear in this monthly breakdown.</p>
+            </div>
           )}
 
           {/* Call Type Legend */}
@@ -443,12 +461,14 @@ export default function BdrReports() {
                         : 0;
                       return (
                         <tr key={i} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                          <td className="px-4 py-2.5 font-medium text-foreground">{row.repName}</td>
+                          <td className="px-4 py-2.5 font-medium text-foreground">
+                            <span className="block max-w-[10rem] truncate" title={row.repName}>{row.repName}</span>
+                          </td>
                           <td className="px-4 py-2.5 text-right text-foreground">{row.totalPartners}</td>
-                          <td className="px-4 py-2.5 text-right text-emerald-400">{row.checkinsThisMonth}</td>
-                          <td className="px-4 py-2.5 text-right text-blue-400">{row.checkinsLast30Days}</td>
+                          <td className="px-4 py-2.5 text-right text-emerald-600 dark:text-emerald-400">{row.checkinsThisMonth}</td>
+                          <td className="px-4 py-2.5 text-right text-blue-600 dark:text-blue-400">{row.checkinsLast30Days}</td>
                           <td className="px-4 py-2.5 text-right">
-                            <span className={row.facilitiesNeedingCheckin > 0 ? "text-amber-400" : "text-emerald-400"}>
+                            <span className={row.facilitiesNeedingCheckin > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}>
                               {row.facilitiesNeedingCheckin}
                             </span>
                           </td>
@@ -460,7 +480,7 @@ export default function BdrReports() {
                                   style={{ width: `${coverage}%` }}
                                 />
                               </div>
-                              <span className={`text-xs font-medium ${coverage >= 80 ? "text-emerald-400" : coverage >= 50 ? "text-amber-400" : "text-red-400"}`}>
+                              <span className={`text-xs font-medium ${coverage >= 80 ? "text-emerald-600 dark:text-emerald-400" : coverage >= 50 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>
                                 {coverage}%
                               </span>
                             </div>
@@ -473,18 +493,17 @@ export default function BdrReports() {
               </div>
               <div className="px-4 py-3 border-t border-border bg-muted/10">
                 <p className="text-xs text-muted-foreground">
-                  <AlertCircle className="w-3.5 h-3.5 inline mr-1 text-amber-400" />
+                  <AlertCircle className="w-3.5 h-3.5 inline mr-1 text-amber-600 dark:text-amber-400" />
                   "Need Check-In" = partners with no contact in the last 30 days. Coverage = partners checked in / total partners.
                 </p>
               </div>
             </Card>
           ) : (
-            <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center text-muted-foreground">
-                <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p>No partner check-in data yet. Assign facilities to reps and log check-in calls to see data here.</p>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <Users className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+              <p className="text-sm font-medium text-foreground">No partner check-in data yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Assign facilities to reps and log check-in calls to see data here.</p>
+            </div>
           )}
         </TabsContent>
 
@@ -523,17 +542,27 @@ export default function BdrReports() {
                       <tr key={row.facilityId} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
                         <td className="px-4 py-2.5 font-medium text-foreground">
-                          <a href={`/crm/facilities/${row.facilityId}`} className="hover:text-[var(--gold)] transition-colors">
+                          <a
+                            href={`/crm/facilities/${row.facilityId}`}
+                            title={row.name}
+                            className="block max-w-[16rem] truncate hover:text-primary transition-colors"
+                          >
                             {row.name}
                           </a>
                         </td>
-                        <td className="px-4 py-2.5 text-muted-foreground capitalize">
+                        <td className="px-4 py-2.5 text-muted-foreground capitalize whitespace-nowrap">
                           {row.category.replace(/_/g, " ")}
                         </td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{row.city || "—"}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{row.assignedRepName || "—"}</td>
-                        <td className="px-4 py-2.5 text-right font-bold text-[var(--gold)]">{row.callCount}</td>
-                        <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.reps || "—"}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">
+                          <span className="block max-w-[10rem] truncate" title={row.city || undefined}>{row.city || "—"}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">
+                          <span className="block max-w-[10rem] truncate" title={row.assignedRepName || undefined}>{row.assignedRepName || "—"}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-bold text-primary">{row.callCount}</td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                          <span className="block max-w-[12rem] truncate" title={row.reps || undefined}>{row.reps || "—"}</span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -541,12 +570,11 @@ export default function BdrReports() {
               </div>
             </Card>
           ) : (
-            <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center text-muted-foreground">
-                <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p>No facility contact data yet.</p>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <Building2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+              <p className="text-sm font-medium text-foreground">No facility contact data yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Log calls against facilities to surface the most-contacted ones.</p>
+            </div>
           )}
         </TabsContent>
       </Tabs>
