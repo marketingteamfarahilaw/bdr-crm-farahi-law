@@ -14,6 +14,7 @@ import {
 import { format, isToday, formatDistanceToNow } from "date-fns";
 import { seesAllData, normalizeRole } from "@shared/permissions";
 import { LogOutcomeDialog } from "@/components/LogOutcomeDialog";
+import { PhraseOfTheDay } from "@/components/PhraseOfTheDay";
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   active_partner: { label: "Active Partner", color: "#34d399" },
@@ -77,6 +78,7 @@ export default function Dashboard() {
   ];
 
   const hero = (
+    <>
     <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="relative overflow-hidden rounded-2xl premium-card p-6 lg:p-8">
       <div className="absolute -right-12 -top-12 w-52 h-52 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(106,155,216,0.16), transparent 70%)" }} />
@@ -104,6 +106,8 @@ export default function Dashboard() {
         </div>
       </div>
     </motion.header>
+    <PhraseOfTheDay />
+    </>
   );
 
   // ─────────────── Rep view: "My Day" ───────────────

@@ -118,6 +118,13 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Manrope', sans-serif;
   }
+  /* Make native date/time picker icons visible in dark mode (otherwise dark-on-dark) */
+  .dark input[type="date"],
+  .dark input[type="datetime-local"],
+  .dark input[type="month"],
+  .dark input[type="time"] {
+    color-scheme: dark;
+  }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),

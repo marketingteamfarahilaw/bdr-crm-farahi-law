@@ -47,7 +47,7 @@ const FIELDS: FieldDef[] = [
   { key: "value", label: "Value", kind: "select", options: LEAD_VALUES },
   { key: "outcome", label: "Outcome", kind: "select", options: LEAD_OUTCOMES },
   { key: "classification", label: "Classification", kind: "select", options: LEAD_CLASSIFICATIONS },
-  { key: "sud", label: "SUD", kind: "text" },
+  { key: "sud", label: "SUD", kind: "date" },
   { key: "liability", label: "Liability", kind: "select", options: LEAD_LIABILITIES },
   { key: "disposition", label: "Disposition", kind: "text" },
   { key: "facility", label: "Facility", kind: "text" },
