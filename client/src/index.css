@@ -118,12 +118,16 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Manrope', sans-serif;
   }
-  /* Make native date/time picker icons visible in dark mode (otherwise dark-on-dark) */
-  .dark input[type="date"],
-  .dark input[type="datetime-local"],
-  .dark input[type="month"],
-  .dark input[type="time"] {
-    color-scheme: dark;
+  /* Force the native date/time picker icon to be light/visible on dark inputs.
+     color-scheme alone is unreliable once a custom background is set, so we
+     invert the (default dark) webkit indicator directly. */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  .dark input[type="month"]::-webkit-calendar-picker-indicator,
+  .dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.9);
+    opacity: 0.85;
+    cursor: pointer;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),

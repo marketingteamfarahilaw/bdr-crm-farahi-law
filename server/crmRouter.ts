@@ -1350,6 +1350,9 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
     create: protectedProcedure
       .input(z.object({
         leadName: z.string().min(1),
+        lastName: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().optional(),
         leadDate: z.string().optional(),
         role: z.string().optional(),
         member: z.string().optional(),
