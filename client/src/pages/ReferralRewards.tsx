@@ -108,6 +108,7 @@ export default function ReferralRewards() {
     }
   }
 
+  const [detail, setDetail] = useState<any | null>(null);
   const totalPayout = rewards?.filter(r => r.status === "Accepted").reduce((s, r) => s + parseFloat(String(r.payoutAmount ?? 0)), 0) ?? 0;
   const pending = rewards?.filter(r => r.status === "Pending").length ?? 0;
 
@@ -169,7 +170,7 @@ export default function ReferralRewards() {
           ) : !rewards || rewards.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">No referral rewards found. Adjust filters or click "Add Referral".</p>
           ) : (
-            <Table>
+            <Table className="text-sm [&_td]:py-2 [&_th]:py-2">
               <TableHeader>
                 <TableRow>
                   <TableHead>Agent</TableHead>
@@ -186,21 +187,21 @@ export default function ReferralRewards() {
               </TableHeader>
               <TableBody>
                 {rewards.map((r) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} onClick={() => setDetail(r)} className="cursor-pointer hover:bg-accent/40">
                     <TableCell><Badge variant="outline">{r.agentName}</Badge></TableCell>
-                    <TableCell>{r.sud ?? "—"}</TableCell>
-                    <TableCell>{r.referralType}</TableCell>
+                    <TableCell className="whitespace-nowrap">{r.sud ?? "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{r.referralType}</TableCell>
                     <TableCell className="max-w-[120px] truncate">{r.facilityName ?? "—"}</TableCell>
-                    <TableCell>{r.clientName ?? "—"}</TableCell>
+                    <TableCell className="max-w-[180px] truncate">{r.clientName ?? "—"}</TableCell>
                     <TableCell><Badge variant="secondary">{r.clientTier}</Badge></TableCell>
-                    <TableCell className="font-medium text-emerald-600">${parseFloat(String(r.payoutAmount ?? 0)).toFixed(2)}</TableCell>
+                    <TableCell className="font-medium text-emerald-600 whitespace-nowrap">${parseFloat(String(r.payoutAmount ?? 0)).toFixed(2)}</TableCell>
                     <TableCell>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColors[r.status] ?? ""}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium whitespace-nowrap ${statusColors[r.status] ?? ""}`}>
                         {r.status}
                       </span>
                     </TableCell>
-                    <TableCell>{r.caseNumber ?? "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-[140px] truncate">{r.caseNumber ?? "—"}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => deleteMutation.mutate({ id: r.id })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
@@ -213,6 +214,50 @@ export default function ReferralRewards() {
           )}
         </CardContent>
       </Card>
+
+      {/* Row detail popup */}
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Referral Reward</DialogTitle></DialogHeader>
+          {detail && (
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-base font-semibold text-foreground break-words">{detail.clientName || "—"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{detail.agentName}</p>
+                </div>
+                <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border font-medium ${statusColors[detail.status] ?? ""}`}>{detail.status}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                {[
+                  ["Payout", `$${parseFloat(String(detail.payoutAmount ?? 0)).toFixed(2)}`],
+                  ["Tier", detail.clientTier],
+                  ["Type", detail.referralType],
+                  ["SUD", detail.sud],
+                  ["Facility", detail.facilityName],
+                  ["Case #", detail.caseNumber],
+                  ["Logged", detail.createdAt ? new Date(detail.createdAt).toLocaleDateString() : null],
+                ].map(([label, val]) => (
+                  <div key={label as string}>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+                    <div className="text-sm font-medium text-foreground break-words">{val || "—"}</div>
+                  </div>
+                ))}
+              </div>
+              {detail.notes && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Notes</div>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{detail.notes}</p>
+                </div>
+              )}
+              <div className="flex gap-2 pt-3 border-t border-border">
+                <Button size="sm" onClick={() => { const r = detail; setDetail(null); openEdit(r); }} className="gap-1.5"><Pencil className="w-3.5 h-3.5" /> Edit</Button>
+                <Button size="sm" variant="outline" onClick={() => setDetail(null)}>Close</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
