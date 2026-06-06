@@ -82,6 +82,7 @@ import {
   createUserAccount,
   getBranding,
   setSetting,
+  setUserPhoto,
 } from "./db";
 import { canManage, canAssignRoles } from "@shared/permissions";
 
@@ -113,6 +114,12 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    updatePhoto: protectedProcedure
+      .input(z.object({ photoUrl: z.string().max(8_000_000).nullable() }))
+      .mutation(async ({ ctx, input }) => {
+        await setUserPhoto(ctx.user.id, input.photoUrl);
+        return { success: true };
+      }),
   }),
 
   team: router({

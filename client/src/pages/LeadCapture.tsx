@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ClipboardList, Plus, Download, Trash2, Loader2 } from "lucide-react";
+import { LeadFormFields } from "@/components/LeadFormFields";
 
 const FIELDS = [
   { key: "leadDate", label: "Date", type: "date" },
@@ -127,18 +128,8 @@ export default function LeadCapture() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Capture a lead</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
-            {FIELDS.map((f) => (
-              <div key={f.key} className="space-y-1.5">
-                <Label className="text-xs">{f.label}{(f as any).required && <span className="text-destructive"> *</span>}</Label>
-                <Input
-                  type={(f as any).type === "date" ? "date" : "text"}
-                  value={form[f.key] ?? ""}
-                  onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
-                  placeholder={f.label}
-                />
-              </div>
-            ))}
+          <div className="py-1">
+            <LeadFormFields form={form} setForm={setForm} />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>

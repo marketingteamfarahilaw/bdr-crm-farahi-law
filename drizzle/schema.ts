@@ -22,6 +22,7 @@ export const users = mysqlTable("users", {
   passwordHash: varchar("passwordHash", { length: 255 }), // scrypt salt:hash for email+password login
   agentName: varchar("agentName", { length: 100 }), // Links user to BDR agent data (e.g. 'Gracel', 'Queenie', 'Ally', 'Miguel', 'Rupert')
   ringoutMyLocation: varchar("ringoutMyLocation", { length: 30 }), // Phone number for RingOut first-leg call (e.g. +12025551234)
+  photoUrl: longtext("photoUrl"), // Profile photo — a small resized data URL
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

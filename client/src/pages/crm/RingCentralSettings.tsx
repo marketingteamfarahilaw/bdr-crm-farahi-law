@@ -30,7 +30,7 @@ export default function RingCentralSettings() {
   });
 
   return (
-    <div className="p-6 max-w-2xl space-y-6">
+    <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-5">
       <div>
         <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
           RingCentral — Calls &amp; Auto-Sync
@@ -40,6 +40,7 @@ export default function RingCentralSettings() {
         </p>
       </div>
 
+      <div className="grid md:grid-cols-2 gap-4 items-start">
       {/* Auto-sync — the primary mechanism */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
@@ -103,13 +104,14 @@ export default function RingCentralSettings() {
           )}
         </CardContent>
       </Card>
+      </div>
 
       {/* How it works */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">How to use it</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm text-muted-foreground">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div className="flex gap-3">
             <Badge variant="outline" className="shrink-0 text-xs w-6 h-6 flex items-center justify-center p-0 rounded-full">1</Badge>
             <div>

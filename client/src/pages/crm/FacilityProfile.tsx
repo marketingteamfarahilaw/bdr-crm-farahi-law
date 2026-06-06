@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { FacilityLocationMap } from "@/components/FacilityLocationMap";
+import { LeadFormFields } from "@/components/LeadFormFields";
 import { formatDistanceToNow, format } from "date-fns";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -479,6 +480,7 @@ function LeadCaptureTab({ facility }: { facility: any }) {
   const openForm = () => {
     setForm({
       leadDate: new Date().toISOString().slice(0, 10),
+      facility: facilityName,
       typeOfFacility: CATEGORY_LABELS[facility.category] ?? facility.category ?? "",
       clientLocation: facility.city ?? "",
     });
@@ -563,27 +565,8 @@ function LeadCaptureTab({ facility }: { facility: any }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-card border-border max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Capture a lead — {facilityName}</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">Facility</label>
-              <Input value={facilityName} disabled className="bg-background border-border" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">Type of Facility</label>
-              <Input value={form.typeOfFacility ?? ""} onChange={(e) => setForm((s) => ({ ...s, typeOfFacility: e.target.value }))} className="bg-background border-border" />
-            </div>
-            {LEAD_FIELDS.map((f) => (
-              <div key={f.key} className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">{f.label}{(f as any).required && <span className="text-destructive"> *</span>}</label>
-                <Input
-                  type={(f as any).type === "date" ? "date" : "text"}
-                  value={form[f.key] ?? ""}
-                  onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
-                  className="bg-background border-border"
-                  placeholder={f.label}
-                />
-              </div>
-            ))}
+          <div className="pt-1">
+            <LeadFormFields form={form} setForm={setForm} lockFacility />
           </div>
           <Button className="w-full mt-3 gap-2" disabled={create.isPending} onClick={submit}>
             {create.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Save lead

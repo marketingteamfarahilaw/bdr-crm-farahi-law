@@ -135,6 +135,12 @@ export async function getBranding(): Promise<{ logoLight: string | null; logoDar
   return { logoLight, logoDark, slogan };
 }
 
+export async function setUserPhoto(userId: number, photoUrl: string | null): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ photoUrl }).where(eq(users.id, userId));
+}
+
 export async function listUsers() {
   const db = await getDb();
   if (!db) return [];
