@@ -58,10 +58,23 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Hashed assets can cache forever; the app shell + service worker must NOT,
+  // or browsers keep serving a stale build after a deploy.
+  const NO_CACHE_FILES = new Set(["index.html", "sw.js", "registerSW.js", "manifest.webmanifest", "workbox"]);
+  app.use(
+    express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        const base = path.basename(filePath);
+        if (NO_CACHE_FILES.has(base) || base.startsWith("workbox-")) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+      },
+    })
+  );
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
