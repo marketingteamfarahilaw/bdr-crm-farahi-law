@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AddressAutocompleteInput } from "@/components/AddressAutocompleteInput";
 
 // Option lists — mirror the team's Excel data-validation.
 export const LEAD_ROLES = ["FR", "BDR"];
@@ -38,7 +39,7 @@ function FieldSelect({
   );
 }
 
-type FieldDef = { key: string; label: string; kind: "text" | "date" | "select" | "member"; options?: string[]; required?: boolean };
+type FieldDef = { key: string; label: string; kind: "text" | "date" | "select" | "member" | "address"; options?: string[]; required?: boolean };
 const FIELDS: FieldDef[] = [
   { key: "leadDate", label: "Date", kind: "date" },
   { key: "role", label: "Role", kind: "select", options: LEAD_ROLES },
@@ -52,7 +53,7 @@ const FIELDS: FieldDef[] = [
   { key: "disposition", label: "Disposition", kind: "text" },
   { key: "facility", label: "Facility", kind: "text" },
   { key: "typeOfFacility", label: "Type of Facility", kind: "text" },
-  { key: "clientLocation", label: "Client's Location", kind: "text" },
+  { key: "clientLocation", label: "Client's Location", kind: "address" },
   { key: "fvDocumentation", label: "FV Documentation", kind: "text" },
 ];
 
@@ -102,6 +103,13 @@ export function LeadFormFields({
               options={memberOptions}
               placeholder="Member"
               onChange={(v) => setForm((s) => ({ ...s, member: v }))}
+            />
+          ) : f.kind === "address" ? (
+            <AddressAutocompleteInput
+              value={form[f.key] ?? ""}
+              onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))}
+              placeholder={f.label}
+              className="bg-background border-border"
             />
           ) : (
             <Input

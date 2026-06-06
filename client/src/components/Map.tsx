@@ -95,7 +95,7 @@ const MAPS_PROXY_URL = DIRECT_API_KEY
   ? "https://maps.googleapis.com"
   : "/api/maps-proxy";
 
-function loadMapScript(): Promise<{ ok: boolean; error?: string }> {
+export function loadMapScript(): Promise<{ ok: boolean; error?: string }> {
   // Already fully initialized
   if ((window as any)._mapsReady && window.google?.maps?.Map) {
     return Promise.resolve({ ok: true });
