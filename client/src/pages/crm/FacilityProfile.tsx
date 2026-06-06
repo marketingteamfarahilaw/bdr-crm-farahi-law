@@ -19,6 +19,7 @@ import {
   Flame, Snowflake, ThermometerSun, Loader2, Download, ClipboardList
 } from "lucide-react";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
+import { FacilityLocationMap } from "@/components/FacilityLocationMap";
 import { formatDistanceToNow, format } from "date-fns";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -1227,12 +1228,11 @@ export default function FacilityProfile() {
                 Open in Maps <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-            <iframe
-              title="Facility location"
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=14&output=embed`}
-              className="w-full h-72 border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
+            <FacilityLocationMap
+              name={facility.name}
+              latitude={facility.latitude}
+              longitude={facility.longitude}
+              address={[facility.address, facility.city].filter(Boolean).join(", ")}
             />
           </div>
         );
