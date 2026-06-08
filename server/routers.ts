@@ -84,7 +84,8 @@ import {
   setSetting,
   setUserPhoto,
 } from "./db";
-import { canManage, canAssignRoles } from "@shared/permissions";
+import { canManage, canAssignRoles, seesAllData } from "@shared/permissions";
+import { getAgentReport } from "./reports";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -660,6 +661,40 @@ export const appRouter = router({
   }),
 
   crm: crmRouter,
+
+  reports: router({
+    // Agents available to report on: agents see only themselves; managers see all.
+    agents: protectedProcedure.query(async ({ ctx }) => {
+      if (!seesAllData(ctx.user.role)) {
+        const self = String(ctx.user.agentName || ctx.user.name || "Me");
+        return [{ name: self, self: true }];
+      }
+      const zones = await getAllAgentZones();
+      const names = Array.from(new Set((zones as any[]).map((z) => z.agentName).filter(Boolean))).sort();
+      return names.map((name) => ({ name: String(name), self: false }));
+    }),
+    agentReport: protectedProcedure
+      .input(z.object({
+        agentName: z.string().optional(), // manager-selected name, or "__all__" / empty for everyone
+        from: z.string(),
+        to: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const from = new Date(input.from);
+        const to = new Date(input.to);
+        const seesAll = seesAllData(ctx.user.role);
+        let names: string[] | undefined;
+        if (!seesAll) {
+          names = [ctx.user.agentName, ctx.user.name].filter((x): x is string => !!x);
+          if (!names.length) names = ["__none__"];
+        } else if (input.agentName && input.agentName !== "__all__") {
+          names = [input.agentName];
+        } else {
+          names = undefined; // all agents
+        }
+        return getAgentReport({ names, from, to });
+      }),
+  }),
 
   bdr: router({
     dashboardKpis: protectedProcedure.query(async () => getAgentDashboardKpis()),

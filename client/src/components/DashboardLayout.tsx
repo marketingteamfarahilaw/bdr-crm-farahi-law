@@ -49,6 +49,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
   ] },
   { title: "Agent Tools", items: [
+    { icon: BarChart3, label: "Reports", path: "/reports", level: "all" },
     { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
     { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
     { icon: Receipt, label: "Expenses", path: "/bdr/expenses", level: "all" },

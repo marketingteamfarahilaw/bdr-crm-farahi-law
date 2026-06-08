@@ -37,6 +37,7 @@ import PiClientsPage from "./pages/PiClients";
 import FilevineSettingsPage from "./pages/FilevineSettings";
 import SettingsPage from "./pages/Settings";
 import ProfilePage from "./pages/Profile";
+import ReportsCenter from "./pages/ReportsCenter";
 import RingCentralCallback from "./pages/RingCentralCallback";
 import { RingCentralProvider } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
@@ -101,6 +102,9 @@ function Router() {
 
         {/* User profile */}
         <Route path="/profile" component={ProfilePage} />
+
+        {/* Reports Center */}
+        <Route path="/reports" component={ReportsCenter} />
 
         <Route path="/ringcentral-callback" component={RingCentralCallback} />
         <Route path="/404" component={NotFound} />

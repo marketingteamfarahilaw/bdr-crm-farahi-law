@@ -129,6 +129,20 @@
     opacity: 0.85;
     cursor: pointer;
   }
+  /* Print / "Save as PDF" — show only the .report-doc as a clean document */
+  @media print {
+    @page { margin: 12mm; }
+    body * { visibility: hidden !important; }
+    .report-doc, .report-doc * { visibility: visible !important; }
+    .report-doc {
+      position: absolute !important;
+      left: 0; top: 0; width: 100%;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .no-print { display: none !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
