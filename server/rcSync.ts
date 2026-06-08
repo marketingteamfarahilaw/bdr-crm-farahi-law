@@ -13,7 +13,7 @@
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
-import { createContactLog, createFacilityUpdate, createTask, getExistingRcCallIds } from "./crmDb";
+import { createContactLog, createFacilityUpdate, createTask, getExistingRcCallIds, getExistingRcSessionIds } from "./crmDb";
 import { getDb } from "./db";
 import { facilities } from "../drizzle/schema";
 
@@ -201,16 +201,23 @@ export async function syncRecentCalls(
   const result: SyncResult = { scanned: records.length, matched: 0, logged: 0, transcribed: 0, skippedRecent: 0 };
   if (records.length === 0) return result;
 
-  // Dedupe: which of these call ids have we already logged?
+  // Dedupe: skip a record if EITHER its per-extension call id OR its stable
+  // cross-extension telephonySessionId is already logged. The latter prevents
+  // double-logging one physical call that appears in two agents' extension logs
+  // (ring group / shared line / transferred inbound) with different record ids.
   const ids = records.map((r) => String(r.id)).filter(Boolean);
+  const sessionIds = records.map((r) => String(r.telephonySessionId ?? r.sessionId ?? "")).filter(Boolean);
   const existing = await getExistingRcCallIds(ids);
+  const existingSessions = await getExistingRcSessionIds(sessionIds);
 
   const index = await buildFacilityIndex();
   const now = Date.now();
 
   for (const r of records) {
     const id = String(r.id);
+    const sessionId = String(r.telephonySessionId ?? r.sessionId ?? "");
     if (!id || existing.has(id)) continue;
+    if (sessionId && existingSessions.has(sessionId)) continue;
 
     // Give RingCentral time to attach the recording before we process — very
     // recent calls are skipped this round and picked up on the next sync.
@@ -248,8 +255,10 @@ export async function syncRecentCalls(
       repName: attribution?.repName ?? r.from?.name ?? facility.assignedRepName ?? undefined,
       fromRingCentral: 1,
       rcCallId: id,
+      rcSessionId: sessionId || undefined,
     });
     existing.add(id); // mark seen so a duplicate id later in THIS batch is skipped
+    if (sessionId) existingSessions.add(sessionId); // and a duplicate session (other extension) later in THIS batch
     result.logged++;
 
     // Transcribe + summarize recorded, connected calls.

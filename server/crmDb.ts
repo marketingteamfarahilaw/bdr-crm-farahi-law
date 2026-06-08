@@ -219,6 +219,20 @@ export async function getExistingRcCallIds(ids: string[]): Promise<Set<string>> 
   return new Set(rows.map((r) => r.rcCallId).filter((x): x is string => !!x));
 }
 
+// Which of these RingCentral telephonySessionIds are already logged. Unlike the
+// per-extension rcCallId, a sessionId is stable across extensions — so a call
+// that lands in two connected agents' extension logs (ring group, shared line,
+// or transferred inbound) is logged only once, not twice.
+export async function getExistingRcSessionIds(ids: string[]): Promise<Set<string>> {
+  const db = await getDb();
+  if (!db || ids.length === 0) return new Set();
+  const rows = await db
+    .select({ rcSessionId: contactLogs.rcSessionId })
+    .from(contactLogs)
+    .where(inArray(contactLogs.rcSessionId, ids));
+  return new Set(rows.map((r) => r.rcSessionId).filter((x): x is string => !!x));
+}
+
 export async function deleteContactLog(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");

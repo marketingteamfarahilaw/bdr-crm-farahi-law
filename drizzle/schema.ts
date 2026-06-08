@@ -293,8 +293,11 @@ export const contactLogs = mysqlTable("contact_logs", {
   repName: varchar("repName", { length: 255 }),
   // V3: RingCentral sync flag
   fromRingCentral: int("fromRingCentral").default(0).notNull(),
-  // RingCentral call-log record id — dedupe key for auto-synced calls.
+  // RingCentral call-log record id — per-extension dedupe key for auto-synced calls.
   rcCallId: varchar("rcCallId", { length: 64 }),
+  // RingCentral telephonySessionId — stable ACROSS extensions, so one physical
+  // call landing in two agents' extension logs (ring group / transfer) dedupes.
+  rcSessionId: varchar("rcSessionId", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

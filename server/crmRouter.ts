@@ -66,6 +66,7 @@ import {
   findFacilityByPhone,
   getNotificationsForUser,
   getExistingRcCallIds,
+  getExistingRcSessionIds,
 } from "./crmDb";
 import { getDb } from "./db";
 import { facilities, uberReceipts, users, leadIntake } from "../drizzle/schema";
@@ -1136,9 +1137,14 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
           params: { dateFrom, perPage: 250, view: "Detailed" },
         });
         const records: any[] = callLogResp.data.records ?? [];
-        // Dedup against already-logged calls (and within this batch) by call id,
-        // and stamp rcCallId so the auto-poller never re-logs these rows.
+        // Dedup against already-logged calls (and within this batch) by per-extension
+        // call id AND by stable cross-extension telephonySessionId, and stamp both so
+        // the auto-poller never re-logs these rows — and one physical call that lands
+        // in two agents' extension logs isn't logged twice.
         const existing = await getExistingRcCallIds(records.map((r) => String(r.id)).filter(Boolean));
+        const existingSessions = await getExistingRcSessionIds(
+          records.map((r) => String(r.telephonySessionId ?? r.sessionId ?? "")).filter(Boolean)
+        );
         // Attribute to the connected agent (their own token), not the call's RC
         // display name. Manager JWT-fallback (no attribution) → the acting user.
         const repId = attribution?.repId ?? ctx.user.id;
@@ -1146,7 +1152,9 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         let synced = 0;
         for (const record of records) {
           const rcCallId = String(record.id ?? "");
+          const rcSessionId = String(record.telephonySessionId ?? record.sessionId ?? "");
           if (rcCallId && existing.has(rcCallId)) continue;
+          if (rcSessionId && existingSessions.has(rcSessionId)) continue;
           const fromNum = (record.from?.phoneNumber ?? "").replace(/\D/g, "");
           const toNum = (record.to?.phoneNumber ?? "").replace(/\D/g, "");
           const matched = phones.some((p) => {
@@ -1171,8 +1179,10 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
             repName,
             fromRingCentral: 1,
             rcCallId: rcCallId || undefined,
+            rcSessionId: rcSessionId || undefined,
           });
           if (rcCallId) existing.add(rcCallId);
+          if (rcSessionId) existingSessions.add(rcSessionId);
           synced++;
         }
         return { success: true, synced };
