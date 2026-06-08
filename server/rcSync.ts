@@ -129,8 +129,11 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
 }
 
 const onlyDigits = (s?: string | null) => (s || "").replace(/\D/g, "");
+// Normalize to the last 10 digits (US) for exact comparison — avoids the loose
+// endsWith matching that let short/partial numbers collide across facilities.
+const last10 = (s?: string | null) => { const d = onlyDigits(s); return d.length >= 10 ? d.slice(-10) : ""; };
 
-type FacIndexEntry = { id: number; name: string; assignedRepId: number | null; assignedRepName: string | null; digits: string[] };
+type FacIndexEntry = { id: number; name: string; assignedRepId: number | null; assignedRepName: string | null; primary: string; others: string[] };
 
 async function buildFacilityIndex(): Promise<FacIndexEntry[]> {
   const db = await getDb();
@@ -152,19 +155,27 @@ async function buildFacilityIndex(): Promise<FacIndexEntry[]> {
     name: f.name,
     assignedRepId: (f.assignedRepId as number | null) ?? null,
     assignedRepName: (f.assignedRepName as string | null) ?? null,
-    digits: [f.phone, f.phone2, f.phone3, f.contactPhone].map(onlyDigits).filter((d) => d.length >= 7),
+    primary: last10(f.phone),
+    others: [f.phone2, f.phone3, f.contactPhone].map(last10).filter(Boolean),
   }));
 }
 
+/**
+ * Match a call to a facility by phone number, PREFERRING the facility where the
+ * number is the PRIMARY phone over one that merely carries it as a secondary
+ * line. Many facilities were imported with another facility's number in phone2/
+ * phone3, so without this preference a call lands on the wrong facility.
+ */
 function matchFacility(index: FacIndexEntry[], fromDigits: string, toDigits: string): FacIndexEntry | null {
+  const fromN = last10(fromDigits);
+  const toN = last10(toDigits);
+  if (!fromN && !toN) return null;
+  let secondaryHit: FacIndexEntry | null = null;
   for (const f of index) {
-    for (const d of f.digits) {
-      const hitFrom = fromDigits.length >= 7 && (fromDigits.endsWith(d) || d.endsWith(fromDigits));
-      const hitTo = toDigits.length >= 7 && (toDigits.endsWith(d) || d.endsWith(toDigits));
-      if (hitFrom || hitTo) return f;
-    }
+    if (f.primary && (f.primary === fromN || f.primary === toN)) return f; // primary wins immediately
+    if (!secondaryHit && f.others.some((o) => o === fromN || o === toN)) secondaryHit = f;
   }
-  return null;
+  return secondaryHit;
 }
 
 export type SyncResult = { scanned: number; matched: number; logged: number; transcribed: number; skippedRecent: number };

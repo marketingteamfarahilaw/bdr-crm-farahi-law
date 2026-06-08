@@ -162,21 +162,26 @@ export async function deleteFacility(id: number) {
 export async function findFacilityByPhone(rawPhone: string) {
   const db = await getDb();
   if (!db) return null;
-  // Normalise: keep digits only
-  const digits = rawPhone.replace(/\D/g, "");
-  if (!digits) return null;
-  // Pull all facilities and match in JS (MySQL REGEXP on computed columns is complex)
+  // Compare on the last 10 digits (US), and PREFER the facility where the number
+  // is the primary phone over one that only carries it as a secondary line —
+  // otherwise a call lands on a facility that wrongly holds another's number.
+  const t = rawPhone.replace(/\D/g, "");
+  const t10 = t.length >= 10 ? t.slice(-10) : "";
+  if (!t10) return null;
   const rows = await db.select().from(facilities);
+  let secondary: typeof rows[number] | null = null;
   for (const f of rows) {
-    const candidates = [f.phone, f.phone2, f.phone3, f.contactPhone].filter(Boolean);
-    for (const c of candidates) {
-      const cd = c!.replace(/\D/g, "");
-      if (cd && (cd === digits || cd.endsWith(digits) || digits.endsWith(cd))) {
-        return f;
-      }
+    const p = (f.phone || "").replace(/\D/g, "");
+    const p10 = p.length >= 10 ? p.slice(-10) : "";
+    if (p10 && p10 === t10) return f; // primary match wins
+    if (!secondary) {
+      const others = [f.phone2, f.phone3, f.contactPhone]
+        .map((x) => (x || "").replace(/\D/g, ""))
+        .map((d) => (d.length >= 10 ? d.slice(-10) : ""));
+      if (others.some((o) => o && o === t10)) secondary = f;
     }
   }
-  return null;
+  return secondary;
 }
 
 // ─── Contact Logs ─────────────────────────────────────────────────────────────
