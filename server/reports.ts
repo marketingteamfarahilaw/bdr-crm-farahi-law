@@ -4,7 +4,7 @@
  * a date range. Feeds the Reports Center (KPIs, trend series, detail tables, and
  * PDF/Excel exports).
  */
-import { and, gte, lte, inArray, eq, desc } from "drizzle-orm";
+import { and, gte, lte, inArray, eq, desc, sql } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   contactLogs,
@@ -17,6 +17,31 @@ import {
   facilityUpdates,
   facilities,
 } from "../drizzle/schema";
+
+/** Real agent names, drawn from who actually has activity (calls, leads, visits,
+ *  expenses, rewards) — not the stale Agent Zones list. Sorted by volume. */
+export async function getReportAgents(): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const result: any = await db.execute(sql`
+      SELECT name FROM (
+        SELECT agentName name FROM referral_rewards WHERE agentName IS NOT NULL AND agentName<>''
+        UNION ALL SELECT agentName FROM field_visits WHERE agentName IS NOT NULL AND agentName<>''
+        UNION ALL SELECT agentName FROM fr_expenses WHERE agentName IS NOT NULL AND agentName<>''
+        UNION ALL SELECT agentName FROM bdr_expenses WHERE agentName IS NOT NULL AND agentName<>''
+        UNION ALL SELECT agentName FROM fr_errands WHERE agentName IS NOT NULL AND agentName<>''
+        UNION ALL SELECT repName FROM contact_logs WHERE repName IS NOT NULL AND repName<>''
+        UNION ALL SELECT repName FROM facility_leads WHERE repName IS NOT NULL AND repName<>''
+      ) t GROUP BY name HAVING COUNT(*) >= 2 ORDER BY COUNT(*) DESC
+    `);
+    const rows: any[] = Array.isArray(result) ? (Array.isArray(result[0]) ? result[0] : result) : (result?.rows ?? []);
+    return rows.map((r) => String(r.name)).filter(Boolean);
+  } catch (e) {
+    console.warn("[reports] getReportAgents failed:", e);
+    return [];
+  }
+}
 
 const durToSec = (s: any) => {
   const str = String(s ?? "");

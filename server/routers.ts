@@ -85,7 +85,7 @@ import {
   setUserPhoto,
 } from "./db";
 import { canManage, canAssignRoles, seesAllData } from "@shared/permissions";
-import { getAgentReport, getCallAnalytics } from "./reports";
+import { getAgentReport, getCallAnalytics, getReportAgents } from "./reports";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -669,9 +669,8 @@ export const appRouter = router({
         const self = String(ctx.user.agentName || ctx.user.name || "Me");
         return [{ name: self, self: true }];
       }
-      const zones = await getAllAgentZones();
-      const names = Array.from(new Set((zones as any[]).map((z) => z.agentName).filter(Boolean))).sort();
-      return names.map((name) => ({ name: String(name), self: false }));
+      const names = await getReportAgents();
+      return names.map((name) => ({ name, self: false }));
     }),
     agentReport: protectedProcedure
       .input(z.object({
