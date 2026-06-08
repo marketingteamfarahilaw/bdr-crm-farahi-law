@@ -68,6 +68,13 @@ interface PinLead {
   assignedAgent: string | null;
 }
 
+// Map a CRM partner status to the map's lead-temperature buckets.
+const statusToTier = (s: string | null | undefined): "hot" | "warm" | "cold" => {
+  if (s === "priority_partner" || s === "active_partner") return "hot";
+  if (s === "dormant" || s === "do_not_use" || s === "churned" || s === "cold") return "cold";
+  return "warm";
+};
+
 // ── Agent color map ──────────────────────────────────────────────────────────
 const AGENT_COLORS: Record<string, string> = {
   "Miguel Flores":    "#FF6B35",
@@ -462,9 +469,9 @@ export default function CaliforniaMapPage() {
     return s;
   }, [crmFacilities]);
 
-  // Convert saved leads to PinLead
+  // Saved leads + real CRM facilities — both rendered as map pins.
   const allPins: PinLead[] = useMemo(() => {
-    return savedLeads
+    const leadPins: PinLead[] = savedLeads
       .filter((l: any) => l.latitude != null && l.longitude != null)
       .map((l: any) => ({
         placeId: l.placeId,
@@ -484,6 +491,28 @@ export default function CaliforniaMapPage() {
         crmId: crmFacilities.find((f: any) => f.placeId === l.placeId)?.id,
         assignedAgent: l.assignedAgent ?? null,
       }));
+    const leadPlaceIds = new Set(leadPins.map((p) => p.placeId));
+    const facilityPins: PinLead[] = (crmFacilities as any[])
+      .filter((f) => f.latitude != null && f.longitude != null && (!f.placeId || !leadPlaceIds.has(f.placeId)))
+      .map((f) => ({
+        placeId: f.placeId ?? `facility-${f.id}`,
+        name: f.name,
+        address: f.city ?? "",
+        phone: f.phone ?? null,
+        website: null,
+        rating: null,
+        reviewCount: null,
+        latitude: f.latitude,
+        longitude: f.longitude,
+        category: f.category,
+        qualificationScore: 0,
+        scoreTier: statusToTier(f.partnerStatus),
+        annotation: null,
+        inCrm: true,
+        crmId: f.id,
+        assignedAgent: f.assignedRepName ?? null,
+      }));
+    return [...leadPins, ...facilityPins];
   }, [savedLeads, crmPlaceIds, crmFacilities]);
 
   // Filtered pins
