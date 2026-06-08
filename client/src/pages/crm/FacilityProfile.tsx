@@ -646,6 +646,7 @@ function GratitudeTab({ facilityId }: { facilityId: number }) {
 // ─── Updates / Transcripts Tab ────────────────────────────────────────────────
 function UpdatesTab({ facilityId }: { facilityId: number }) {
   const utils = trpc.useUtils();
+  const { data: rcStatus } = trpc.crm.ringcentral.status.useQuery();
   const { data: updates = [], isLoading } = trpc.crm.updates.list.useQuery({ facilityId });
   const createUpdate = trpc.crm.updates.create.useMutation({
     onSuccess: () => { utils.crm.updates.list.invalidate({ facilityId }); toast.success("Update saved"); setOpen(false); resetForm(); },
@@ -696,14 +697,14 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {upd.extractedData.relationshipTone && (
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${
-                            upd.extractedData.relationshipTone === "warm" ? "bg-green-500/10 text-green-400 border-green-500/20"
-                            : upd.extractedData.relationshipTone === "cold" ? "bg-blue-500/10 text-blue-300 border-blue-500/20"
-                            : upd.extractedData.relationshipTone === "hostile" ? "bg-red-500/10 text-red-400 border-red-500/20"
+                            upd.extractedData.relationshipTone === "warm" ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30"
+                            : upd.extractedData.relationshipTone === "cold" ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                            : upd.extractedData.relationshipTone === "hostile" ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30"
                             : "bg-muted text-muted-foreground border-border"
                           }`}>Tone: {upd.extractedData.relationshipTone}</span>
                         )}
                         {upd.extractedData.leadsDiscussed && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-amber-500/10 text-amber-400 border-amber-500/20">Leads discussed</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">Leads discussed</span>
                         )}
                         {upd.extractedData.contactPerson && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-muted text-muted-foreground border-border">Spoke with: {upd.extractedData.contactPerson}</span>
@@ -721,7 +722,7 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                       <ul className="space-y-1">
                         {points.map((p: string, i: number) => (
                           <li key={i} className="flex items-start gap-2 text-xs text-foreground/90">
-                            <span className="text-blue-400 mt-1 shrink-0 leading-none">•</span>
+                            <span className="text-blue-600 dark:text-blue-400 mt-1 shrink-0 leading-none">•</span>
                             <span className="leading-relaxed">{p}</span>
                           </li>
                         ))}
@@ -738,8 +739,8 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                         {(upd.extractedData.followUpTasks as Array<{title:string;priority:string;dueInDays:number}>).map((task, i) => (
                           <li key={i} className="flex items-start gap-2 text-xs">
                             <span className={`shrink-0 mt-0.5 text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                              task.priority === "high" ? "bg-red-500/20 text-red-400"
-                              : task.priority === "medium" ? "bg-amber-500/20 text-amber-400"
+                              task.priority === "high" ? "bg-red-500/20 text-red-700 dark:text-red-400"
+                              : task.priority === "medium" ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
                               : "bg-muted text-muted-foreground"
                             }`}>{task.priority.toUpperCase()}</span>
                             <span className="text-foreground flex-1 leading-relaxed">{task.title}</span>
@@ -754,9 +755,9 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                 )}
                 {/* Commitment made */}
                 {upd.updateType === "transcript" && upd.extractedData?.commitmentMade && (
-                  <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-2.5 mb-2 flex items-start gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0 mt-0.5" />
-                    <p className="text-xs text-green-300"><span className="font-semibold">Commitment: </span>{upd.extractedData.commitmentMade}</p>
+                  <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-2.5 mb-2 flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-green-800 dark:text-green-300"><span className="font-semibold">Commitment: </span>{upd.extractedData.commitmentMade}</p>
                   </div>
                 )}
                 {upd.rawText && upd.rawText.trim() && !upd.rawText.startsWith("[") && (
@@ -768,7 +769,9 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                   </details>
                 )}
               </div>
-              <button onClick={()=>deleteUpdate.mutate({id:upd.id})} className="text-muted-foreground hover:text-red-400 flex-shrink-0"><Trash2 className="w-4 h-4"/></button>
+              {rcStatus?.canManage && (
+                <button onClick={()=>deleteUpdate.mutate({id:upd.id})} className="text-muted-foreground hover:text-red-400 flex-shrink-0" title="Delete recap (managers only)"><Trash2 className="w-4 h-4"/></button>
+              )}
             </div>
           </CardContent></Card>
         ))}</div>

@@ -1463,7 +1463,11 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        // Agents cannot remove call recaps / transcripts — managers only.
+        if (!seesAllData(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can delete call recaps." });
+        }
         await deleteFacilityUpdate(input.id);
         return { success: true };
       }),
