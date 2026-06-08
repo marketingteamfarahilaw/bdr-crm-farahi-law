@@ -155,6 +155,31 @@ function FollowUpDigest() {
   return null;
 }
 
+/**
+ * Once-per-session nudge for agents who haven't connected their own RingCentral
+ * yet — so their calls get attributed to them instead of the shared account.
+ */
+function RingCentralNudge() {
+  const [, navigate] = useLocation();
+  const { data: status } = trpc.crm.ringcentral.status.useQuery(undefined, { staleTime: 60_000 });
+  const shownRef = useRef(false);
+
+  useEffect(() => {
+    if (shownRef.current || !status) return;
+    if (status.connected) { shownRef.current = true; return; }
+    if (sessionStorage.getItem("rc-connect-nudge-shown")) { shownRef.current = true; return; }
+    toast("Connect your RingCentral", {
+      description: "Sign in to your own RingCentral so your calls are tracked under your name.",
+      action: { label: "Connect", onClick: () => navigate("/crm/ringcentral") },
+      duration: 10000,
+    });
+    sessionStorage.setItem("rc-connect-nudge-shown", "1");
+    shownRef.current = true;
+  }, [status, navigate]);
+
+  return null;
+}
+
 function AppWithPhone() {
   const utils = trpc.useUtils();
 
@@ -259,6 +284,7 @@ function AppWithPhone() {
   return (
     <RingCentralProvider onCallEnd={handleCallEnd}>
       <FollowUpDigest />
+      <RingCentralNudge />
       <Router />
     </RingCentralProvider>
   );

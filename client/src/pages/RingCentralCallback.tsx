@@ -1,129 +1,111 @@
 /**
- * RingCentral OAuth Callback Page
+ * RingCentral OAuth Callback
  *
- * This page handles the OAuth redirect from RingCentral after the user authorizes.
- * It works in two scenarios:
- *  1. Popup flow: sends the auth code back to the opener window via postMessage, then closes
- *  2. Tab redirect flow (popup blocked): stores the auth code in localStorage, then redirects back to the app
+ * After an agent signs into their own RingCentral, RingCentral redirects here
+ * with an authorization code. This page exchanges that code (via the per-agent
+ * `connect` mutation) and stores the token against the logged-in agent, then
+ * sends them back to the RingCentral page.
  *
- * The redirect URI registered in RingCentral Developer Console must include this page's URL.
- * e.g. https://your-app.com/ringcentral-callback
+ * The redirect URI registered in the RingCentral Developer Console must be this
+ * page's URL, e.g. https://bdcrm.farahilaw.com/ringcentral-callback
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export default function RingCentralCallback() {
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
-  const [message, setMessage] = useState("Processing login...");
+  const [message, setMessage] = useState("Finishing RingCentral sign-in…");
   const [, navigate] = useLocation();
+  const ranRef = useRef(false);
+
+  const connect = trpc.crm.ringcentral.connect.useMutation();
+  const utils = trpc.useUtils();
 
   useEffect(() => {
+    if (ranRef.current) return;
+    ranRef.current = true;
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const state = params.get("state");
     const error = params.get("error");
     const errorDescription = params.get("error_description");
 
+    const goBack = (delay = 2200) => setTimeout(() => navigate("/crm/ringcentral"), delay);
+
     if (error) {
       setStatus("error");
-      setMessage(`Login failed: ${errorDescription ?? error}`);
-      // If in popup, notify opener and close
+      setMessage(`Sign-in failed: ${errorDescription ?? error}`);
+      // Legacy popup flow: tell the opener and close.
       if (window.opener) {
-        try {
-          window.opener.postMessage(
-            { type: "rc-oauth-callback", error, errorDescription },
-            "*"
-          );
-          setTimeout(() => window.close(), 1500);
-        } catch {
-          // opener may be cross-origin, just close
-          setTimeout(() => window.close(), 1500);
-        }
-      } else {
-        // Tab/iframe flow: navigate top window back to app
-        setTimeout(() => {
-          if (window.top && window.top !== window) {
-            window.top.location.href = window.location.origin + "/";
-          } else {
-            navigate("/");
-          }
-        }, 2000);
+        try { window.opener.postMessage({ type: "rc-oauth-callback", error, errorDescription }, "*"); } catch { /* cross-origin */ }
+        setTimeout(() => window.close(), 1500);
+        return;
       }
+      goBack();
       return;
     }
 
     if (!code) {
       setStatus("error");
-      setMessage("No authorization code received.");
-      setTimeout(() => navigate("/"), 2000);
+      setMessage("No authorization code was returned by RingCentral.");
+      goBack();
       return;
     }
 
-    // We have a code — try to send it to the widget
+    // Legacy embeddable popup flow — hand the code to the opener.
     if (window.opener) {
-      // Popup flow: send to opener (the widget iframe's parent)
       try {
-        // Try sending to the RingCentral embeddable redirect handler format
-        // The widget listens for messages from the redirect page
-        window.opener.postMessage(
-          {
-            type: "rc-oauth-callback",
-            callbackUri: window.location.href,
-            code,
-            state,
-          },
-          "*"
-        );
-        setStatus("success");
-        setMessage("Login successful! Closing...");
-        setTimeout(() => window.close(), 800);
-      } catch {
-        setStatus("success");
-        setMessage("Login successful! Closing...");
-        setTimeout(() => window.close(), 800);
-      }
-    } else {
-      // Tab redirect flow (or iframe redirect)
+        window.opener.postMessage({ type: "rc-oauth-callback", callbackUri: window.location.href, code, state }, "*");
+      } catch { /* cross-origin */ }
       setStatus("success");
-      setMessage("Login successful! Redirecting back to app...");
-
-      const callbackData = {
-        code,
-        state,
-        callbackUri: window.location.href,
-        timestamp: Date.now(),
-      };
-
-      if (window.top && window.top !== window) {
-        // We're inside an iframe (the widget's popup was blocked and the iframe navigated here)
-        // Send the auth code to the top-level window via postMessage, then navigate top to app
-        try {
-          window.top.postMessage(
-            { type: "rc-oauth-callback-from-iframe", ...callbackData },
-            window.location.origin
-          );
-        } catch {
-          // Cross-origin postMessage may fail, fall back to localStorage
-        }
-        setTimeout(() => {
-          try {
-            window.top!.location.href = window.location.origin + "/";
-          } catch {
-            navigate("/");
-          }
-        }, 800);
-      } else {
-        // We're the top window (tab redirect flow)
-        try {
-          localStorage.setItem("rc_oauth_callback", JSON.stringify(callbackData));
-        } catch {
-          // localStorage may be unavailable
-        }
-        setTimeout(() => navigate("/"), 800);
-      }
+      setMessage("Signed in. Closing…");
+      setTimeout(() => window.close(), 800);
+      return;
     }
-  }, [navigate]);
+
+    // Full-page per-agent flow: verify state, then exchange the code.
+    const savedState = sessionStorage.getItem("rc_oauth_state");
+    const redirectUri = sessionStorage.getItem("rc_oauth_redirect") || `${window.location.origin}/ringcentral-callback`;
+    // Fail CLOSED: this connection must have been started from THIS browser
+    // (handleConnect wrote rc_oauth_state) and the returned state must match it.
+    // A missing saved state means the callback wasn't initiated here — reject it.
+    if (!savedState || !state || state !== savedState) {
+      sessionStorage.removeItem("rc_oauth_state");
+      sessionStorage.removeItem("rc_oauth_redirect");
+      setStatus("error");
+      setMessage("Security check failed. Please start the RingCentral connection again from the RingCentral page.");
+      goBack(2800);
+      return;
+    }
+
+    connect.mutate(
+      { code, redirectUri },
+      {
+        onSuccess: (res) => {
+          sessionStorage.removeItem("rc_oauth_state");
+          sessionStorage.removeItem("rc_oauth_redirect");
+          utils.crm.ringcentral.status.invalidate();
+          utils.crm.ringcentral.connectedAgents.invalidate();
+          setStatus("success");
+          setMessage(`Connected as ${res.ownerName}. Redirecting…`);
+          toast.success(`RingCentral connected as ${res.ownerName}`, {
+            description: "Your calls will now be logged under your name.",
+          });
+          goBack(1100);
+        },
+        onError: (e) => {
+          setStatus("error");
+          setMessage(e.message || "Could not complete RingCentral sign-in.");
+          goBack(3200);
+        },
+      }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -147,7 +129,7 @@ export default function RingCentralCallback() {
             </div>
           )}
         </div>
-        <h2 className="text-lg font-semibold text-foreground mb-2">RingCentral Login</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-2">RingCentral Sign-In</h2>
         <p className="text-sm text-muted-foreground">{message}</p>
       </div>
     </div>

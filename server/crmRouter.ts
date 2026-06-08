@@ -29,6 +29,11 @@ import {
   deleteFacilityUpdate,
   deleteReferral,
   deleteRingcentralToken,
+  getUserRingcentralToken,
+  upsertUserRingcentralToken,
+  deleteUserRingcentralToken,
+  listAgentsWithRcStatus,
+  setUserRcLastSync,
   deleteTask,
   getAllFacilitiesForMap,
   getDashboardStats,
@@ -60,6 +65,7 @@ import {
   getBdrTopFacilities,
   findFacilityByPhone,
   getNotificationsForUser,
+  getExistingRcCallIds,
 } from "./crmDb";
 import { getDb } from "./db";
 import { facilities, uberReceipts, users, leadIntake } from "../drizzle/schema";
@@ -150,6 +156,102 @@ export async function getValidRCToken(): Promise<string> {
 
   // Robust fallback: mint a fresh token from the long-lived RINGCENTRAL_JWT.
   return mintRCTokenFromJwt(clientId, clientSecret);
+}
+
+/**
+ * Per-AGENT token. Returns a valid access token for the agent's OWN RingCentral
+ * connection, refreshing it if near expiry. Returns null if the agent hasn't
+ * connected — deliberately with NO fallback to the account JWT, because that's
+ * a different RingCentral identity and using it would re-attribute the agent's
+ * calls to the JWT owner (the exact bug we're fixing).
+ */
+export async function getValidRCTokenForUser(userId: number): Promise<string | null> {
+  const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
+  const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
+  if (!clientId || !clientSecret) return null;
+
+  const stored = await getUserRingcentralToken(userId);
+  if (!stored) return null;
+
+  // Fast path: more than 5 minutes of life left.
+  if (stored.tokenExpiry.getTime() - Date.now() >= 5 * 60 * 1000) return stored.accessToken;
+
+  if (stored.refreshToken) {
+    try {
+      const refreshed = await refreshRCToken(stored.refreshToken, clientId, clientSecret);
+      await upsertUserRingcentralToken({
+        userId,
+        accountId: stored.accountId ?? undefined,
+        extensionId: stored.extensionId ?? undefined,
+        ownerName: stored.ownerName ?? undefined,
+        ownerEmail: stored.ownerEmail ?? undefined,
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        tokenExpiry: new Date(Date.now() + refreshed.expires_in * 1000),
+      });
+      return refreshed.access_token;
+    } catch (err: any) {
+      console.warn(`[RingCentral] per-user refresh failed for user ${userId} — they must reconnect:`, err?.response?.status ?? err?.message ?? err);
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Pick the right RingCentral token for an authenticated request:
+ *  - the agent's own connection (preferred — calls attribute to them), else
+ *  - for managers, the company/admin JWT connection as a fallback, else
+ *  - throw, prompting the agent to connect their own account.
+ */
+async function resolveRCToken(user: { id: number; role: any; name?: string | null; email?: string | null }): Promise<{
+  token: string;
+  attribution?: { repId: number; repName: string };
+}> {
+  const own = await getValidRCTokenForUser(user.id);
+  if (own) return { token: own, attribution: { repId: user.id, repName: String(user.name ?? user.email ?? "Unknown") } };
+  if (seesAllData(user.role)) {
+    const account = await getValidRCToken();
+    return { token: account };
+  }
+  throw new TRPCError({
+    code: "PRECONDITION_FAILED",
+    message: "Connect your RingCentral account first — open the RingCentral page and click “Connect my RingCentral”.",
+  });
+}
+
+/**
+ * Defense-in-depth: the OAuth redirect must point at THIS app's own callback
+ * path. RingCentral also enforces its registered-URI allowlist, but we don't
+ * rely solely on RC-side config. An explicit RC_REDIRECT_ORIGINS env (comma-
+ * separated) can pin exact origins; otherwise any https origin ending in the
+ * callback path is accepted (covers bdcrm.farahilaw.com + localhost dev).
+ */
+function assertRcRedirectUri(redirectUri: string): void {
+  let u: URL;
+  try {
+    u = new URL(redirectUri);
+  } catch {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid redirect URI." });
+  }
+  if (u.pathname !== "/ringcentral-callback") {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Redirect URI is not allowed." });
+  }
+  const allow = (process.env.RC_REDIRECT_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (allow.length > 0) {
+    if (!allow.includes(u.origin)) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Redirect URI origin is not allowed." });
+    }
+    return;
+  }
+  // No explicit allowlist configured — require https (allow http only for localhost dev).
+  const isLocalhost = u.hostname === "localhost" || u.hostname === "127.0.0.1";
+  if (u.protocol !== "https:" && !isLocalhost) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Redirect URI must use HTTPS." });
+  }
 }
 
 const PARTNER_STATUSES = ["prospect", "active_partner", "priority_partner", "needs_follow_up", "dormant", "do_not_use"] as const;
@@ -567,19 +669,52 @@ export const crmRouter = router({
   // ─── RingCentral Integration ──────────────────────────────────────────────────
 
   ringcentral: router({
-    status: protectedProcedure.query(async () => {
-      const token = await getRingcentralToken();
-      return { connected: !!token, ownerName: token?.ownerName ?? null, tokenExpiry: token?.tokenExpiry ?? null };
+    // Per-agent connection status for the logged-in user, plus whether the
+    // company/admin (JWT) connection exists (managers can fall back to it).
+    status: protectedProcedure.query(async ({ ctx }) => {
+      const mine = await getUserRingcentralToken(ctx.user.id);
+      const account = await getRingcentralToken();
+      return {
+        connected: !!mine,
+        ownerName: mine?.ownerName ?? null,
+        ownerEmail: mine?.ownerEmail ?? null,
+        tokenExpiry: mine?.tokenExpiry ?? null,
+        lastSyncAt: mine?.lastSyncAt ?? null,
+        accountConnected: !!account,
+        accountOwnerName: account?.ownerName ?? null,
+        canManage: seesAllData(ctx.user.role),
+      };
     }),
 
+    // Build the RingCentral hosted-login URL. The agent's browser navigates here
+    // (full page), signs into THEIR OWN RingCentral, and is redirected back to
+    // /ringcentral-callback with an auth code.
+    getAuthorizeUrl: protectedProcedure
+      .input(z.object({ redirectUri: z.string().url(), state: z.string().min(1).max(200) }))
+      .query(async ({ input }) => {
+        const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
+        if (!clientId) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral is not configured on the server." });
+        }
+        assertRcRedirectUri(input.redirectUri);
+        const u = new URL(`${RC_BASE}/restapi/oauth/authorize`);
+        u.searchParams.set("response_type", "code");
+        u.searchParams.set("client_id", clientId);
+        u.searchParams.set("redirect_uri", input.redirectUri);
+        u.searchParams.set("state", input.state);
+        return { url: u.toString() };
+      }),
+
+    // Exchange the auth code for tokens and store them for THIS agent.
     connect: protectedProcedure
       .input(z.object({ code: z.string(), redirectUri: z.string() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
         const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
         if (!clientId || !clientSecret) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral credentials not configured. Add RINGCENTRAL_CLIENT_ID and RINGCENTRAL_CLIENT_SECRET in Settings." });
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "RingCentral credentials not configured on the server." });
         }
+        assertRcRedirectUri(input.redirectUri);
         const tokenResp = await axios.post(
           `${RC_BASE}/restapi/oauth/token`,
           new URLSearchParams({ grant_type: "authorization_code", code: input.code, redirect_uri: input.redirectUri }),
@@ -589,22 +724,37 @@ export const crmRouter = router({
         const meResp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/extension/~`, {
           headers: { Authorization: `Bearer ${access_token}` },
         });
-        const accountId = meResp.data.account?.id?.toString() ?? "default";
-        const ownerName = meResp.data.name ?? "Unknown";
-        await upsertRingcentralToken({
+        const accountId = meResp.data.account?.id?.toString() ?? undefined;
+        const ownerName = meResp.data.name ?? undefined;
+        const ownerEmail = meResp.data.contact?.email ?? undefined;
+        const extensionId = meResp.data.id?.toString() ?? undefined;
+        await upsertUserRingcentralToken({
+          userId: ctx.user.id,
           accountId,
-          accessToken: access_token,
-          refreshToken: refresh_token,
-          tokenExpiry: new Date(Date.now() + expires_in * 1000),
+          extensionId,
           ownerName,
-          ownerExtensionId: meResp.data.id?.toString(),
+          ownerEmail,
+          accessToken: access_token,
+          refreshToken: refresh_token ?? "",
+          tokenExpiry: new Date(Date.now() + (expires_in ?? 3600) * 1000),
         });
-        return { success: true, ownerName };
+        return { success: true, ownerName: ownerName ?? "your RingCentral account", ownerEmail: ownerEmail ?? null };
       }),
+
+    // Manager overview: every user and whether they've connected RingCentral.
+    connectedAgents: protectedProcedure.query(async ({ ctx }) => {
+      if (!seesAllData(ctx.user.role)) return [];
+      return listAgentsWithRcStatus();
+    }),
 
     connectJwt: protectedProcedure
       .input(z.object({ jwt: z.string() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        // This sets the COMPANY-WIDE admin connection — managers only, never a
+        // regular agent (who could otherwise overwrite the shared credential).
+        if (!seesAllData(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can set the company RingCentral connection." });
+        }
         const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
         const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
         if (!clientId || !clientSecret) {
@@ -632,32 +782,25 @@ export const crmRouter = router({
         return { success: true, ownerName };
       }),
 
-    disconnect: protectedProcedure.mutation(async () => {
-      await deleteRingcentralToken();
+    // Disconnect THIS agent's RingCentral (leaves the company/admin connection).
+    disconnect: protectedProcedure.mutation(async ({ ctx }) => {
+      await deleteUserRingcentralToken(ctx.user.id);
       return { success: true };
     }),
 
-    getAccessToken: protectedProcedure.query(async () => {
-      try {
-        const accessToken = await getValidRCToken();
-        return { accessToken };
-      } catch {
-        return { accessToken: null };
-      }
+    getAccessToken: protectedProcedure.query(async ({ ctx }) => {
+      const accessToken = await getValidRCTokenForUser(ctx.user.id);
+      return { accessToken };
     }),
 
     getWidgetConfig: protectedProcedure.query(async () => {
-      // JWT auto-login for the embeddable phone widget. The OAuth "Sign In" popup
-      // flow is broken on this RingCentral account (returns "Access denied"), so
-      // the widget auto-authenticates with the JWT credential instead — this is
-      // the proven working path the team used before.
-      // SECURITY NOTE: this sends the client secret + JWT to logged-in users'
-      // browsers. Acceptable for an internal, login-gated tool; revisit with a
-      // server-minted short-lived token if the widget is ever exposed publicly.
+      // Only non-sensitive config. The client secret and the company JWT are
+      // NEVER sent to the browser — agents authenticate via the per-agent OAuth
+      // flow (getAuthorizeUrl → connect), not a shared JWT. (Previously this
+      // leaked clientSecret + RINGCENTRAL_JWT to every logged-in user, which
+      // could be used to mint the admin account token — removed.)
       const clientId = process.env.RINGCENTRAL_CLIENT_ID ?? "";
-      const clientSecret = process.env.RINGCENTRAL_CLIENT_SECRET ?? "";
-      const jwt = process.env.RINGCENTRAL_JWT ?? "";
-      return { clientId, clientSecret, jwt, configured: !!clientId };
+      return { clientId, configured: !!clientId };
     }),
 
     transcribeCall: protectedProcedure
@@ -670,7 +813,7 @@ export const crmRouter = router({
         repName: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const accessToken = await getValidRCToken();
+        const { token: accessToken } = await resolveRCToken(ctx.user);
         // Fetch call recording
         const recResp = await axios.get(
           `${RC_BASE}/restapi/v1.0/account/~/recording/${input.callId}/content`,
@@ -778,7 +921,7 @@ export const crmRouter = router({
         let aiSummary = "";
 
         let accessToken: string | null = null;
-        try { accessToken = await getValidRCToken(); } catch (e) { console.warn("[logFacilityCall] no RC token:", (e as any)?.message ?? e); }
+        try { accessToken = (await resolveRCToken(ctx.user)).token; } catch (e) { console.warn("[logFacilityCall] no RC token:", (e as any)?.message ?? e); }
 
         // Only connected calls (duration > 0) can have a recording. Skip the
         // whole fetch for unanswered / 0:00 calls so they log instantly.
@@ -981,7 +1124,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
     syncCalls: protectedProcedure
       .input(z.object({ facilityId: z.number(), daysBack: z.number().min(1).max(90).default(30) }))
       .mutation(async ({ input, ctx }) => {
-        const accessToken = await getValidRCToken();
+        const { token: accessToken, attribution } = await resolveRCToken(ctx.user);
         const facility = await getFacilityById(input.facilityId);
         if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
         const phones = [facility.phone, facility.phone2, facility.phone3, facility.contactPhone]
@@ -993,8 +1136,17 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
           params: { dateFrom, perPage: 250, view: "Detailed" },
         });
         const records: any[] = callLogResp.data.records ?? [];
+        // Dedup against already-logged calls (and within this batch) by call id,
+        // and stamp rcCallId so the auto-poller never re-logs these rows.
+        const existing = await getExistingRcCallIds(records.map((r) => String(r.id)).filter(Boolean));
+        // Attribute to the connected agent (their own token), not the call's RC
+        // display name. Manager JWT-fallback (no attribution) → the acting user.
+        const repId = attribution?.repId ?? ctx.user.id;
+        const repName = attribution?.repName ?? ctx.user.name ?? ctx.user.email ?? "Unknown";
         let synced = 0;
         for (const record of records) {
+          const rcCallId = String(record.id ?? "");
+          if (rcCallId && existing.has(rcCallId)) continue;
           const fromNum = (record.from?.phoneNumber ?? "").replace(/\D/g, "");
           const toNum = (record.to?.phoneNumber ?? "").replace(/\D/g, "");
           const matched = phones.some((p) => {
@@ -1015,8 +1167,12 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
             callDuration: durationStr,
             callType: "partner_checkin",
             summary: `[RingCentral] ${record.direction} call — ${record.result ?? ""}. ${record.from?.name ?? record.from?.phoneNumber ?? "?"} → ${record.to?.name ?? record.to?.phoneNumber ?? "?"}`,
-            repName: record.from?.name ?? ctx.user.name ?? undefined,
+            repId,
+            repName,
+            fromRingCentral: 1,
+            rcCallId: rcCallId || undefined,
           });
+          if (rcCallId) existing.add(rcCallId);
           synced++;
         }
         return { success: true, synced };
@@ -1027,10 +1183,28 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
     // summarize + auto-task the new recorded ones. Deduped by call id.
     syncRecent: protectedProcedure
       .input(z.object({ lookbackMinutes: z.number().min(5).max(43200).optional() }).optional())
-      .mutation(async ({ input }) => {
-        const accessToken = await getValidRCToken();
-        const res = await syncRecentCalls(accessToken, { lookbackMinutes: input?.lookbackMinutes ?? 1440 });
-        return { success: true as const, ...res };
+      .mutation(async ({ input, ctx }) => {
+        const lookbackMinutes = input?.lookbackMinutes ?? 1440;
+        // Prefer the agent's OWN RingCentral — pulls their extension's calls and
+        // attributes every one to them.
+        const own = await getValidRCTokenForUser(ctx.user.id);
+        if (own) {
+          const res = await syncRecentCalls(own, {
+            lookbackMinutes,
+            attribution: { repId: ctx.user.id, repName: String(ctx.user.name ?? ctx.user.email ?? "Unknown") },
+          });
+          await setUserRcLastSync(ctx.user.id, new Date());
+          return { success: true as const, ...res };
+        }
+        // Managers without their own connection can still pull the company/admin log.
+        if (seesAllData(ctx.user.role)) {
+          const res = await syncRecentCalls(await getValidRCToken(), { lookbackMinutes });
+          return { success: true as const, ...res };
+        }
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Connect your RingCentral account first — open the RingCentral page and click “Connect my RingCentral”.",
+        });
       }),
 
     // ─── Click-to-call via RingOut ────────────────────────────────────────────
@@ -1058,7 +1232,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         if (!from) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Set your callback number first — that's the phone RingCentral will ring." });
         }
-        const accessToken = await getValidRCToken();
+        const { token: accessToken } = await resolveRCToken(ctx.user);
         try {
           const resp = await axios.post(
             `${RC_BASE}/restapi/v1.0/account/~/extension/~/ring-out`,
@@ -1078,9 +1252,9 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
 
     ringOutStatus: protectedProcedure
       .input(z.object({ id: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         if (!input.id) return { status: "Unknown", caller: null as string | null, callee: null as string | null };
-        const accessToken = await getValidRCToken();
+        const { token: accessToken } = await resolveRCToken(ctx.user);
         const resp = await axios
           .get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/ring-out/${input.id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
           .catch(() => null);

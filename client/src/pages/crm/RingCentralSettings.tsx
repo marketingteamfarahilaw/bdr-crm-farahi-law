@@ -4,10 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Phone, CheckCircle2, PhoneCall, FileText, Sparkles, RefreshCw, MonitorSmartphone, Clock } from "lucide-react";
+import RingCentralConnectCard from "@/components/RingCentralConnectCard";
+import { Phone, CheckCircle2, PhoneCall, Sparkles, RefreshCw, MonitorSmartphone, Clock, Users } from "lucide-react";
 
 export default function RingCentralSettings() {
   const { data: status } = trpc.crm.ringcentral.status.useQuery();
+  const isManager = !!status?.canManage;
+  const { data: agents } = trpc.crm.ringcentral.connectedAgents.useQuery(undefined, { enabled: isManager });
   const utils = trpc.useUtils();
   const [last, setLast] = useState<{ logged: number; transcribed: number; matched: number; scanned: number } | null>(null);
 
@@ -26,8 +29,10 @@ export default function RingCentralSettings() {
       utils.crm.tasks.listMine.invalidate();
       utils.crm.tasks.listOverdue.invalidate();
     },
-    onError: (e) => toast.error(e.message || "Sync failed. Check the RingCentral connection."),
+    onError: (e) => toast.error(e.message || "Sync failed. Connect your RingCentral account first."),
   });
+
+  const connectedCount = (agents ?? []).filter((a) => a.connected).length;
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-5">
@@ -36,75 +41,99 @@ export default function RingCentralSettings() {
           RingCentral — Calls &amp; Auto-Sync
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Call from your RingCentral app or desk phone — the CRM automatically pulls each call in with a transcript, an AI summary, and follow-up tasks.
+          Connect <strong className="text-foreground">your own</strong> RingCentral account, then call from your RingCentral app or desk phone — the CRM pulls each of your calls in with a transcript, an AI summary, and follow-up tasks, all logged under your name.
         </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 items-start">
-      {/* Auto-sync — the primary mechanism */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 text-primary" />
-            Automatic call sync
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-start gap-3">
-            <Clock className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              Calls are pulled in <strong className="text-foreground">automatically every 5 minutes</strong>. Each call is matched to its facility by phone number; recorded calls get transcribed and summarized, with action items turned into tasks. Already-synced calls are never duplicated.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => sync.mutate({ lookbackMinutes: 1440 })} disabled={sync.isPending} className="gap-2">
-              <RefreshCw className={`w-4 h-4 ${sync.isPending ? "animate-spin" : ""}`} />
-              {sync.isPending ? "Syncing…" : "Sync now"}
-            </Button>
-            <span className="text-xs text-muted-foreground">Pulls the last 24 hours immediately.</span>
-          </div>
-          {last && (
-            <div className="rounded-lg bg-secondary/40 border border-border px-3 py-2 text-xs text-muted-foreground">
-              Last sync: <strong className="text-foreground">{last.logged}</strong> new · <strong className="text-foreground">{last.transcribed}</strong> transcribed · {last.matched}/{last.scanned} matched a facility.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Per-agent connection — the primary action */}
+        <RingCentralConnectCard />
 
-      {/* Connection status */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Phone className="w-4 h-4" />
-            RingCentral connection
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {status?.connected ? (
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Connected as <span className="text-green-400">{status.ownerName}</span>
-                </p>
-                {status.tokenExpiry && (
-                  <p className="text-xs text-muted-foreground mt-0.5">Session active · renews automatically</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-yellow-400" />
-              </div>
+        {/* Auto-sync */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-primary" />
+              Automatic call sync
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Clock className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
               <p className="text-sm text-muted-foreground">
-                Server-side sync uses your RingCentral JWT — it stays connected on its own. If sync errors, check the credentials in the server <code>.env</code>.
+                Your calls are pulled in <strong className="text-foreground">automatically every couple of minutes</strong>. Each is matched to its facility by phone number; recorded calls get transcribed and summarized, with action items turned into tasks. Already-synced calls are never duplicated.
               </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={() => sync.mutate({ lookbackMinutes: 1440 })} disabled={sync.isPending} className="gap-2">
+                <RefreshCw className={`w-4 h-4 ${sync.isPending ? "animate-spin" : ""}`} />
+                {sync.isPending ? "Syncing…" : "Sync my calls now"}
+              </Button>
+              <span className="text-xs text-muted-foreground">Pulls your last 24 hours immediately.</span>
+            </div>
+            {last && (
+              <div className="rounded-lg bg-secondary/40 border border-border px-3 py-2 text-xs text-muted-foreground">
+                Last sync: <strong className="text-foreground">{last.logged}</strong> new · <strong className="text-foreground">{last.transcribed}</strong> transcribed · {last.matched}/{last.scanned} matched a facility.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Manager overview — who has connected */}
+      {isManager && (
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              Team RingCentral connections
+              <Badge variant="outline" className="ml-1 text-[11px]">{connectedCount}/{agents?.length ?? 0} connected</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border/60">
+                    <th className="py-1.5 px-2 font-semibold">Agent</th>
+                    <th className="py-1.5 px-2 font-semibold">RingCentral</th>
+                    <th className="py-1.5 px-2 font-semibold">Status</th>
+                    <th className="py-1.5 px-2 font-semibold">Last sync</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(agents ?? []).map((a) => (
+                    <tr key={a.userId} className="border-b border-border/40">
+                      <td className="py-1.5 px-2">
+                        <span className="text-foreground font-medium">{a.agentName ?? a.name ?? a.email ?? `User #${a.userId}`}</span>
+                      </td>
+                      <td className="py-1.5 px-2 text-muted-foreground">
+                        {a.connected ? (a.ownerEmail ?? a.ownerName ?? "—") : <span className="text-muted-foreground/60">Not connected</span>}
+                      </td>
+                      <td className="py-1.5 px-2">
+                        {a.connected ? (
+                          <span className="inline-flex items-center gap-1 text-green-500"><CheckCircle2 className="w-3.5 h-3.5" /> Connected</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-yellow-500/90"><span className="w-2 h-2 rounded-full bg-yellow-400" /> Pending</span>
+                        )}
+                      </td>
+                      <td className="py-1.5 px-2 text-muted-foreground text-xs">
+                        {a.lastSyncAt ? new Date(a.lastSyncAt).toLocaleString() : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  {(agents ?? []).length === 0 && (
+                    <tr><td colSpan={4} className="py-3 px-2 text-center text-muted-foreground text-xs">No users found.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-3">
+              Each agent connects from this page (or their Profile). Until they do, their calls won't be attributed to them. Each agent must have their own RingCentral user/extension.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* How it works */}
       <Card className="bg-card border-border">
@@ -115,36 +144,37 @@ export default function RingCentralSettings() {
           <div className="flex gap-3">
             <Badge variant="outline" className="shrink-0 text-xs w-6 h-6 flex items-center justify-center p-0 rounded-full">1</Badge>
             <div>
-              <p className="text-foreground font-medium flex items-center gap-1.5"><MonitorSmartphone className="w-3.5 h-3.5" /> Call from the RingCentral app</p>
-              <p className="text-xs mt-0.5">Use the RingCentral <strong className="text-foreground">desktop app</strong>, mobile app, or your desk phone — whatever's most reliable. Calls just need to go through your RingCentral number.</p>
+              <p className="text-foreground font-medium flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> Connect your RingCentral</p>
+              <p className="text-xs mt-0.5">Click <strong className="text-foreground">Connect my RingCentral</strong> above and sign into <strong className="text-foreground">your own</strong> RingCentral account. One time only.</p>
             </div>
           </div>
           <div className="flex gap-3">
             <Badge variant="outline" className="shrink-0 text-xs w-6 h-6 flex items-center justify-center p-0 rounded-full">2</Badge>
             <div>
-              <p className="text-foreground font-medium flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> The CRM syncs automatically</p>
-              <p className="text-xs mt-0.5">Within a few minutes the call appears on the matching facility's <strong className="text-foreground">Contact Log</strong>. Need it instantly? Hit <strong className="text-foreground">Sync now</strong> above.</p>
+              <p className="text-foreground font-medium flex items-center gap-1.5"><MonitorSmartphone className="w-3.5 h-3.5" /> Call as usual</p>
+              <p className="text-xs mt-0.5">Use the RingCentral <strong className="text-foreground">desktop app</strong>, mobile app, or your desk phone. The call just needs to go through your own RingCentral number.</p>
             </div>
           </div>
           <div className="flex gap-3">
             <Badge variant="outline" className="shrink-0 text-xs w-6 h-6 flex items-center justify-center p-0 rounded-full">3</Badge>
             <div>
-              <p className="text-foreground font-medium flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-blue-400" /> Transcript, summary &amp; tasks</p>
-              <p className="text-xs mt-0.5">Recorded calls are transcribed and summarized by AI (what was discussed, commitments, next steps) on the facility's <strong className="text-foreground">Updates</strong> tab, and action items become follow-up <strong className="text-foreground">tasks</strong>.</p>
+              <p className="text-foreground font-medium flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> The CRM syncs automatically</p>
+              <p className="text-xs mt-0.5">Within a few minutes the call appears on the matching facility's <strong className="text-foreground">Contact Log</strong>, logged under your name. Need it instantly? Hit <strong className="text-foreground">Sync my calls now</strong>.</p>
             </div>
           </div>
           <div className="flex gap-3">
             <Badge variant="outline" className="shrink-0 text-xs w-6 h-6 flex items-center justify-center p-0 rounded-full">4</Badge>
             <div>
-              <p className="text-foreground font-medium flex items-center gap-1.5"><PhoneCall className="w-3.5 h-3.5" /> Or per-facility</p>
-              <p className="text-xs mt-0.5">On any facility profile you can also <strong className="text-foreground">Sync calls</strong> just for that partner.</p>
+              <p className="text-foreground font-medium flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-blue-400" /> Transcript, summary &amp; tasks</p>
+              <p className="text-xs mt-0.5">Recorded calls are transcribed and summarized by AI on the facility's <strong className="text-foreground">Updates</strong> tab, and action items become follow-up <strong className="text-foreground">tasks</strong>.</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <p className="text-xs text-muted-foreground">
-        The in-app phone widget (bottom-right) still works for click-to-dial if you prefer it, but it's optional — the desktop app plus auto-sync is the reliable path.
+      <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+        <PhoneCall className="w-3.5 h-3.5" />
+        Click-to-call (RingOut) from any facility also uses your connected RingCentral, so those calls are attributed to you too.
       </p>
     </div>
   );

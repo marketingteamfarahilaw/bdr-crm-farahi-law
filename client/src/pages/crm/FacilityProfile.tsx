@@ -1026,7 +1026,7 @@ export default function FacilityProfile() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium text-sm text-muted-foreground">{contactLogs?.length ?? 0} contact entries</h3>
             <div className="flex gap-2">
-              {rcStatus?.connected && (
+              {(rcStatus?.connected || (rcStatus?.canManage && rcStatus?.accountConnected)) && (
                 <Button
                   size="sm"
                   variant="outline"

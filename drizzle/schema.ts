@@ -454,6 +454,30 @@ export const ringcentralTokens = mysqlTable("ringcentral_tokens", {
 export type RingcentralToken = typeof ringcentralTokens.$inferSelect;
 export type InsertRingcentralToken = typeof ringcentralTokens.$inferInsert;
 
+/**
+ * Per-AGENT RingCentral OAuth tokens. Each CRM user connects their OWN
+ * RingCentral account (authorization-code flow) so their calls are pulled from
+ * THEIR extension and attributed to them — instead of everything rolling up to
+ * the single account/JWT owner. Keyed uniquely by the CRM user id.
+ */
+export const userRingcentralTokens = mysqlTable("user_ringcentral_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  accountId: varchar("accountId", { length: 128 }),
+  extensionId: varchar("extensionId", { length: 64 }),
+  ownerName: varchar("ownerName", { length: 255 }),
+  ownerEmail: varchar("ownerEmail", { length: 320 }),
+  accessToken: text("accessToken").notNull(),
+  refreshToken: text("refreshToken").notNull(),
+  tokenExpiry: timestamp("tokenExpiry").notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserRingcentralToken = typeof userRingcentralTokens.$inferSelect;
+export type InsertUserRingcentralToken = typeof userRingcentralTokens.$inferInsert;
+
 // ─── BDR Report Tables (digitized from Excel BDR system) ─────────────────────
 
 /**

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { fileToResizedDataUrl } from "@/lib/image";
+import RingCentralConnectCard from "@/components/RingCentralConnectCard";
 import { UserRound, Upload, Trash2, Loader2, Save } from "lucide-react";
 
 export default function ProfilePage() {
@@ -95,6 +96,10 @@ export default function ProfilePage() {
       <p className="text-xs text-muted-foreground mt-3">
         Your photo shows on your avatar in the sidebar. PNG or JPG, auto-resized to 256px.
       </p>
+
+      <div className="mt-6">
+        <RingCentralConnectCard />
+      </div>
     </div>
   );
 }

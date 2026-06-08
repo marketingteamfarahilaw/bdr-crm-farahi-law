@@ -13,6 +13,8 @@ import {
   facilityGratitude,
   facilityUpdates,
   ringcentralTokens,
+  userRingcentralTokens,
+  users,
   type InsertContactLog,
   type InsertFacility,
   type InsertFacilityLeadsSent,
@@ -22,6 +24,7 @@ import {
   type InsertFacilityGratitude,
   type InsertFacilityUpdate,
   type InsertRingcentralToken,
+  type InsertUserRingcentralToken,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 
@@ -545,6 +548,94 @@ export async function deleteRingcentralToken() {
   const db = await getDb();
   if (!db) return;
   await db.delete(ringcentralTokens);
+}
+
+// ─── Per-agent RingCentral Tokens ─────────────────────────────────────────────
+// Each agent connects their OWN RingCentral account so calls attribute to them.
+
+export async function getUserRingcentralToken(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(userRingcentralTokens).where(eq(userRingcentralTokens.userId, userId)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertUserRingcentralToken(data: InsertUserRingcentralToken) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db
+    .insert(userRingcentralTokens)
+    .values(data)
+    .onDuplicateKeyUpdate({
+      set: {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        tokenExpiry: data.tokenExpiry,
+        accountId: data.accountId,
+        extensionId: data.extensionId,
+        ownerName: data.ownerName,
+        ownerEmail: data.ownerEmail,
+        ...(data.lastSyncAt !== undefined ? { lastSyncAt: data.lastSyncAt } : {}),
+      },
+    });
+}
+
+export async function setUserRcLastSync(userId: number, at: Date) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(userRingcentralTokens).set({ lastSyncAt: at }).where(eq(userRingcentralTokens.userId, userId));
+}
+
+export async function deleteUserRingcentralToken(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(userRingcentralTokens).where(eq(userRingcentralTokens.userId, userId));
+}
+
+/** All connected agents' tokens — used by the auto-sync poller to pull each
+ *  agent's own call log with their own token. */
+export async function listConnectedRcUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      userId: userRingcentralTokens.userId,
+      userName: users.name,
+      userEmail: users.email,
+      ownerName: userRingcentralTokens.ownerName,
+      ownerEmail: userRingcentralTokens.ownerEmail,
+      extensionId: userRingcentralTokens.extensionId,
+      tokenExpiry: userRingcentralTokens.tokenExpiry,
+      lastSyncAt: userRingcentralTokens.lastSyncAt,
+    })
+    .from(userRingcentralTokens)
+    .leftJoin(users, eq(users.id, userRingcentralTokens.userId));
+}
+
+/** Every user + whether they've connected their RingCentral — for the manager
+ *  overview on the RingCentral settings page. */
+export async function listAgentsWithRcStatus() {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      agentName: users.agentName,
+      role: users.role,
+      ownerName: userRingcentralTokens.ownerName,
+      ownerEmail: userRingcentralTokens.ownerEmail,
+      tokenExpiry: userRingcentralTokens.tokenExpiry,
+      lastSyncAt: userRingcentralTokens.lastSyncAt,
+    })
+    .from(users)
+    .leftJoin(userRingcentralTokens, eq(userRingcentralTokens.userId, users.id))
+    // Only roles that actually place calls (exclude default "user" service rows)
+    // so the manager overview isn't padded with people who'll never connect.
+    .where(inArray(users.role, ["admin", "super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]))
+    .orderBy(asc(users.name));
+  return rows.map((r) => ({ ...r, connected: !!r.ownerName || !!r.ownerEmail || !!r.tokenExpiry }));
 }
 
 // ─── Management Dashboard ─────────────────────────────────────────────────────

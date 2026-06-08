@@ -12,8 +12,9 @@ import { registerGoogleAuth } from "./googleAuth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { getValidRCToken } from "../crmRouter";
+import { getValidRCToken, getValidRCTokenForUser } from "../crmRouter";
 import { syncRecentCalls } from "../rcSync";
+import { listConnectedRcUsers, setUserRcLastSync } from "../crmDb";
 // Note: RingCentral auto-connect via JWT has been removed.
 // Agents now log in to RingCentral directly through the embedded widget UI.
 // The server still stores tokens when agents connect via OAuth through the widget.
@@ -83,8 +84,9 @@ async function startServer() {
 // ones. Deduped by call id, so re-runs are cheap and safe.
 let rcSyncRunning = false;
 function startRingCentralAutoSync() {
-  const configured =
-    process.env.RINGCENTRAL_JWT && process.env.RINGCENTRAL_CLIENT_ID && process.env.RINGCENTRAL_CLIENT_SECRET;
+  // Per-agent sync only needs the app credentials; the JWT is optional (used
+  // only for the company/admin fallback pass).
+  const configured = process.env.RINGCENTRAL_CLIENT_ID && process.env.RINGCENTRAL_CLIENT_SECRET;
   if (!configured) {
     console.log("[rcSync] RingCentral not configured — auto-sync disabled.");
     return;
@@ -94,20 +96,49 @@ function startRingCentralAutoSync() {
     if (rcSyncRunning) return; // never overlap runs
     rcSyncRunning = true;
     try {
-      const token = await getValidRCToken();
-      const res = await syncRecentCalls(token, { lookbackMinutes: 90 });
-      if (res.logged > 0 || res.transcribed > 0) {
-        console.log(`[rcSync] synced ${res.logged} new call(s), transcribed ${res.transcribed} (matched ${res.matched}/${res.scanned}).`);
+      // 1) Per-agent: pull each connected agent's OWN extension calls with their
+      //    own token and attribute every call to them.
+      let connected: Awaited<ReturnType<typeof listConnectedRcUsers>> = [];
+      try { connected = await listConnectedRcUsers(); } catch (e: any) { console.warn("[rcSync] listConnectedRcUsers failed:", e?.message ?? e); }
+      for (const u of connected) {
+        try {
+          const token = await getValidRCTokenForUser(u.userId);
+          if (!token) continue; // not connected / refresh expired — they'll reconnect
+          const res = await syncRecentCalls(token, {
+            lookbackMinutes: 90,
+            attribution: { repId: u.userId, repName: String(u.userName ?? u.ownerName ?? u.userEmail ?? "Unknown") },
+          });
+          await setUserRcLastSync(u.userId, new Date());
+          if (res.logged > 0 || res.transcribed > 0) {
+            console.log(`[rcSync] agent #${u.userId} (${u.userName ?? u.ownerName ?? "?"}): ${res.logged} new, ${res.transcribed} transcribed.`);
+          }
+        } catch (e: any) {
+          console.warn(`[rcSync] per-agent sync failed for user ${u.userId}:`, e?.response?.status ?? e?.message ?? e);
+        }
       }
-    } catch (e: any) {
-      console.warn("[rcSync] auto-sync error:", e?.response?.status ?? e?.message ?? e);
+
+      // 2) Company/admin (JWT) BOOTSTRAP pass — only while NO agent has connected
+      //    their own RingCentral yet. Once agents connect, the per-agent loop is
+      //    authoritative; we stop the account pass so the JWT owner's calls are
+      //    never mis-attributed to facility.assignedRep (the bug we're fixing).
+      if (connected.length === 0 && process.env.RINGCENTRAL_JWT) {
+        try {
+          const token = await getValidRCToken();
+          const res = await syncRecentCalls(token, { lookbackMinutes: 90 });
+          if (res.logged > 0 || res.transcribed > 0) {
+            console.log(`[rcSync] account bootstrap sync: ${res.logged} new, ${res.transcribed} transcribed (matched ${res.matched}/${res.scanned}).`);
+          }
+        } catch (e: any) {
+          console.warn("[rcSync] account auto-sync error:", e?.response?.status ?? e?.message ?? e);
+        }
+      }
     } finally {
       rcSyncRunning = false;
     }
   };
   setTimeout(tick, 30 * 1000); // first pass shortly after boot
   setInterval(tick, INTERVAL_MS);
-  console.log(`[rcSync] auto-sync enabled — every ${INTERVAL_MS / 60000} min.`);
+  console.log(`[rcSync] auto-sync enabled — every ${INTERVAL_MS / 60000} min (per-agent + account).`);
 }
 
 startServer().catch(console.error);

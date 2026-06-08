@@ -174,8 +174,18 @@ export type SyncResult = { scanned: number; matched: number; logged: number; tra
  */
 export async function syncRecentCalls(
   accessToken: string,
-  opts: { lookbackMinutes?: number; settleMinutes?: number; transcribe?: boolean; perPage?: number; dryRun?: boolean } = {}
+  opts: {
+    lookbackMinutes?: number;
+    settleMinutes?: number;
+    transcribe?: boolean;
+    perPage?: number;
+    dryRun?: boolean;
+    /** When set (per-agent sync), every logged call / recap / task is attributed
+     *  to this CRM user instead of the call's RingCentral display name. */
+    attribution?: { repId?: number; repName?: string };
+  } = {}
 ): Promise<SyncResult> {
+  const attribution = opts.attribution;
   const lookbackMinutes = opts.lookbackMinutes ?? 90;
   const settleMs = (opts.settleMinutes ?? 2) * 60 * 1000;
   const transcribe = opts.transcribe ?? true;
@@ -234,11 +244,12 @@ export async function syncRecentCalls(
       callDuration: durationStr,
       callType: "partner_checkin",
       summary: `[Synced] ${r.direction ?? "Outbound"} call — ${r.result ?? ""} (${durationStr}). ${r.from?.phoneNumber ?? "?"} → ${r.to?.phoneNumber ?? "?"}`,
-      repId: facility.assignedRepId ?? undefined,
-      repName: r.from?.name ?? facility.assignedRepName ?? undefined,
+      repId: attribution?.repId ?? facility.assignedRepId ?? undefined,
+      repName: attribution?.repName ?? r.from?.name ?? facility.assignedRepName ?? undefined,
       fromRingCentral: 1,
       rcCallId: id,
     });
+    existing.add(id); // mark seen so a duplicate id later in THIS batch is skipped
     result.logged++;
 
     // Transcribe + summarize recorded, connected calls.
@@ -256,8 +267,8 @@ export async function syncRecentCalls(
             rawText: transcriptText,
             summary: analysis.summary || transcriptText.slice(0, 300),
             updateType: "transcript",
-            repId: facility.assignedRepId ?? undefined,
-            repName: facility.assignedRepName ?? undefined,
+            repId: attribution?.repId ?? facility.assignedRepId ?? undefined,
+            repName: attribution?.repName ?? facility.assignedRepName ?? undefined,
             extractedData: Object.keys(analysis.extractedData).length > 0 ? analysis.extractedData : null,
           });
           for (const task of analysis.followUpTasks) {
@@ -269,8 +280,8 @@ export async function syncRecentCalls(
               description: `Auto-created from a synced call on ${callDate.toLocaleDateString()}`,
               dueDate,
               priority: task.priority,
-              assignedToId: facility.assignedRepId ?? undefined,
-              assignedToName: facility.assignedRepName ?? undefined,
+              assignedToId: attribution?.repId ?? facility.assignedRepId ?? undefined,
+              assignedToName: attribution?.repName ?? facility.assignedRepName ?? undefined,
               status: "open",
             });
           }
