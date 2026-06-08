@@ -194,8 +194,8 @@ function DashboardLayoutContent({
           className="border-r-0"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center">
-            <div className="flex items-center gap-3 px-2 transition-all w-full">
+          <SidebarHeader className="h-auto py-3 justify-center">
+            <div className="flex items-start gap-2.5 px-2 transition-all w-full">
               <button
                 onClick={toggleSidebar}
                 className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
@@ -204,9 +204,9 @@ function DashboardLayoutContent({
                 <PanelLeft className="h-4 w-4 text-muted-foreground" />
               </button>
               {!isCollapsed ? (
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <img src={logo} alt="Farahi Law Firm" className="h-12 w-auto max-w-[130px] object-contain shrink-0" />
-                  <span className="text-xs text-muted-foreground leading-tight truncate min-w-0">{slogan}</span>
+                <div className="flex flex-col min-w-0">
+                  <img src={logo} alt="Farahi Law Firm" className="h-14 w-auto max-w-[190px] object-contain" />
+                  <span className="text-sm font-semibold text-muted-foreground mt-1.5 leading-snug">{slogan}</span>
                 </div>
               ) : (
                 <img src={logo} alt="Farahi Law Firm" className="h-9 w-9 object-contain" />
