@@ -81,6 +81,7 @@ import {
   setUserAgentName,
   createUserAccount,
   getBranding,
+  getSetting,
   setSetting,
   setUserPhoto,
 } from "./db";
@@ -658,6 +659,28 @@ export const appRouter = router({
       });
       return { success: true };
     }),
+
+    // ─── Filevine via Zapier/n8n webhook ──────────────────────────────────────
+    // One org-wide webhook URL; every call recap is POSTed to it so a Zapier/n8n
+    // automation can create a Filevine task. Managers only.
+    getWebhook: protectedProcedure.query(async ({ ctx }) => {
+      if (!seesAllData(ctx.user.role)) return { url: null, canEdit: false };
+      const url = await getSetting('filevine_webhook_url');
+      return { url: url ?? null, canEdit: true };
+    }),
+    setWebhook: protectedProcedure
+      .input(z.object({ url: z.string().max(2000) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!seesAllData(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only managers can set the Filevine webhook.' });
+        }
+        const url = input.url.trim();
+        if (url && !/^https?:\/\//i.test(url)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Webhook URL must start with http:// or https://' });
+        }
+        await setSetting('filevine_webhook_url', url || null);
+        return { success: true as const };
+      }),
   }),
 
   crm: crmRouter,

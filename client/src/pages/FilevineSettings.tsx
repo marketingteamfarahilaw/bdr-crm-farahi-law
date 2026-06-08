@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -42,6 +42,15 @@ export default function FilevineSettingsPage() {
       utils.filevine.getSettings.invalidate();
     },
     onError: (e) => toast.error(e.message || "Failed to disconnect"),
+  });
+
+  // Zapier/n8n webhook → Filevine tasks (manager-only)
+  const { data: webhook } = trpc.filevine.getWebhook.useQuery();
+  const [webhookUrl, setWebhookUrl] = useState("");
+  useEffect(() => { if (webhook?.url != null) setWebhookUrl(webhook.url); }, [webhook?.url]);
+  const saveWebhook = trpc.filevine.setWebhook.useMutation({
+    onSuccess: () => { toast.success("Filevine webhook saved."); utils.filevine.getWebhook.invalidate(); },
+    onError: (e) => toast.error(e.message || "Failed to save webhook"),
   });
 
   const handleSave = () => {
@@ -314,6 +323,56 @@ export default function FilevineSettingsPage() {
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Zapier / n8n webhook → Filevine tasks */}
+      {webhook?.canEdit && (
+        <div
+          style={{
+            background: "linear-gradient(160deg, rgba(8,18,36,0.97) 0%, rgba(5,12,24,0.97) 100%)",
+            border: "1px solid rgba(99,102,241,0.25)",
+            borderRadius: 18,
+            padding: "24px 28px",
+            marginBottom: 24,
+            boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#f1f5f9", marginBottom: 4 }}>
+            Auto-create Filevine tasks from calls
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(148,163,184,0.6)", marginBottom: 16, lineHeight: 1.5 }}>
+            Paste your <strong style={{ color: "#a5b4fc" }}>Zapier / n8n webhook URL</strong>. Every call recap is sent there —
+            facility name, date &amp; time, call duration, the AI summary, and follow-up tasks — so your automation can create a
+            Filevine task. Leave blank to turn it off. (No Filevine API key needed.)
+          </div>
+          <div className="flex gap-3 items-center">
+            <Input
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://hooks.zapier.com/hooks/catch/..."
+              className="bg-[#0d1526] border-[#1e2d4a] text-white placeholder:text-[#334155] focus:border-[#6366f1]"
+            />
+            <button
+              onClick={() => saveWebhook.mutate({ url: webhookUrl })}
+              disabled={saveWebhook.isPending}
+              style={{
+                whiteSpace: "nowrap",
+                padding: "9px 20px",
+                background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+                border: "none", borderRadius: 9,
+                color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                opacity: saveWebhook.isPending ? 0.6 : 1,
+              }}
+            >
+              {saveWebhook.isPending ? "Saving..." : "Save"}
+            </button>
+          </div>
+          {webhook?.url && (
+            <div style={{ fontSize: 11, color: "rgba(34,197,94,0.85)", marginTop: 10 }}>
+              ● Active — call recaps are being sent to your webhook.
+            </div>
+          )}
         </div>
       )}
 

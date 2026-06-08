@@ -14,6 +14,7 @@ import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
 import { createContactLog, createFacilityUpdate, createTask, getExistingRcCallIds, getExistingRcSessionIds } from "./crmDb";
+import { sendCallRecapToWebhook } from "./filevineHook";
 import { getDb } from "./db";
 import { facilities } from "../drizzle/schema";
 
@@ -294,6 +295,26 @@ export async function syncRecentCalls(
               status: "open",
             });
           }
+          // Push the finished recap out to Filevine (via the Zapier/n8n webhook).
+          await sendCallRecapToWebhook({
+            event: "call_recap",
+            facilityId: facility.id,
+            facilityName: facility.name,
+            agent: attribution?.repName ?? facility.assignedRepName ?? r.from?.name ?? null,
+            callTime: callDate.toISOString(),
+            callTimeLocal: callDate.toLocaleString(),
+            durationStr,
+            durationSeconds: durationSecs,
+            callResult,
+            direction: r.direction ?? null,
+            summary: analysis.summary || transcriptText.slice(0, 300),
+            keyPoints: (analysis.extractedData.keyPoints as string[]) ?? [],
+            sentiment: (analysis.extractedData.sentiment as string) ?? null,
+            interestLevel: (analysis.extractedData.interestLevel as string) ?? null,
+            tasks: analysis.followUpTasks,
+            transcript: transcriptText,
+            source: "bdcrm",
+          });
           result.transcribed++;
         }
       } catch (e: any) {

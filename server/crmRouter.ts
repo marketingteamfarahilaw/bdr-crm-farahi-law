@@ -11,6 +11,7 @@ import { seesAllData, canManage } from "@shared/permissions";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
 import { syncRecentCalls } from "./rcSync";
+import { sendCallRecapToWebhook } from "./filevineHook";
 import { uberConfigured, importOrderReceipt, matchFacilityByAddress } from "./uber";
 import { frExpenses } from "../drizzle/schema";
 import {
@@ -1107,6 +1108,26 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
               status: "open",
             });
           }
+          // Push the finished recap out to Filevine (via the Zapier/n8n webhook).
+          await sendCallRecapToWebhook({
+            event: "call_recap",
+            facilityId: facility.id,
+            facilityName: facility.name,
+            agent: agentName,
+            callTime: callDate.toISOString(),
+            callTimeLocal: callDate.toLocaleString(),
+            durationStr,
+            durationSeconds: input.duration ?? null,
+            callResult: input.result ?? null,
+            direction: input.direction ?? null,
+            summary: aiSummary || transcriptText.slice(0, 300),
+            keyPoints: (extractedData.keyPoints as string[]) ?? [],
+            sentiment: (extractedData.sentiment as string) ?? null,
+            interestLevel: (extractedData.interestLevel as string) ?? null,
+            tasks: followUpTasks,
+            transcript: transcriptText,
+            source: "bdcrm",
+          });
         }
 
         return {
