@@ -4,7 +4,7 @@
  * a date range. Feeds the Reports Center (KPIs, trend series, detail tables, and
  * PDF/Excel exports).
  */
-import { and, gte, lte, inArray, desc } from "drizzle-orm";
+import { and, gte, lte, inArray, eq, desc } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   contactLogs,
@@ -14,7 +14,17 @@ import {
   referralRewards,
   frExpenses,
   bdrExpenses,
+  facilityUpdates,
+  facilities,
 } from "../drizzle/schema";
+
+const durToSec = (s: any) => {
+  const str = String(s ?? "");
+  const p = str.split(":").map((x) => parseInt(x, 10));
+  if (p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])) return p[0] * 60 + p[1];
+  const n = parseInt(str, 10);
+  return isNaN(n) ? 0 : n;
+};
 
 const num = (v: any) => {
   const n = parseFloat(String(v ?? 0));
@@ -142,4 +152,74 @@ export async function getAgentReport(opts: { names?: string[]; from: Date; to: D
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
     },
   };
+}
+
+// ─── Call analytics + partner sentiment ──────────────────────────────────────
+export type CallAnalytics = {
+  range: { from: string; to: string };
+  byAgent: { agent: string; calls: number; connected: number; voicemail: number; noAnswer: number; durationSec: number }[];
+  partners: { facilityId: number | null; facility: string; calls: number; interested: number; notInterested: number; neutral: number; collaboration: "collaborative" | "neutral" | "cool" }[];
+  totals: { calls: number; analyzed: number; interested: number; notInterested: number; neutral: number; positive: number; negative: number; durationSec: number };
+};
+
+export async function getCallAnalytics(opts: { names?: string[]; from: Date; to: Date }): Promise<CallAnalytics> {
+  const db = await getDb();
+  const { names, from, to } = opts;
+  const emptyTotals = { calls: 0, analyzed: 0, interested: 0, notInterested: 0, neutral: 0, positive: 0, negative: 0, durationSec: 0 };
+  const range = { from: from.toISOString(), to: to.toISOString() };
+  if (!db) return { range, byAgent: [], partners: [], totals: emptyTotals };
+
+  const nameFilter = (col: any) => (names && names.length ? [inArray(col, names)] : []);
+
+  const calls = (await db.select().from(contactLogs)
+    .where(and(gte(contactLogs.contactDate, from), lte(contactLogs.contactDate, to), ...nameFilter(contactLogs.repName)))
+  ).filter((c: any) => c.contactType === "call") as any[];
+
+  const agentMap = new Map<string, any>();
+  for (const c of calls) {
+    const a = c.repName || "Unknown";
+    const e = agentMap.get(a) ?? { agent: a, calls: 0, connected: 0, voicemail: 0, noAnswer: 0, durationSec: 0 };
+    e.calls++;
+    if (c.callResult === "connected") e.connected++;
+    else if (c.callResult === "voicemail") e.voicemail++;
+    else if (c.callResult === "no_answer") e.noAnswer++;
+    e.durationSec += durToSec(c.callDuration);
+    agentMap.set(a, e);
+  }
+  const byAgent = Array.from(agentMap.values()).sort((a, b) => b.calls - a.calls);
+
+  // AI-analyzed transcripts (sentiment / interest) grouped by partner.
+  const updates = await db.select({
+    facilityId: facilityUpdates.facilityId,
+    facilityName: facilities.name,
+    extractedData: facilityUpdates.extractedData,
+  }).from(facilityUpdates)
+    .leftJoin(facilities, eq(facilityUpdates.facilityId, facilities.id))
+    .where(and(eq(facilityUpdates.updateType, "transcript"), gte(facilityUpdates.createdAt, from), lte(facilityUpdates.createdAt, to), ...nameFilter(facilityUpdates.repName))) as any[];
+
+  const partnerMap = new Map<number, any>();
+  const totals = { ...emptyTotals, calls: calls.length, durationSec: calls.reduce((s, c) => s + durToSec(c.callDuration), 0) };
+  for (const u of updates) {
+    const ed = (u.extractedData ?? {}) as any;
+    const tone = ed.relationshipTone as string | undefined;
+    const eff = (ed.interestLevel as string | undefined)
+      ?? (tone === "warm" ? "interested" : tone === "hostile" || tone === "cold" ? "not_interested" : "neutral");
+    const sent = (ed.sentiment as string | undefined)
+      ?? (tone === "warm" ? "positive" : tone === "hostile" || tone === "cold" ? "negative" : "neutral");
+    totals.analyzed++;
+    if (eff === "interested") totals.interested++; else if (eff === "not_interested") totals.notInterested++; else totals.neutral++;
+    if (sent === "positive") totals.positive++; else if (sent === "negative") totals.negative++;
+    const fid = u.facilityId as number;
+    const p = partnerMap.get(fid) ?? { facilityId: fid, facility: u.facilityName ?? "Unknown", calls: 0, interested: 0, notInterested: 0, neutral: 0 };
+    p.calls++;
+    if (eff === "interested") p.interested++; else if (eff === "not_interested") p.notInterested++; else p.neutral++;
+    partnerMap.set(fid, p);
+  }
+
+  const partners = Array.from(partnerMap.values()).map((p) => ({
+    ...p,
+    collaboration: (p.interested > p.notInterested ? "collaborative" : p.notInterested > p.interested ? "cool" : "neutral") as "collaborative" | "neutral" | "cool",
+  })).sort((a, b) => b.calls - a.calls);
+
+  return { range, byAgent, partners, totals };
 }

@@ -51,9 +51,14 @@ Return a JSON object with EXACTLY these fields:
   ],
   "contactPerson": "name of person spoken to if mentioned, else null",
   "relationshipTone": "warm|neutral|cold|hostile",
+  "sentiment": "positive|neutral|negative",
+  "interestLevel": "interested|not_interested|neutral",
   "leadsDiscussed": true or false,
   "commitmentMade": "brief description of any commitment made, else null"
 }
+
+For sentiment: the overall emotional tone of the partner toward our firm on this call.
+For interestLevel: is the partner interested in partnering / sending or receiving referrals? "interested" = engaged, positive, made a commitment, or wants to continue; "not_interested" = declined, brushed off, hostile, or asked us to stop; "neutral" = noncommittal or purely informational.
 
 For actionItems: list concrete things the BD rep needs to do (e.g. "Send referral package to Dr. Smith", "Follow up on 3 pending cases").
 For followUpTasks: list tasks that should be scheduled (e.g. check-in calls, sending materials, visiting the facility). Set dueInDays based on urgency (1-3 for urgent, 7 for this week, 14 for next 2 weeks, 30 for next month).
@@ -87,10 +92,12 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
               },
               contactPerson: { type: ["string", "null"] },
               relationshipTone: { type: "string", enum: ["warm", "neutral", "cold", "hostile"] },
+              sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
+              interestLevel: { type: "string", enum: ["interested", "not_interested", "neutral"] },
               leadsDiscussed: { type: "boolean" },
               commitmentMade: { type: ["string", "null"] },
             },
-            required: ["summary", "keyPoints", "actionItems", "followUpTasks", "contactPerson", "relationshipTone", "leadsDiscussed", "commitmentMade"],
+            required: ["summary", "keyPoints", "actionItems", "followUpTasks", "contactPerson", "relationshipTone", "sentiment", "interestLevel", "leadsDiscussed", "commitmentMade"],
             additionalProperties: false,
           },
         },
@@ -106,6 +113,8 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         keyPoints: parsed.keyPoints ?? [],
         contactPerson: parsed.contactPerson,
         relationshipTone: parsed.relationshipTone,
+        sentiment: parsed.sentiment,
+        interestLevel: parsed.interestLevel,
         leadsDiscussed: parsed.leadsDiscussed,
         commitmentMade: parsed.commitmentMade,
         actionItems: parsed.actionItems ?? [],

@@ -38,6 +38,7 @@ import FilevineSettingsPage from "./pages/FilevineSettings";
 import SettingsPage from "./pages/Settings";
 import ProfilePage from "./pages/Profile";
 import ReportsCenter from "./pages/ReportsCenter";
+import CallAnalytics from "./pages/CallAnalytics";
 import RingCentralCallback from "./pages/RingCentralCallback";
 import { RingCentralProvider } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
@@ -105,6 +106,9 @@ function Router() {
 
         {/* Reports Center */}
         <Route path="/reports" component={ReportsCenter} />
+
+        {/* Call Analytics */}
+        <Route path="/call-analytics" component={CallAnalytics} />
 
         <Route path="/ringcentral-callback" component={RingCentralCallback} />
         <Route path="/404" component={NotFound} />
