@@ -86,7 +86,7 @@ import {
   setUserPhoto,
 } from "./db";
 import { canManage, canAssignRoles, seesAllData } from "@shared/permissions";
-import { getAgentReport, getCallAnalytics, getReportAgents } from "./reports";
+import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs } from "./reports";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -732,6 +732,23 @@ export const appRouter = router({
           names = undefined;
         }
         return getCallAnalytics({ names, from, to });
+      }),
+    callLogs: protectedProcedure
+      .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const from = new Date(input.from);
+        const to = new Date(input.to);
+        const seesAll = seesAllData(ctx.user.role);
+        let names: string[] | undefined;
+        if (!seesAll) {
+          names = [ctx.user.agentName, ctx.user.name].filter((x): x is string => !!x);
+          if (!names.length) names = ["__none__"];
+        } else if (input.agentName && input.agentName !== "__all__") {
+          names = [input.agentName];
+        } else {
+          names = undefined;
+        }
+        return getCallLogs({ names, from, to });
       }),
   }),
 

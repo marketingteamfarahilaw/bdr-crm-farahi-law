@@ -51,6 +51,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   { title: "Agent Tools", items: [
     { icon: BarChart3, label: "Reports", path: "/reports", level: "all" },
     { icon: Phone, label: "Call Analytics", path: "/call-analytics", level: "all" },
+    { icon: ClipboardList, label: "Call Logs", path: "/call-logs", level: "all" },
     { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
     { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
     { icon: Receipt, label: "Expenses", path: "/bdr/expenses", level: "all" },

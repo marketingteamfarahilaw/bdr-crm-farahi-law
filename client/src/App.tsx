@@ -39,6 +39,7 @@ import SettingsPage from "./pages/Settings";
 import ProfilePage from "./pages/Profile";
 import ReportsCenter from "./pages/ReportsCenter";
 import CallAnalytics from "./pages/CallAnalytics";
+import CallLogs from "./pages/CallLogs";
 import RingCentralCallback from "./pages/RingCentralCallback";
 import { RingCentralProvider } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
@@ -109,6 +110,9 @@ function Router() {
 
         {/* Call Analytics */}
         <Route path="/call-analytics" component={CallAnalytics} />
+
+        {/* Call Logs */}
+        <Route path="/call-logs" component={CallLogs} />
 
         <Route path="/ringcentral-callback" component={RingCentralCallback} />
         <Route path="/404" component={NotFound} />

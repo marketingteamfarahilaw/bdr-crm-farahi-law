@@ -248,3 +248,61 @@ export async function getCallAnalytics(opts: { names?: string[]; from: Date; to:
 
   return { range, byAgent, partners, totals };
 }
+
+// ─── Raw call log (every call, with facility + time + details) ────────────────
+export type CallLogRow = {
+  id: number;
+  facilityId: number | null;
+  facilityName: string | null;
+  date: any;
+  result: string | null;
+  callType: string | null;
+  duration: string | null;
+  durationSec: number;
+  direction: string;
+  rep: string | null;
+  fromRingCentral: boolean;
+  summary: string | null;
+};
+
+export async function getCallLogs(opts: { names?: string[]; from: Date; to: Date; limit?: number }): Promise<CallLogRow[]> {
+  const db = await getDb();
+  const { names, from, to } = opts;
+  const limit = opts.limit ?? 2000;
+  if (!db) return [];
+  const nameFilter = names && names.length ? [inArray(contactLogs.repName, names)] : [];
+  const rows = await db.select({
+    id: contactLogs.id,
+    facilityId: contactLogs.facilityId,
+    facilityName: facilities.name,
+    date: contactLogs.contactDate,
+    result: contactLogs.callResult,
+    callType: contactLogs.callType,
+    duration: contactLogs.callDuration,
+    rep: contactLogs.repName,
+    fromRingCentral: contactLogs.fromRingCentral,
+    summary: contactLogs.summary,
+  }).from(contactLogs)
+    .leftJoin(facilities, eq(contactLogs.facilityId, facilities.id))
+    .where(and(eq(contactLogs.contactType, "call"), gte(contactLogs.contactDate, from), lte(contactLogs.contactDate, to), ...nameFilter))
+    .orderBy(desc(contactLogs.contactDate))
+    .limit(limit);
+  return (rows as any[]).map((c) => {
+    const s = String(c.summary || "");
+    const direction = /inbound/i.test(s) ? "Inbound" : /outbound/i.test(s) ? "Outbound" : "";
+    return {
+      id: c.id,
+      facilityId: c.facilityId ?? null,
+      facilityName: c.facilityName ?? null,
+      date: c.date,
+      result: c.result ?? null,
+      callType: c.callType ?? null,
+      duration: c.duration ?? null,
+      durationSec: durToSec(c.duration),
+      direction,
+      rep: c.rep ?? null,
+      fromRingCentral: !!c.fromRingCentral,
+      summary: c.summary ?? null,
+    };
+  });
+}
