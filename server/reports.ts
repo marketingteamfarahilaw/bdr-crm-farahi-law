@@ -5,8 +5,11 @@
  * PDF/Excel exports).
  */
 import { and, gte, lte, inArray, eq, desc, sql } from "drizzle-orm";
+import { formatInTimeZone } from "date-fns-tz";
 import { getDb } from "./db";
 import { invokeLLM } from "./_core/llm";
+
+const APP_TZ = "America/Los_Angeles";
 import {
   contactLogs,
   facilityLeads,
@@ -57,7 +60,9 @@ const num = (v: any) => {
   return isNaN(n) ? 0 : n;
 };
 const dayKey = (d: any) => {
-  try { return new Date(d).toISOString().slice(0, 10); } catch { return ""; }
+  // Group by the California (Pacific) calendar day, not the UTC day, so an
+  // evening call doesn't land on the next day's bucket.
+  try { return formatInTimeZone(new Date(d), APP_TZ, "yyyy-MM-dd"); } catch { return ""; }
 };
 
 export type AgentReport = {

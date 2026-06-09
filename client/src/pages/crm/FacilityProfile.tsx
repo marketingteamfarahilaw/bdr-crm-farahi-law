@@ -21,7 +21,7 @@ import {
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { FacilityLocationMap } from "@/components/FacilityLocationMap";
 import { LeadFormFields } from "@/components/LeadFormFields";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format } from "@/lib/datetime";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   prospect: { label: "Prospect", color: "bg-sky-500/20 text-sky-400 border-sky-500/30" },

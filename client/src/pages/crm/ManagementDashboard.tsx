@@ -10,7 +10,7 @@ import {
   Building2, Users, PhoneCall, Star, AlertTriangle,
   Clock, TrendingUp, CheckCircle2, ChevronRight
 } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format } from "@/lib/datetime";
 
 import { STATUS_LABELS } from "@/lib/crmMeta";
 

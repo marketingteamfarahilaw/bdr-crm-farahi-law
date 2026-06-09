@@ -14,7 +14,7 @@ import {
   Building2, Phone, MapPin, User, Plus, Search,
   AlertTriangle, Clock, ChevronUp, ChevronDown, Upload, List, Map,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "@/lib/datetime";
 import { BulkImportDialog } from "./BulkImportDialog";
 import FacilitiesMap from "@/components/FacilitiesMap";
 

@@ -11,7 +11,7 @@ import {
   CalendarClock, CheckCircle2, ListChecks, Activity, FileText,
   MapPin, Send, PhoneCall, Workflow,
 } from "lucide-react";
-import { format, isToday, formatDistanceToNow } from "date-fns";
+import { format, isToday, formatDistanceToNow } from "@/lib/datetime";
 import { seesAllData, normalizeRole } from "@shared/permissions";
 import { LogOutcomeDialog } from "@/components/LogOutcomeDialog";
 import { PhraseOfTheDay } from "@/components/PhraseOfTheDay";

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { UtensilsCrossed, CheckCircle2, Link2, RefreshCw, Building2, AlertTriangle, Upload } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "@/lib/datetime";
 
 // Minimal CSV parser (handles quoted fields, commas, newlines).
 function parseCsv(text: string): string[][] {

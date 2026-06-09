@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { seesAllData } from "@shared/permissions";
 import { LogOutcomeDialog } from "@/components/LogOutcomeDialog";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "@/lib/datetime";
 import { Building2, User, Search, GripVertical, Send, Workflow, ArrowRight } from "lucide-react";
 
 // Pipeline stages, in flow order, using the EXISTING partnerStatus values

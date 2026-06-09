@@ -86,6 +86,11 @@ import {
   setUserPhoto,
 } from "./db";
 import { canManage, canAssignRoles, seesAllData } from "@shared/permissions";
+import { fromZonedTime } from "date-fns-tz";
+
+/** Interpret a "YYYY-MM-DDTHH:mm:ss" report-range boundary as California
+ *  (Pacific) local time, returning the matching UTC instant for DB comparison. */
+const laDate = (s: string) => fromZonedTime(s, "America/Los_Angeles");
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -740,8 +745,8 @@ export const appRouter = router({
         to: z.string(),
       }))
       .query(async ({ ctx, input }) => {
-        const from = new Date(input.from);
-        const to = new Date(input.to);
+        const from = laDate(input.from);
+        const to = laDate(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         if (!seesAll) {
@@ -757,8 +762,8 @@ export const appRouter = router({
     callAnalytics: protectedProcedure
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
-        const from = new Date(input.from);
-        const to = new Date(input.to);
+        const from = laDate(input.from);
+        const to = laDate(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         if (!seesAll) {
@@ -774,8 +779,8 @@ export const appRouter = router({
     callLogs: protectedProcedure
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
-        const from = new Date(input.from);
-        const to = new Date(input.to);
+        const from = laDate(input.from);
+        const to = laDate(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         if (!seesAll) {
@@ -791,8 +796,8 @@ export const appRouter = router({
     agentPerformance: protectedProcedure
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
-        const from = new Date(input.from);
-        const to = new Date(input.to);
+        const from = laDate(input.from);
+        const to = laDate(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         if (!seesAll) {
@@ -808,8 +813,8 @@ export const appRouter = router({
     agentPerformanceReview: protectedProcedure
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        const from = new Date(input.from);
-        const to = new Date(input.to);
+        const from = laDate(input.from);
+        const to = laDate(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         let agentLabel: string | undefined;

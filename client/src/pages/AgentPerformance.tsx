@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, Phone, PhoneCall, Clock, Building2, ThumbsUp, ThumbsDown, Loader2, AlertTriangle, Lightbulb, Award, CalendarDays } from "lucide-react";
-import { format } from "date-fns";
+import { format } from "@/lib/datetime";
 
 function presetRange(p: string): { from: string; to: string } {
   const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
