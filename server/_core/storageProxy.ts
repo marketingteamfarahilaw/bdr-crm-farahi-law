@@ -1,11 +1,20 @@
 import type { Express } from "express";
+import { parse as parseCookie } from "cookie";
+import { COOKIE_NAME } from "@shared/const";
 import { ENV } from "./env";
+import { sdk } from "./sdk";
 
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req, res) => {
+    // Require a valid login session — stored objects (uploads, photos, exports)
+    // must not be fetchable by anonymous callers who guess an object key.
+    const token = parseCookie(req.headers.cookie || "")[COOKIE_NAME];
+    const session = await sdk.verifySession(token);
+    if (!session) { res.status(401).send("Authentication required"); return; }
+
     const key = (req.params as Record<string, string>)[0];
-    if (!key) {
-      res.status(400).send("Missing storage key");
+    if (!key || key.includes("..")) {
+      res.status(400).send("Missing or invalid storage key");
       return;
     }
 

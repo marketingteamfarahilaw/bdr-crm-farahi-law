@@ -90,6 +90,24 @@ import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgen
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
+/** For non-managers, force the agent filter to themselves so BDR/FR list
+ *  endpoints never leak the whole team's financial/operational rows. Managers
+ *  keep the optional client-supplied filter. */
+function scopeAgentFilter<T extends { agent?: string }>(
+  ctx: { user: { role: any; agentName?: string | null; name?: string | null } },
+  input: T | undefined,
+): T {
+  const base = { ...(input ?? {}) } as T;
+  if (seesAllData(ctx.user.role)) return base;
+  (base as any).agent = ctx.user.agentName ?? ctx.user.name ?? "__none__";
+  return base;
+}
+
+/** Managers only — used to gate BDR/FR financial row edits/deletes. */
+function mgrOnly(ctx: { user: { role: any } }): void {
+  if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
+}
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -345,7 +363,8 @@ export const appRouter = router({
         cities: z.array(z.string()).default([]),
         active: z.boolean().default(true),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         await createAgent({
           agentName: input.agentName,
           firstName: input.firstName,
@@ -376,14 +395,16 @@ export const appRouter = router({
         cities: z.array(z.string()).optional(),
         active: z.boolean().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         const { id, ...data } = input;
         await updateAgent(id, data);
         return { success: true };
       }),
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         await deleteAgent(input.id);
         return { success: true };
       }),
@@ -393,7 +414,8 @@ export const appRouter = router({
         color: z.string(),
         cities: z.array(z.string()),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         await upsertAgentZone(input.agentName, input.color, input.cities);
         return { success: true };
       }),
@@ -402,20 +424,27 @@ export const appRouter = router({
         placeId: z.string(),
         assignedAgent: z.string().nullable(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         await updateSavedLeadAgent(input.placeId, input.assignedAgent);
         return { success: true };
       }),
   }),
 
   piClients: router({
-    list: protectedProcedure.query(async () => {
-      return getAllPiClients();
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const all = await getAllPiClients();
+      if (seesAllData(ctx.user.role)) return all;
+      return (all as any[]).filter((c) => c.assignedAgentId === ctx.user.id);
     }),
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        return getPiClientById(input.id);
+      .query(async ({ ctx, input }) => {
+        const c = await getPiClientById(input.id);
+        if (c && !seesAllData(ctx.user.role) && (c as any).assignedAgentId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your client." });
+        }
+        return c;
       }),
     create: protectedProcedure
       .input(z.object({
@@ -465,7 +494,8 @@ export const appRouter = router({
         assignedAgentName: z.string().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         const { id, ...data } = input;
         await updatePiClient(id, {
           ...data,
@@ -475,7 +505,8 @@ export const appRouter = router({
       }),
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         await deletePiClient(input.id);
         return { success: true };
       }),
@@ -499,13 +530,20 @@ export const appRouter = router({
       }),
     getCallLogs: protectedProcedure
       .input(z.object({ piClientId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        if (!seesAllData(ctx.user.role)) {
+          const c = await getPiClientById(input.piClientId);
+          if (c && (c as any).assignedAgentId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Not your client." });
+        }
         return getPiClientCallLogs(input.piClientId);
       }),
     findByPhone: protectedProcedure
       .input(z.object({ phone: z.string() }))
-      .query(async ({ input }) => {
-        return findPiClientByPhone(input.phone) ?? null;
+      .query(async ({ ctx, input }) => {
+        const c = findPiClientByPhone(input.phone) ?? null;
+        const resolved = await c;
+        if (resolved && !seesAllData(ctx.user.role) && (resolved as any).assignedAgentId !== ctx.user.id) return null;
+        return resolved;
       }),
     logCallByPhone: protectedProcedure
       .input(z.object({
@@ -807,7 +845,7 @@ export const appRouter = router({
           year: z.string().optional(),
           search: z.string().optional(),
         }).optional())
-        .query(async ({ input }) => getAllFieldVisits(input ?? {})),
+        .query(async ({ ctx, input }) => getAllFieldVisits(scopeAgentFilter(ctx, input))),
       create: protectedProcedure
         .input(z.object({
           visitDate: z.string(),
@@ -838,7 +876,8 @@ export const appRouter = router({
           facilityNames: z.string().optional(),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
           const { id, visitDate, facilityNames, ...rest } = input;
           await updateFieldVisit(id, {
             ...rest,
@@ -849,7 +888,7 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => { await deleteFieldVisit(input.id); return { success: true }; }),
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteFieldVisit(input.id); return { success: true }; }),
     }),
 
     frExpenses: router({
@@ -862,7 +901,7 @@ export const appRouter = router({
           status: z.string().optional(),
           search: z.string().optional(),
         }).optional())
-        .query(async ({ input }) => getAllFrExpenses(input ?? {})),
+        .query(async ({ ctx, input }) => getAllFrExpenses(scopeAgentFilter(ctx, input))),
       create: protectedProcedure
         .input(z.object({
           expenseDate: z.string(),
@@ -899,7 +938,8 @@ export const appRouter = router({
           cardType: z.enum(["Personal", "Company"]).optional(),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
           const { id, expenseDate, storeName, ...rest } = input;
           await updateFrExpense(id, {
             ...rest,
@@ -910,7 +950,7 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => { await deleteFrExpense(input.id); return { success: true }; }),
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteFrExpense(input.id); return { success: true }; }),
     }),
 
     bdrExpenses: router({
@@ -923,7 +963,7 @@ export const appRouter = router({
           year: z.string().optional(),
           search: z.string().optional(),
         }).optional())
-        .query(async ({ input }) => getAllBdrExpenses(input ?? {})),
+        .query(async ({ ctx, input }) => getAllBdrExpenses(scopeAgentFilter(ctx, input))),
       create: protectedProcedure
         .input(z.object({
           expenseDate: z.string(),
@@ -963,7 +1003,8 @@ export const appRouter = router({
           amount: z.string().optional(),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
           const { id, expenseDate, reportMonth, storeName, ...rest } = input;
           await updateBdrExpense(id, {
             ...rest,
@@ -975,7 +1016,7 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => { await deleteBdrExpense(input.id); return { success: true }; }),
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteBdrExpense(input.id); return { success: true }; }),
     }),
 
     referralRewards: router({
@@ -988,7 +1029,7 @@ export const appRouter = router({
           status: z.string().optional(),
           search: z.string().optional(),
         }).optional())
-        .query(async ({ input }) => getAllReferralRewards(input ?? {})),
+        .query(async ({ ctx, input }) => getAllReferralRewards(scopeAgentFilter(ctx, input))),
       create: protectedProcedure
         .input(z.object({
           agentName: z.string().min(1),
@@ -1031,7 +1072,8 @@ export const appRouter = router({
           caseNumber: z.string().optional(),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
           const { id, sudName, referralType, tier, payoutAmount, ...rest } = input;
           await updateReferralReward(id, {
             ...rest,
@@ -1044,7 +1086,7 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => { await deleteReferralReward(input.id); return { success: true }; }),
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteReferralReward(input.id); return { success: true }; }),
     }),
 
     frErrands: router({
@@ -1057,7 +1099,7 @@ export const appRouter = router({
           status: z.string().optional(),
           search: z.string().optional(),
         }).optional())
-        .query(async ({ input }) => getAllFrErrands(input ?? {})),
+        .query(async ({ ctx, input }) => getAllFrErrands(scopeAgentFilter(ctx, input))),
       create: protectedProcedure
         .input(z.object({
           errandDate: z.string(),
@@ -1094,7 +1136,8 @@ export const appRouter = router({
           notes: z.string().optional(),
           address: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
           const { id, errandDate, tier, ...rest } = input;
           await updateFrErrand(id, {
             ...rest,
@@ -1105,7 +1148,7 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => { await deleteFrErrand(input.id); return { success: true }; }),
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteFrErrand(input.id); return { success: true }; }),
     }),
 
     referralTracker: router({
@@ -1119,7 +1162,7 @@ export const appRouter = router({
           status: z.string().optional(),
           search: z.string().optional(),
         }).optional())
-        .query(async ({ input }) => getAllReferralTracker(input ?? {})),
+        .query(async ({ ctx, input }) => getAllReferralTracker(scopeAgentFilter(ctx, input))),
       create: protectedProcedure
         .input(z.object({
           reportMonth: z.string().optional(),
@@ -1156,7 +1199,8 @@ export const appRouter = router({
           status: z.enum(["Successful Sent", "Demo Sent", "Pending", "Unsuccessful", "In Progress"]).optional(),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
           const { id, reportMonth, bdrAgent, ...rest } = input;
           await updateReferralTracker(id, {
             ...rest,
@@ -1167,7 +1211,7 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => { await deleteReferralTracker(input.id); return { success: true }; }),
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteReferralTracker(input.id); return { success: true }; }),
     }),
   }),
 
@@ -1282,7 +1326,8 @@ export const appRouter = router({
           notes: z.string().optional(),
           lastUpdatedBy: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
           const { id, dateSigned, referralSentDate, followUpDate, ...rest } = input;
           await updateOutboundReferral(id, {
             ...rest,
@@ -1294,7 +1339,7 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => { await deleteOutboundReferral(input.id); return { success: true }; }),
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteOutboundReferral(input.id); return { success: true }; }),
     }),
 
     // Inbound leads (received from facilities)
@@ -1338,7 +1383,8 @@ export const appRouter = router({
           countsTowardPartnerActivity: z.boolean().optional(),
           notes: z.string().optional(),
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
           const { id, dateReceived, signedDate, ...rest } = input;
           await updateInboundLead(id, {
             ...rest,
@@ -1349,7 +1395,7 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => { await deleteInboundLead(input.id); return { success: true }; }),
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteInboundLead(input.id); return { success: true }; }),
     }),
 
     // Reporting aggregates

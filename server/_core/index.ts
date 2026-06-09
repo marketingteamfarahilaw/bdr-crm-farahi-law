@@ -40,6 +40,16 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  // Session cookies are HS256-signed with JWT_SECRET. A missing/weak secret lets
+  // anyone forge a session — refuse to start rather than fail open.
+  const jwtSecret = process.env.JWT_SECRET ?? "";
+  if (jwtSecret.length < 16 || jwtSecret === "change-me-to-a-long-random-string") {
+    throw new Error(
+      "[Security] JWT_SECRET is missing, too short, or still the default placeholder. " +
+      "Set a long random JWT_SECRET (32+ chars) before starting — it signs all session cookies."
+    );
+  }
+
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads

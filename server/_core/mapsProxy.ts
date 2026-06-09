@@ -11,6 +11,9 @@
 
 import type { Express, Request, Response } from "express";
 import axios from "axios";
+import { parse as parseCookie } from "cookie";
+import { COOKIE_NAME } from "@shared/const";
+import { sdk } from "./sdk";
 
 const GOOGLE_MAPS_BASE = "https://maps.googleapis.com";
 
@@ -24,6 +27,11 @@ export function registerMapsProxy(app: Express) {
 
   // Match /api/maps-proxy/<anything>
   app.get("/api/maps-proxy/*", async (req: Request, res: Response) => {
+    // Require a valid login session — this proxy spends the firm's billable
+    // Maps key, so it must never be an open/unauthenticated proxy.
+    const token = parseCookie(req.headers.cookie || "")[COOKIE_NAME];
+    const session = await sdk.verifySession(token);
+    if (!session) { res.status(401).send("Authentication required"); return; }
     try {
       // Strip the /api/maps-proxy prefix to get the downstream path
       const downstreamPath = req.path.replace(/^\/api\/maps-proxy/, "");
@@ -38,16 +46,13 @@ export function registerMapsProxy(app: Express) {
         params,
         responseType: "arraybuffer",
         timeout: 15000,
-        // Don't follow redirects automatically — pass them through
-        maxRedirects: 5,
+        maxRedirects: 0,
       });
 
-      // Forward content-type and cache headers
+      // Forward content-type and cache headers (same-origin only — no CORS *).
       const ct = upstream.headers["content-type"];
       if (ct) res.setHeader("Content-Type", ct);
-      res.setHeader("Cache-Control", "public, max-age=3600");
-      // Allow cross-origin access from the frontend
-      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cache-Control", "private, max-age=3600");
 
       res.status(upstream.status).send(upstream.data);
     } catch (err: any) {
