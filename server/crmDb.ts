@@ -36,6 +36,7 @@ export async function listFacilities(filters?: {
   partnerStatus?: string;
   category?: string;
   assignedRepId?: number;
+  assignedRepNames?: string[];
   managementFlag?: boolean;
   priorityPartner?: boolean;
   followUpDue?: boolean;
@@ -63,7 +64,17 @@ export async function listFacilities(filters?: {
   if (filters?.status) conditions.push(eq(facilities.relationshipStatus, filters.status as any));
   if (filters?.partnerStatus) conditions.push(eq(facilities.partnerStatus, filters.partnerStatus as any));
   if (filters?.category) conditions.push(eq(facilities.category, filters.category));
-  if (filters?.assignedRepId) conditions.push(eq(facilities.assignedRepId, filters.assignedRepId));
+  // Ownership scope: a facility belongs to an agent by id OR by name (most are
+  // assigned by name — e.g. "Grace" — and have no id), so match either.
+  if (filters?.assignedRepId || filters?.assignedRepNames?.length) {
+    const ors: any[] = [];
+    if (filters.assignedRepId) ors.push(eq(facilities.assignedRepId, filters.assignedRepId));
+    if (filters.assignedRepNames?.length) {
+      const lowered = filters.assignedRepNames.map((n) => n.toLowerCase());
+      ors.push(sql`LOWER(${facilities.assignedRepName}) IN (${sql.join(lowered.map((n) => sql`${n}`), sql`, `)})`);
+    }
+    conditions.push(ors.length === 1 ? ors[0] : or(...ors));
+  }
   if (filters?.managementFlag) conditions.push(eq(facilities.managementFlag, 1));
   if (filters?.priorityPartner) conditions.push(eq(facilities.priorityPartner, 1));
 

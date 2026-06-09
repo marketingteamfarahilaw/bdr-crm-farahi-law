@@ -256,6 +256,23 @@ function assertRcRedirectUri(redirectUri: string): void {
   }
 }
 
+/** Name candidates a facility might be assigned under for an agent — their agent
+ *  name, full name, and first names — used for owner-by-name facility scoping. */
+function ownerNameCandidates(user: { name?: string | null; agentName?: string | null }): string[] {
+  const out = new Set<string>();
+  const add = (s?: string | null) => {
+    if (!s) return;
+    const t = String(s).trim();
+    if (!t) return;
+    out.add(t);
+    const first = t.split(/\s+/)[0];
+    if (first) out.add(first);
+  };
+  add(user.agentName);
+  add(user.name);
+  return Array.from(out);
+}
+
 const PARTNER_STATUSES = ["prospect", "active_partner", "priority_partner", "needs_follow_up", "dormant", "do_not_use"] as const;
 
 const RELATIONSHIP_STATUSES = [
@@ -298,7 +315,11 @@ export const crmRouter = router({
       )
       .query(async ({ ctx, input }) => {
         // Agents see only their assigned facilities; managers/super admin see all.
-        const scoped = seesAllData(ctx.user.role) ? (input ?? {}) : { ...(input ?? {}), assignedRepId: ctx.user.id };
+        // Facilities are mostly assigned by NAME (e.g. "Grace"), rarely by id, so
+        // scope an agent by their id AND their name candidates (full + first name).
+        const scoped = seesAllData(ctx.user.role)
+          ? (input ?? {})
+          : { ...(input ?? {}), assignedRepId: ctx.user.id, assignedRepNames: ownerNameCandidates(ctx.user) };
         const rows = await listFacilities(scoped);
         // Enrich with last contact and total leads sent
         const enriched = await Promise.all(
