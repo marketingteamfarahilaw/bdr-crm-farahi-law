@@ -6,6 +6,7 @@
  */
 import { and, gte, lte, inArray, eq, desc, sql } from "drizzle-orm";
 import { getDb } from "./db";
+import { invokeLLM } from "./_core/llm";
 import {
   contactLogs,
   facilityLeads,
@@ -305,4 +306,153 @@ export async function getCallLogs(opts: { names?: string[]; from: Date; to: Date
       summary: c.summary ?? null,
     };
   });
+}
+
+// ─── Agent performance + AI review ───────────────────────────────────────────
+export type AgentPerformanceData = {
+  range: { from: string; to: string };
+  kpis: {
+    calls: number; connected: number; voicemail: number; noAnswer: number; talkSec: number;
+    facilities: number; recaps: number;
+    sentiment: { positive: number; neutral: number; negative: number };
+    interest: { interested: number; notInterested: number; neutral: number };
+    leadsSent: number; leadsReceived: number; signed: number;
+  };
+  days: { date: string; calls: number; connected: number; recaps: number }[];
+  recaps: { date: string; facilityId: number | null; facility: string; sentiment: string; interest: string; tone: string; summary: string; keyPoints: string[]; commitment: string | null }[];
+};
+
+export async function getAgentPerformanceData(opts: { names?: string[]; from: Date; to: Date }): Promise<AgentPerformanceData> {
+  const db = await getDb();
+  const { names, from, to } = opts;
+  const range = { from: from.toISOString(), to: to.toISOString() };
+  const empty: AgentPerformanceData = {
+    range,
+    kpis: { calls: 0, connected: 0, voicemail: 0, noAnswer: 0, talkSec: 0, facilities: 0, recaps: 0, sentiment: { positive: 0, neutral: 0, negative: 0 }, interest: { interested: 0, notInterested: 0, neutral: 0 }, leadsSent: 0, leadsReceived: 0, signed: 0 },
+    days: [], recaps: [],
+  };
+  if (!db) return empty;
+  const nf = (col: any) => (names && names.length ? [inArray(col, names)] : []);
+
+  const [calls, updates, leads] = await Promise.all([
+    db.select().from(contactLogs).where(and(eq(contactLogs.contactType, "call"), gte(contactLogs.contactDate, from), lte(contactLogs.contactDate, to), ...nf(contactLogs.repName))),
+    db.select({ date: facilityUpdates.updateDate, facilityId: facilityUpdates.facilityId, facility: facilities.name, extractedData: facilityUpdates.extractedData, summary: facilityUpdates.summary })
+      .from(facilityUpdates).leftJoin(facilities, eq(facilityUpdates.facilityId, facilities.id))
+      .where(and(eq(facilityUpdates.updateType, "transcript"), gte(facilityUpdates.updateDate, from), lte(facilityUpdates.updateDate, to), ...nf(facilityUpdates.repName))),
+    db.select().from(facilityLeads).where(and(gte(facilityLeads.leadDate, from), lte(facilityLeads.leadDate, to), ...nf(facilityLeads.repName))),
+  ]);
+
+  const callRows = (calls as any[]).filter((c) => c.contactType === "call");
+  const facSet = new Set<number>();
+  const dayMap = new Map<string, { date: string; calls: number; connected: number; recaps: number }>();
+  const bumpDay = (d: any, key: "calls" | "connected" | "recaps") => { const k = dayKey(d); if (!k) return; const e = dayMap.get(k) ?? { date: k, calls: 0, connected: 0, recaps: 0 }; e[key]++; dayMap.set(k, e); };
+
+  let connected = 0, voicemail = 0, noAnswer = 0, talkSec = 0;
+  for (const c of callRows) {
+    if (c.facilityId) facSet.add(c.facilityId);
+    bumpDay(c.contactDate, "calls");
+    if (c.callResult === "connected") { connected++; bumpDay(c.contactDate, "connected"); }
+    else if (c.callResult === "voicemail") voicemail++;
+    else if (c.callResult === "no_answer") noAnswer++;
+    talkSec += durToSec(c.callDuration);
+  }
+
+  const sentiment = { positive: 0, neutral: 0, negative: 0 };
+  const interest = { interested: 0, notInterested: 0, neutral: 0 };
+  const recaps = (updates as any[]).map((u) => {
+    const ed = (u.extractedData ?? {}) as any;
+    const tone = (ed.relationshipTone as string) || "";
+    const sent = (ed.sentiment as string) || (tone === "warm" ? "positive" : tone === "hostile" || tone === "cold" ? "negative" : "neutral");
+    const inter = (ed.interestLevel as string) || (tone === "warm" ? "interested" : tone === "hostile" || tone === "cold" ? "not_interested" : "neutral");
+    bumpDay(u.date, "recaps");
+    if (sent === "positive") sentiment.positive++; else if (sent === "negative") sentiment.negative++; else sentiment.neutral++;
+    if (inter === "interested") interest.interested++; else if (inter === "not_interested") interest.notInterested++; else interest.neutral++;
+    if (u.facilityId) facSet.add(u.facilityId);
+    return { date: dayKey(u.date), facilityId: u.facilityId ?? null, facility: u.facility ?? "Unknown", sentiment: sent, interest: inter, tone, summary: u.summary || "", keyPoints: (ed.keyPoints ?? []) as string[], commitment: (ed.commitmentMade as string) ?? null };
+  });
+
+  const days = Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  return {
+    range,
+    kpis: {
+      calls: callRows.length, connected, voicemail, noAnswer, talkSec,
+      facilities: facSet.size, recaps: recaps.length, sentiment, interest,
+      leadsSent: (leads as any[]).filter((l) => l.direction === "sent_to_facility").length,
+      leadsReceived: (leads as any[]).filter((l) => l.direction === "received_from_facility").length,
+      signed: (leads as any[]).filter((l) => l.signedCase === 1).length,
+    },
+    days,
+    recaps,
+  };
+}
+
+export type AgentPerformanceReview = {
+  overallSummary: string;
+  performanceRating: "strong" | "solid" | "needs_improvement";
+  daily: { date: string; summary: string }[];
+  challenges: string[];
+  recommendations: string[];
+  strengths: string[];
+  basedOnRecaps: number;
+  kpis: AgentPerformanceData["kpis"];
+};
+
+/** AI-generated performance review: what the agent did each day with facilities,
+ *  the challenges they met, their strengths, and concrete recommendations. */
+export async function generateAgentPerformanceReview(opts: { names?: string[]; from: Date; to: Date; agentLabel?: string }): Promise<AgentPerformanceReview> {
+  const data = await getAgentPerformanceData(opts);
+  const k = data.kpis;
+  const agentLabel = opts.agentLabel || opts.names?.[0] || "the agent";
+
+  const base: AgentPerformanceReview = { overallSummary: "", performanceRating: "solid", daily: [], challenges: [], recommendations: [], strengths: [], basedOnRecaps: 0, kpis: k };
+  if (!data.recaps.length && !k.calls) return { ...base, overallSummary: "No activity for this agent in the selected period." };
+
+  // Compact day-grouped digest (cap to keep the prompt bounded).
+  const capped = data.recaps.slice(0, 80);
+  const byDay = new Map<string, string[]>();
+  for (const r of capped) {
+    const line = `• ${r.facility} [sentiment:${r.sentiment}, interest:${r.interest}]: ${r.summary}${r.commitment ? ` (commitment: ${r.commitment})` : ""}`;
+    if (!byDay.has(r.date)) byDay.set(r.date, []);
+    byDay.get(r.date)!.push(line);
+  }
+  const callsByDay = new Map(data.days.map((d) => [d.date, d]));
+  const digest = Array.from(byDay.keys()).sort().map((date) => {
+    const d = callsByDay.get(date);
+    return `=== ${date} === (${d?.calls ?? 0} calls, ${d?.connected ?? 0} connected)\n` + byDay.get(date)!.join("\n");
+  }).join("\n\n");
+
+  const statsLine = `Totals for ${agentLabel} this period: ${k.calls} calls (${k.connected} connected, ${k.voicemail} voicemail, ${k.noAnswer} no-answer), ${k.facilities} facilities touched, ${k.recaps} recorded/analyzed calls. Sentiment of partners: ${k.sentiment.positive} positive / ${k.sentiment.neutral} neutral / ${k.sentiment.negative} negative. Interest: ${k.interest.interested} interested / ${k.interest.neutral} neutral / ${k.interest.notInterested} not-interested. Leads: ${k.leadsSent} sent, ${k.leadsReceived} received, ${k.signed} signed.`;
+
+  try {
+    const llmResp = await invokeLLM({
+      messages: [
+        { role: "system", content: `You are a senior business-development coach for a personal-injury law firm. You review a BD rep's activity with partner facilities (body shops, chiropractors, towing companies, clinics) and produce an honest, specific performance review. Be concrete — reference real facilities and patterns from the data, not generic advice. Identify genuine challenges (objections, not-interested partners, low connect rate, days with little activity, gaps) and give actionable recommendations the rep can act on next week. Keep each daily summary to 1-2 sentences. Return JSON only.` },
+        { role: "user", content: `${statsLine}\n\nDaily call recaps:\n${digest || "(no recorded-call recaps this period; base the review on the call totals above)"}\n\nWrite the performance review for ${agentLabel}.` },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "agent_review", strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              overallSummary: { type: "string" },
+              performanceRating: { type: "string", enum: ["strong", "solid", "needs_improvement"] },
+              daily: { type: "array", items: { type: "object", properties: { date: { type: "string" }, summary: { type: "string" } }, required: ["date", "summary"], additionalProperties: false } },
+              challenges: { type: "array", items: { type: "string" } },
+              recommendations: { type: "array", items: { type: "string" } },
+              strengths: { type: "array", items: { type: "string" } },
+            },
+            required: ["overallSummary", "performanceRating", "daily", "challenges", "recommendations", "strengths"],
+            additionalProperties: false,
+          },
+        },
+      },
+    });
+    const parsed = JSON.parse(llmResp.choices[0]?.message?.content as string);
+    return { ...base, ...parsed, basedOnRecaps: capped.length };
+  } catch (e) {
+    console.warn("[reports] performance review LLM failed:", (e as any)?.message ?? e);
+    return { ...base, overallSummary: "Could not generate the AI review right now (the AI service was unavailable). The metrics shown are still accurate — try again in a moment." };
+  }
 }
