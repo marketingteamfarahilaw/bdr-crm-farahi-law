@@ -270,12 +270,12 @@ export default function Dashboard() {
     .sort((a, b) => b.value - a.value);
 
   const kpis = [
-    { label: "Facilities", value: stats?.totalFacilities, icon: Building2, tint: "#7dd3fc" },
-    { label: "Active Partners", value: stats?.activePartners, icon: Handshake, tint: "#34d399" },
-    { label: "Signed Cases", value: stats?.totalSignedCases, icon: Scale, tint: "#6a9bd8", hero: true },
-    { label: "Referrals", value: stats?.totalReferrals, icon: Star, tint: "#a78bfa" },
-    { label: "Calls Logged", value: stats?.totalContactLogs, icon: Phone, tint: "#22d3ee" },
-    { label: "Open Tasks", value: stats?.openTasks, icon: ClipboardList, tint: "#fb923c", badge: stats?.overdueTasks },
+    { label: "Facilities", value: stats?.totalFacilities, icon: Building2, tint: "#7dd3fc", path: "/crm/facilities" },
+    { label: "Active Partners", value: stats?.activePartners, icon: Handshake, tint: "#34d399", path: "/crm/facilities?partnerStatus=active_partner" },
+    { label: "Signed Cases", value: stats?.totalSignedCases, icon: Scale, tint: "#6a9bd8", hero: true, path: "/reports" },
+    { label: "Referrals", value: stats?.totalReferrals, icon: Star, tint: "#a78bfa", path: "/referral/tracker" },
+    { label: "Calls Logged", value: stats?.totalContactLogs, icon: Phone, tint: "#22d3ee", path: "/call-logs" },
+    { label: "Open Tasks", value: stats?.openTasks, icon: ClipboardList, tint: "#fb923c", badge: stats?.overdueTasks, path: "/crm/dashboard" },
   ];
 
   return (
@@ -288,7 +288,10 @@ export default function Dashboard() {
             const Icon = k.icon;
             return (
               <motion.div key={k.label} variants={item}
-                className="premium-card group rounded-2xl p-4 hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(106,155,216,0.30)]">
+                onClick={() => k.path && navigate(k.path)}
+                role="button" tabIndex={0}
+                onKeyDown={(e) => { if (k.path && (e.key === "Enter" || e.key === " ")) navigate(k.path); }}
+                className="premium-card group rounded-2xl p-4 cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(106,155,216,0.30)]">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${k.tint}1a`, border: `1px solid ${k.tint}33` }}>
                     <Icon className="w-[18px] h-[18px]" style={{ color: k.tint }} />
