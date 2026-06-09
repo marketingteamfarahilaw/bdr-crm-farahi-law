@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   ArrowLeft, Phone, Globe, MapPin, User, Mail, AlertTriangle,
-  Plus, CheckCircle2, Circle, Trash2, PhoneCall, Car, MessageSquare,
+  Plus, CheckCircle2, Circle, Trash2, PhoneCall, Play, Car, MessageSquare,
   Calendar, Clock, Star, Edit, RefreshCw, Building2, Gift, FileText,
   TrendingUp, Flag, ExternalLink, ListChecks, Zap, ChevronDown, ChevronUp,
   Flame, Snowflake, ThermometerSun, Loader2, Download, ClipboardList
@@ -808,6 +808,7 @@ export default function FacilityProfile() {
   const { data: tasks } = trpc.crm.tasks.listByFacility.useQuery({ facilityId });
   const { data: referrals } = trpc.crm.referrals.list.useQuery({ facilityId });
   const { data: rcStatus } = trpc.crm.ringcentral.status.useQuery();
+  const [playLog, setPlayLog] = useState<number | null>(null);
 
   const completeTask = trpc.crm.tasks.complete.useMutation({
     onSuccess: () => { utils.crm.tasks.listByFacility.invalidate({ facilityId }); toast.success("Task completed"); },
@@ -1063,8 +1064,20 @@ export default function FacilityProfile() {
                         {log.callResult && <span className="text-[10px] font-semibold capitalize px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{log.callResult.replace("_", " ")}</span>}
                         {log.callType && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{log.callType.replace(/_/g, " ")}</span>}
                         {log.callDuration && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />{log.callDuration}</span>}
+                        {(log as any).fromRingCentral === 1 && log.callResult === "connected" && (
+                          <button onClick={() => setPlayLog(playLog === log.id ? null : log.id)} className="text-[11px] font-semibold inline-flex items-center gap-1 text-primary hover:text-primary/80">
+                            <Play className="w-3 h-3" /> {playLog === log.id ? "Hide" : "Listen"}
+                          </button>
+                        )}
                       </div>
                       {log.summary && <p className="text-sm text-foreground/80 mt-1.5 leading-relaxed">{log.summary}</p>}
+                      {playLog === log.id && (
+                        <audio
+                          controls autoPlay className="mt-2 w-full max-w-sm h-9"
+                          src={`/api/recording/${log.id}`}
+                          onError={() => { toast.error("No recording available for this call."); setPlayLog(null); }}
+                        />
+                      )}
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(log.contactDate), "MMM d, yyyy h:mm a")}</span>
                         {log.repName && <span className="flex items-center gap-1"><User className="w-3 h-3" />{log.repName}</span>}

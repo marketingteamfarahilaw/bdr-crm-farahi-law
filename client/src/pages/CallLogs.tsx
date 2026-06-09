@@ -1,12 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { seesAllData } from "@shared/permissions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, PhoneCall, PhoneIncoming, PhoneOutgoing, Clock, Search, Download, ExternalLink } from "lucide-react";
+import { Phone, PhoneCall, PhoneIncoming, PhoneOutgoing, Clock, Search, Download, ExternalLink, Play } from "lucide-react";
 import { format } from "date-fns";
 
 function presetRange(p: string): { from: string; to: string } {
@@ -54,6 +55,7 @@ export default function CallLogs() {
   const [agent, setAgent] = useState("__all__");
   const [q, setQ] = useState("");
   const [result, setResult] = useState("__all__");
+  const [playing, setPlaying] = useState<number | null>(null);
 
   const { data: agents = [] } = trpc.reports.agents.useQuery();
   const { data: rows = [], isLoading } = trpc.reports.callLogs.useQuery(
@@ -177,20 +179,41 @@ export default function CallLogs() {
               <tbody>
                 {filtered.map((c) => {
                   const d = c.date ? new Date(c.date) : null;
+                  const playable = c.fromRingCentral && c.result === "connected";
                   return (
-                    <tr key={c.id} className="border-b border-border/50 hover:bg-accent/30 cursor-pointer" onClick={() => c.facilityId && navigate(`/crm/facilities/${c.facilityId}`)}>
-                      <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">{d ? format(d, "MMM d, h:mm a") : "—"}</td>
-                      <td className="px-3 py-2 font-medium text-foreground max-w-[240px] truncate">{c.facilityName ?? <span className="text-muted-foreground italic">Unmatched</span>}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{c.rep ?? "—"}</td>
-                      <td className="px-3 py-2">
-                        {c.direction === "Inbound" ? <span className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400"><PhoneIncoming className="w-3.5 h-3.5" />In</span>
-                          : c.direction === "Outbound" ? <span className="inline-flex items-center gap-1 text-foreground"><PhoneOutgoing className="w-3.5 h-3.5" />Out</span>
-                          : <span className="text-muted-foreground">—</span>}
-                      </td>
-                      <td className="px-3 py-2"><span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${RESULT_STYLE[c.result] ?? RESULT_STYLE.other}`}>{RESULT_LABEL[c.result] ?? c.result ?? "—"}</span></td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{c.duration ?? "—"}</td>
-                      <td className="px-2 py-2 text-right">{c.facilityId && <ExternalLink className="w-3.5 h-3.5 text-muted-foreground inline" />}</td>
-                    </tr>
+                    <Fragment key={c.id}>
+                      <tr className="border-b border-border/50 hover:bg-accent/30 cursor-pointer" onClick={() => c.facilityId && navigate(`/crm/facilities/${c.facilityId}`)}>
+                        <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">{d ? format(d, "MMM d, h:mm a") : "—"}</td>
+                        <td className="px-3 py-2 font-medium text-foreground max-w-[240px] truncate">{c.facilityName ?? <span className="text-muted-foreground italic">Unmatched</span>}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{c.rep ?? "—"}</td>
+                        <td className="px-3 py-2">
+                          {c.direction === "Inbound" ? <span className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400"><PhoneIncoming className="w-3.5 h-3.5" />In</span>
+                            : c.direction === "Outbound" ? <span className="inline-flex items-center gap-1 text-foreground"><PhoneOutgoing className="w-3.5 h-3.5" />Out</span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </td>
+                        <td className="px-3 py-2"><span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${RESULT_STYLE[c.result] ?? RESULT_STYLE.other}`}>{RESULT_LABEL[c.result] ?? c.result ?? "—"}</span></td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{c.duration ?? "—"}</td>
+                        <td className="px-2 py-2 text-right">
+                          {playable ? (
+                            <button onClick={(e) => { e.stopPropagation(); setPlaying(playing === c.id ? null : c.id); }} className="text-primary hover:text-primary/80" title="Play recording">
+                              <Play className="w-4 h-4 inline" />
+                            </button>
+                          ) : (c.facilityId && <ExternalLink className="w-3.5 h-3.5 text-muted-foreground inline" />)}
+                        </td>
+                      </tr>
+                      {playing === c.id && (
+                        <tr className="bg-accent/20 border-b border-border/50">
+                          <td colSpan={7} className="px-4 py-2">
+                            <audio
+                              controls autoPlay className="w-full max-w-md h-9"
+                              src={`/api/recording/${c.id}`}
+                              onError={() => { toast.error("No recording available for this call."); setPlaying(null); }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
                 {!isLoading && filtered.length === 0 && <tr><td colSpan={7} className="px-5 py-10 text-center text-muted-foreground">No calls in this period.</td></tr>}
