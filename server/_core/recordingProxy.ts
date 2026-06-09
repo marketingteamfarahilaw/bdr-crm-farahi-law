@@ -62,8 +62,12 @@ export function registerRecordingProxy(app: Express) {
       if (!allowed) { res.status(403).send("Forbidden"); return; }
     }
 
-    // Token: prefer the requester's own RingCentral; fall back to the account token.
-    let token: string | null = await getValidRCTokenForUser(user.id);
+    // Token: a call's record id only resolves on the OWNING agent's extension,
+    // so prefer the owner's token (log.repId), then the requester's, then the
+    // company/admin token.
+    let token: string | null = null;
+    if (log.repId) token = await getValidRCTokenForUser(log.repId);
+    if (!token) token = await getValidRCTokenForUser(user.id);
     if (!token) { try { token = await getValidRCToken(); } catch { token = null; } }
     if (!token) { res.status(503).send("RingCentral not connected"); return; }
 
