@@ -1,6 +1,6 @@
 import { eq, and, desc, sql, gte, lte, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
+import { createPool } from "mysql2";
 import { InsertUser, users, appSettings, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -13,7 +13,7 @@ export async function getDb() {
       // timezone:"Z" — read/write all timestamps as UTC so naive DB datetimes
       // aren't misread in the server's local zone (which shifted call dates,
       // e.g. an evening call showing on the next day).
-      const pool = mysql.createPool({ uri: process.env.DATABASE_URL, timezone: "Z" });
+      const pool = createPool({ uri: process.env.DATABASE_URL, timezone: "Z" });
       _db = drizzle(pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
