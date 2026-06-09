@@ -2,7 +2,7 @@
  * CRM database helpers — Facility Partner CRM V3
  */
 
-import { and, desc, eq, like, or, sql, asc, inArray, gte, lte } from "drizzle-orm";
+import { and, desc, eq, like, or, sql, asc, inArray, gte, lte, isNotNull } from "drizzle-orm";
 import {
   contactLogs,
   facilities,
@@ -650,9 +650,16 @@ export async function listAgentsWithRcStatus() {
     })
     .from(users)
     .leftJoin(userRingcentralTokens, eq(userRingcentralTokens.userId, users.id))
-    // Only roles that actually place calls (exclude default "user" service rows)
-    // so the manager overview isn't padded with people who'll never connect.
-    .where(inArray(users.role, ["admin", "super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]))
+    // Show real people: an agent/manager role, OR anyone with an agent name
+    // (real agents are often created with the default "user" role), OR anyone
+    // who has actually connected RingCentral. Don't hide a connected agent.
+    .where(
+      or(
+        inArray(users.role, ["admin", "super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]),
+        isNotNull(users.agentName),
+        isNotNull(userRingcentralTokens.userId),
+      ),
+    )
     .orderBy(asc(users.name));
   return rows.map((r) => ({ ...r, connected: !!r.ownerName || !!r.ownerEmail || !!r.tokenExpiry }));
 }
