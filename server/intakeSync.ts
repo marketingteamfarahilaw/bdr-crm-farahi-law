@@ -134,6 +134,12 @@ export async function syncIntakeCalls(
       const isCaseCall = x.isPotentialClient && (x.callPurpose === "new_case" || x.callPurpose === "follow_up");
       if (!isCaseCall) continue; // solicitors / wrong numbers / existing clients stay as plain call rows
 
+      // HARD substance gate: never auto-create a lead from a call with zero
+      // case content (internal/colleague chatter the LLM mis-flags). The call
+      // stays in Calls & Transcripts where a human can "Create lead" if real.
+      const hasSubstance = !!(x.caseType || x.injuries || x.incidentDescription || x.incidentDate);
+      if (!hasSubstance) continue;
+
       const existingLead = callerNumber ? await findOpenLeadByPhone(callerNumber) : null;
       if (existingLead) {
         await linkCallToLead(callId, existingLead.id);
