@@ -11,7 +11,7 @@ import { scryptSync, randomBytes } from "crypto";
 
 const TEAM = [
   { name: "Malvin Rosales",   email: "malvin@farahilaw.com",  role: "intake_manager" }, // Intakes Manager
-  { name: "Toni Fernandez",   email: "toni@farahilaw.com",    role: "intake_agent" },   // Operations Coordinator
+  { name: "Toni Fernandez",   email: "toni@farahilaw.com",    role: "intake_manager" }, // Operations Coordinator — runs the queue
   { name: "Felix Cedillo",    email: "felix@farahilaw.com",   role: "intake_agent" },   // Specialist
   { name: "Karen Vega",       email: "karenv@farahilaw.com",  role: "intake_agent" },   // Specialist
   { name: "George Iniguez",   email: "gi@farahilaw.com",      role: "intake_agent" },   // Specialist
