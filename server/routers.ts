@@ -85,7 +85,8 @@ import {
   setSetting,
   setUserPhoto,
 } from "./db";
-import { canManage, canAssignRoles, seesAllData } from "@shared/permissions";
+import { canManage, canAssignRoles, seesAllData, isIntakeOnly } from "@shared/permissions";
+import { intakeRouter } from "./intakeRouter";
 import { fromZonedTime } from "date-fns-tz";
 
 /** Interpret a "YYYY-MM-DDTHH:mm:ss" report-range boundary as California
@@ -112,6 +113,15 @@ function scopeAgentFilter<T extends { agent?: string }>(
 function mgrOnly(ctx: { user: { role: any } }): void {
   if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
 }
+
+/** BD/FR-side procedure — the Intake team is walled off from the lead scraper,
+ *  facility CRM, BD/FR reports and expenses (and vice versa via intakeRouter). */
+const bdProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (isIntakeOnly(ctx.user.role)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "This area is for the BD/FR team." });
+  }
+  return next();
+});
 
 export const appRouter = router({
   system: systemRouter,
@@ -155,7 +165,7 @@ export const appRouter = router({
       return all.map(({ passwordHash, ...u }) => ({ ...u, hasPassword: Boolean(passwordHash) }));
     }),
     setRole: protectedProcedure
-      .input(z.object({ userId: z.number(), role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]) }))
+      .input(z.object({ userId: z.number(), role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent"]) }))
       .mutation(async ({ ctx, input }) => {
         if (!canAssignRoles(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only the super admin can assign roles." });
         if (input.userId === ctx.user.id && input.role !== "super_admin") {
@@ -182,7 +192,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
-        role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]),
+        role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent"]),
         password: z.string().min(6),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -214,7 +224,7 @@ export const appRouter = router({
   }),
 
   leads: router({
-    search: protectedProcedure
+    search: bdProcedure
       .input(
         z.object({
           category: z.enum([
@@ -269,11 +279,11 @@ export const appRouter = router({
   }),
 
   savedLeads: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: bdProcedure.query(async ({ ctx }) => {
       return getSavedLeads(ctx.user.id);
     }),
 
-    save: protectedProcedure
+    save: bdProcedure
       .input(
         z.object({
           placeId: z.string(),
@@ -323,21 +333,21 @@ export const appRouter = router({
         return { saved: true, alreadyExisted: false };
       }),
 
-    unsave: protectedProcedure
+    unsave: bdProcedure
       .input(z.object({ placeId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         await deleteSavedLead(ctx.user.id, input.placeId);
         return { success: true };
       }),
 
-    annotate: protectedProcedure
+    annotate: bdProcedure
       .input(z.object({ placeId: z.string(), annotation: z.string() }))
       .mutation(async ({ ctx, input }) => {
         await updateSavedLeadAnnotation(ctx.user.id, input.placeId, input.annotation);
         return { success: true };
       }),
 
-    isSaved: protectedProcedure
+    isSaved: bdProcedure
       .input(z.object({ placeId: z.string() }))
       .query(async ({ ctx, input }) => {
         const lead = await getSavedLeadByPlaceId(ctx.user.id, input.placeId);
@@ -346,15 +356,15 @@ export const appRouter = router({
   }),
 
   agentZones: router({
-    list: protectedProcedure.query(async () => {
+    list: bdProcedure.query(async () => {
       return getAllAgentZones();
     }),
-    get: protectedProcedure
+    get: bdProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return getAgentById(input.id);
       }),
-    create: protectedProcedure
+    create: bdProcedure
       .input(z.object({
         agentName: z.string().min(1),
         firstName: z.string().optional(),
@@ -385,7 +395,7 @@ export const appRouter = router({
         });
         return { success: true };
       }),
-    update: protectedProcedure
+    update: bdProcedure
       .input(z.object({
         id: z.number(),
         agentName: z.string().min(1).optional(),
@@ -406,14 +416,14 @@ export const appRouter = router({
         await updateAgent(id, data);
         return { success: true };
       }),
-    delete: protectedProcedure
+    delete: bdProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         await deleteAgent(input.id);
         return { success: true };
       }),
-    upsert: protectedProcedure
+    upsert: bdProcedure
       .input(z.object({
         agentName: z.string(),
         color: z.string(),
@@ -424,7 +434,7 @@ export const appRouter = router({
         await upsertAgentZone(input.agentName, input.color, input.cities);
         return { success: true };
       }),
-    assignLead: protectedProcedure
+    assignLead: bdProcedure
       .input(z.object({
         placeId: z.string(),
         assignedAgent: z.string().nullable(),
@@ -437,12 +447,12 @@ export const appRouter = router({
   }),
 
   piClients: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: bdProcedure.query(async ({ ctx }) => {
       const all = await getAllPiClients();
       if (seesAllData(ctx.user.role)) return all;
       return (all as any[]).filter((c) => c.assignedAgentId === ctx.user.id);
     }),
-    get: protectedProcedure
+    get: bdProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
         const c = await getPiClientById(input.id);
@@ -451,7 +461,7 @@ export const appRouter = router({
         }
         return c;
       }),
-    create: protectedProcedure
+    create: bdProcedure
       .input(z.object({
         firstName: z.string().min(1),
         lastName: z.string().min(1),
@@ -478,7 +488,7 @@ export const appRouter = router({
         });
         return { success: true };
       }),
-    update: protectedProcedure
+    update: bdProcedure
       .input(z.object({
         id: z.number(),
         firstName: z.string().min(1).optional(),
@@ -508,14 +518,14 @@ export const appRouter = router({
         });
         return { success: true };
       }),
-    delete: protectedProcedure
+    delete: bdProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
         await deletePiClient(input.id);
         return { success: true };
       }),
-    logCall: protectedProcedure
+    logCall: bdProcedure
       .input(z.object({
         piClientId: z.number(),
         callId: z.string().optional(),
@@ -533,7 +543,7 @@ export const appRouter = router({
         await createPiClientCallLog(input);
         return { success: true };
       }),
-    getCallLogs: protectedProcedure
+    getCallLogs: bdProcedure
       .input(z.object({ piClientId: z.number() }))
       .query(async ({ ctx, input }) => {
         if (!seesAllData(ctx.user.role)) {
@@ -542,7 +552,7 @@ export const appRouter = router({
         }
         return getPiClientCallLogs(input.piClientId);
       }),
-    findByPhone: protectedProcedure
+    findByPhone: bdProcedure
       .input(z.object({ phone: z.string() }))
       .query(async ({ ctx, input }) => {
         const c = findPiClientByPhone(input.phone) ?? null;
@@ -550,7 +560,7 @@ export const appRouter = router({
         if (resolved && !seesAllData(ctx.user.role) && (resolved as any).assignedAgentId !== ctx.user.id) return null;
         return resolved;
       }),
-    logCallByPhone: protectedProcedure
+    logCallByPhone: bdProcedure
       .input(z.object({
         phone: z.string(),
         callId: z.string().optional(),
@@ -576,7 +586,7 @@ export const appRouter = router({
      * 3. Transcribes the recording with Whisper.
      * 4. Saves the full call log + transcript to pi_client_call_logs.
      */
-    transcribeAndLog: protectedProcedure
+    transcribeAndLog: bdProcedure
       .input(z.object({
         phone: z.string(),
         callId: z.string().optional(),
@@ -664,7 +674,7 @@ export const appRouter = router({
   }),
 
   filevine: router({
-    getSettings: protectedProcedure.query(async ({ ctx }) => {
+    getSettings: bdProcedure.query(async ({ ctx }) => {
       const settings = await getFilevineSettings(ctx.user.id);
       // Never expose raw keys to frontend — just return connection status
       if (!settings) return { connected: false, orgId: null, baseUrl: 'https://api.filevine.io', lastSyncAt: null };
@@ -675,7 +685,7 @@ export const appRouter = router({
         lastSyncAt: settings.lastSyncAt,
       };
     }),
-    saveSettings: protectedProcedure
+    saveSettings: bdProcedure
       .input(z.object({
         apiKey: z.string().min(1),
         apiSecret: z.string().min(1),
@@ -693,7 +703,7 @@ export const appRouter = router({
         });
         return { success: true };
       }),
-    disconnect: protectedProcedure.mutation(async ({ ctx }) => {
+    disconnect: bdProcedure.mutation(async ({ ctx }) => {
       await upsertFilevineSettings({
         userId: ctx.user.id,
         apiKey: '',
@@ -706,12 +716,12 @@ export const appRouter = router({
     // ─── Filevine via Zapier/n8n webhook ──────────────────────────────────────
     // One org-wide webhook URL; every call recap is POSTed to it so a Zapier/n8n
     // automation can create a Filevine task. Managers only.
-    getWebhook: protectedProcedure.query(async ({ ctx }) => {
+    getWebhook: bdProcedure.query(async ({ ctx }) => {
       if (!seesAllData(ctx.user.role)) return { url: null, canEdit: false };
       const url = await getSetting('filevine_webhook_url');
       return { url: url ?? null, canEdit: true };
     }),
-    setWebhook: protectedProcedure
+    setWebhook: bdProcedure
       .input(z.object({ url: z.string().max(2000) }))
       .mutation(async ({ ctx, input }) => {
         if (!seesAllData(ctx.user.role)) {
@@ -728,9 +738,12 @@ export const appRouter = router({
 
   crm: crmRouter,
 
+  // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
+  intake: intakeRouter,
+
   reports: router({
     // Agents available to report on: agents see only themselves; managers see all.
-    agents: protectedProcedure.query(async ({ ctx }) => {
+    agents: bdProcedure.query(async ({ ctx }) => {
       if (!seesAllData(ctx.user.role)) {
         const self = String(ctx.user.agentName || ctx.user.name || "Me");
         return [{ name: self, self: true }];
@@ -738,7 +751,7 @@ export const appRouter = router({
       const names = await getReportAgents();
       return names.map((name) => ({ name, self: false }));
     }),
-    agentReport: protectedProcedure
+    agentReport: bdProcedure
       .input(z.object({
         agentName: z.string().optional(), // manager-selected name, or "__all__" / empty for everyone
         from: z.string(),
@@ -759,7 +772,7 @@ export const appRouter = router({
         }
         return getAgentReport({ names, from, to });
       }),
-    callAnalytics: protectedProcedure
+    callAnalytics: bdProcedure
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
         const from = laDate(input.from);
@@ -776,7 +789,7 @@ export const appRouter = router({
         }
         return getCallAnalytics({ names, from, to });
       }),
-    callLogs: protectedProcedure
+    callLogs: bdProcedure
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
         const from = laDate(input.from);
@@ -793,7 +806,7 @@ export const appRouter = router({
         }
         return getCallLogs({ names, from, to });
       }),
-    agentPerformance: protectedProcedure
+    agentPerformance: bdProcedure
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
         const from = laDate(input.from);
@@ -810,7 +823,7 @@ export const appRouter = router({
         }
         return getAgentPerformanceData({ names, from, to });
       }),
-    agentPerformanceReview: protectedProcedure
+    agentPerformanceReview: bdProcedure
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const from = laDate(input.from);
@@ -834,14 +847,14 @@ export const appRouter = router({
   }),
 
   bdr: router({
-    dashboardKpis: protectedProcedure.query(async () => getAgentDashboardKpis()),
-    adminDashboard: protectedProcedure.query(async ({ ctx }) => {
+    dashboardKpis: bdProcedure.query(async () => getAgentDashboardKpis()),
+    adminDashboard: bdProcedure.query(async ({ ctx }) => {
       if (!canManage(ctx.user.role)) throw new TRPCError({ code: 'FORBIDDEN', message: 'Managers only' });
       return getBdrAdminDashboard();
     }),
 
     fieldVisits: router({
-      list: protectedProcedure
+      list: bdProcedure
         .input(z.object({
           agent: z.string().optional(),
           dateFrom: z.string().optional(),
@@ -851,7 +864,7 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllFieldVisits(scopeAgentFilter(ctx, input))),
-      create: protectedProcedure
+      create: bdProcedure
         .input(z.object({
           visitDate: z.string(),
           agentName: z.string().min(1),
@@ -871,7 +884,7 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      update: protectedProcedure
+      update: bdProcedure
         .input(z.object({
           id: z.number(),
           visitDate: z.string().optional(),
@@ -891,13 +904,13 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      delete: protectedProcedure
+      delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteFieldVisit(input.id); return { success: true }; }),
     }),
 
     frExpenses: router({
-      list: protectedProcedure
+      list: bdProcedure
         .input(z.object({
           agent: z.string().optional(),
           dateFrom: z.string().optional(),
@@ -907,7 +920,7 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllFrExpenses(scopeAgentFilter(ctx, input))),
-      create: protectedProcedure
+      create: bdProcedure
         .input(z.object({
           expenseDate: z.string(),
           agentName: z.string().min(1),
@@ -931,7 +944,7 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      update: protectedProcedure
+      update: bdProcedure
         .input(z.object({
           id: z.number(),
           expenseDate: z.string().optional(),
@@ -953,13 +966,13 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      delete: protectedProcedure
+      delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteFrExpense(input.id); return { success: true }; }),
     }),
 
     bdrExpenses: router({
-      list: protectedProcedure
+      list: bdProcedure
         .input(z.object({
           agent: z.string().optional(),
           dateFrom: z.string().optional(),
@@ -969,7 +982,7 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllBdrExpenses(scopeAgentFilter(ctx, input))),
-      create: protectedProcedure
+      create: bdProcedure
         .input(z.object({
           expenseDate: z.string(),
           reportMonth: z.string().optional(),
@@ -995,7 +1008,7 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      update: protectedProcedure
+      update: bdProcedure
         .input(z.object({
           id: z.number(),
           expenseDate: z.string().optional(),
@@ -1019,13 +1032,13 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      delete: protectedProcedure
+      delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteBdrExpense(input.id); return { success: true }; }),
     }),
 
     referralRewards: router({
-      list: protectedProcedure
+      list: bdProcedure
         .input(z.object({
           agent: z.string().optional(),
           dateFrom: z.string().optional(),
@@ -1035,7 +1048,7 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllReferralRewards(scopeAgentFilter(ctx, input))),
-      create: protectedProcedure
+      create: bdProcedure
         .input(z.object({
           agentName: z.string().min(1),
           sudName: z.string().optional(),
@@ -1063,7 +1076,7 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      update: protectedProcedure
+      update: bdProcedure
         .input(z.object({
           id: z.number(),
           agentName: z.string().optional(),
@@ -1089,13 +1102,13 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      delete: protectedProcedure
+      delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteReferralReward(input.id); return { success: true }; }),
     }),
 
     frErrands: router({
-      list: protectedProcedure
+      list: bdProcedure
         .input(z.object({
           agent: z.string().optional(),
           dateFrom: z.string().optional(),
@@ -1105,7 +1118,7 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllFrErrands(scopeAgentFilter(ctx, input))),
-      create: protectedProcedure
+      create: bdProcedure
         .input(z.object({
           errandDate: z.string(),
           clientName: z.string().optional(),
@@ -1129,7 +1142,7 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      update: protectedProcedure
+      update: bdProcedure
         .input(z.object({
           id: z.number(),
           errandDate: z.string().optional(),
@@ -1151,13 +1164,13 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      delete: protectedProcedure
+      delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteFrErrand(input.id); return { success: true }; }),
     }),
 
     referralTracker: router({
-      list: protectedProcedure
+      list: bdProcedure
         .input(z.object({
           agent: z.string().optional(),
           dateFrom: z.string().optional(),
@@ -1168,7 +1181,7 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllReferralTracker(scopeAgentFilter(ctx, input))),
-      create: protectedProcedure
+      create: bdProcedure
         .input(z.object({
           reportMonth: z.string().optional(),
           clientName: z.string().optional(),
@@ -1192,7 +1205,7 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      update: protectedProcedure
+      update: bdProcedure
         .input(z.object({
           id: z.number(),
           reportMonth: z.string().optional(),
@@ -1214,18 +1227,18 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      delete: protectedProcedure
+      delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteReferralTracker(input.id); return { success: true }; }),
     }),
   }),
 
   savedSearches: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: bdProcedure.query(async ({ ctx }) => {
       return getSavedSearches(ctx.user.id);
     }),
 
-    save: protectedProcedure
+    save: bdProcedure
       .input(
         z.object({
           name: z.string().min(1),
@@ -1250,7 +1263,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: bdProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await deleteSavedSearch(ctx.user.id, input.id);
@@ -1261,8 +1274,8 @@ export const appRouter = router({
   referralWorkflow: router({
     // Outbound referrals (leads sent to facilities)
     outbound: router({
-      list: protectedProcedure.query(async () => getAllOutboundReferrals()),
-      create: protectedProcedure
+      list: bdProcedure.query(async () => getAllOutboundReferrals()),
+      create: bdProcedure
         .input(z.object({
           clientName: z.string().min(1),
           filevineLinkOrRef: z.string().optional(),
@@ -1301,7 +1314,7 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      update: protectedProcedure
+      update: bdProcedure
         .input(z.object({
           id: z.number(),
           clientName: z.string().optional(),
@@ -1342,15 +1355,15 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      delete: protectedProcedure
+      delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteOutboundReferral(input.id); return { success: true }; }),
     }),
 
     // Inbound leads (received from facilities)
     inbound: router({
-      list: protectedProcedure.query(async () => getAllInboundLeads()),
-      create: protectedProcedure
+      list: bdProcedure.query(async () => getAllInboundLeads()),
+      create: bdProcedure
         .input(z.object({
           leadName: z.string().min(1),
           dateReceived: z.string().optional(),
@@ -1373,7 +1386,7 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      update: protectedProcedure
+      update: bdProcedure
         .input(z.object({
           id: z.number(),
           leadName: z.string().optional(),
@@ -1398,13 +1411,13 @@ export const appRouter = router({
           });
           return { success: true };
         }),
-      delete: protectedProcedure
+      delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteInboundLead(input.id); return { success: true }; }),
     }),
 
     // Reporting aggregates
-    stats: protectedProcedure.query(async () => getReferralStats()),
+    stats: bdProcedure.query(async () => getReferralStats()),
   }),
 });
 

@@ -14,11 +14,14 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { isIntakeOnly } from "@shared/permissions";
 
 export default function RingCentralCallback() {
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
   const [message, setMessage] = useState("Finishing RingCentral sign-in…");
   const [, navigate] = useLocation();
+  const { user } = useAuth();
   const ranRef = useRef(false);
 
   const connect = trpc.crm.ringcentral.connect.useMutation();
@@ -34,7 +37,9 @@ export default function RingCentralCallback() {
     const error = params.get("error");
     const errorDescription = params.get("error_description");
 
-    const goBack = (delay = 2200) => setTimeout(() => navigate("/crm/ringcentral"), delay);
+    // Intake users connect from (and return to) their own settings page.
+    const backPath = isIntakeOnly(user?.role) ? "/intake/settings" : "/crm/ringcentral";
+    const goBack = (delay = 2200) => setTimeout(() => navigate(backPath), delay);
 
     if (error) {
       setStatus("error");

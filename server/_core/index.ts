@@ -15,7 +15,9 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getValidRCToken, getValidRCTokenForUser } from "../crmRouter";
 import { syncRecentCalls } from "../rcSync";
+import { syncIntakeCalls } from "../intakeSync";
 import { listConnectedRcUsers, setUserRcLastSync } from "../crmDb";
+import { isIntakeOnly } from "@shared/permissions";
 // Note: RingCentral auto-connect via JWT has been removed.
 // Agents now log in to RingCentral directly through the embedded widget UI.
 // The server still stores tokens when agents connect via OAuth through the widget.
@@ -109,20 +111,31 @@ function startRingCentralAutoSync() {
     rcSyncRunning = true;
     try {
       // 1) Per-agent: pull each connected agent's OWN extension calls with their
-      //    own token and attribute every call to them.
+      //    own token. HARD SPLIT by role: intake team members' calls flow into
+      //    the Intake Case Desk (intake_calls / intake_leads) and NEVER into the
+      //    facility CRM; BD/FR calls flow into contact_logs as before.
       let connected: Awaited<ReturnType<typeof listConnectedRcUsers>> = [];
       try { connected = await listConnectedRcUsers(); } catch (e: any) { console.warn("[rcSync] listConnectedRcUsers failed:", e?.message ?? e); }
       for (const u of connected) {
+        const display = String(u.userName ?? u.ownerName ?? u.userEmail ?? "Unknown");
         try {
           const token = await getValidRCTokenForUser(u.userId);
           if (!token) continue; // not connected / refresh expired — they'll reconnect
-          const res = await syncRecentCalls(token, {
-            lookbackMinutes: 90,
-            attribution: { repId: u.userId, repName: String(u.userName ?? u.ownerName ?? u.userEmail ?? "Unknown") },
-          });
-          await setUserRcLastSync(u.userId, new Date());
-          if (res.logged > 0 || res.transcribed > 0) {
-            console.log(`[rcSync] agent #${u.userId} (${u.userName ?? u.ownerName ?? "?"}): ${res.logged} new, ${res.transcribed} transcribed.`);
+          if (isIntakeOnly(u.userRole)) {
+            const res = await syncIntakeCalls(token, { agent: { id: u.userId, name: display }, lookbackMinutes: 90 });
+            await setUserRcLastSync(u.userId, new Date());
+            if (res.logged > 0 || res.transcribed > 0) {
+              console.log(`[intakeSync] #${u.userId} (${display}): ${res.logged} calls, ${res.transcribed} transcribed, +${res.leadsCreated} leads, ${res.leadsUpdated} updated.`);
+            }
+          } else {
+            const res = await syncRecentCalls(token, {
+              lookbackMinutes: 90,
+              attribution: { repId: u.userId, repName: display },
+            });
+            await setUserRcLastSync(u.userId, new Date());
+            if (res.logged > 0 || res.transcribed > 0) {
+              console.log(`[rcSync] agent #${u.userId} (${u.userName ?? u.ownerName ?? "?"}): ${res.logged} new, ${res.transcribed} transcribed.`);
+            }
           }
         } catch (e: any) {
           console.warn(`[rcSync] per-agent sync failed for user ${u.userId}:`, e?.response?.status ?? e?.message ?? e);

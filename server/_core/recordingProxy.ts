@@ -13,13 +13,31 @@
 import type { Express } from "express";
 import axios from "axios";
 import { eq } from "drizzle-orm";
-import { seesAllData } from "@shared/permissions";
+import { seesAllData, canSeeIntake, isIntakeOnly } from "@shared/permissions";
 import { sdk } from "./sdk";
 import { getDb } from "../db";
-import { contactLogs, facilities } from "../../drizzle/schema";
+import { contactLogs, facilities, intakeCalls } from "../../drizzle/schema";
 import { getValidRCTokenForUser, getValidRCToken } from "../crmRouter";
 
 const RC_BASE = "https://platform.ringcentral.com";
+
+/** Fetch a RingCentral recording (by the owning extension's call-log id) and
+ *  stream it to the response. Shared by the facility + intake endpoints. */
+async function streamRecording(res: any, rcCallId: string, token: string): Promise<void> {
+  const rec = await axios
+    .get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${encodeURIComponent(rcCallId)}`, { headers: { Authorization: `Bearer ${token}` }, params: { view: "Detailed" } })
+    .catch(() => null);
+  const contentUri: string | null = rec?.data?.recording?.contentUri ?? null;
+  if (!contentUri) { res.status(404).send("No recording attached to this call"); return; }
+
+  const audio = await axios.get(contentUri, { headers: { Authorization: `Bearer ${token}` }, responseType: "stream" });
+  res.set("Content-Type", (audio.headers["content-type"] as string) || "audio/mpeg");
+  if (audio.headers["content-length"]) res.set("Content-Length", audio.headers["content-length"] as string);
+  res.set("Cache-Control", "private, no-store");
+  res.set("Accept-Ranges", "none");
+  audio.data.pipe(res);
+  audio.data.on("error", () => { try { res.end(); } catch { /* ignore */ } });
+}
 
 function nameCandidates(user: { name?: string | null; agentName?: string | null }): string[] {
   const out = new Set<string>();
@@ -73,21 +91,41 @@ export function registerRecordingProxy(app: Express) {
 
     try {
       // The recording content URI comes from RingCentral's call-log record.
-      const rec = await axios
-        .get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${encodeURIComponent(log.rcCallId)}`, { headers: { Authorization: `Bearer ${token}` }, params: { view: "Detailed" } })
-        .catch(() => null);
-      const contentUri: string | null = rec?.data?.recording?.contentUri ?? null;
-      if (!contentUri) { res.status(404).send("No recording attached to this call"); return; }
-
-      const audio = await axios.get(contentUri, { headers: { Authorization: `Bearer ${token}` }, responseType: "stream" });
-      res.set("Content-Type", (audio.headers["content-type"] as string) || "audio/mpeg");
-      if (audio.headers["content-length"]) res.set("Content-Length", audio.headers["content-length"] as string);
-      res.set("Cache-Control", "private, no-store");
-      res.set("Accept-Ranges", "none");
-      audio.data.pipe(res);
-      audio.data.on("error", () => { try { res.end(); } catch { /* ignore */ } });
+      await streamRecording(res, log.rcCallId, token);
     } catch (e: any) {
       console.warn("[recordingProxy] failed:", e?.response?.status ?? e?.message ?? e);
+      if (!res.headersSent) res.status(502).send("Could not fetch recording");
+    }
+  });
+
+  // ── Intake call recordings ──────────────────────────────────────────────────
+  // Same model, intake world: only the intake team (+ super admin) may listen,
+  // and the recording resolves with the OWNING intake specialist's token.
+  app.get("/api/intake-recording/:id", async (req, res) => {
+    let user: any = null;
+    try { user = await sdk.authenticateRequest(req); } catch { /* unauthenticated */ }
+    if (!user) { res.status(401).send("Not authenticated"); return; }
+    if (!canSeeIntake(user.role)) { res.status(403).send("Forbidden"); return; }
+
+    const id = parseInt(String(req.params.id), 10);
+    if (!id || Number.isNaN(id)) { res.status(400).send("Bad call id"); return; }
+
+    const db = await getDb();
+    if (!db) { res.status(500).send("Database unavailable"); return; }
+
+    const [call] = await db.select().from(intakeCalls).where(eq(intakeCalls.id, id)).limit(1);
+    if (!call || !call.rcCallId) { res.status(404).send("No recording for this call"); return; }
+
+    let token: string | null = null;
+    if (call.agentId) token = await getValidRCTokenForUser(call.agentId);
+    if (!token && isIntakeOnly(user.role)) token = await getValidRCTokenForUser(user.id);
+    if (!token) { try { token = await getValidRCToken(); } catch { token = null; } }
+    if (!token) { res.status(503).send("RingCentral not connected"); return; }
+
+    try {
+      await streamRecording(res, call.rcCallId, token);
+    } catch (e: any) {
+      console.warn("[recordingProxy] intake failed:", e?.response?.status ?? e?.message ?? e);
       if (!res.headersSent) res.status(502).send("Could not fetch recording");
     }
   });

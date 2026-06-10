@@ -42,6 +42,12 @@ import CallAnalytics from "./pages/CallAnalytics";
 import CallLogs from "./pages/CallLogs";
 import AgentPerformance from "./pages/AgentPerformance";
 import RingCentralCallback from "./pages/RingCentralCallback";
+import IntakeDeskPage from "./pages/intake/IntakeDesk";
+import IntakeLeadsPage from "./pages/intake/IntakeLeads";
+import IntakeLeadDetailPage from "./pages/intake/IntakeLeadDetail";
+import IntakeCallsPage from "./pages/intake/IntakeCalls";
+import IntakeSettingsPage from "./pages/intake/IntakeSettings";
+import { isIntakeOnly } from "@shared/permissions";
 import { RingCentralProvider } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
 import { trpc } from "./lib/trpc";
@@ -51,11 +57,23 @@ import Login from "./pages/Login";
 import { Scale, Loader2 } from "lucide-react";
 
 function Router() {
+  // Intake roles live in their own world: their home IS the Intake Desk.
+  const { user } = useAuth();
+  const intakeHome = isIntakeOnly(user?.role);
+
   return (
     <DashboardLayout>
       <Switch>
-        {/* Home: Command Center dashboard */}
-        <Route path="/" component={Dashboard} />
+        {/* Home: Command Center for BD/FR, Intake Desk for the intake team */}
+        <Route path="/" component={intakeHome ? IntakeDeskPage : Dashboard} />
+
+        {/* Intake — AI Case Desk */}
+        <Route path="/intake" component={IntakeDeskPage} />
+        <Route path="/intake/leads" component={IntakeLeadsPage} />
+        <Route path="/intake/leads/:id" component={IntakeLeadDetailPage} />
+        <Route path="/intake/calls" component={IntakeCallsPage} />
+        <Route path="/intake/settings" component={IntakeSettingsPage} />
+
         <Route path="/map" component={CaliforniaMapPage} />
 
         {/* Lead Scraper */}
@@ -133,7 +151,9 @@ function Router() {
  */
 function FollowUpDigest() {
   const [, navigate] = useLocation();
-  const { data: myTasks } = trpc.crm.tasks.listMine.useQuery({ status: "open" });
+  const { user } = useAuth();
+  // Facility tasks are a BD/FR concept — never query them for intake users.
+  const { data: myTasks } = trpc.crm.tasks.listMine.useQuery({ status: "open" }, { enabled: !isIntakeOnly(user?.role) });
   const shownRef = useRef(false);
 
   useEffect(() => {
@@ -169,6 +189,8 @@ function FollowUpDigest() {
  */
 function RingCentralNudge() {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const connectPath = isIntakeOnly(user?.role) ? "/intake/settings" : "/crm/ringcentral";
   const { data: status } = trpc.crm.ringcentral.status.useQuery(undefined, { staleTime: 60_000 });
   const shownRef = useRef(false);
 
@@ -178,18 +200,20 @@ function RingCentralNudge() {
     if (sessionStorage.getItem("rc-connect-nudge-shown")) { shownRef.current = true; return; }
     toast("Connect your RingCentral", {
       description: "Sign in to your own RingCentral so your calls are tracked under your name.",
-      action: { label: "Connect", onClick: () => navigate("/crm/ringcentral") },
+      action: { label: "Connect", onClick: () => navigate(connectPath) },
       duration: 10000,
     });
     sessionStorage.setItem("rc-connect-nudge-shown", "1");
     shownRef.current = true;
-  }, [status, navigate]);
+  }, [status, navigate, connectPath]);
 
   return null;
 }
 
 function AppWithPhone() {
   const utils = trpc.useUtils();
+  const { user } = useAuth();
+  const intakeOnly = isIntakeOnly(user?.role);
 
   // Auto-log facility calls when a RingCentral call ends.
   // Uses logFacilityCall which: matches facility by phone → creates contact log → fetches RC recording → Whisper transcription → AI summary → saves to facility_updates.
@@ -209,6 +233,17 @@ function AppWithPhone() {
   const handleCallEnd = (data: CallEndData) => {
     const dur = data.durationStr ?? "0:00";
     const phone = data.phoneNumber ?? "unknown";
+
+    // Intake team: the background intake sync picks the call up (recording
+    // needs ~2 min to attach), transcribes it, and creates/updates the lead.
+    if (intakeOnly) {
+      toast.info(`Call ended — ${phone} · ${dur}`, {
+        description: "It will be transcribed & AI-analyzed within ~2 minutes, then appear in your Lead Queue.",
+        duration: 9000,
+      });
+      setTimeout(() => { utils.intake.invalidate(); }, 150_000);
+      return;
+    }
 
     if (data.phoneNumber) {
       // Show an immediate "processing" toast while transcription runs server-side

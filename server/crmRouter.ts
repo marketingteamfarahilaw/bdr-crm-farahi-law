@@ -7,10 +7,11 @@ import { TRPCError } from "@trpc/server";
 import axios from "axios";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
-import { seesAllData, canManage } from "@shared/permissions";
+import { seesAllData, canManage, isIntakeOnly } from "@shared/permissions";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
 import { syncRecentCalls } from "./rcSync";
+import { syncIntakeCalls } from "./intakeSync";
 import { sendCallRecapToWebhook } from "./filevineHook";
 import { uberConfigured, importOrderReceipt, matchFacilityByAddress } from "./uber";
 import { frExpenses } from "../drizzle/schema";
@@ -73,6 +74,17 @@ import { getDb } from "./db";
 import { facilities, uberReceipts, users, leadIntake, contactLogs, facilityTasks, facilityReferrals, facilityLeads, facilityGratitude } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
 const RC_BASE = "https://platform.ringcentral.com";
+
+/** Facility-CRM procedure — BD/FR (+ super admin) only. The Intake team is
+ *  hard-walled from facility data; their world is intakeRouter. The generic
+ *  RingCentral CONNECTION procedures below stay on protectedProcedure because
+ *  intake members link their own RingCentral through the same flow. */
+const crmProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (isIntakeOnly(ctx.user.role)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "This area is for the BD/FR team." });
+  }
+  return next();
+});
 
 async function refreshRCToken(refreshToken: string, clientId: string, clientSecret: string) {
   const resp = await axios.post(
@@ -327,7 +339,7 @@ export const crmRouter = router({
   // ─── Facilities ─────────────────────────────────────────────────────────────
 
   facilities: router({
-    list: protectedProcedure
+    list: crmProcedure
       .input(
         z.object({
           search: z.string().optional(),
@@ -358,7 +370,7 @@ export const crmRouter = router({
         return enriched;
       }),
 
-    get: protectedProcedure
+    get: crmProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
         await assertFacilityAccess(ctx.user, input.id);
@@ -375,7 +387,7 @@ export const crmRouter = router({
         return { ...facility, contactHistory, tasks, leadsSent, totalLeads, referrals, totalReferrals };
       }),
 
-    create: protectedProcedure
+    create: crmProcedure
       .input(
         z.object({
           name: z.string().min(1),
@@ -407,7 +419,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    update: protectedProcedure
+    update: crmProcedure
       .input(
         z.object({
           id: z.number(),
@@ -449,7 +461,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    bulkUpdate: protectedProcedure
+    bulkUpdate: crmProcedure
       .input(z.object({
         ids: z.array(z.number()).min(1),
         partnerStatus: z.enum(PARTNER_STATUSES).optional(),
@@ -462,7 +474,7 @@ export const crmRouter = router({
         return { success: true, updated: ids.length };
       }),
 
-    delete: protectedProcedure
+    delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         if (!canManage(ctx.user.role)) {
@@ -472,7 +484,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    bulkCreate: protectedProcedure
+    bulkCreate: crmProcedure
       .input(
         z.object({
           facilities: z.array(
@@ -513,7 +525,7 @@ export const crmRouter = router({
         return { created, skipped };
       }),
 
-    promoteFromScraper: protectedProcedure
+    promoteFromScraper: crmProcedure
       .input(
         z.object({
           name: z.string(),
@@ -550,11 +562,11 @@ export const crmRouter = router({
   // ─── Contact Logs ────────────────────────────────────────────────────────────
 
   contactLogs: router({
-    list: protectedProcedure
+    list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
       .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listContactLogs(input.facilityId); }),
 
-    create: protectedProcedure
+    create: crmProcedure
       .input(
         z.object({
           facilityId: z.number(),
@@ -584,7 +596,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await assertRowFacilityAccess(ctx.user, contactLogs, input.id);
@@ -596,17 +608,17 @@ export const crmRouter = router({
   // ─── Tasks ───────────────────────────────────────────────────────────────────
 
   tasks: router({
-    listByFacility: protectedProcedure
+    listByFacility: crmProcedure
       .input(z.object({ facilityId: z.number() }))
       .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listTasksByFacility(input.facilityId); }),
 
-    listMine: protectedProcedure
+    listMine: crmProcedure
       .input(z.object({ status: z.enum(["open", "completed"]).optional() }))
       .query(async ({ ctx, input }) => listTasksByUser(ctx.user.id, input.status)),
 
-    listOverdue: protectedProcedure.query(async () => listOverdueTasks()),
+    listOverdue: crmProcedure.query(async () => listOverdueTasks()),
 
-    create: protectedProcedure
+    create: crmProcedure
       .input(
         z.object({
           facilityId: z.number(),
@@ -630,7 +642,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    complete: protectedProcedure
+    complete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await assertRowFacilityAccess(ctx.user, facilityTasks, input.id);
@@ -638,7 +650,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    reopen: protectedProcedure
+    reopen: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await assertRowFacilityAccess(ctx.user, facilityTasks, input.id);
@@ -646,7 +658,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await assertRowFacilityAccess(ctx.user, facilityTasks, input.id);
@@ -658,11 +670,11 @@ export const crmRouter = router({
   // ─── Leads Sent ──────────────────────────────────────────────────────────────
 
   leadsSent: router({
-    list: protectedProcedure
+    list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
       .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listLeadsSent(input.facilityId); }),
 
-    upsert: protectedProcedure
+    upsert: crmProcedure
       .input(
         z.object({
           facilityId: z.number(),
@@ -681,11 +693,11 @@ export const crmRouter = router({
   // ─── Referrals ────────────────────────────────────────────────────────────────
 
   referrals: router({
-    list: protectedProcedure
+    list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
       .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listReferrals(input.facilityId); }),
 
-    create: protectedProcedure
+    create: crmProcedure
       .input(z.object({
         facilityId: z.number(),
         referralDate: z.string(),
@@ -704,7 +716,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    update: protectedProcedure
+    update: crmProcedure
       .input(z.object({
         id: z.number(),
         referralDate: z.string().optional(),
@@ -722,7 +734,7 @@ export const crmRouter = router({
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await assertRowFacilityAccess(ctx.user, facilityReferrals, input.id);
@@ -812,7 +824,7 @@ export const crmRouter = router({
       return listAgentsWithRcStatus();
     }),
 
-    connectJwt: protectedProcedure
+    connectJwt: crmProcedure
       .input(z.object({ jwt: z.string() }))
       .mutation(async ({ ctx, input }) => {
         // This sets the COMPANY-WIDE admin connection — managers only, never a
@@ -856,7 +868,7 @@ export const crmRouter = router({
     // (Removed getAccessToken — it returned a live RingCentral OAuth token to the
     // browser. All RC calls are proxied server-side; the token never leaves here.)
 
-    getWidgetConfig: protectedProcedure.query(async () => {
+    getWidgetConfig: crmProcedure.query(async () => {
       // Only non-sensitive config. The client secret and the company JWT are
       // NEVER sent to the browser — agents authenticate via the per-agent OAuth
       // flow (getAuthorizeUrl → connect), not a shared JWT. (Previously this
@@ -866,7 +878,7 @@ export const crmRouter = router({
       return { clientId, configured: !!clientId };
     }),
 
-    transcribeCall: protectedProcedure
+    transcribeCall: crmProcedure
       .input(z.object({
         facilityId: z.number(),
         callId: z.string(),
@@ -928,7 +940,7 @@ export const crmRouter = router({
      * 5. Generates an AI summary.
      * 6. Saves transcript + summary to facility_updates.
      */
-    logFacilityCall: protectedProcedure
+    logFacilityCall: crmProcedure
       .input(z.object({
         phone: z.string(),
         facilityId: z.number().optional(),
@@ -1204,7 +1216,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         };
       }),
 
-    syncCalls: protectedProcedure
+    syncCalls: crmProcedure
       .input(z.object({ facilityId: z.number(), daysBack: z.number().min(1).max(90).default(30) }))
       .mutation(async ({ input, ctx }) => {
         const { token: accessToken, attribution } = await resolveRCToken(ctx.user);
@@ -1277,6 +1289,19 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
       .input(z.object({ lookbackMinutes: z.number().min(5).max(43200).optional() }).optional())
       .mutation(async ({ input, ctx }) => {
         const lookbackMinutes = input?.lookbackMinutes ?? 1440;
+        // Intake team members sync into the Intake Case Desk, never the facility CRM.
+        if (isIntakeOnly(ctx.user.role)) {
+          const ownTok = await getValidRCTokenForUser(ctx.user.id);
+          if (!ownTok) {
+            throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Connect your RingCentral account first — open the RingCentral page and click “Connect my RingCentral”." });
+          }
+          const r = await syncIntakeCalls(ownTok, {
+            agent: { id: ctx.user.id, name: String(ctx.user.name ?? ctx.user.email ?? "Unknown") },
+            lookbackMinutes,
+          });
+          await setUserRcLastSync(ctx.user.id, new Date());
+          return { success: true as const, scanned: r.scanned, matched: r.leadsCreated + r.leadsUpdated, logged: r.logged, transcribed: r.transcribed, skippedRecent: r.skippedRecent };
+        }
         // Prefer the agent's OWN RingCentral — pulls their extension's calls and
         // attributes every one to them.
         const own = await getValidRCTokenForUser(ctx.user.id);
@@ -1304,11 +1329,11 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
     // agent's own phone (their saved callback number) first, then bridges it to
     // the facility. The recorded call is then picked up by the call sync →
     // transcript + recap, exactly like a desk-phone call. No mic, no WebRTC.
-    getMyCallback: protectedProcedure.query(async ({ ctx }) => {
+    getMyCallback: crmProcedure.query(async ({ ctx }) => {
       return { number: (ctx.user as any).ringoutMyLocation ?? null };
     }),
 
-    setMyCallback: protectedProcedure
+    setMyCallback: crmProcedure
       .input(z.object({ number: z.string().max(30) }))
       .mutation(async ({ ctx, input }) => {
         const n = input.number.replace(/[^\d+]/g, "").slice(0, 30);
@@ -1317,7 +1342,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         return { success: true as const, number: n || null };
       }),
 
-    ringOut: protectedProcedure
+    ringOut: crmProcedure
       .input(z.object({ toNumber: z.string().min(7), facilityId: z.number().optional(), fromNumber: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
         const from = (input.fromNumber?.trim() || (ctx.user as any).ringoutMyLocation || "").trim();
@@ -1342,7 +1367,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         }
       }),
 
-    ringOutStatus: protectedProcedure
+    ringOutStatus: crmProcedure
       .input(z.object({ id: z.string() }))
       .query(async ({ input, ctx }) => {
         if (!input.id) return { status: "Unknown", caller: null as string | null, callee: null as string | null };
@@ -1362,7 +1387,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
 
   // ─── Uber Eats (Uber for Business Receipt API) ──────────────────────────────
   uber: router({
-    status: protectedProcedure.query(async () => {
+    status: crmProcedure.query(async () => {
       const db = await getDb();
       let imported = 0;
       let lastAt: Date | null = null;
@@ -1373,14 +1398,14 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
       }
       return { configured: uberConfigured(), webhookPath: "/api/uber/webhook", imported, lastAt };
     }),
-    recent: protectedProcedure.query(async () => {
+    recent: crmProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
       return db.select().from(uberReceipts).orderBy(desc(uberReceipts.createdAt)).limit(50);
     }),
     // Import Uber Eats expenses from a parsed CSV export (client parses + maps;
     // server matches each to a facility by delivery address and files it).
-    importExpenses: protectedProcedure
+    importExpenses: crmProcedure
       .input(z.object({
         rows: z.array(z.object({
           date: z.string().optional(),
@@ -1417,7 +1442,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
       }),
 
     // Manual fetch+import of one order (for testing / backfilling a missed order).
-    importOrder: protectedProcedure
+    importOrder: crmProcedure
       .input(z.object({ orderId: z.string().min(1) }))
       .mutation(async ({ ctx, input }) => {
         if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
@@ -1427,11 +1452,11 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   }),
 
   facilityLeads: router({
-    list: protectedProcedure
+    list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
       .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listFacilityLeads(input.facilityId); }),
 
-    create: protectedProcedure
+    create: crmProcedure
       .input(z.object({
         facilityId: z.number(),
         direction: z.enum(["sent_to_facility", "received_from_facility"]),
@@ -1456,7 +1481,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         return { success: true };
       }),
 
-    update: protectedProcedure
+    update: crmProcedure
       .input(z.object({
         id: z.number(),
         outcome: z.enum(["pending", "signed", "not_signed", "not_qualified", "duplicate", "unknown"]).optional(),
@@ -1476,7 +1501,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await assertRowFacilityAccess(ctx.user, facilityLeads, input.id);
@@ -1488,11 +1513,11 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   // ─── Gratitude Actions V3 ─────────────────────────────────────────────────────
 
   gratitude: router({
-    list: protectedProcedure
+    list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
       .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listGratitudeActions(input.facilityId); }),
 
-    create: protectedProcedure
+    create: crmProcedure
       .input(z.object({
         facilityId: z.number(),
         actionDate: z.string(),
@@ -1511,7 +1536,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await assertRowFacilityAccess(ctx.user, facilityGratitude, input.id);
@@ -1523,11 +1548,11 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   // ─── Facility Updates / Transcripts V3 ───────────────────────────────────────
 
   updates: router({
-    list: protectedProcedure
+    list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
       .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listFacilityUpdates(input.facilityId); }),
 
-    create: protectedProcedure
+    create: crmProcedure
       .input(z.object({
         facilityId: z.number(),
         updateDate: z.string(),
@@ -1546,7 +1571,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         // Agents cannot remove call recaps / transcripts — managers only.
@@ -1561,7 +1586,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   // ─── Notifications ────────────────────────────────────────────────────────────
 
   notifications: router({
-    list: protectedProcedure.query(async ({ ctx }) =>
+    list: crmProcedure.query(async ({ ctx }) =>
       getNotificationsForUser(ctx.user.id, seesAllData(ctx.user.role)),
     ),
   }),
@@ -1569,40 +1594,40 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   // ─── Map View ─────────────────────────────────────────────────────────────────
 
   map: router({
-    allFacilities: protectedProcedure.query(async () => getAllFacilitiesForMap()),
-    relationshipBalance: protectedProcedure.query(async () => getRelationshipBalance()),
+    allFacilities: crmProcedure.query(async () => getAllFacilitiesForMap()),
+    relationshipBalance: crmProcedure.query(async () => getRelationshipBalance()),
   }),
 
   // ─── BDR Reports ─────────────────────────────────────────────────────────────
   bdrReports: router({
-    callActivity: protectedProcedure
+    callActivity: crmProcedure
       .input(z.object({ repName: z.string().optional(), month: z.string().optional() }))
       .query(async ({ input }) => getBdrCallActivity(input)),
 
-    partnerCheckins: protectedProcedure
+    partnerCheckins: crmProcedure
       .input(z.object({ repName: z.string().optional() }))
       .query(async ({ input }) => getBdrPartnerCheckins(input)),
 
-    topFacilities: protectedProcedure
+    topFacilities: crmProcedure
       .input(z.object({ limit: z.number().min(1).max(100).default(20) }))
       .query(async ({ input }) => getBdrTopFacilities(input.limit)),
   }),
 
   // ─── Cross-facility activity feed ───────────────────────────────────────────
   activity: router({
-    recent: protectedProcedure.query(async () => getRecentActivity(18)),
+    recent: crmProcedure.query(async () => getRecentActivity(18)),
   }),
 
   // ─── Management Dashboard ────────────────────────────────────────────────────
   management: router({
-    dashboard: protectedProcedure.query(async ({ ctx }) => {
+    dashboard: crmProcedure.query(async ({ ctx }) => {
       if (!canManage(ctx.user.role)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Manager access required." });
       }
       return getDashboardStats();
     }),
 
-    flaggedFacilities: protectedProcedure.query(async ({ ctx }) => {
+    flaggedFacilities: crmProcedure.query(async ({ ctx }) => {
       if (!canManage(ctx.user.role)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Manager access required." });
       }
@@ -1612,7 +1637,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
 
   // ─── Lead Capture / Intake ───────────────────────────────────────────────────
   leadIntake: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: crmProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
       const rows = await db.select().from(leadIntake).orderBy(desc(leadIntake.createdAt));
@@ -1620,7 +1645,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
       const mine = (ctx.user.name ?? "").toLowerCase().trim();
       return rows.filter((r) => r.createdById === ctx.user.id || (r.member ?? "").toLowerCase().trim() === mine);
     }),
-    create: protectedProcedure
+    create: crmProcedure
       .input(z.object({
         leadName: z.string().min(1),
         lastName: z.string().optional(),
@@ -1653,7 +1678,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         });
         return { success: true as const };
       }),
-    delete: protectedProcedure
+    delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();

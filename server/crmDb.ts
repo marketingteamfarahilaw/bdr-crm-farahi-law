@@ -632,6 +632,7 @@ export async function listConnectedRcUsers() {
       userId: userRingcentralTokens.userId,
       userName: users.name,
       userEmail: users.email,
+      userRole: users.role,
       ownerName: userRingcentralTokens.ownerName,
       ownerEmail: userRingcentralTokens.ownerEmail,
       extensionId: userRingcentralTokens.extensionId,

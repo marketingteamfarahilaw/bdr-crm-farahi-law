@@ -44,6 +44,64 @@ export async function getFilevineWebhookUrl(): Promise<string> {
   return (fromDb && fromDb.trim()) || (process.env.FILEVINE_WEBHOOK_URL ?? "").trim();
 }
 
+/** Intake pushes can use their own webhook (a different Zapier/n8n flow that
+ *  creates a Filevine project/intake instead of a task); falls back to the
+ *  shared call-recap webhook so one URL also works. */
+export async function getIntakeWebhookUrl(): Promise<string> {
+  const fromDb = await getSetting("intake_filevine_webhook_url");
+  return (
+    (fromDb && fromDb.trim()) ||
+    (process.env.FILEVINE_INTAKE_WEBHOOK_URL ?? "").trim() ||
+    (await getFilevineWebhookUrl())
+  );
+}
+
+export type IntakeLeadPayload = {
+  event: "intake_lead";
+  trigger: "qualified" | "signed" | "manual";
+  leadId: number;
+  status: string;
+  qualificationScore: number | null;
+  qualificationTier: string | null;
+  client: {
+    firstName: string | null; lastName: string | null; phone: string | null; email: string | null;
+    preferredLanguage: string | null; location: string | null;
+  };
+  caseFacts: {
+    caseType: string | null; incidentDate: string | null; incidentLocation: string | null;
+    incidentDescription: string | null; injuries: string | null; injurySeverity: string | null;
+    treatmentStatus: string | null; treatmentDetails: string | null;
+    liabilityAssessment: string | null; liabilityNotes: string | null; policeReport: string | null;
+    defendantInsurer: string | null; clientInsurer: string | null; umCoverage: string | null;
+    healthInsurance: string | null; propertyDamage: string | null; lostWages: string | null;
+    priorAttorney: string | null; governmentEntity: string | null; referredBy: string | null;
+    solDate: string | null; solRisk: string | null;
+  };
+  aiSummary: string | null;
+  aiRecommendation: string | null;
+  redFlags: string[];
+  agent: string | null;
+  source: "bdcrm-intake";
+};
+
+/** Best-effort POST of a qualified/signed intake lead to the Filevine webhook.
+ *  Never throws. Returns true when actually delivered. */
+export async function sendIntakeLeadToWebhook(payload: IntakeLeadPayload): Promise<boolean> {
+  try {
+    const url = await getIntakeWebhookUrl();
+    if (!url) {
+      console.log("[filevineHook] no intake webhook URL configured — skipping intake push.");
+      return false;
+    }
+    await axios.post(url, payload, { timeout: 10000, headers: { "Content-Type": "application/json" } });
+    console.log(`[filevineHook] pushed intake lead #${payload.leadId} (${payload.trigger}) → Filevine webhook.`);
+    return true;
+  } catch (e: any) {
+    console.warn("[filevineHook] intake webhook post failed:", e?.response?.status ?? e?.message ?? e);
+    return false;
+  }
+}
+
 /**
  * Best-effort: POST a call recap to the configured webhook. Never throws — a
  * webhook failure must never block call logging / transcription.

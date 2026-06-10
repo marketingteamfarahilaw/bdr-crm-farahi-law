@@ -18,7 +18,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin", "super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent"]).default("user").notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }), // scrypt salt:hash for email+password login
   agentName: varchar("agentName", { length: 100 }), // Links user to BDR agent data (e.g. 'Gracel', 'Queenie', 'Ally', 'Miguel', 'Rupert')
   ringoutMyLocation: varchar("ringoutMyLocation", { length: 30 }), // Phone number for RingOut first-leg call (e.g. +12025551234)
@@ -769,3 +769,127 @@ export const leadIntake = mysqlTable("lead_intake", {
 });
 export type LeadIntake = typeof leadIntake.$inferSelect;
 export type InsertLeadIntake = typeof leadIntake.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INTAKE — AI Case Desk (Eve-style client intake; fully separate from the
+// BD/FR facility CRM — the intake team never touches facility data and BD/FR
+// never see potential-client case data).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A potential new client (PNC). One row per person/case — calls, AI analyses,
+ * and human review all hang off this. The AI fills the case-fact columns from
+ * call transcripts; the intake team verifies/edits and decides the outcome.
+ */
+export const intakeLeads = mysqlTable("intake_leads", {
+  id: int("id").autoincrement().primaryKey(),
+
+  // Pipeline
+  status: mysqlEnum("status", ["new", "reviewing", "qualified", "unqualified", "referred_out", "signed", "lost", "duplicate"]).default("new").notNull(),
+  source: mysqlEnum("source", ["phone", "web", "referral", "walk_in", "manual"]).default("phone").notNull(),
+
+  // Person
+  firstName: varchar("firstName", { length: 120 }),
+  lastName: varchar("lastName", { length: 120 }),
+  phone: varchar("phone", { length: 60 }),
+  email: varchar("email", { length: 320 }),
+  preferredLanguage: varchar("preferredLanguage", { length: 40 }),
+  callerName: varchar("callerName", { length: 255 }),             // who actually called (may be a relative)
+  callerRelationship: varchar("callerRelationship", { length: 120 }),
+  clientLocation: varchar("clientLocation", { length: 255 }),
+
+  // Case facts (AI-extracted, human-verified)
+  caseType: varchar("caseType", { length: 60 }),                  // auto_accident | slip_fall | dog_bite | premises | work_injury | medical_malpractice | product_liability | wrongful_death | other
+  incidentDate: timestamp("incidentDate"),
+  incidentLocation: varchar("incidentLocation", { length: 255 }),
+  incidentDescription: text("incidentDescription"),
+  injuries: text("injuries"),
+  injurySeverity: mysqlEnum("injurySeverity", ["none", "minor", "moderate", "severe", "catastrophic", "unknown"]).default("unknown"),
+  treatmentStatus: mysqlEnum("treatmentStatus", ["none", "er_visit", "hospitalized", "ongoing", "completed", "unknown"]).default("unknown"),
+  treatmentDetails: text("treatmentDetails"),
+  liabilityAssessment: mysqlEnum("liabilityAssessment", ["clear_other_party", "mostly_other_party", "shared", "unclear", "client_at_fault", "unknown"]).default("unknown"),
+  liabilityNotes: text("liabilityNotes"),
+  policeReport: mysqlEnum("policeReport", ["yes", "no", "unknown"]).default("unknown"),
+  defendantInsurer: varchar("defendantInsurer", { length: 255 }),
+  clientInsurer: varchar("clientInsurer", { length: 255 }),
+  umCoverage: mysqlEnum("umCoverage", ["yes", "no", "unknown"]).default("unknown"),
+  healthInsurance: varchar("healthInsurance", { length: 255 }),
+  propertyDamage: text("propertyDamage"),
+  lostWages: mysqlEnum("lostWages", ["yes", "no", "unknown"]).default("unknown"),
+  priorAttorney: mysqlEnum("priorAttorney", ["yes", "no", "unknown"]).default("unknown"),
+  governmentEntity: mysqlEnum("governmentEntity", ["yes", "no", "unknown"]).default("unknown"),  // govt defendant → 6-month CA claim deadline
+  referredBy: varchar("referredBy", { length: 255 }),
+
+  // Statute of limitations (computed in code — deterministic, CA rules)
+  solDate: timestamp("solDate"),
+  solRisk: mysqlEnum("solRisk", ["ok", "warning", "urgent", "expired", "unknown"]).default("unknown"),
+
+  // AI qualification
+  qualificationScore: int("qualificationScore"),                  // 0–100
+  qualificationTier: mysqlEnum("qualificationTier", ["hot", "qualified", "review", "unqualified"]),
+  aiSummary: text("aiSummary"),
+  aiAnalysis: json("aiAnalysis"),                                 // rubric breakdown, red flags, missing info, suggested questions
+  aiRecommendation: text("aiRecommendation"),
+
+  // Working the lead
+  assignedToId: int("assignedToId"),
+  assignedToName: varchar("assignedToName", { length: 255 }),
+  reviewOutcome: varchar("reviewOutcome", { length: 255 }),
+  reviewNotes: text("reviewNotes"),
+  reviewedById: int("reviewedById"),
+  reviewedAt: timestamp("reviewedAt"),
+
+  // Hand-offs
+  piClientId: int("piClientId"),                                  // pi_clients row created on "signed"
+  filevineSyncedAt: timestamp("filevineSyncedAt"),
+
+  notes: text("notes"),
+  createdById: int("createdById"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type IntakeLead = typeof intakeLeads.$inferSelect;
+export type InsertIntakeLead = typeof intakeLeads.$inferInsert;
+
+/**
+ * Every intake call (synced from the intake team's RingCentral extensions).
+ * Carries the Whisper transcript; linked to a lead by caller phone number.
+ */
+export const intakeCalls = mysqlTable("intake_calls", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId"),                                          // intake_leads.id once matched/linked
+  direction: varchar("direction", { length: 20 }),
+  fromNumber: varchar("fromNumber", { length: 60 }),
+  toNumber: varchar("toNumber", { length: 60 }),
+  callerName: varchar("callerName", { length: 255 }),
+  callDate: timestamp("callDate"),
+  durationSeconds: int("durationSeconds").default(0),
+  callResult: varchar("callResult", { length: 40 }),              // connected | voicemail | no_answer | busy | other
+  agentId: int("agentId"),                                        // intake specialist whose extension handled it
+  agentName: varchar("agentName", { length: 255 }),
+  rcCallId: varchar("rcCallId", { length: 64 }),
+  rcSessionId: varchar("rcSessionId", { length: 64 }),
+  hasRecording: int("hasRecording").default(0),
+  transcript: longtext("transcript"),                             // long calls exceed TEXT's 64KB — MySQL truncates silently
+  transcriptLang: varchar("transcriptLang", { length: 20 }),
+  aiProcessed: int("aiProcessed").default(0),
+  aiSummary: text("aiSummary"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type IntakeCall = typeof intakeCalls.$inferSelect;
+export type InsertIntakeCall = typeof intakeCalls.$inferInsert;
+
+/** Activity timeline on a lead: status changes, notes, AI runs, Filevine pushes. */
+export const intakeLeadEvents = mysqlTable("intake_lead_events", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  eventType: varchar("eventType", { length: 40 }).notNull(),      // created | status_change | note | call_linked | ai_analysis | assigned | filevine_push | signed | edited
+  title: varchar("title", { length: 255 }),
+  detail: text("detail"),
+  payload: json("payload"),
+  actorId: int("actorId"),
+  actorName: varchar("actorName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type IntakeLeadEvent = typeof intakeLeadEvents.$inferSelect;
+export type InsertIntakeLeadEvent = typeof intakeLeadEvents.$inferInsert;

@@ -17,6 +17,8 @@ const ROLE_COLOR: Record<string, string> = {
   fr_manager: "text-cyan-600 dark:text-cyan-400",
   bdr_agent: "text-sky-600 dark:text-sky-400",
   fr_agent: "text-orange-600 dark:text-orange-400",
+  intake_manager: "text-violet-600 dark:text-violet-400",
+  intake_agent: "text-fuchsia-600 dark:text-fuchsia-400",
 };
 
 // Inline editor for a user's canonical agent name (used to scope BDR/FR records).

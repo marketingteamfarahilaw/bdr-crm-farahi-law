@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import Login from "@/pages/Login";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -30,11 +30,19 @@ import { QuickAdd } from "./QuickAdd";
 import { NotificationBell } from "./NotificationBell";
 import { useBrand } from "@/hooks/useBranding";
 import { useTheme } from "@/contexts/ThemeContext";
-import { canSeeBDR, canSeeFR, canManage, canAssignRoles } from "@shared/permissions";
+import { canSeeBDR, canSeeFR, canManage, canAssignRoles, canSeeIntake, isIntakeOnly } from "@shared/permissions";
 
-type NavLevel = "all" | "bdr" | "fr" | "manage" | "super";
+type NavLevel = "all" | "bdr" | "fr" | "manage" | "super" | "intake";
 
 const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: string; level: NavLevel }[] }[] = [
+  // Intake — a separate world. Intake roles see ONLY this section (plus their
+  // profile); BD/FR roles never see it. The super admin sees both sides.
+  { title: "Intake — AI Case Desk", items: [
+    { icon: Sparkles, label: "Intake Desk", path: "/intake", level: "intake" },
+    { icon: Inbox, label: "Lead Queue", path: "/intake/leads", level: "intake" },
+    { icon: PhoneCall, label: "Calls & Transcripts", path: "/intake/calls", level: "intake" },
+    { icon: Settings, label: "Settings & RingCentral", path: "/intake/settings", level: "intake" },
+  ] },
   { title: "Lead Scraper", items: [
     { icon: Map, label: "CA Lead Map", path: "/map", level: "bdr" },
     { icon: Search, label: "Lead Search", path: "/search", level: "bdr" },
@@ -77,11 +85,12 @@ const ALL_NAV = NAV_SECTIONS.flatMap((s) => s.items);
 
 function canShow(level: NavLevel, role?: string | null) {
   switch (level) {
-    case "all": return true;
-    case "bdr": return canSeeBDR(role);
-    case "fr": return canSeeFR(role);
+    case "all": return !isIntakeOnly(role); // BD/FR shared tools — hidden from the intake team
+    case "bdr": return canSeeBDR(role) && !isIntakeOnly(role);
+    case "fr": return canSeeFR(role) && !isIntakeOnly(role);
     case "manage": return canManage(role);
     case "super": return canAssignRoles(role);
+    case "intake": return canSeeIntake(role);
     default: return false;
   }
 }
@@ -188,10 +197,14 @@ function DashboardLayoutContent({
     };
   }, [isResizing, setSidebarWidth]);
 
+  // The intake team gets a clean, intake-only shell: no facility search
+  // palette, no facility quick-add, no BD notification feed.
+  const intakeOnly = isIntakeOnly(user?.role);
+
   return (
     <>
-      <CommandPalette />
-      <QuickAdd />
+      {!intakeOnly && <CommandPalette />}
+      {!intakeOnly && <QuickAdd />}
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
@@ -220,7 +233,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0 overflow-y-auto">
             {/* Quick search + quick add */}
-            {!isCollapsed && (
+            {!isCollapsed && !intakeOnly && (
               <div className="px-3 pt-3 space-y-2">
                 <button
                   onClick={() => document.dispatchEvent(new CustomEvent("open-command-palette"))}
@@ -247,11 +260,11 @@ function DashboardLayoutContent({
                   <SidebarMenuButton
                     isActive={location === "/"}
                     onClick={() => setLocation("/")}
-                    tooltip="Command Center"
+                    tooltip={intakeOnly ? "Intake Desk" : "Command Center"}
                     className="h-10 transition-all font-medium"
                   >
                     <LayoutDashboard className={`h-4 w-4 ${location === "/" ? "text-primary" : ""}`} />
-                    <span>Command Center</span>
+                    <span>{intakeOnly ? "Intake Desk" : "Command Center"}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -292,7 +305,7 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
-            <NotificationBell />
+            {!intakeOnly && <NotificationBell />}
             {toggleTheme && (
               <button
                 onClick={toggleTheme}
