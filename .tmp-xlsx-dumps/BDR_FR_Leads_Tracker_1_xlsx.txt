@@ -1,0 +1,390 @@
+FILE: BDR_FR Leads Tracker (1).xlsx
+SHEETS (8): New Sales Tracker | Summary | DASHBOARD ni BDR | May | Intake sheet | FLF Sign Up | Sheet6 | Sales Tracker
+
+===== SHEET "New Sales Tracker" — 335 non-empty rows =====
+R1: Date Filter | TM (FR/BDR) | Month | Timestamp | Name of Person Conductin | Call Back Number  | We are excited to serve  | Lead Name | Value | Case Type (Slip, Auto, E | Outcome | Outcome | Sign up Date | Matched? | Final Outcome
+R2:  |  |  | ( A) - INTAKE SHEET | ( B) - INTAKE SHEET | ( K ) - INTAKE SHEET | ( D ) - INTAKE SHEET | ( H ) - INTAKE SHEET | ( G ) - INTAKE SHEET | ( R ) - INTAKE SHEET | ( E ) - INTAKE SHEET | ( P) - FLF SIGNUP | ( F) - FLF SIGNUP |  | 
+R3: 46090 | Zulema Salas | March 2026 | 46090.35206 | George Iniguez | 661-861-3765 | Field Representative Zul | Julio Cesar Cruz | Rank X | Auto | Signed | Signed | 46090 | Yes | Signed
+R4: 46089 | Lupe Campos | March 2026 | 46090.40694 | Felix Cedillo / Karen Ve | 559-901-2631 | Field Representative Lup | Victor Lopez | Medium | Auto | Signed | Signed | 46089 | Yes | Signed
+R5: 46089 | Lupe Campos | March 2026 | 46090.40903 | Felix Cedillo / Karen Ve | 559-901-2631 | Field Representative Lup | Clarinda Raquel Lynn Hen | Medium | Auto | Signed | Signed | 46089 | Yes | Signed
+R6: 46090 | Grace Lanayon | March 2026 | 46090.48249 | George Iniguez | 510-561-7824 | BDR Grace Lanayon / Spor | Gabriela del Socorro Gut | Medium | Auto | Signed | Signed | 46090 | Yes | Signed
+R7: 46090 | Grace Lanayon | March 2026 | 46090.48249 | George Iniguez | 510-561-7824 | BDR Grace Lanayon / Spor | Gabriela del Socorro Gut | Medium | Auto | Signed | Signed | 46090 | Yes | Signed
+R8: 46090 | Grace Lanayon | March 2026 | 46090.48249 | George Iniguez | 510-561-7824 | BDR Grace Lanayon / Spor | Gabriela del Socorro Gut | Medium | Auto | Signed | Signed | 46090 | Yes | Signed
+R9: 46091 | Jezel Mercado | March 2026 | 46090.6516 | Felix Cedillo | 916-729-9245 | Field Representative Jez | Latoya Duncan | High | Auto | Signed | Signed | 46091 | Yes | Signed
+R10: 46090 | Jezel Mercado | March 2026 | 46090.6516 | Felix Cedillo | 916-729-9245 | Field Representative Jez | Genelle Yvonne Montue | High | Auto | Signed | Signed | 46090 | Yes | Signed
+R11: 46090.66892 | Jezel Mercado | March 2026 | 46090.66892 | Melanie Vigueria | 916-606-4403 | Field Representative Jez | Humberto Angel Coutino  |  | Criminal | Referred_Out |  |  |  | Referred out
+R12: 46090 | Lupe Campos | March 2026 | 46090.7163 | Malvin Rosales | 630-639-2328 | Field Representative Lup | Martin Valerio Rios  | High | Auto | Signed | Signed | 46090 | Yes | Signed
+R13: 46090 | Lupe Campos | March 2026 | 46090.7163 | Malvin Rosales | 630-639-2328 | Field Representative Lup | Maria Elena Valerio | High | Auto | Signed | Signed | 46090 | Yes | Signed
+R14: 46090.77152 | Zulema Salas | March 2026 | 46090.77152 | Malvin Rosales | 661-484-1419 | Field Representative Zul | Sukhveer S Virk |  | Auto | Not_Interested |  |  |  | Not_Interested
+R15: 46090 | Jezel Mercado | March 2026 | 46091.34264 | Felix Cedillo | 916-729-9245  | Felix Cedillo Marketing  | Genelle Yvonne Montue | High | Slip and Fall | Signed | Signed | 46090 | Yes | Signed
+R16: 46091.50586 | Zulema Salas | March 2026 | 46091.50586 | Felix Cedillo | 661-448-0261 | Field Representative Zul | Carol Ash |  | Auto | Rejected |  |  |  | Rejected
+R17: 46091.54295 | Jezel Mercado | March 2026 | 46091.54295 | Malvin Rosales | 916-388-4275 | Field Representative Jez | Linh Qhoc My Nguyen |  | Auto | Rejected |  |  |  | Rejected
+R18: 46091.58594 | Jezel Mercado | March 2026 | 46091.58594 | Karen Vega | 209-283-3510  | Field Representative Jez | Robert Lopez |  | Slip and Fall | Rejected |  |  |  | Rejected
+R19: 46091.67686 | Lupe Campos | March 2026 | 46091.67686 | George Iniguez | 559-312-4019 | Field Representative Lup | Tommy Orozco |  | Auto | Not_Interested |  |  |  | Not_Interested
+R20: 46168 | Zulema Salas | May 2026 | 46091.78052 | Malvin Rosales | 661-900-5290 / 661-377-6 | Field Representative Zul | Maria Lopez |  | Auto | Not_Interested | Referred out | 46168 | No - Outcome not matched | Signed Referred Out
+R21: 46092.40339 | Genysys Sanchez | March 2026 | 46092.40339 | Malvin Rosales | 323-621-9917 | Field Representative Gen | Aracely Castillo |  | Auto | Rejected |  |  |  | Rejected
+R22: 46092 | Jezel Mercado | March 2026 | 46092.57246 | Felix Cedillo | 209-616-2567 | Field Representative Jez | Marissa S Lopez | Medium | Auto | Signed | Signed | 46092 | Yes | Signed
+R23: 46092 | Jezel Mercado | March 2026 | 46092.59863 | Felix Cedillo | 209-904-0773 | Field Representative Jez | Gina Mendoza | Medium | Auto | Signed | Signed | 46092 | Yes | Signed
+R24: 46098 | Genysys Sanchez | March 2026 | 46092.67125 | George Iniguez | 714-684-5654 | Field Representative Gen | Javier Ruiz | Low | Work Comp | Referred_Out | Referred out | 46098 | Yes | Signed Referred Out
+R25: 46098 | Genysys Sanchez | March 2026 | 46092.67125 | George Iniguez | 714-684-5654 | Field Representative Gen | Javier Ruiz |  | Employment | Referred_Out | Referred out | 46098 | Yes | Signed Referred Out
+R26: 46093 | Zulema Salas | March 2026 | 46093.50448 | Malvin Rosales | 760- 338-8111 | Field Representative Zul | Carmil Andre | Rank X | Auto | Signed | Signed | 46093 | Yes | Signed
+R27: 46157 | Genysys Sanchez | May 2026 | 46093.65398 | Karen Vega | 951-726-4537 | Field Representative Gen | Luis Castillo | Low | Work Comp | Referred_Out | Referred out | 46157 | Yes | Signed Referred Out
+R28: 46099 | Zulema Salas | March 2026 | 46093.66402 | Malvin Rosales | 661-900-0829 | Field Representative Zul | Jose Gavino Peralez Diaz | Medium | Auto | Signed | Signed | 46099 | Yes | Signed
+R29: 46094 | Genysys Sanchez | March 2026 | 46094.49693 | Malvin Rosales | 731-747-5560 | Field Representative Gen | Esther Godinez  | High | Auto | Signed | Signed | 46094 | Yes | Signed
+R30: 46094 | Genysys Sanchez | March 2026 | 46094.49698 | Malvin Rosales | 731-747-5560 | Field Representative Gen | Esther Godinez mother of | High | Auto | Signed | Signed | 46094 | Yes | Signed
+... (2438 rows skipped) ...
+FORMULAS:
+A3 = IF(M3="",D3,M3)
+B3 = IFERROR(__xludf.DUMMYFUNCTION("IF(
+  G3="""",
+  """",
+  IF(
+    REGEXMATCH(G3,""Genysys Sanchez""),
+    ""Genysys Sanchez"",
+    IF(
+      REGEXMATCH(G3,""Jezel
+C3 = IF(A3="","",TEXT(A3,"mmmm yyyy"))
+D3 = IFERROR(__xludf.DUMMYFUNCTION("ARRAYFORMULA(
+QUERY({
+'Intake sheet'!A:A,
+'Intake sheet'!B:B,
+'Intake sheet'!K:K,
+IF(
+  REGEXMATCH('Intake sheet'!D:D,
+    ""Ally
+E3 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"George Iniguez")
+F3 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"661-861-3765")
+G3 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Field Representative Zulema Salas / Jaime’s Auto Repair")
+H3 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Julio Cesar Cruz")
+I3 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Rank X")
+J3 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Auto")
+K3 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Signed")
+L3 = IFERROR(__xludf.DUMMYFUNCTION("IFERROR(
+  INDEX(
+    FILTER(
+      'FLF Sign Up'!$P:$P,
+      TRIM('FLF Sign Up'!$Q:$Q)=TRIM(H3)
+    ),
+    1
+  ),
+  """"
+)"),"S
+M3 = IFERROR(__xludf.DUMMYFUNCTION("IFERROR(
+INDEX(
+FILTER(
+'FLF Sign Up'!F:F,
+TRIM('FLF Sign Up'!Q:Q)=TRIM(H3)
+),
+1
+),
+""""
+)"),46090.0)
+N3 = IF(
+  AND(K3="signed",L3="",M3=""),
+  "No - Name not matched",
+  IF(
+    L3="",
+    "",
+    IF(
+      OR(
+        COUNTIF(K3,L3)>0,
+        AND(K3="Referred_Out
+O3 = IF(L3="Referred out",
+   "Signed Referred Out",
+   IF(AND(K3="Referred_Out",L3=""),
+      "Referred out",
+      IF(L3="",K3,L3)
+   )
+)
+
+===== SHEET "Summary" — 16 non-empty rows =====
+R1: 46174 |  |  |  |  |  |  |  |  |  |  |  | 
+R2: 46203 |  |  |  |  |  |  |  |  |  |  |  | 
+R4: FR's |  |  |  |  |  |  |  |  |  |  |  | 
+R5: Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi
+R6: Genysys Sanchez | 2 | 0 | 0 | 0 | 0 | 0 |  | 2 | 2 | 10 | 0.2 | 1
+R7: Jezel Mercado | 11 | 0 | 3 | 1 | 0 | 2 |  | 5 | 7 | 10 | 0.7 | 0.6363636364
+R8: Lupe Campos | 13 | 0 | 0 | 0 | 0 | 0 |  | 13 | 13 | 10 | 1.3 | 1
+R9: Zulema Salas | 4 | 0 | 0 | 1 | 0 | 0 |  | 3 | 3 | 10 | 0.3 | 0.75
+R11:  | 30 | 0 | 3 | 2 | 0 | 2 | 0 | 23 | 25 | 40 | 0.625 | 0.8465909091
+R13: BDR's |  |  |  |  |  |  |  |  |  |  |  | 
+R14: Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi
+R15: Ally Maceda | 6 | 1 | 1 | 2 | 1 | 0 |  | 1 | 1 | 2 | 0.5 | 0.1666666667
+R16: Grace Lanayon | 1 | 0 | 0 | 0 | 0 | 0 |  | 1 | 1 | 2 | 0.5 | 1
+R17: Miguel Flores | 0 | 0 | 0 | 0 | 0 | 0 |  | 0 | 0 | 2 | 0 | #DIV/0!
+R18: Queenie Miranda | 0 | 0 | 0 | 0 | 0 | 0 |  | 0 | 0 | 2 | 0 | #DIV/0!
+R20:  | 7 | 1 | 1 | 2 | 1 | 0 | 0 | 2 | 2 | 8 | 0.25 | #DIV/0!
+... (967 rows skipped) ...
+FORMULAS:
+C6 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B6,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2
+)
+D6 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B6,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"open"
+)
+E6 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B6,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"Rejected"
+)
+F6 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B6,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"Referred Out"
+)
+G6 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B6,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"Not_Interested"
+)
+H6 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B6,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"Signed Referred O
+J6 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B6,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"Signed"
+)
+K6 = H6+J6
+M6 = K6/L6
+N6 = K6/C6
+C7 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B7,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2
+)
+D7 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B7,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"open"
+)
+E7 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B7,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"Rejected"
+)
+F7 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B7,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"Referred Out"
+)
+G7 = COUNTIFS(
+'New Sales Tracker'!$B:$B, B7,
+'New Sales Tracker'!$A:$A, ">="&$B$1,
+'New Sales Tracker'!$A:$A, "<="&$B$2,'New Sales Tracker'!$O:$O,"Not_Interested"
+)
+
+===== SHEET "DASHBOARD ni BDR" — 16 non-empty rows =====
+R1: May 1-31, 2026 |  |  |  |  |  |  |  |  |  |  |  | 
+R2: FRS |  |  |  |  |  |  |  |  |  |  |  | 
+R3: Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi
+R4: Lupe | 20 | 2 | 3 | 5 | 0 | 1 | 5 | 9 | 10 | 10 | 1 | 0.5
+R5: Jezel | 28 | 2 | 7 | 3 | 3 | 5 | 6 | 8 | 13 | 10 | 1.3 | 0.4643
+R6: Zulema | 23 | 0 | 4 | 1 | 0 | 1 | 12 | 17 | 18 | 10 | 1.8 | 0.7826
+R7: Genysys | 10 | 0 | 1 | 0 | 0 | 6 | 3 | 3 | 9 | 10 | 0.9 | 0.9
+R8: TOTAL | 81 | 4 | 15 | 9 | 3 | 13 | 26 | 37 | 50 | 40 | 1.25 | 0.6173
+R10: May 1-31, 2026 |  |  |  |  |  |  |  |  |  |  |  | 
+R11: BDRS |  |  |  |  |  |  |  |  |  |  |  | 
+R12: Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi
+R13: Queenie | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0
+R14: Grace | 4 | 0 | 1 | 0 | 2 | 0 | 1 | 1 | 1 | 2 | 0.5 | 0.25
+R15: Ally | 3 | 0 | 0 | 1 | 0 | 2 | 0 | 0 | 2 | 2 | 1 | 0.6667
+R16: Miguel | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0
+R17: TOTAL | 9 | 0 | 3 | 1 | 2 | 2 | 1 | 1 | 3 | 8 | 0.375 | 0.3333
+
+===== SHEET "May" — 91 non-empty rows =====
+R1: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Disposition | Facility | Type of Facility | Client's Location | FV Documentation
+R2: 46136 | Zulema | Maria Isabel Urtiz a la  | Rank X | Signed | Driver | 46148 | Accepted | Contingency agreement ha | Delano’s Towing |  |  | 
+R3: 46141 | Jezel | Sarrin Sterling | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  | 
+R4: 46141 | Jezel | Darrin Sterling Sr | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  | 
+R5: 46141 | Jezel | Ajanee Webb | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  | 
+R6: 46141 | Jezel | Sarrin Sterling as the M | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  | 
+R7: 46141 | Jezel | Sarrin Sterling as the M | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  | 
+R8: 46121.51482366898 | Ally | Vondrai Skillern | Low | Signed Referred Out |  | 46154 | Disputed | Successful Lead Referral | Ana with Royal Road Coll |  |  | 
+R9: 46121.51545586805 | Ally | Vondrai Skillern as the  | Low | Signed Referred Out |  | 46154 | Disputed | Successful Lead Referral | Ana with Royal Road Coll |  |  | 
+R10: 46093 | Genysys | Luis Castillo | Low | Signed Referred Out |  | 46157 | Accepted | Lead Referred out - Succ | Independent |  |  | 
+R11: 46143 | Zulema | Oscar Mandujano Ramirez | High | Signed | Driver | 46148 | Accepted | Contingency agreement ha | Delano's Towing |  |  | 
+R12: 46143 | Zulema | Aida Yolanda Ramirez Ato | High | Signed | Passenger | 46148 | Accepted | Contingency agreement ha | Delano's Towing |  |  | 
+R13: 46143 | Lupe | Erika Flores |  | Referred_Out |  |  |  | Disputed liability and n | Isaes Auto Body |  |  | 
+R14: 46144 | Zulema | Mariana Pizano | Rank X | Signed | Driver | 46144 | Disputed | Contingency agreement ha |  |  |  | 
+R15: 46146 | Zulema | Noemy Pizano | Rank X | Signed | Passenger | 46144 | Disputed | Contingency agreement ha |  |  |  | 
+R16: 46146 | Jezel | Jose Luis Zilingua |  | Rejected |  |  |  | No Injuries |  |  |  | 
+R17: 46146 | Lupe | Adrian Ramirez |  | Rejected |  |  |  | No Injuries |  |  |  | 
+R18: 46146 | Lupe | Victor Jr Maldonado | Medium | Signed | Driver | 46146 | Accepted | Contingency agreement ha | Friiend Samantha Sket |  |  | 
+R19: 46146 | Lupe | Victor Jr Maldonado as t | Medium | Signed | Passenger | 46146 | Accepted | Contingency agreement ha | Friend Samantha Sket |  |  | 
+R20: 46146 | Lupe | Federico Dominguez Lopez | Medium | Signed Referred Out |  | 46146 | Accepted | Contingency agreement ha | Freeway Insurance |  |  | 
+R21: 46146 | Lupe | Juana Chavez Martinez mo | Medium | Signed | Passenger | 46146 | Accepted | Contingency agreement ha | Freeway Insurance |  |  | 
+R22: 46147 | Zulema | Juan Aranda Zeferino | Rank X | Signed | Driver | 46147 | Accepted | Contingency agreement ha | Augie with Delano’s Towi |  |  | 
+R23: 46147 | Zulema | Rosalinda Morales Bello | Rank X | Signed | Passenger | 46147 | Accepted | Contingency agreement ha | Augie with Delano’s Towi |  |  | 
+R24: 46147 | Lupe | Andre Ceballos | Rank X | Signed | Driver | 46147 | Disputed | Contingency agreement ha | Central Valley Collision |  |  | 
+R25: 46147 | Zulema | Lilia Torres |  | Referred_Out |  |  |  | Employment Law |  |  |  | 
+R26: 46147 | Genysys | Ellen Marie Gustafson | Medium | Signed | Driver | 46147 | Accepted | Contingency agreement ha | 714 Kustomz Auto Body &  |  |  | 
+R27: 46147 | Zulema | Joe Daniel Sosa Gonzalez | High | Signed | Driver | 46148 | Accepted | Contingency agreement ha | Jody with Randy's Towing |  |  | 
+R28: 46148 | Jezel | Ehsanuddin Sahraee |  | Not Interested |  |  |  | Currently has an Atty bu | BS Auto Collision |  |  | 
+R29: 46148 | Jezel | Ramon de Maria |  | Rejected |  |  |  | General Inquiry | Martin del toro Auto Bod |  |  | 
+R30: 46149 | Zulema | Yunes Musleh Alsubari |  | Rejected |  |  |  | PD only |  |  |  | 
+... (55 rows skipped) ...
+R86: 46169 | Jezel | Tamara Montoya |  | Referred_Out |  |  |  |  |  |  |  | 
+R87: 46169 | Jezel | Juan Alberto Alcala |  | Open |  |  |  | Pending Intake on PD, TC | Bridger Insurance Servic |  |  | 
+R88: 46170 | Jezel | Angelo Gino Dalo |  | Open |  |  |  | Pending Intake decision  | Oakland Collision Center |  |  | 
+R89: 46170 | Jezel | Maria Ramos |  | Rejected |  |  |  | No Injuries | Rudt with Sacramento Aut |  |  | 
+R90: 46170 | Zulema | Ronald D Gibbs | Medium | Signed | Driver | 46170 | Accepted | Contingency agreement ha | Aguilera Chiro |  |  | 
+R91: 46170 | Jezel | Catalina Sulem Nieto | Medium | Signed | Passenger | 46170 | Accepted | Contingency agreement ha | Stockton Family Chiropra |  |  | 
+
+===== SHEET "Intake sheet" — 2059 non-empty rows =====
+R1: Timestamp | Name of Person Conductin | Signed Up By | We are excited to serve  | Outcome | Disposition | Value | Potential Client's Name | Primary Language |  | Call Back Number  | Notes | Best call back time if w | Email Contact info? | Date of Loss - Are we wi | Time of Loss | Description of Injuries  | Case Type (Slip, Auto, E | Facts of Incident: How d | Have you seen a Doctor?  | Is Liability Clear | Property Damage: Is your | What Collision Center is | More Info about PD (How  | Collision Center Referre | Location Of Loss (Addres | Any Passengers? If so wh | Incident Report for Slip | Did you call the police? | Police report | Any Witnesses? | Do you have Car Insuranc | Insurance Agenc
+R2: 46090.30034 | Felix Cedillo |  | Walker Advertising Contr | Referred_Out | Disputed liability and n |  | Jose Luis Jove | Spanish |  | 442-273-6583 | FC 03092026 Pending refe | Morning | No | 46079 | 0.25 | Upper and lower back kne | Auto | PL was traveling through | Yes to ER | Inconclusive at this tim | Not Apply | No | Passenger front panel | No | Home Depot parking lot | No | No | No No | No | No | PL-Yes Def-Yes | No | No | No | Tier 1 |  | 
+R3: 46090.34258 | George Iniguez | George Iniguez | Walker Advertising Contr | Signed | Contingency agreement ha | Medium | Irving Ociel Cortez Sand | Spanish |  | 812-441-9987 | GI 03082026 Signed Up, 7 | Anytime | OCIELIII@GMAIL.COM | 46083 | 0.7083333333 | Neck and back soreness,  | Auto | PL (Ociel Cortez) was tr | NOT YET | Yes | Yes, No |  |  |  |  |  |  |  |  |  |  |  | Yes |  | Tier 2 |  | 
+R4: 46090.35206 | George Iniguez | George Iniguez | Field Representative Zul | Signed | Contingency agreement ha | Rank X | Julio Cesar Cruz | Spanish |  | 661-861-3765 | GI 03092026 Signed Up, 7 | Anytime | juliochoa1968@gmail.com | 46086 | 0.2916666667 | back and neck, leg pain | Auto | PL (Julio) was driving a | same day ER via ambulanc | No | No |  |  |  |  |  |  |  |  |  |  |  | Yes |  | Tier 2 |  | 
+R5: 46090.3603 | Felix Cedillo | Felix Cedillo | Felix Cedillo Marketing  | Signed | Contingency agreement ha | High | Ashish Kumar | English |  | 559-996-7776 | FC 03082026 Sigend up 7  | Morning | ak4970928@gmail.com | 46088 | 0.125 | Loss of conciousness dis | Pedestrian | PL was walking toward hi | Yes to ER on 03/08/2026 | Accepted | Not Apply | No | No | No | Close to home | No | No | Yes Yes | Yes | No | PL-Yes Def-Yes | No | Yes | No | Tier 1 |  | 
+R6: 46090.37149 | George Iniguez / Gizhel  |  | Former / Existing Client | Not_Interested | Signed with another Law  |  | Ruby Esmeralda Moreno | English |  | 818-310-9777 | GI 03082026 PL will revi | Anytime | NA | 46087 | 0.3506944444 | sprained ankle, lower ba | Auto | PL (Ruby) was driving ea | SAME DAY ER VIA AMBULANC | Yes | No |  |  |  |  |  |  |  |  |  |  |  | Yes |  | Tier 1 |  | 
+R7: 46090.40694 | Felix Cedillo / Karen Ve | Felix Cedillo | Field Representative Lup | Signed | Contingency agreement ha | Medium | Victor Lopez | English |  | 559-901-2631 | FC 03082026 Signed up 7  | Afternoon | v49lopez@gmail.com | 46088 | 0.4166666667 | Back pain, shoulder pain | Auto | PL was traveling on Ave  | Yes to UC 03/09/2029 | Accepted | Not Apply | No | Back rear bumper | Vejar Auto Collision | Ave A | Yes 1 | No | Yes No | Yes | No | PL-Yes Def-Yes  | No | Yes | No | Tier 1 |  | 
+R8: 46090.40903 | Felix Cedillo / Karen Ve | Felix Cedillo | Field Representative Lup | Signed | Contingency agreement ha | Medium | Clarinda Raquel Lynn Hen | English |  | 559-901-2631 | FC 03082026 Signed up 7  | Morning | v49lopez@gmail.com | 46088 | 0.4166666667 | Headaches shoulder upper | Auto | PL is front passenger an | Yes to UC 03/09/2029 | Accepted | Not Apply | No | Back rear bumper | No | Ave A | Yes 1 | No | Yes No | Yes | No | PL-Yes Def-Yes  | No | Yes | No | Tier 1 |  | 
+R9: 46090.40975 | Malvin Rosales |  | Walker Advertising Contr | Rejected | SOL Lapsed |  | Walter Aunng | English |  | 510-485-2812 | MR 03092026 Reject, SOL  | Anytime |  | 45200 | 0.4166666667 | Body Aches | Auto | PL Walter Aunng reports  | Yes | Inconclusive at this tim | No | n/a | totaled | n.a | unk | no |  | Yes, Yes | Yes | no | Yes, Liability | n/a | No | no | Reject, SOL tolled |  | 
+R10: 46090.41784 | Malvin Rosales |  | Walker Advertising Contr | Rejected | At fault |  | Vincent Manriquez | English |  | 562-278-5298 / 213-272-1 | MR 03092026 Reject, PL w | Anytime | RAIDERS.4.LIFE.1972@GMAI | 46028 | 0.4166666667 | body aches | Auto | PL Vincent Manriquez rep | Yes | Yes | No | n/a | totaled | n/a | unk | no |  | no, yes | Yes | no | Yes, Liability | n/a | No | no | Reject, PL was arrested  |  | 
+R11: 46090.44546 | Malvin Rosales |  | Walker Advertising Contr | Rejected | City Claim |  | Cody Roach | English |  | 831-220-1097 | Pending Referral / City  | Anytime | CODYROACH426@GMAIL.COM | 46087 |  |  Body Aches/Pain (Soft T | Auto | PL, Cody Roach, reports  | unk  | Inconclusive at this tim | Not Apply | unk  | unk  | unk  | unk  | NO |  | UNK  | No | no  | yes, Liability  | na  | No | no  | Pending - Referral due t |  | 
+R12: 46090.46659 | Malvin Rosales |  | Walker Advertising Contr | Referred_Out | City Claim |  | James Wargelin | English |  | 415-741-4970 | PENDING INTAKE / FC 0311 | Anytime | NILEGRAW68@GMAIL.COM | 46088 | 0.7513888889 | Palm of his hand pain | Slip and Fall | Trip and fall in a publi | pending  | Inconclusive at this tim | Not Apply | na  | na | na | na | unk  | Yes | pending  | No | unk  | na | na | No | no  | Caller disconnected when |  | 
+R13: 46090.48249 | George Iniguez | George Iniguez | BDR Grace Lanayon / Spor | Signed | Contingency agreement ha | Medium | Gabriela del Socorro Gut | English |  | 510-561-7824 | GI 03092026 Signed Up, 7 | Anytime | GABRIELAGUTIERREZ1211@GM | 46088 | 0.5416666667 | headaches, neck and back | Auto | PL was with 2 passengers | SAME DAY UC / next day C | Yes | Yes |  |  |  |  |  |  |  |  |  |  |  | Yes |  | Tier 2 |  | 
+R14: 46090.48249 | George Iniguez | George Iniguez | BDR Grace Lanayon / Spor | Signed | Contingency agreement ha | Medium | Gabriela del Socorro Gut | English |  | 510-561-7824 | GI 03092026 Signed Up, 7 | Anytime | GABRIELAGUTIERREZ1211@GM | 46088 | 0.5416666667 | head, neck and lower bac | Auto | PL was with 2 passengers | SAME DAY UC / next day C | Yes | Yes |  |  |  |  |  |  |  |  |  |  |  | Yes |  | Tier 2 |  | 
+R15: 46090.48249 | George Iniguez | George Iniguez | BDR Grace Lanayon / Spor | Signed | Contingency agreement ha | Medium | Gabriela del Socorro Gut | English |  | 510-561-7824 | GI 03092026 Signed Up, 7 | Anytime | GABRIELAGUTIERREZ1211@GM | 46088 | 0.5416666667 | body pain shoulder and b | Auto | PL was with 2 passengers | SAME DAY UC / next day C | Yes | Yes |  |  |  |  |  |  |  |  |  |  |  | Yes |  | Tier 2 |  | 
+R16: 46090.4934 | Felix Cedillo |  | Justin For Justice Toll  | Referred_Out | Employment Law |  | Michael Brown | English |  | 619-430-7358 | FC 03092026 Pending refe | Anytime | No | 45940 | 0.5833333333 | No injuries  | Employment | PL reports that while wo | No ER at all | Inconclusive at this tim | Not Apply | No | No | No | Cal Pacific Cable and El | No | No | No No | No | No | Def-Yes | No | No | No | Tier 1 |  | 
+R17: 46090.49743 | Melanie Vigueria |  | Intaker - JFJ | Referred_Out | Dog bites |  | Maria Olvera | Spanish |  | 209-263-8376 | MV03092026 PL called bac | Anytime | marias9899@yahoo.com | 45806 | 0.5465277778 | 2 puncture wounds on lef | Dog Bite | Maria Olvera contacted t | Yes on own same day and  | No | Not Apply | n/a | n/a | n/a | 23627 N Devries Rd, Lodi | n/a | No | No | No | n/a | n/a | n/a | No | No | Tier 2 |  | 
+R18: 46090.5336 | Felix Cedillo |  | Walker Advertising Contr | Referred_Out | City Claim |  | Timoci Nakalevu | English |  | 707-992-7181  | FC 03092026 Pending refe | Morning |  JIMNAKALEVU87@GMAIL.COM | 46088 | 0.4166666667 | Neck shoulder upper and  | Auto | PL was traveling on the  | Yes to ER same day no am | Inconclusive at this tim | Not Apply | No | Passenger side | No | Freeway | Yes 4 they lived with PL | No | Yes Yes | Yes | No | PL-Yes Def-Yes | No | No | No | Tier 1 |  | 
+R19: 46090.55516 | Malvin Rosales | Malvin Rosales | Walker Advertising Contr | Signed | Contingency agreement ha | Rank X | Trinidad Chavez | Spanish |  | 323-479-0892 | MR 03092026 Signed Up, A | Anytime |  | 44261 |  | Neck, shoulders, upper a | Auto | PL reports that she was  | Going to ER 03/09/2026 | Yes | No | home | front end dMge, totaled | n/a | Sunol St | no | n/a | No, No | No | no | Yes, liability | n/a | Yes | yes | SIGNED UP - PENDING DATA |  | 
+R20: 46090.56328 | George Iniguez | George Iniguez | GMB 4701 Patrick Henry D | Signed | Contingency agreement ha | High | Gedeon David Yahmontalvo | English |  | 510-826-9002 | GI 03092026 Signed Up, 7 | Anytime | DAVIDYAHVDSP@GMAIL.COM | 46041 | 0.5416666667 | Fractured wrist Fracture | Auto | PL (Gideon David Montalv | same day ER, and surgery | No | Not Apply |  |  |  |  |  |  |  |  |  |  |  | Yes |  | Tier 1 |  | 
+R21: 46090.57911 | George Iniguez |  | Justin For Justice Toll  | Referred_Out | City Claim |  | Lori Woodman | English |  | 310-381-9302 | GI 03092026 Pending refe | Anytime | lori_w77@yahoo.com | 46054 | 0.4166666667 | evere bump on her forehe | Slip and Fall | PL (Lori Woodman), a res | Same day ER via ambulanc | Yes | No |  |  |  |  |  |  |  |  |  |  |  | No |  | Tier 1 |  | 
+R22: 46090.5863 | Melanie Vigueria |  | Intaker - JFJ | Referred_Out | Employment Law |  | Maria Olvera | Spanish |  | 209-263-8376 | MV03092026 Pending refer | Anytime | marias9899@yahoo.com | 45821 | 0.5465277778 | 2 puncture wounds on lef | Employment | Maria Olvera contacted t | Yes same day ER  | No | Not Apply | n/a | n/a | n/a | 23627 N Devries Rd, Lodi | n/a | No | n/a | No | No | No | n/a | No | No | Tier 3 |  | 
+R23: 46090.58764 | Melanie Vigueria |  | Intaker - JFJ | Referred_Out | Work Comp |  | Maria Olvera | Spanish |  | 209-263-8376 | MV03092026 Pending refer | Anytime | marias9899@yahoo.com | 45806 | 0.5465277778 | 2 puncture wounds on lef | Work Comp | Maria Olvera reported a  | Yesa same day ER | No | No | n/a | n/a | n/a | 23627 N Devries Rd, Lodi | n/a | No | n/a | No | No | n/a | n/a | No | No | Tier 3 |  | 
+R24: 46090.58909 | Malvin Rosales |  | Walker Advertising Contr | Rejected | DEF is Prop 213 and PL o |  | Ronald Jackson | English |  | 760-481-5073 | MR 03092026 Reject, No I | Anytime | PAT4437@SBCGLOBAL.NET | 45871 | 0.4166666667 | no injuries | Auto | PL Ronald Jackson report | no | Yes | Not Apply | home | rear bumper | n/a | unk | no | No | Yes, No |  | no | Yes, Liability | n/a | No | no | Reject, No Injuries and  |  | 
+R25: 46090.64531 | Malvin Rosales |  | GMB 525 W Main St Suite  | Rejected | Not a PI case |  | Adam Arasteh | English |  | 410-303-3723 | MR 03092026 Referral, PL | Anytime |  | 46028 | 0.4166666667 | no injuries | Other | Caller Adam Araste conta | no | Inconclusive at this tim | Not Apply | n/a | n/a | n/a | Tulare County | no |  | n/a | No | no | n/a | n/a | No | no | Referral, PL is needing  |  | 
+R26: 46090.6516 | Felix Cedillo | Felix Cedillo | Field Representative Jez | Signed | Contingency agreement ha | High | Latoya Duncan | English |  | 916-729-9245 | FC 03092026 signed up 7  | Morning | Montuegy@yahoo.com | 46073 | 0.6666666667 | Neck disoriented upper a | Auto | PL was traveling on Hwy  | Yes same day ER via ambu | Disputed | Not Apply | No | Total loss | No | Hwy 32 | Yes 1 | No | Yes Yes  | Yes | No | PL-Yes full UM  | No | Yes | No | Tier 1 |  | 
+R27: 46090.6516 | Felix Cedillo | Felix Cedillo | Field Representative Jez | Signed | Contingency agreement ha | High | Genelle Yvonne Montue | English |  | 916-729-9245 | FC 03092026 signed up 7  | Morning | Montuegy@yahoo.com | 46073 | 0.6666666667 | Disoriented neck shoulde | Auto | PL is back passenger and | Yes same day ER via ambu | Disputed | Not Apply | No | Total loss | No | Hwy 32 | Yes 1 | No | Yes Yes  | Yes | No | PL-Yes full UM  | No | Yes | No | Tier 1 |  | 
+R28: 46090.66892 | Melanie Vigueria |  | Field Representative Jez | Referred_Out | Criminal Law / Traffic V |  | Humberto Angel Coutino  | Spanish |  | 916-606-4403 | MV03092026 pending refer | Anytime | n/a | 45839 | 0.75 | No injuries | Criminal | Humberto called seeking  | n/a | No | Not Apply | n/a | n/a | n/a | Arizona–California borde | n/a | No | n/a | No | n/a | n/a | n/a | No | No | Tier 3 |  | 
+R29: 46090.67827 | George Iniguez / Ernesto |  | GMB Palmdale | Not_Interested | Signed with another Law  |  | Miguel Angel Noriega | English |  | 909-731-6831 | HC 03102026 Waiting for  | Anytime |  | 46089 | 0.4166666667 | unk injuries | Auto | Pl was stop at a stopsin | yes, ER next day | Inconclusive at this tim | Yes | home | front bumper damaged, un | na | linden ave & riverside a | no | No | yes, yes | Yes | no | yes, full cover | na | No | PL details of insurance  | Tier 2 |  | 
+R30: 46090.69923 | Felix Cedillo | Felix Cedillo | Email Campaigns | Signed | Contingency agreement ha | Medium | Kevin Alexander Lopez Pa | Spanish |  | 415-760-8453 | FC 03092026 Signed up 7  | Morning | Kevinlp563@gmail.com | 46069 | 0.8541666667 | upper and lower back pai | Auto | PL was traveling on San  | No ER at all sending to  | Accepted | Not Apply | No | Back rear bumper | No | San Pablo Dam Road | No | No | Yes Yes  | Yes | No | PL-Yes Full Coverage UM  | No | Yes | No | Tier 1 |  | 
+... (2861 rows skipped) ...
+FORMULAS:
+A1 = IFERROR(__xludf.DUMMYFUNCTION("IMPORTRANGE(""https://docs.google.com/spreadsheets/d/1cFHr5xCLLpf7ek5b949CmeE-SEJm-ftbN5IMKZfoONI/edit?pli=1&gid=739373611#gid=73
+B1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Name of Person Conducting Intake ")
+C1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Signed Up By")
+D1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"We are excited to serve you. How did you hear about Farahi Law Firm? How did you find us?")
+E1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Outcome")
+F1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Disposition")
+G1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Value")
+H1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Potential Client's Name")
+I1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Primary Language")
+K1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Call Back Number ")
+L1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Notes")
+M1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Best call back time if we get disconnected? ")
+N1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Email Contact info?")
+O1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Date of Loss - Are we within Statutes?")
+P1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Time of Loss")
+
+===== SHEET "FLF Sign Up" — 2122 non-empty rows =====
+R1: Source | Lead Source | Timestamp | Name of Person Conductin | Signed Up By | Sign Up Date | 90 Day Drop Date | Email Sent Date | Email Sent Time within a | Signed Cases Referral St | CM Assigned | PD/Investigator Assigned | 2nd Intake Completed | Value | Rank |  Lead Outcome | Client's Name | Best Call Back Number  | Best Email Contact info? | TIER | Active Status | Case Type (Slip, Auto, E | Accepted or Disputed Lia | Language | ER/UC Visit? (Yes/No) | Time To First Medical (E | If NO visit yet, did we  | Facility Name (UC/ER sen | TELEMED DOCS RECEIVED AN | Notes | Referred Attorney | Referral Fee | Drop Date | Signup Outside Workhours | Obtained Recorded Statem | Case Group Number | Case 
+R2: GMB | GMB 4701 Patrick Henry D | 46024.38434 | Felix Cedillo | Felix Cedillo | 46023 | 46113 | 46024 | 0.4305555556 |  | Abraham Bustillos | Jean Bagaman / Alan Fran |  | High |  | Signed | Moyo Oyimhe Abu | 916-873-3196 | Moyomil@gmail.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER |  |  |  |  |  |  |  |  |  |  | 1 | CASE-0001 | 
+R3: GMB | GMB 4701 Patrick Henry D | 46024.39028 | Felix Cedillo | Felix Cedillo | 46023 | 46113 | 46024 | 0.4305555556 |  | Abraham Bustillos | Jean Bagaman / Alan Fran |   | High |  | Signed | Moyo Oyimhe Abu as the M | 916-873-3196 | Moyomil@gmail.com | Tier 1 | Minor | Auto | Accepted | English | Yes, to ER |  |  |  |  |  |  |  |  |  |  | 1 | CASE-0001 | 
+R4: GMB | GMB 4701 Patrick Henry D | 46024.39522 | Felix Cedillo | Felix Cedillo | 46023 | 46113 | 46024 | 0.4305555556 |  | Abraham Bustillos | Jean Bagaman / Alan Fran |  | High |  | Signed | Moyo Oyimhe Abu as the M | 916-873-3196 | Moyomil@gmail.com | Tier 1 | Minor | Auto | Accepted | English | Yes, to ER |  |  |  |  |  |  |  |  |  |  | 1 | CASE-0001 | 
+R5: GMB | GMB 5340 Alla Road Los A | 46024.42592 | Felix Cedillo | Felix Cedillo | 46023 | 46113 | 46024 | 0.4430555556 | Client Referred out - Pe | Pending Referral | Pending Referral |  | Rank X |  | Signed | Alyndis Kay Jones | 424-405-0402 |  Alyndiskay1@gmail.com | Tier 1 |  | PI | Disputed | English | No |  | Yes, to Telemed |  |  |  |  |  |  |  |  | 2 | CASE-0002 | 
+R6: GMB | GMB 14500 Roscoe Blvd -  | 46024.48059 | Felix Cedillo / Ian Guer | Felix Cedillo | 46024 | 46114 | 46024 | 0.5631944444 |  | Jelai Allejos | Darren Ilogon / Lea Rami |  | High |  | Signed | Michele Mastrodomenico | 818-433-5025 | M.mastrodomenico@yahoo.c | Tier 1 |  | Slip and Fall | Disputed | English | Yes, to ER |  |  | Keiser permanente on des |  |  |  |  |  |  |  | 3 | CASE-0003 | 
+R7: Walker | Walker Advertising Contr | 46024.65935 | Felix Cedillo / Ian Guer | Felix Cedillo | 46024 | 46114 | 46024 | 0.7118055556 |  | Kim Luzon | Alan Franklin |  | Rank X |  | Signed | Rosa Maria Vazquez | 619-274-3795  | AMORES3BOYS@GMAIL.COM | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46023 |  | Sharp Memorial Hospital  |  |  |  |  |  |  |  | 4 | CASE-0004 | 
+R8: Walker Employment Contra | Walker Employment Contra | 46024.69957 | Felix Cedillo / Karen Ve | Felix Cedillo | 46024 | 46114 | 46024 | 0.7208333333 |  | Ivan Gonzalez | Jean Bagaman |  | Medium |  | Signed | Edgar Rodriguez | 805-336-0057 | No | Tier 2  |  | Auto | Accepted | English | No |  | Yes, to Telemed |  |  |  |  |  |  |  |  | 5 | CASE-0005 | 
+R9: GMB | GMB 836 57th Street Sacr | 46024.44441 | Felix Cedillo / Karen Ve | Felix Cedillo | 46027 | 46117 |  |  | Lead Referred out - Succ | Malvin Rosales | Malvin Rosales |  | Low |  | Referred out | Shah Agha Noori | 916-868-8935 |  | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46009 |  |  |  |  | Deldar Legal  | 0.33 |  |  |  | 6 | CASE-0006 | 
+R10: Referral | Employee Referral Rafael | 46025.32797 | Malvin Rosales | Malvin Rosales | 46025 | 46115 | 46027 | 0.5034722222 |  | Charlotte Quijano | Enrique Avila |  | Rank X |  | Signed | Lyla Rodriguez Alvarado | 310-940-9769 | Aztecstar@aol.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46024 |  | Yes, same day ER via amb |  |  |  |  |  |  |  | 7 | CASE-0007 | 
+R11: Referral | Employee Referral Rafael | 46025.32897 | Malvin Rosales | Malvin Rosales | 46025 | 46115 | 46027 | 0.5034722222 |  | Charlotte Quijano | Enrique Avila |  | Rank X |  | Signed | Lyla Rodriguez Alvarado  | 310-940-9769 | Aztecstar@aol.com | Tier 1 | Minor | Auto | Accepted | English | Yes, to ER | 46024 |  | Yes, same day ER via amb |  |  |  |  |  |  |  | 7 | CASE-0007 | 
+R12: Referral | Employee Referral Rafael | 46025.32968 | Malvin Rosales | Malvin Rosales | 46025 | 46115 | 46027 | 0.5034722222 |  | Charlotte Quijano | Enrique Avila |  | Rank X |  | Signed | Lyla Rodriguez Alvarado  | 310-940-9769 | Aztecstar@aol.com | Tier 1 | Minor | Auto | Accepted | English | Yes, to ER | 46024 |  | Yes, same day ER via amb |  |  |  |  |  |  |  | 7 | CASE-0007 | 
+R13: Referral | Employee Referral Rafael | 46025.33029 | Malvin Rosales | Malvin Rosales | 46025 | 46115 | 46027 | 0.5034722222 |  | Charlotte Quijano | Enrique Avila |  | Rank X |  | Signed | Lyla Rodriguez Alvarado  | 310-940-9769 | Aztecstar@aol.com | Tier 1 | Minor | Auto | Accepted | English | Yes, to ER | 46024 |  | Yes, same day ER via amb |  |  |  |  |  |  |  | 7 | CASE-0007 | 
+R14: Walker | Walker Advertising Contr | 46027.23864 | Felix Cedillo / Karen Ve | Felix Cedillo | 46026 | 46026 | 46027 | 0.44375 |  | CJ Arellano | Diana Lopez |  | Medium |  | Signed | Neilsen Castaneda Ebojo | 510-322-1770 | EBOJONEILSEN@GMAIL.COM | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46015 |  | Yes same day ER no ambul |  |  |  |  |  |  |  | 8 | CASE-0008 | 
+R15: FR Lupe | Field Representative Lup | 46027.263 | Felix Cedillo | Felix Cedillo | 46026 | 46026 | 46027 | 0.4583333333 |  | Silvia Acosta | Alan Franklin |  | Medium |  | Signed | Ahmad Kaihan Rahmany | 209-287-6696  | Kayrahmany@gmail.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46020 |  | Yes same day ER no ambul |  |  |  |  |  |  |  | 9 | CASE-0009 | 
+R16: Walker | Walker Advertising Contr | 46027.52983 | George Iniguez | George Iniguez | 46027 | 46027 | 46027 | 0.5840277778 |  | Josue Flores | Eliana Rivera |  | Rank X |  | Signed | Roy Mauricio Arce Jr | 510-672-8859 | ROYMAURICIOARCEJR@GMAIL. | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46015 |  | Yes same day ER VIA ambu |  |  |  |  |  |  |  | 10 | CASE-0010 | 
+R17: FR Zulema | Field Representative Zul | 46027.56329 | Felix Cedillo | Felix Cedillo | 46027 | 46117 | 46027 | 0.6027777778 |  | Sarah Quesea | Carlos Reyna |  | Medium |  | Signed | Avery Marie Gonzalez | 323-801-3187 | Avycavy6@gmail.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46022 |  | Yes same day ER no ambul |  |  |  |  |  |  |  | 11 | CASE-0011 | 
+R18: Walker | Walker Advertising Contr | 46022.12764 | Felix Cedillo | Felix Cedillo | 46027 | 46117 | 46027 | 0.7006944444 |  | Liz Salgado | Enrique Avila |  | Medium |  | Signed | Cruz Miguel Puac Ixtos | 323-794-6408  | CRUZPUAC001@GMAIL.COM | Tier 1 |  | Auto | Accepted | Spanish | No |  | Yes, to Telemed |  |  |  |  |  |  |  |  | 12 | CASE-0012 | 
+R19: Walker | Walker Advertising Contr | 46022.12764 | Felix Cedillo | Felix Cedillo | 46027 | 46117 | 46027 | 0.7006944444 |  | Liz Salgado | Enrique Avila |  | Medium |  | Signed | Antonia Ralac | 323-794-6408  | CRUZPUAC001@GMAIL.COM | Tier 1 |  | Auto | Accepted | Spanish | No |  | Yes, to Telemed |  |  |  |  |  |  |  |  | 12 | CASE-0012 | 
+R20: FR Genysys | Field Representative Gen | 46015.57125 | Malvin Rosales / Melanie | Malvin Rosales | 46027 | 46117 | 46027 | 0.7444444444 |  | Rafael Reyes | Lea Ramirez |  | Rank X |  | Signed | Faviola Castañeda Mendoz | 714-788-6074 | favi_castaneda@yahoo.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46007 |  | Yes same day ER VIA ambu |  |  |  |  |  |  |  | 13 | CASE-0013 | 
+R21: FR Zulema | Field Representative Zul | 46027.67245 | Malvin Rosales | Malvin Rosales | 46027 | 46117 | 46027 | 0.7673611111 |  | Gerald Gaya | Alan Franklin |  | Rank X |  | Signed | Peter Todd Hollar | 661 246 8219 | phollar500@gmail.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 01/02/2026/ |  | Yes same day ER no ambul |  |  |  |  |  |  |  | 14 | CASE-0014 | 
+R22: FR Zulema | Field Representative Zul | 46027.77131 | Malvin Rosales | Malvin Rosales | 46027 | 46117 | 46027 | 0.8361111111 |  | Andy Hijar | Diana Lopez |  | Rank X |  | Signed | Daniela Flores | 661-340-4755 | daflores096@gmail.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER |  |  | Yes same day ER VIA ambu |  |  |  |  |  |  |  | 14 | CASE-0014 | 
+R23: FR Lupe | Field Representative Lup | 46025.3784 | Malvin Rosales | Malvin Rosales | 46027 | 46117 | 46027 | 0.4131944444 |  | Aylin Macias | Carlos Reyna |  | Rank X |  | Signed | Cheenouj Vang | 559-473-5566 | cheenoujvan@gmail.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46022 |  | Yes same day ER VIA ambu |  |  |  |  |  |  |  | 15 | CASE-0015 | 
+R24: FR Lupe | Field Representative Lup | 46025.37819 | Malvin Rosales | Malvin Rosales | 46027 | 46117 | 46027 | 0.4131944444 |  | Aylin Macias | Carlos Reyna |  | Rank X |  | Signed | Gia Yang | 209-322-5242 | giayang429@yahoo.com | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46022 |  | Yes same day ER VIA ambu |  |  |  |  |  |  |  | 15 | CASE-0015 | 
+R25: GMB | GMB 4701 Patrick Henry D | 46028.48688 | George Iniguez / Karen V | George Iniguez | 46028 | 46118 | 46028 | 0.5861111111 |  | Vanessa Sotelo | Darren Ilogon |  | High |  | Signed | Nia Braden Bich Casad Se | 831-444-5822  | niacasad1995@gmail.com | Tier 1 |  | Slip and Fall | Disputed | English | Yes, to ER | 46028 |  | Same day ER on her own t |  |  |  |  |  |  |  | 16 | CASE-0016 | 
+R26: Walker | Walker Advertising Contr | 46028.75248 | George Iniguez | George Iniguez | 46028 | 46118 | 46028 | 0.7618055556 |  | Arthur Garcia | Enrique Avila |  | Rank X |  | Signed | Touseefuddin Syed | 832-728-6773 / 281-733-5 | STOUSEEFUDDIN@YAHOO.COM | Tier 1 |  | Auto | Disputed | English | No |  | Yes, to Telemed |  |  |  |  |  |  |  |  | 17 | CASE-0017 | 
+R27: Referral | Employee Referral Malvin | 46015.54139 | Karen Vega | Karen Vega | 46028 | 46118 |  |  | Lead Referred out - Succ | Malvin Rosales | Malvin Rosales |  | Low |  | Referred out | Sergio Guerrero | 661-470-1126  | No Email | Tier 2  |  | Employment | Accepted | Spanish | N/A |  |  |  |  |  |  |  |  |  |  | 18 | CASE-0018 | 
+R28: FR Lupe | Field Representative Lup | 46028.74589 | Felix Cedillo / Karen Ve | Felix Cedillo | 46028 | 46118 | 46028 | 0.2763888889 |  | Kim Luzon | Lea Ramirez |  | Medium |  | Signed | Adriana Margarita Becerr | 559-300-2033  | Becerra.adrianam@gmail.c | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46009 |  | Yes same day ER  |  |  |  |  |  |  |  | 19 | CASE-0019 | 
+R29: JFJ Website | Justin For Justice Toll  | 46029.29164 | Felix Cedillo | Felix Cedillo | 46028 | 46118 | N/A | N/A |  | LOC | LOC |  | LOC |  | Signed | Jawid A Qalandarzada | 510-695-3699 | khatera_zargaran@hotmail | Tier 1 |  | Slip and Fall | Accepted | English |  | LOC |  | LOC |  |  |  |  |  |  |  | 20 | CASE-0020 | 
+R30: Walker | Walker Advertising Contr | 46029.32194 | Felix Cedillo | Felix Cedillo | 46028 | 46118 | 46029 | 0.4145833333 |  | Ivan Gonzalez | Jean Bagaman |  | Medium |  | Signed | Tomasa E Ramirez as the  | 661-371-5525  |  ERICAFLOWERS997@GMAIL.C | Tier 1 |  | Auto | Accepted | English | Yes, to ER | 46028 |  | Yes to ER  |  |  |  |  |  |  |  | 21 | CASE-0021 | 
+... (2110 rows skipped) ...
+R2141:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 50 | CASE-0050 | 
+R2142:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 50 | CASE-0050 | 
+R2143:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 50 | CASE-0050 | 
+R2144:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 50 | CASE-0050 | 
+R2145:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 50 | CASE-0050 | 
+R2146:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 50 | CASE-0050 | 
+FORMULAS:
+A1 = IFERROR(__xludf.DUMMYFUNCTION("IMPORTRANGE(""https://docs.google.com/spreadsheets/d/1_PLPrmmOv0KIyuqd_e2AaDKpLWYFvq4byj4DFdAB49k/edit?pli=1&gid=639185904#gid=63
+B1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Lead Source")
+C1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Timestamp")
+D1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Name of Person Conducting Intake ")
+E1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Signed Up By")
+F1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Sign Up Date")
+G1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"90 Day Drop Date")
+H1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Email Sent Date")
+I1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Email Sent Time within an hour after Sign Up")
+J1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Signed Cases Referral Status")
+K1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"CM Assigned")
+L1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"PD/Investigator Assigned")
+M1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"2nd Intake Completed")
+N1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Value")
+O1 = IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),"Rank")
+
+===== SHEET "Sheet6" — 1804 non-empty rows =====
+R1: Call Back Number 
+R2: 442-273-6583
+R3: 812-441-9987
+R4: 661-861-3765
+R5: 559-996-7776
+R6: 818-310-9777
+R7: 559-901-2631
+R8: 510-485-2812
+R9: 562-278-5298 / 213-272-1
+R10: 831-220-1097
+R11: 415-741-4970
+R12: 510-561-7824
+R13: 619-430-7358
+R14: 209-263-8376
+R15: 707-992-7181 
+R16: 323-479-0892
+R17: 510-826-9002
+R18: 310-381-9302
+R19: 760-481-5073
+R20: 410-303-3723
+R21: 916-729-9245
+R22: 916-606-4403
+R23: 909-731-6831
+R24: 415-760-8453
+R25: 323-694-8958
+R26: 630-639-2328
+R27: 925-877-5597
+R28: 661-484-1419
+R29: 760-835-8783 / 442-599-0
+R30: 626-206-4787
+... (1769 rows skipped) ...
+R1800: (830) 483-5598
+R1801: BE CAREFUL , CHECK ON LD
+R1802: Karen
+R1803: jorge
+R1804: Melanie
+R1805: Felix
+FORMULAS:
+A1 = unique('Intake sheet'!K:K)
+
+===== SHEET "Sales Tracker" — 6 non-empty rows =====
+R1: leads fro fr/bdr | 
+R2: 1. direct give contact t | 
+R3: 2. to contact by bdr | 
+R6:  | pag ngyari na yung call 
+R7:  | to lead docket
+R9:  | insan nasa lead docket n

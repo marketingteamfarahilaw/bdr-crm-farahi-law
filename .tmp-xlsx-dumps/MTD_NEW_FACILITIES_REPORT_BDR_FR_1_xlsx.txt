@@ -1,0 +1,45 @@
+FILE: MTD NEW FACILITIES REPORT - BDR & FR (1).xlsx
+SHEETS (1): MAY 2026
+
+===== SHEET "MAY 2026" — 105 non-empty rows =====
+R2: BUSINESS DEVELOPMENT REP |  |  |  |  | 
+R4:  | MAY-JUNE NEW FACILITIES  |  |  |  | 
+R5: from May 1 | 46177 |  |  |  | 
+R7:  | NAME | NO. OF BDR FACILITIES | NEW FACILITY ADDED | MTD FACILITY DROPPED | TOTAL FACILITIES ACTIVE
+R8:  | GRACE | 50 | 10 | 0 | 60
+R9:  | ALLY | 11 | 9 | 0 | 20
+R10:  | QUEENIE | 26 | 5 | 0 | 31
+R11:  | MIGUEL | 53 | 9 | 0 | 62
+R12:  | TOTAL | 140 | 33 | 0 | 173
+R15:  | GRACE LANAYON |  |  |  | 
+R17:  | NEW FACILITY ADDED | DATE ADDED | COUNT |  | 
+R18: 1 | JP Auto Body Shop -Redwo | 46143 | 1 |  | 
+R19: 2 | 5 Stars Auto Body Repair | 46143 | 1 |  | 
+R20: 3 | Santa Clara Auto Care | 46154 | 1 |  | 
+R21: 4 | New Hope Chiropractic Sa | 46156 | 1 |  | 
+R22: 5 | Soma Collision Repair | 46160 | 1 |  | 
+R23: 6 | J & T Advanced Collision | 46160 | 1 |  | 
+R24: 7 | A1 CHIROPRACTIC | 46169 | 1 |  | 
+R25: 8 | Element Chiropractic Wel | 46170 | 1 |  | 
+R26: 9 |  remotion chiropractic | 46171 | 1 |  | 
+R27: 10 | Civic Center Chiropracti | 46162 | 1 |  | 
+R28: 11 |  |  | 0 |  | 
+R29: 12 |  |  | 0 |  | 
+R30: 13 |  |  | 0 |  | 
+... (1005 rows skipped) ...
+FORMULAS:
+D8 = D32
+F8 = C8+D8-E8
+D9 = D50
+F9 = C9+D9-E9
+D10 = D63
+F10 = C10+D10-E10
+D11 = D76
+F11 = C11+D11-E11
+C12 = SUM(C8:C11)
+D12 = SUM(D8:D11)
+E12 = SUM(E8:E11)
+F12 = C12+D12-E12
+D32 = SUM(D18:D31)
+D50 = SUM(D37:D49)
+D63 = SUM(D56:D60)

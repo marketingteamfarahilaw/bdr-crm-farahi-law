@@ -292,6 +292,7 @@ export const contactLogs = mysqlTable("contact_logs", {
   repId: int("repId"),
   repName: varchar("repName", { length: 255 }),
   // V3: RingCentral sync flag
+  direction: varchar("direction", { length: 20 }),  // Inbound | Outbound (RC-synced; older rows backfilled from summary)
   fromRingCentral: int("fromRingCentral").default(0).notNull(),
   // RingCentral call-log record id — per-extension dedupe key for auto-synced calls.
   rcCallId: varchar("rcCallId", { length: 64 }),

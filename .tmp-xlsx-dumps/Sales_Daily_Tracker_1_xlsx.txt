@@ -1,0 +1,1089 @@
+FILE: Sales Daily Tracker (1).xlsx
+SHEETS (25): July Signups 2024 | August Signups 2024 | August Leads 2024 | data 2022-2024 | September Leads 2024 | October Leads 2024 | November Leads 2024 | December Leads 2024 | FRBDR_Jan 2026 | FRBDR_Feb 2026 | FRBDR_March 2026 | FRBDR_April 2026 | FRBDR_May 2026 | FRBDR_June 2026 | DD | Sep-Dec Queenie | Dashboard | YTD_2026 | YTD_2025-1st | Drops | Sheet53 | Case Status | Referred Out Cases | Intakes Meeting | FR Cases 2025
+
+===== SHEET "July Signups 2024" — 34 non-empty rows =====
+R1: Signups as of July 30th |  |  |  |  |  |  |  | As of 7/30 | 
+R2: FR/BDR | Date of Signup | Client Name | Type of Case | Value | Partner Facility |  |  | Performance Team Wise | 
+R3: Arden Burrows | 45474 | Janette Morales | Auto | Medium | Dr. Bal - AV Chiropracti |  |  | Total Sigups | 32
+R4: Brizelle Cardenas | 45476 | Antonia Contreras | Auto | Low | Auto Collision Group (Ad |  |  | % To Goal | 0.9142857143
+R5: Arden Burrows | 45476 | Brandon Rodriguez | Auto | Low | Maggie's A-1 Insurance |  |  |  | 
+R6: Lupe Campos | 45477 | Jesus Alvarez Rivera | Auto | Low | Accident Recovery Center |  |  |  | 
+R7: Brizelle Cardenas | 45482 | Maria De Jesus Martinez  | Wrongfull Death | High | Adam Gomez Auto Collisio |  |  |  | 
+R8: Arden Burrows | 45482 | Jose Renteria Moran | Motorcycle | Low |  Victor with B&M Towing |  |  |  | 
+R9: Brizelle Cardenas | 45483 | Maria De Jesus Martinez  | Wrongfull Death | High | Sophie Celis / Adam Gome |  |  |  | 
+R10: Brizelle Cardenas | 45483 | Maria De Jesus Martinez  | Wrongfull Death | High | Sophie Celis / Adam Gome |  |  |  | 
+R11: Brizelle Cardenas | 45483 | Joseline Avalos Martinez | Wrongfull Death | High | Sophie Celis / Adam Gome |  |  |  | 
+R12: Arden Burrows | 45490 | Francisco Luis Jaquez Ne | Auto | Medium | Schraders Auto Craft |  |  |  | 
+R13: Arden Burrows | 45490 | Jose Jesus Velazquez Jaq | Auto | Medium | Schraders Auto Craft |  |  |  | 
+R14: Arden Burrows / Lupe Cam | 45491 | Ashley Marie Duarte | Auto | Low | James Mobil Auto Repair |  |  |  | 
+R15: Brizelle Cardenas | 45492 | Kaitlynn Breann Fields | Auto | Low | Ten Eight Towing |  |  |  | 
+R16: Brizelle Cardenas | 45492 | Manuel Jaramillo | Auto | Low | Ten Eight Towing |  |  |  | 
+R17: Brizelle Cardenas | 45492 | Jonnie Leeann Anglin | Auto | Low | Ten Eight Towing |  |  |  | 
+R18: Jezel Mercado | 45492 | Asmar Lodeen | Auto | Low | Jeeo Health Center- Dr.  |  |  |  | 
+R19: Jezel Mercado | 45492 | Mehrya Lodeen | Auto | Low | Jeeo Health Center- Dr.  |  |  |  | 
+R20: Arden Burrows | 45497 | Percy Ward III | Auto | Low | Autobahn (Tony) |  |  |  | 
+R21: Arden Burrows | 45498 | Yenis J Garcia Mora | Auto | Low | Carlos with Mr. Kool's C |  |  |  | 
+R22: Monica Valles | 45499 | Darryl L Redmond | Auto | Low |  Joe All Valley Collisio |  |  |  | 
+R23: Jezel Mercado | 45500 | PeterJohn Giove II | Auto | Medium |  American River Chiropra |  |  |  | 
+R24: Jezel Mercado | 45500 | Alexandra Victoria Apila | Auto | Medium |  American River Chiropra |  |  |  | 
+R25: Jezel Mercado | 45500 | PeterJohn Giove II as th | Auto | Medium |  American River Chiropra |  |  |  | 
+R26: Arden Burrows | 45500 | Gisela Magdalena Tejeda | Auto | Medium | Maggie's A-1 Insurance |  |  |  | 
+R27: Brizelle Cardenas | 45502 | Angel Eduardo Salazar Am | Auto | Medium | Adam Auto Collision Grou |  |  |  | 
+R28: Brizelle Cardenas | 45502 | Carlos Javier Coral Inig | Auto | Medium | Adam Auto Collision Grou |  |  |  | 
+R29: Brizelle Cardenas | 45502 | Anthony Salazar | Auto | Medium | Adam Auto Collision Grou |  |  |  | 
+R30: Lupe Campos | 45502 | Aurelia Botello Gonzalez | Auto | Low | Feel Good Chiro |  |  |  | 
+... (964 rows skipped) ...
+FORMULAS:
+J3 = COUNTA(C3:C233)
+J4 = J3/35
+
+===== SHEET "August Signups 2024" — 59 non-empty rows =====
+R1: Signups as of August 31s |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2: FR | Date of Signup | Client Name | Type of Case | Value | Sept Status | Oct Status | Nov Status | Partner Facility |  |  | Team-Wise Performance |  |  |  | 
+R3: Jezel Mercado | 45506 | Amendra Kumar | Auto | Medium |  | Treating |  | West Sacramento Urgent C |  |  | Total Signups | 51 |  | 2 sign ups from Erika Vi | 
+R4: Monica Valles | 45512 | Taylor Ann Lumagui | Auto | Low |  | Treating |  | Empire Collision |  |  | FR | Low | Medium | High | Total
+R5: Lupe Campos | 45506 | Ana Magana | Slip and Fall | Low |  | Closed/Dropping  |  | Accident Recovery in Mod |  |  |  |  |  |  | 
+R6: Jezel Mercado | 45509 | Erica Lorenza Liset Orte | Auto | Medium |  | Treating |  | Super Towing |  |  |  |  |  |  | 
+R7: Jezel Mercado | 45509 | Erica Lorenza Liset Orte | Auto | Medium |  | Treating |  | Super Towing |  |  | Value of Cases |  |  |  | 
+R8: Arden Burrows | 45509 | Pauletta Marie Conway | Auto | Low |  | Treating |  | Maggie's A-1 Insurance |  |  | High | 1 |  |  | 
+R9: Arden Burrows | 45509 | Christopher Caine Conway | Auto | Low |  | Treating |  | Maggie's A-1 Insurance |  |  | Medium | 22 |  |  | 
+R10: Arden Burrows | 45510 | Alberto Harrison Ramirez | Auto | Low |  | Treating |  | Maggie's A-1 Insurance |  |  | Low | 34 |  |  | 
+R11: Lupe Campos | 45511 | Jose Francisco Santiago  | Auto | Medium |  | Treating |  |  Nelly's Towing |  |  |  |  |  |  | 
+R12: Lupe Campos | 45511 | Adelina Montano Rodrigue | Auto | Medium |  | Treating |  |  Nelly's Towing |  |  |  |  |  |  | 
+R13: Lupe Campos | 45511 | Jose Hernandez | Auto | Medium |  | Treating |  |  Nelly's Towing |  |  | August |  |  |  | 
+R14: Monica Valles | 45512 | Taylor Lumagui Passenger | Auto | Low |  | Treating |  | Empire Collision |  |  | Arden Burrows | 4 | 1 | 1 | 6
+R15: Monica Valles | 45531 | Christian De Paz Ortuno | Auto | Low |  | Treating |  | J.L Auto Detail Body & P |  |  |  |  |  |  | 
+R16: Brizelle Cardenas | 45516 | Kenneth Edwin Smith | Auto | Medium |  | Treating |  |  Envista Medical Neck an |  |  | Lupe Campos | 4 | 4 | 0 | 8
+R17: Brizelle Cardenas | 45516 | Pete Jara Jr | Auto | Medium |  | Treating |  |  Envista Medical Neck an |  |  | Jezel Mercado | 3 | 8 | 0 | 11
+R18: Lupe Campos | 45516 | Sonia Franco | Auto | Low |  | Treating |  | Accident Recovery Center |  |  | Monica Valles | 3 | 2 | 0 | 5
+R19: Lupe Campos | 45518 | Tounkeo Vongsanan | Auto | Low |  | Treating |  | Feel Good Chiropractor |  |  | Brizelle Cardenas | 12 | 5 | 0 | 17
+R20: Brizelle Cardenas | 45521 | Kisha Tomlin  | Auto | Low |  | Treating |  |  Jose Ten Eight Towing |  |  | Brizelle Cardenas and Ar | 0 | 2 | 0 | 2
+R21: Brizelle Cardenas | 45516 | Gabriel Escandon | Auto | Medium |  | Treating |  | Kate with Auto Collision |  |  | Arden Burrows and Lupe C | 7 | 0 | 0 | 7
+R22: Brizelle Cardenas | 45516 | Gabriel Escandon on the  | Auto | Medium |  | Treating |  | Kate with Auto Collision |  |  | Monica Valles and Arden  | 1 | 0 | 0 | 1
+R23: Arden Burrows | 45525 | Jaime Kathleen Schaffran | Auto | Low |  | Subbed out  |  | Maggie's A-1 Insurance |  |  | TOTAL | 30 | 21 | 0 | 51
+R24: Brizelle Cardenas and Ar | 45525 | Snooky Canto Calambro | Auto | Medium |  | Treating |  | Core Chiropractic + Well |  |  |  |  |  |  | 
+R25: Brizelle Cardenas and Ar | 45525 | Alyssa Jaramillo | Auto | Medium |  | Treating |  | Core Chiropractic + Well |  |  |  |  |  |  | 
+R26: Jezel Mercado | 45525 | Gregorio Lopez Carrillo | Auto | Low |  | Treating |  | New Era Body Shop |  |  |  |  |  |  | 
+R27: Jezel Mercado | 45525 | Jensen Casarrubias | Auto | Low |  | Treating |  | New Era Body Shop |  |  |  |  |  |  | 
+R28: Jezel Mercado | 45525 | Eder Cassarrubias | Auto | Low |  | Treating |  | New Era Body Shop |  |  |  |  |  |  | 
+R29: Jezel Mercado | 45526 | Dominique Nicole Quick | Auto | Medium |  | Treating |  | Super Towing |  |  |  |  |  |  | 
+R30: Jezel Mercado | 45526 | Gloria Patricia Gonzalez | Auto | Medium |  | Draft demand/Still treat |  |  |  |  |  |  |  |  | 
+... (966 rows skipped) ...
+FORMULAS:
+M3 = P23
+M8 = COUNTIF(E:E,L8)
+M9 = COUNTIF(E:E,L9)
+M10 = COUNTIF(E:E,L10)
+M14 = COUNTIFS(A:A,L14,E:E, "Low")
+N14 = COUNTIFS(A:A,L14,E:E, "Medium")
+O14 = COUNTIFS(A:A,L14,E:E, "High")
+P14 = SUM(M14:O14)
+M16 = COUNTIFS(A:A,L16,E:E, "Low")
+N16 = COUNTIFS(A:A,L16,E:E, "Medium")
+O16 = COUNTIFS(A:A,L16,E:E, "High")
+P16 = SUM(M16:O16)
+M17 = COUNTIFS(A:A,L17,E:E, "Low")
+N17 = COUNTIFS(A:A,L17,E:E, "Medium")
+O17 = COUNTIFS(A:A,L17,E:E, "High")
+
+===== SHEET "August Leads 2024" — 103 non-empty rows =====
+R1: Signups as of August 31s |  |  |  |  |  |  |  |  | Outcome as of August 31s |  |  |  |  |  |  | 
+R2: Date | FR/BDR | Lead Name | Value | Outcome | Facility | Network |  |  | FR | Total Leads | Open | Rejected | Referred_Out | Not Interested | Signed | Conversion
+R3: 45505 | Brizelle Cardenas | Teresa Zepata | Unknown | Rejected | Ken Ten Eight Tow | BS/Towing |  |  | Arden Burrows | 15 | 3 | 5 | 1 | 0 | 6 | 0.4
+R4: 45506 | Jezel Mercado | Amendra kumar | Medium | Signed | West Sacramento Urgent C | Medical Facility |  |  | Lupe Campos | 17 | 0 | 5 | 2 | 2 | 8 | 0.4705882353
+R5: 45506 | Monica Valles and Arden  | Leo Mario Martinez | Low | Signed |  Leo's Paint & Body | BS/Towing |  |  | Jezel Mercado | 14 | 0 | 2 | 3 | 0 | 9 | 0.6428571429
+R6: 45506 | Lupe Campos |  Ana Magana | Medium | Signed | Accident recovery in Mod | Medical Facility |  |  | Monica Valles | 10 | 0 | 3 | 0 | 2 | 5 | 0.5
+R7: 45508 | Brizelle Cardenas and Lu | Maricella Prado | Unknown | Not Interested | Back to School Drive | Outreach Program |  |  | Brizelle Cardenas | 32 | 1 | 7 | 6 | 6 | 12 | 0.375
+R8: 45508 | Brizelle Cardenas and Lu | Giovanni | Unknown | Not Interested | Back to School Drive | Outreach Program |  |  | Monica Valles and Arden  | 1 | 0 | 0 | 0 | 0 | 1 | 1
+R9: 45509 | Jezel Mercado | Erica Lorenza Liset Orte | Medium | Signed | Super Towing Sacramento | BS/Towing |  |  | Brizelle Cardenas and Ar | 2 | 0 | 0 | 0 | 0 | 2 | 1
+R10: 45509 | Jezel Mercado | Erica Lorenza Liset Orte | Medium | Signed | Super Towing Sacramento | BS/Towing |  |  | Arden Burrows and Lupe C | 7 | 0 | 0 | 0 | 0 | 7 | 1
+R11: 45509 | Arden Burrows | Pauletta Conway | Low | Signed | Maggie's A-1 Insurance | Insurance Company |  |  | Brizelle Cardenas and Lu | 2 | 0 | 0 | 0 | 2 | 0 | 0
+R12: 45509 | Arden Burrows | Christopher Caine Conway | Low | Signed | Maggie's A-1 Insurance | Insurance Company |  |  | Elle Santos | 1 | 1 | 0 | 0 | 0 | 0 | 0
+R13: 45510 | Arden Burrows | Alberto Harrison Ramirez | Low | Signed | Maggie's A-1 Insurance | Insurance Company |  |  | TOTAL | 101 | 5 | 22 | 12 | 12 | 50 | 0.495049505
+R14: 45510 | Lupe Campos | Wilfrido Garcia | Unknown | Rejected | Nelly's Towing | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R15: 45511 | Lupe Campos | Cinthia Rodriguez  | Unknown | Referred_Out |  Accident Recovery Cente | Medical Facility |  |  |  |  |  |  |  |  |  | 
+R16: 45511 | Lupe Campos | Jose Francisco Santiago  | Medium | Signed |  Nelly's Towing | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R17: 45511 | Lupe Campos | Adelina Montano Rodrigue | Medium | Signed |  Nelly's Towing | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R18: 45511 | Lupe Campos | Jose Hernandez | Medium | Signed |  Nelly's Towing | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R19: 45511 | Brizelle Cardenas | Joe Holguyn | Unknown | Rejected | Trends Auto Body Luis Ra | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R20: 45512 | Brizelle Cardenas | Richard Sanchez | Unknown | Rejected |  | FR Independent Lead |  |  |  |  |  |  |  |  |  | 
+R21: 45512 | Monica Valles | Taylor Ann Lumagui | Low | Signed | Empire Collision | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R22: 45512 | Monica Valles | Taylor Lumagui Passenger | Low | Signed | Empire Collision | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R23: 45512 | Monica Valles | Hector Huizai | Unknown | Rejected | Johnnys Auto Color & Bod | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R24: 45512 | Arden Burrows | Tyesha Williams  | Unknown | Rejected |  | FR Independent Lead |  |  |  |  |  |  |  |  |  | 
+R25: 45516 | Brizelle Cardenas | Kenneth Edwin Smith | Medium | Signed |  Envista Medical Neck an | Medical Facility |  |  |  |  |  |  |  |  |  | 
+R26: 45516 | Brizelle Cardenas | Pete Jara | Medium | Signed |  Envista Medical Neck an | Medical Facility |  |  |  |  |  |  |  |  |  | 
+R27: 45516 | Lupe Campos | Sonia Franco | Low | Signed | Accident Recovery Center | Medical Facility |  |  |  |  |  |  |  |  |  | 
+R28: 45516 | Lupe Campos | Ivan Rodriguez Ruvalcaba | High | Not Interested | Accident Recovery Center | Medical Facility |  |  |  |  |  |  |  |  |  | 
+R29: 45516 | Brizelle Cardenas | Gabriel Escandon | Medium | Signed | Kate with Auto Collision | BS/Towing |  |  |  |  |  |  |  |  |  | 
+R30: 45516 | Brizelle Cardenas | Gabriel Escandon on the  | Medium | Signed | Kate with Auto Collision | BS/Towing |  |  |  |  |  |  |  |  |  | 
+... (970 rows skipped) ...
+FORMULAS:
+K3 = COUNTIF(B:B,J3)
+L3 = COUNTIFS(B:B,J3,E:E,"Open")
+M3 = COUNTIFS(B:B,J3,E:E, "Rejected")
+N3 = COUNTIFS(B:B,J3,E:E, "Referred_Out")
+O3 = COUNTIFS(B:B,J3,E:E, "Not Interested")
+P3 = COUNTIFS(B:B,J3,E:E, "Signed")
+Q3 = P3/K3
+K4 = COUNTIF(B:B,J4)
+L4 = COUNTIFS(B:B,J4,E:E,"Open")
+M4 = COUNTIFS(B:B,J4,E:E, "Rejected")
+N4 = COUNTIFS(B:B,J4,E:E, "Referred_Out")
+O4 = COUNTIFS(B:B,J4,E:E, "Not Interested")
+P4 = COUNTIFS(B:B,J4,E:E, "Signed")
+Q4 = P4/K4
+K5 = COUNTIF(B:B,J5)
+
+===== SHEET "data 2022-2024" — 2067 non-empty rows =====
+R1: Name | Phase | First Primary | Phase Date
+R2: Manraj Kaur Kingra | Closed/Dropping | leaddocket Integration | 45579
+R3: Crystal Alcantar | Closed/Dropping | Stephanie Mariscal | 45567
+R4: Araceli Olivares Oregel  | Closed/Dropping | Stephanie Mariscal | 45575
+R5: Araceli Olivares Oregel  | Closed/Dropping | Stephanie Mariscal | 45575
+R6: Araceli Olivares Oregel | Closed/Dropping | Stephanie Mariscal | 45575
+R7: Kate Flores | Closed/Dropping | Stephanie Mariscal | 45573
+R8: Accident with Kate Flore | Closed/Dropping | Stephanie Mariscal | 45573
+R9: Valerie Sanchez | Closed/Dropping | Stephanie Mariscal | 45558
+R10: Guadalupe Zapata Cruz | Closed/Dropping | Stephanie Mariscal | 45567
+R11: Passenger of Tyler Terre | Closed/Dropping | Stephanie Mariscal | 45554
+R12: Tyler Terrell Williamson | Closed/Dropping | Stephanie Mariscal | 45552
+R13: Ismael Arteaga Turcios | Closed/Dropping | Stephanie Mariscal | 45575
+R14: Juana Ramirez Parra | Closed/Dropping | Stephanie Mariscal | 45568
+R15: Marlon Aurelio Zelada Ra | Closed/Dropping | Stephanie Mariscal | 45554
+R16: Marcella Von Oesen | Closed/Dropping | Stephanie Mariscal | 45566
+R17: Bryan Uriel Rodriguez | Closed/Dropping | Stephanie Mariscal | 45560
+R18: Mariela Del Carmen Torre | Closed/Dropping | Stephanie Mariscal | 45538
+R19: Oscar Eduardo Rosales Me | Closed/Dropping | Stephanie Mariscal | 45567
+R20: Bryann Lopez | Closed/Dropping | Stephanie Mariscal | 45538
+R21: Ana Magana | Closed/Dropping | Stephanie Mariscal | 45509
+R22: Passenger of Pedro Fandi | Closed/Dropping | Stephanie Mariscal | 45550
+R23: Julio Cesar Ramos Fortin | Closed/Dropping | Stephanie Mariscal | 45517
+R24: Pedro Eduardo Fandino Le | Closed/Dropping | Stephanie Mariscal | 45550
+R25: Passenger of Iris Criste | Closed/Dropping | Stephanie Mariscal | 45559
+R26: Iris Cristelia Murcia | Closed/Dropping | Stephanie Mariscal | 45559
+R27: Iris Cristelia Murcia as | Closed/Dropping | Stephanie Mariscal | 45559
+R28: Guadalupe Aguilar Espino | Closed/Dropping | Stephanie Mariscal | 45553
+R29: Guadalupe Aguilar Espino | Closed/Dropping | Stephanie Mariscal | 45553
+R30: Guadalupe Aguilar Espino | Closed/Dropping | Stephanie Mariscal | 45553
+... (2031 rows skipped) ...
+R2062: Roberto Jr Rivera | Treating | Andy Hijar | 44896
+R2063: Juanita Small | Treating | Mayra Jara | 45543
+R2064: Miriam Plascencia | Treating | Sophie Celis | 44814
+R2065: Santiago Hernandez Mende | Treating | Andy Hijar | 45510
+R2066: Selene Rodriguez | Treating | Arthur Garcia | 44806
+R2067: Helen Limsuk Fung | Treating | Justin Justin@farahilaw. | 44735
+
+===== SHEET "September Leads 2024" — 76 non-empty rows =====
+R1: Signups as of September  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2: Date | FR/BDR | Lead Name | Value | Outcome | SUD | Oct 27 Status | Nov Status | Dec Status | Facility |  |  | FR/BDR | Total Leads | Open | Rejected | Referred_Out | Not Interested | Signed | Conversion |  | Sept. Goal | 45
+R3: 45534 | Brizelle | Sandra I. Moreno | Low | Signed | 45537 | Treating |  |  | Envista Medical |  |  | Arden | 17 | 2 | 3 | 0 | 5 | 6 | 0.3529411765 |  | MTD Sign-Up | 35
+R4: 45530 | Arden | Marquise Londo | Low | Referral Accepted | 45538 | Referral Accepted |  |  | AV Chiropractic Health C |  |  | Lupe | 15 | 2 | 4 | 0 | 1 | 8 | 0.5333333333 |  | % to Goal | 0.7777777778
+R5: 45538 | Monica | Saeed Laiskhan |  | Not Interested |  |  |  |  | Guillermo Romo/Uber Lift |  |  | Jezel | 9 | 0 | 2 | 0 | 0 | 4 | 0.4444444444 |  |  | 
+R6: 45539 | Brizelle | Cristine Salinas |  | Rejected |  |  |  |  | Collision Repair |  |  | Monica | 9 | 0 | 1 | 0 | 1 | 6 | 0.6666666667 |  |  | 
+R7: 45539 | Lupe | John Doe |  | Rejected |  |  |  |  | Bobby's Auto Body & Pain |  |  | Brizelle | 21 | 2 | 4 | 0 | 3 | 11 | 0.5238095238 |  |  | 
+R8: 45540 | Lupe | Gil Ledesma Jr. | Medium | Signed | 45544 | Treating |  |  | Triple H Auto Body LLC |  |  | Elle | 1 | 0 | 0 | 0 | 1 | 0 | 0 |  |  | 
+R9: 45540 | Rey | Donald Smith  |  | Rejected |  |  |  |  | Miller Collision Service |  |  | Jaque | 0 | 0 | 0 | 0 | 0 | 0 | #DIV/0! |  |  | 
+R10: 45541 | Lupe | Antonio Benjamin Orozco  | Low | Signed | 45545 | Treating |  |  | Accident Recovery Center |  |  | Rey | 1 | 0 | 1 | 0 | 0 | 0 | 0 |  |  | 
+R11: 45541 | Arden | Angie Reyes |  | Referred Out | Referral to Injured Work |  |  |  |  |  |  | Lester | 0 | 0 | 0 | 0 | 0 | 0 | #DIV/0! |  |  | 
+R12: 45541 | Monica | Erik Elijah Valenzuela | Low | Signed | 45541 | Treating |  |  | Valenz Auto Body |  |  | TOTAL | 73 | 6 | 15 | 0 | 11 | 35 | 0.4794520548 |  |  | 
+R13: 45541 | Lupe | Candice |  | Not Interested |  |  |  |  | Bobbie's auto body |  |  |  |  |  |  |  |  |  |  |  |  | 
+R14: 45541 | Brizelle | Mauricio Rodriguez Jr |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15: 45542 | Brizelle | Gema Lizete Torres Torre |  | Open |  |  |  |  |  |  |  | September |  |  |  |  |  |  |  |  |  | 
+R16: 45542 | Brizelle | Michael Torres |  | Not Interested |  |  |  |  |  |  |  | FR | Low | Medium | High | Total |  | FR | Signed | Referral Accepted | Total | 
+R17: 45544 | Jezel | Mr Amrani |  | Referred Out | Referred to Injured Work |  |  |  |  |  |  | Arden | 4 | 2 | 0 | 6 |  | Arden | 5 | 1 | 6 | 
+R18: 45544 | Brizelle | Jose Ramos Garcia |  | Open |  |  |  |  | Augie Delano Towing |  |  | Lupe | 1 | 6 | 1 | 8 |  | Lupe | 8 | 0 | 8 | 
+R19: 45545 | Jezel | John Doe |  | Rejected |  |  |  |  | Fast Service Towing |  |  | Jezel | 0 | 4 | 0 | 4 |  | Jezel | 4 | 0 | 4 | 
+R20: 45534 | Arden | Jorge Andre Montoya Delg | Medium | Signed | 45544 | Treating |  |  | Tony from Autobahn Colli |  |  | Monica | 2 | 3 | 1 | 6 |  | Monica | 6 | 0 | 6 | 
+R21: 45534 | Arden | Lesley Michelle Rodrigue | Medium | Signed | 45541 | Treating |  |  | Tony from Autobahn Colli |  |  | Brizelle | 6 | 5 | 0 | 11 |  | Brizelle | 10 | 1 | 11 | 
+R22: 45545 | Arden | Giovanny Martinez |  | Open |  |  |  |  | Maggie's A-1 Insurance |  |  | TOTAL | 13 | 20 | 2 | 35 |  | TOTAL | 33 | 2 | 35 | 
+R23: 45546 | Lupe | Lucy Marie Ceballos | Medium | Signed | 45546 | Treating |  |  | GMB 525 W Main St Suite  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 45547 | Brizelle | Janice Lynn Agustin |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 45547 | Lupe | Carolina Luna Galvan | High | Signed | 45547 | Treating |  |  | Accident Recovery Center |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 45547 | Brizelle | Cristianna Hernandez Pon | Low | Signed | 45547 | Treating |  |  | Ten Eight Towing |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 45548 | Arden | Faavae Pele | Low | Signed | 45552 | Treating |  |  | Existing Client Tiana Ma |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 45548 | Arden | Claudia Vargas |  | Not Interested |  |  |  |  | Tony from Autobahn Colli |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 45548 | Arden | Claudia Vargas as mother |  | Not Interested |  |  |  |  | Tony from Autobahn Colli |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 45548 | Arden | Claudia Vargas as aunt o |  | Not Interested |  |  |  |  | Tony from Autobahn Colli |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (974 rows skipped) ...
+FORMULAS:
+N3 = COUNTIF(B:B,M3)
+O3 = COUNTIFS(B:B,M3,E:E,"Open")
+P3 = COUNTIFS(B:B,M3,E:E, "Rejected")
+Q3 = COUNTIFS(B:B,M3,E:E, "Referred_Out")
+R3 = COUNTIFS(B:B,M3,E:E, "Not Interested")
+S3 = COUNTIFS(B:B,M3,E:E, "Signed") + COUNTIFS(B:B,M3, E:E, "Referral Accepted")
+T3 = S3/N3
+W3 = Q22
+N4 = COUNTIF(B:B,M4)
+O4 = COUNTIFS(B:B,M4,E:E,"Open")
+P4 = COUNTIFS(B:B,M4,E:E, "Rejected")
+Q4 = COUNTIFS(B:B,M4,E:E, "Referred_Out")
+R4 = COUNTIFS(B:B,M4,E:E, "Not Interested")
+S4 = COUNTIFS(B:B,M4,E:E, "Signed") + COUNTIFS(B:B,M4, E:E, "Referral Accepted")
+T4 = S4/N4
+
+===== SHEET "October Leads 2024" — 92 non-empty rows =====
+R1: Signups as of October 23 |  |  |  |  |  |  |  |  |  | October 1-31, 2024 |  |  |  |  |  |  |  |  |  | 
+R2: Date | FR/BDR | Lead Name | Value | Outcome | SUD | Liability | Facility |  |  | FR/BDR | Total Leads | Open | Rejected | Referred_Out | Not Interested | Signed | Conversion |  | Oct. Goal | 45
+R3: 45565 | Monica | Jose Bernabe Lozada-Cort | Low | Signed | 45566 | Accepted | Walker Advertising Contr |  |  | Arden | 10 | 2 | 2 | 1 | 0 | 5 | 0.5 |  | MTD Sign-Up | 41
+R4: 45566 | Monica | Yeymy Sarahi Lozada | Low | Signed | 45566 | Accepted | Walker Advertising Contr |  |  | Lupe | 14 | 0 | 3 | 2 | 3 | 6 | 0.4285714286 |  | % to Goal | 0.9111111111
+R5: 45566 | Monica | Martin Andrews |  | Rejected |  |  | Business Card of Moni |  |  | Jezel | 14 | 4 | 4 | 1 | 2 | 3 | 0.2142857143 |  |  | 
+R6: 45566 | Arden | Victor Pleitez |  | Open | Unresponsive client |  |  |  |  | Monica | 13 | 0 | 3 | 4 | 0 | 6 | 0.4615384615 |  |  | 
+R7: 45566 | Lupe | Pranay Narayan |  | Rejected |  |  | DKN America's Body Shop |  |  | Brizelle | 36 | 4 | 7 | 2 | 4 | 19 | 0.5277777778 |  |  | 
+R8: 45566 | Jezel | Porsha Punt |  | Referred_Out | Referred to Sharen Heshy |  | Titan Auto Body |  |  | BDR | 2 | 0 | 0 | 0 | 0 | 2 | 1 |  |  | 
+R9: 45567 | Arden | Rudy Ulises Zepeda | Medium | Signed | 45567 | Accepted | Dr-Ball and Hadgin chiro |  |  | TOTAL | 89 | 10 | 19 | 10 | 9 | 41 | 0.4606741573 |  |  | 
+R10: 45565 | Monica | Carlos Ortiz  | Low | Referral Accepted | 45567 | Disputed | Pato Bravo |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11: 45567 | Lupe | Ernesto Solis |  | Rejected |  |  | Ruben's Auto Body |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12: 45567 | Brizelle | Jasmine Orona |  | Rejected |  |  | Trends Autobody shop |  |  | October 1-31 |  |  |  |  |  | Status of Liability |  |  |  | 
+R13: 45568 | Brizelle | Keri Costa |  | Open | Unresponsive client |  |  Visalia Synergy Chiropr |  |  | FR/BDR | Low | Medium | High | Total |  | FR/BDR | Signed | Accepted | Disputed | 
+R14: 45568 | Brizelle | Makayla Yeager |  | Rejected |  |  |  |  |  | Arden | 4 | 1 | 0 | 5 |  | Arden | 5 | 3 | 2 | 
+R15: 45567 | Lupe | Jaime Moreno Mendoza |  | Referred_Out | Lahmani Law declined / R |  |  Extreme Car Care Center |  |  | Lupe | 1 | 5 | 0 | 6 |  | Lupe | 6 | 4 | 2 | 
+R16: 45568 | Brizelle | David Andres Casillas | High | Signed | 45568 | Accepted | Trends Auto Body Luis Ra |  |  | Jezel | 1 | 1 | 1 | 3 |  | Jezel | 3 | 3 | 0 | 
+R17: 45568 | Arden | Francisco Lopez Gonzalez | Low | Signed | 45568 | Disputed | Ralfis collision center |  |  | Monica | 5 | 0 | 1 | 6 |  | Monica | 6 | 4 | 2 | 
+R18: 45568 | Arden | Julia C Maldonado de Lop | Low | Signed | 45568 | Disputed | Ralfis collision center |  |  | Brizelle | 12 | 5 | 2 | 19 |  | Brizelle | 19 | 18 | 1 | 
+R19: 45568 | Brizelle | Greddell Davis |  | Open | Unresponsive client |  | Distinctive coach auto b |  |  | BDR | 2 | 0 | 0 | 2 |  | BDR | 2 | 2 | 0 | 
+R20: 45569 | Brizelle | Juan Bugarin |  | Referred_Out | Referred out to IWLG  |  |  |  |  | TOTAL | 25 | 12 | 4 | 41 |  | TOTAL | 41 | 34 | 7 | 
+R21: 45569 | Brizelle | Juan Bugarin |  | Referred_Out | Referred out to LLA |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 45569 | Brizelle | Jose Hernandez |  | Rejected |  |  | Kate Auto Collision Grou |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 45572 | Jezel | Sandra Leticia Mercardo | Medium | Signed | 45572 | Accepted | Jezel's referral |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 45572 | Lupe | Rafael Corona / Towing Y |  | Rejected |  |  | Johnson Bros Towing |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 45572 | Jezel | Dorian McCants |  | Open | Unresponsive client |  | American River Chiroprac |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 45573 | BDR | Lana Lamont | Low | Signed | 45573 | Accepted |  Abels Body Shop Mario |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 45573 | BDR | Melinda Marie Huerta | Low | Signed | 45573 | Accepted |  Abels Body Shop Mario |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 45573 | Lupe | Sandy Mabel Baquedano So | Medium | Signed | 45573 | Accepted |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 45573 | Jezel | Heather Grim |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 45573 | Jezel | Mackenz |  | Not Interested | Unresponsive |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (973 rows skipped) ...
+FORMULAS:
+L3 = COUNTIF(B:B,K3)
+M3 = COUNTIFS(B:B,K3,E:E,"Open")
+N3 = COUNTIFS(B:B,K3,E:E, "Rejected")
+O3 = COUNTIFS(B:B,K3,E:E, "Referred_Out")
+P3 = COUNTIFS(B:B,K3,E:E, "Not Interested")
+Q3 = COUNTIFS(B:B,K3,E:E, "Signed") + COUNTIFS(B:B,K3, E:E, "Referral Accepted")
+R3 = Q3/L3
+U3 = O20
+L4 = COUNTIF(B:B,K4)
+M4 = COUNTIFS(B:B,K4,E:E,"Open")
+N4 = COUNTIFS(B:B,K4,E:E, "Rejected")
+O4 = COUNTIFS(B:B,K4,E:E, "Referred_Out")
+P4 = COUNTIFS(B:B,K4,E:E, "Not Interested")
+Q4 = COUNTIFS(B:B,K4,E:E, "Signed") + COUNTIFS(B:B,K4, E:E, "Referral Accepted")
+R4 = Q4/L4
+
+===== SHEET "November Leads 2024" — 87 non-empty rows =====
+R1: Signups as of Nov EOM |  |  |  |  |  |  |  |  |  | November 1-30, 2024 |  |  |  |  |  |  |  |  |  |  |  | 
+R2: f | FR/BDR | Lead Name | Value | Outcome | SUD | Liability | Facility |  |  | Field Rep | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed to Referred Out | Referral Accepted | Signed | Conversion |  | Nov. Goal | 45
+R3: 45597 | Monica | Carlos Alcivar  |  | Rejected |  |  |  |  |  | Arden | 17 | 1 | 2 | 2 | 1 | 0 | 0 | 11 | 0.6470588235 |  | MTD Sign-Up | 39
+R4: 45598 | Lupe | Ceida Hernandez |  | Referred_Out |  | Sharen Heshy Ghatan  | Rapid Body Revitalizatio |  |  | Lupe | 17 | 3 | 4 | 2 | 1 | 3 | 2 | 2 | 0.1176470588 |  | % to Goal | 0.8666666667
+R5: 45598 | Brizelle | Juan Ocampo  |  | Rejected |  |  |  |  |  | Jezel | 13 | 0 | 0 | 5 | 1 | 0 | 3 | 4 | 0.3076923077 |  |  | 
+R6: 45600 | Monica | Christina Rodriguez |  | Referred_Out |  | Refererd to IWLG |  |  |  | Monica | 14 | 1 | 3 | 2 | 1 | 0 | 0 | 7 | 0.5 |  |  | 
+R7: 45600 | Brizelle | Savannah Marie Gutierrez | Low | Signed | 45600 | Comparative | Envista Medical |  |  | Brizelle | 22 | 6 | 4 | 1 | 1 | 0 | 0 | 10 | 0.4545454545 |  |  | 
+R8: 45600 | Brizelle | Patricia Alcala  | Low | Signed | 45600 | Comparative | Envista Medical |  |  | Marla | 2 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |  |  | 
+R9: 45601 | Lupe | Robert Zimarripa |  | Rejected |  |  |  |  |  | TOTAL | 85 | 11 | 14 | 13 | 5 | 3 | 5 | 34 | 0.4 |  |  | 
+R10: 45601 | Jezel | Angelina Cuevas |  | Referred_Out |  | Refererd to LLA |  Natomas Urgent Care |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11: 45601 | Jezel | Angelina Cuevas |  | Referred_Out |  | Refererd to IWLG |  Natomas Urgent Care |  |  | Signed + Referral Accept |  |  |  |  |  | Status of Liability |  |  |  |  |  | 
+R12: 45601 | Jezel | Vanessa Savala |  | Referred_Out |  | Refererd to LLA |  Natomas Urgent Care |  |  | Field Rep | Low | Medium | High | Total |  | Field Rep | Accepted | Disputed | Comparative |  |  | 
+R13: 45601 | Jezel | Vanessa Savala |  | Referred_Out |  | Refererd to IWLG |  Natomas Urgent Care |  |  | Arden | 7 | 1 | 3 | 11 |  | Arden | 11 | 0 | 0 |  |  | 
+R14: 45601 | Arden | Ruth Angelica Ayala Garc | Low | Signed | 45601 | Accepted | Regino Auto Body Shop |  |  | Lupe | 2 | 2 | 0 | 4 |  | Lupe | 4 | 0 | 0 |  |  | 
+R15: 45601 | Arden | Ruth Angelica Ayala Garc | Low | Signed | 45601 | Accepted | Regino Auto Body Shop |  |  | Jezel | 5 | 2 | 0 | 7 |  | Jezel | 6 | 1 | 0 |  |  | 
+R16: 45601 | Arden | Ruth Angelica Ayala Garc | Low | Signed | 45601 | Accepted | Regino Auto Body Shop |  |  | Monica | 5 | 1 | 1 | 7 |  | Monica | 7 | 0 | 0 |  |  | 
+R17: 45601 | Arden | Ruth Angelica Ayala Garc | Low | Signed | 45601 | Accepted | Regino Auto Body Shop |  |  | Brizelle | 7 | 3 | 0 | 10 |  | Brizelle | 7 | 1 | 2 |  |  | 
+R18: 45601 | Arden | Ruth Angelica Ayala Garc | Low | Signed | 45601 | Accepted | Regino Auto Body Shop |  |  | Marla | 0 | 0 | 0 | 0 |  | Marla | 0 | 0 | 0 |  |  | 
+R19: 45602 | Arden | Asefa Meresa |  | Not Interested | Client doesn't want to p |  | Mr. Kool's Collision |  |  | TOTAL | 26 | 9 | 4 | 39 |  | TOTAL | 35 | 2 | 2 |  |  | 
+R20: 45602 | Brizelle | Ashley Ochoa | Medium | Signed | 45602 | Disputed | Noe with Camino Real Aut |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: 45602 | Lupe | Terry Baker  |  | Referred_Out |  | Ikuta Hemesath LLP  | Med Mal |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 45603 | Monica | Luisa Cuevas  |  | Rejected |  |  | Bodyworks Collision Cent |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 45603 | Monica | Rene Lopez | Medium | Signed | 45603 | Accepted | On Fire Auto Customs |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 45603 | Monica | Amelia Ortega | High | Signed | 45603 | Accepted |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 45603 | Arden | Reyna Rosalia Gonzalez P | High | Signed | 45603 | Accepted | Regino Auto Body Shop |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 45603 | Arden | Reyna Rosalia Gonzalez P | High | Signed | 45603 | Accepted | Regino Auto Body Shop |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 45604 | Brizelle | Labraya Tierre Peterson | Low | Signed | 45604 | Accepted | Rosedale-Ryan Chiropract |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 45604 | Brizelle | Ivanna Taylor | Low | Signed | 45607 | Accepted | Rosedale-Ryan Chiropract |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 45580 | Jezel | Fepaki Fungavaka | Low | Referral Accepted | 45604 | Accepted | American River Chiro |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 45608 | Lupe | Severiano Diaz Garcia | Medium | Signed | 45608 | Accepted | Torres Auto Body inc |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (978 rows skipped) ...
+FORMULAS:
+L3 = COUNTIF(B:B,K3)
+M3 = COUNTIFS(B:B,K3,E:E,"Open")
+N3 = COUNTIFS(B:B,K3,E:E, "Rejected")
+O3 = COUNTIFS(B:B,K3,E:E, "Referred_Out")
+P3 = COUNTIFS(B:B,K3,E:E, "Not Interested")
+Q3 = COUNTIFS(B:B,K3,E:E, "Signed to Referred Out")
+R3 = COUNTIFS(B:B,K3,E:E, "Referral Accepted")
+S3 = COUNTIFS(B:B,K3,E:E, "Signed")
+T3 = S3/L3
+W3 = O19
+L4 = COUNTIF(B:B,K4)
+M4 = COUNTIFS(B:B,K4,E:E,"Open")
+N4 = COUNTIFS(B:B,K4,E:E, "Rejected")
+O4 = COUNTIFS(B:B,K4,E:E, "Referred_Out")
+P4 = COUNTIFS(B:B,K4,E:E, "Not Interested")
+
+===== SHEET "December Leads 2024" — 120 non-empty rows =====
+R1: Signups as of Dec EOM |  |  |  |  |  |  |  |  |  |  |  | December 1-31, 2024  |  |  |  |  |  |  |  |  |  |  |  | 
+R2: Date | FR | Lead Name | Value | Outcome | SUD | Liability | Facility | Client's Location | Classification |  |  | Field Rep | Total Leads | Open | Rejected | Referred_ Out | Not Interested | Signed to Referred Out | Referral Accepted | Signed | Conversion |  | Dec. Goal | 50
+R3: 45618 | Lupe | Maria Guadalupe Quevedo  | Low | Signed | 45628 | Accepted | Dooley Family Chiropract | Modesto | Plaintiff |  |  | Arden | 25 | 5 | 3 | 1 | 1 | 0 | 2 | 13 | 0.52 |  | MTD Sign-Up | 64
+R4: 45628 | Lupe | Quantica Nickel Adamson | Medium | Signed | 45628 | Accepted | Accident Recovery Center | Fresno | Plaintiff |  |  | Lupe | 23 | 1 | 5 | 2 | 1 | 0 | 3 | 11 | 0.4782608696 |  | % to Goal | 1.28
+R5: 45628 | Jezel | Cyrus Afkhami |  | Referred_Out |  | Referred to Workers Comp | West Side Urgent Care |  |  |  |  | Jezel | 15 | 0 | 5 | 6 | 0 | 0 | 1 | 3 | 0.2 |  |  | 
+R6: 45628 | Jezel | Jesus Aguilar |  | Referred_Out |  | Referred to Workers Comp |  |  |  |  |  | Monica | 22 | 2 | 5 | 1 | 0 | 0 | 1 | 13 | 0.5909090909 |  |  | 
+R7: 45628 | Brizelle | Hunter Thomas |  | Referred_Out |  | Referred to Employment L | Randy's towing |  |  |  |  | Brizelle | 32 | 9 | 1 | 3 | 2 | 0 | 0 | 17 | 0.53125 |  |  | 
+R8: 45629 | Jezel | Joseph Genobaga | Medium | Referral Accepted | 45632 | Accepted | Folsom Urgent Care | Folsom | Plaintiff |  |  | TOTAL | 117 | 17 | 19 | 13 | 4 | 0 | 7 | 57 | 0.4871794872 |  |  | 
+R9: 45629 | Lupe | Elibet Hernandez Cortes |  | Referred_Out |  |  Sharen Heshy Ghatan | Xtreme Collision Auto an |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |   | 
+R10: 45629 | Arden | Juan Derwin Vasquez Cast | Low | Signed | 45629 | Accepted |  Maggie’s insurance (Dul | Signal Hill | Plaintiff |  |  | Signed + Referral Accept |  |  |  |  |  | Status of Liability |  |  |  |  |  | 
+R11: 45629 | Monica | Chloe Kue  |  | Rejected |  |  | Valenz Autobody |  |  |  |  | Field Rep | Low | Medium | High | Total |  | Field Rep | Accepted | Disputed | Comparative |  |  | 
+R12: 45629 | Lupe | Emilio Chavez Antillon | Low | Signed | 45629 | Accepted | Sals Auto Body Shop | Fresno | Plaintiff |  |  | Arden | 11 | 4 | 0 | 15 |  | Arden | 11 | 4 | 0 |  |  | 
+R13: 45629 | Monica | Ana Delmy De Leon | Low | Signed | 45629 | Comparative | BG Auto Body- Jesus/Jona | Montebello | Plaintiff |  |  | Lupe | 12 | 2 | 0 | 14 |  | Lupe | 12 | 2 | 0 |  |  | 
+R14: 45630 | Brizelle | Irene Maya  |  | Referred_Out |  | Referral for WC | Memo 10/8 Towing  |  |  |  |  | Jezel | 0 | 4 | 0 | 4 |  | Jezel | 4 | 0 | 0 |  |  | 
+R15: 45630 | Brizelle | Connesha Danyelle Harper | Low | Signed | 45630 | Accepted | Aguilera Health & Wellne | Bakersfield | Plaintiff |  |  | Monica | 5 | 9 | 0 | 14 |  | Monica | 8 | 5 | 1 |  |  | 
+R16: 45630 | Monica | Crystal Vazquez  |  | Referred_Out |  |  Injured Workers Law Gro |  |  |  |  |  | Brizelle | 15 | 2 | 0 | 17 |  | Brizelle | 15 | 2 | 0 |  |  | 
+R17: 45630 | Brizelle | Humberto Aguiar Guzman | Low | Signed | 45631 | Accepted | Augie with Delano Towing | Fresno | Plaintiff |  |  | TOTAL | 43 | 21 | 0 | 64 |  | TOTAL | 50 | 13 | 1 |  |  | 
+R18: 45630 | Brizelle | Claudia Susana Escatell  | Low | Signed | 45631 | Accepted | Augie with Delano Towing | Fresno | Passenger |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: 45630 | Brizelle | Abraham Isaias Aguiar Es | Low | Signed | 45631 | Accepted | Augie with Delano Towing | Fresno | Passenger |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: 45630 | Brizelle | Marisol Tapia Avila | Low | Signed | 45631 | Accepted | Augie with Delano Towing | Fresno | Passenger |  |  |  | Dec. Goal | 50 |  | Per FR Goal |  |  |  |  |  |  |  | 
+R21: 45630 | Brizelle | Marisol Tapia Avila as t | Low | Signed | 45631 | Accepted | Augie with Delano Towing | Fresno | Passenger |  |  |  | MTD Sign-Up | 64 |  | Field Rep | Sign-up Goal | Achieved | % to Goal |  |  |  |  | 
+R22: 45630 | Brizelle | Marisol Tapia Avila as t | Low | Signed | 45631 | Accepted | Augie with Delano Towing | Fresno | Passenger |  |  |  | % to Goal | 1.28 |  | Arden | 10 | 15 | 1.5 |  |  |  |  | 
+R23: 45631 | Monica | Amber Oriana Gardner | Medium | Signed | 45631 | Disputed | Valenz Autobody | Riverside | Plaintiff |  |  |  |  |  |  | Lupe | 10 | 14 | 1.4 |  |  |  |  | 
+R24: 45631 | Monica | Amber Oriana Gardner as  | Medium | Signed | 45631 | Disputed | Valenz Autobody | Riverside | Passenger |  |  |  |  |  |  | Jezel | 10 | 4 | 0.4 |  |  |  |  | 
+R25: 45631 | Monica | Amber Oriana Gardner as  | Medium | Signed | 45631 | Disputed | Valenz Autobody | Riverside | Passenger |  |  |  |  |  |  | Monica | 10 | 14 | 1.4 |  |  |  |  | 
+R26: 45631 | Monica | Amber Oriana Gardner as  | Medium | Signed | 45631 | Disputed | Valenz Autobody | Riverside | Passenger |  |  |  |  |  |  | Brizelle | 10 | 17 | 1.7 |  |  |  |  | 
+R27: 45631 | Lupe | Jorge Juarez  |  | Rejected |  | Not a PI Case |  |  |  |  |  |  |  |  |  | Grand Total | 50 | 64 | 1.28 |  |  |  |  | 
+R28: 45631 | Lupe | Alejandro Veloz |  | Rejected |  | Not a PI Case | Central Valley Collision |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 45631 | Brizelle | Heydi Yiuliza Figueroa | Low | Signed | 45631 | Accepted | Luis Trends Collision | Bakersfield | Passenger |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 45632 | Arden | Kelly Evanna Avelar  | Low | Signed | 45632 | Accepted | Maggie’s insurance | Lancaster | Plaintiff |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (974 rows skipped) ...
+FORMULAS:
+N3 = COUNTIF(B:B,M3)
+O3 = COUNTIFS(B:B,M3,E:E,"Open")
+P3 = COUNTIFS(B:B,M3,E:E, "Rejected")
+Q3 = COUNTIFS(B:B,M3,E:E, "Referred_Out")
+R3 = COUNTIFS(B:B,M3,E:E, "Not Interested")
+S3 = COUNTIFS(B:B,M3,E:E, "Signed to Referred Out")
+T3 = COUNTIFS(B:B,M3,E:E, "Referral Accepted")
+U3 = COUNTIFS(B:B,M3,E:E, "Signed")
+V3 = U3/N3
+Y3 = U8+T8
+N4 = COUNTIF(B:B,M4)
+O4 = COUNTIFS(B:B,M4,E:E,"Open")
+P4 = COUNTIFS(B:B,M4,E:E, "Rejected")
+Q4 = COUNTIFS(B:B,M4,E:E, "Referred_Out")
+R4 = COUNTIFS(B:B,M4,E:E, "Not Interested")
+
+===== SHEET "FRBDR_Jan 2026" — 110 non-empty rows =====
+R1:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | January 1-31, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  | October 1-30, 2025 |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Disposition | Facility | Type of Facility | Client's Location | FV Documentation |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Rank | Field Rep | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi
+R3: 46024 | Queenie | Eric Morales Hernandez |  | Not Interested |  |  |  | Client doesn't want to p | Xtreme Auto Collision an | Bodyshop |  | Yes |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  | 1 | Lupe |  |  |  |  |  |  |  |  |  |  |  | 
+R4: 46024 | Queenie | Marla Rubio |  | Not Interested |  |  |  | Client doesn't want to p | Xtreme Auto Collision an | Bodyshop |  | Yes |  |  | Lupe | 21 | 2 | 3 | 6 | 1 | 0 | 6 | 9 | 9 | 10 | 0.9 | 0.4285714286 |  | 2 | Zuly |  |  |  |  |  |  |  |  |  |  |  | 
+R5: 46024 | Jezel | Maria Juana |  | Referred_Out |  |  |  | Disputed liability and n | Sacramento Collision Cen | Bodyshop |  | Yes |  |  | Jezel | 24 | 0 | 7 | 7 | 1 | 1 | 4 | 8 | 9 | 10 | 0.9 | 0.375 |  | 3 | Arden |  |  |  |  |  |  |  |  |  |  |  | 
+R6: 46025 | Lupe | Cheenouj Vang | Rank X | Signed | Driver | 46027 | Accepted | Signed In-House | Extreme Car Care Center | Bodyshop |  | Yes |  |  | Zuly | 39 | 4 | 5 | 5 | 5 | 2 | 11 | 18 | 20 | 10 | 2 | 0.5128205128 |  | 4 | Jezel |  |  |  |  |  |  |  |  |  |  |  | 
+R7: 46025 | Lupe | Slip and Fall Referral - | Rank X | Signed | Passenger | 46027 | Accepted | Signed In-House | Extreme Car Care Center | Bodyshop |  | Yes |  |  | Genysys | 9 | 0 | 1 | 2 | 2 | 0 | 3 | 4 | 4 | 10 | 0.4 | 0.4444444444 |  | 5 | Genysys |  |  |  |  |  |  |  |  |  |  |  | 
+R8: 46027 | Lupe | Ahmad Kaihan Rahmany | Medium | Signed | Driver | 46027 | Accepted | Signed In-House | Star Auto Sales | Dealership |  | n/A |  |  | TOTAL | 93 | 6 | 16 | 20 | 9 | 3 | 24 | 39 | 42 | 40 | 1.05 | 0.4516129032 |  |  | TOTAL |  |  |  |  |  |  |  |  |  |  |  | 
+R9: 46027 | Grace | Jimmy Doe |  | Rejected |  |  |  | No Injuries | Jerry's towing | Towing |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R10: 46027 | Zuly | Esther Leyva |  | Referred_Out |  |  |  | Employment Law | Sharon a lady I met at t | Independent |  |  |  |  | January 1-31, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11: 46027 | Zuly | Esther Leyva | Low | Signed Referred Out |  | 46043 | Accepted | Work Comp | Sharon a lady I met at t | Independent |  |  |  |  | BDRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12: 46027 | Zuly | Diana Vasquez |  | Referred_Out |  |  |  | Gap in treatment | Randys Towing | Towing |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  | October Goal | 46 |  |  |  |  |  |  |  |  |  |  | 
+R13: 46027 | Lupe | David Leyva |  | Rejected |  |  |  | PD only | Central Valley Collision | Bodyshop |  | Yes |  |  | Grace | 2 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 1 | 2 | 0.5 | 0.5 |  |  | Total Signed  | 48 |  |  |  |  |  |  |  |  |  |  | 
+R14: 46027 | Zuly | Avery Marie Gonzalez | Medium | Signed | Driver | 46027 | Accepted | Signed In-House | Randys Towing | Towing |  |  |  |  | Queenie | 4 | 0 | 0 | 0 | 2 | 0 | 1 | 2 | 2 | 2 | 1 | 0.5 |  |  | % to Goal | 1.043478261 |  |  |  |  |  |  |  |  |  |  | 
+R15: 46027 | Monica | Quynh Ntuyen |  | Rejected |  |  |  | No Injuries | Leo's Paint & Body  | Bodyshop |  |  |  |  | Ally | 8 | 0 | 1 | 0 | 0 | 3 | 3 | 4 | 7 | 2 | 3.5 | 0.875 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: 46027 | Zuly | Obed Ramos |  | Open |  |  |  | No Answer (Calls/Text/Em | Jody -Randy’s Towing | Towing |  |  |  |  | TOTAL | 14 | 0 | 2 | 0 | 2 | 4 | 4 | 6 | 10 | 6 | 1.666666667 | 0.7142857143 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17: 46027 | Zuly | Peter Todd Hollar  | Rank X | Signed | Driver | 46027 | Accepted | Signed In-House | Jody -Randy’s Towing | Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R18: 46027 | Genysys | Mequanent (Mike) Fasil  |  | Not Interested |  |  |  | Signed with another Law  | Independent | Independent |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: 46027 | Zuly | Daniela Flores | Rank X | Signed | Driver | 46027 | Accepted | Signed In-House | Jody -Randy’s Towing | Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: 46015 | Genysys | Faviola Castaneda Mendoz | Rank X | Signed | Driver | 46027 | Accepted | Signed In-House | JC CUSTOMZ COLLISION CEN | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: 46028 | Lupe | Lisa Dominguez |  | Referred_Out |  |  |  | Product Liability | Central Valley Collision | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 46028 | Lupe | Adriana Margarita Becerr | Medium | Signed | Driver | 46028 | Accepted | Signed In-House | Synergy Chiropractic wit | Chiro |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | s |  |  |  |  |  |  |  |  |  |  | 
+R23: 46028 | Zuly | Abigail Grace Coleman | Medium | Signed | Driver | 46029 | Accepted | Signed In-House | Tony- Envista Medical Ce | Chiro |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 46028 | Zuly | William Alexander Hernan | Medium | Signed | Passenger | 46030 | Accepted | Signed In-House | Tony- Envista Medical Ce | Chiro |  |  |  |  | Signed In-House |  |  |  |  |  |  | Status of Liability (Ini |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 46028 | Zuly | Abigail Grace Coleman mo | Medium | Signed | Passenger | 46030 | Accepted | Signed In-House | Tony- Envista Medical Ce | Chiro |  |  |  |  | Field Rep | Low | Medium | High | Rank X | Total |  | Field Rep | Accepted | Disputed | Comparative |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 46028 | Zuly | Abigail Grace Coleman mo | Medium | Signed | Passenger | 46031 | Accepted | Signed In-House | Tony- Envista Medical Ce | Chiro |  |  |  |  | Lupe | 0 | 4 | 0 | 5 | 9 |  | Lupe | 9 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 46028 | Zuly | Abigail Grace Coleman mo | Medium | Signed | Passenger | 46030 | Accepted | Signed In-House | Tony- Envista Medical Ce | Chiro |  |  |  |  | Jezel | 0 | 6 | 1 | 1 | 8 |  | Jezel | 7 | 1 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 46029 | Lupe | Julia Marie Ford | Medium | Signed | Driver | 46030 | Accepted | Signed In-House | Extreme Car Care Center | Bodyshop |  | Yes |  |  | Zuly | 0 | 9 | 0 | 8 | 17 |  | Zuly | 16 | 1 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 46029 | Genysys | Ana Reyes |  | Referred_Out |  |  |  | Disputed liability and n | Abel's Autobody | Bodyshop |  | Yes |  |  | Genysys | 0 | 2 | 0 | 2 | 4 |  | Genysys | 3 | 1 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 46029 | Genysys | Roberto Michael Gutierre |  | Not Interested |  |  |  | Client doesn't want to p | Valley Auto Collison  | Bodyshop |  |  |  |  | Grace | 0 | 0 | 0 | 0 | 0 |  | Grace | 0 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (987 rows skipped) ...
+FORMULAS:
+Q4 = COUNTIF(B:B,P4)
+R4 = COUNTIFS(B:B,P4,E:E,"Open")
+S4 = COUNTIFS(B:B,P4,E:E, "Rejected")
+T4 = COUNTIFS(B:B,P4,E:E, "Referred_Out")
+U4 = COUNTIFS(B:B,P4,E:E, "Not Interested")
+V4 = COUNTIFS(B:B,P4,E:E, "Signed Referred Out")
+W4 = COUNTIFS(B:B,P4,F:F, "driver")
+X4 = COUNTIFS(B:B,P4,E:E, "Signed")
+Y4 = SUM(V4,X4)
+AA4 = Y4/Z4
+AB4 = Y4/Q4
+Q5 = COUNTIF(B:B,P5)
+R5 = COUNTIFS(B:B,P5,E:E,"Open")
+S5 = COUNTIFS(B:B,P5,E:E, "Rejected")
+T5 = COUNTIFS(B:B,P5,E:E, "Referred_Out")
+
+===== SHEET "FRBDR_Feb 2026" — 115 non-empty rows =====
+R1:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | February 1-28, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  | October 1-30, 2025 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Disposition | Facility | Type of Facility | Client's Location | FV Documentation |  |  | FRS |  |  |  |  |  |  |  |  |  |  |  |  |  | Rank | Field Rep | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  | 
+R3: 46055 | Zuly | Rhyann Doe |  | Open |  |  |  | No Answer (Calls/Text/Em | Independent | Independent |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  | 1 | Lupe |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R4: 46055 | Zuly | Guillermo Beltran Pallar | High | Signed | Driver | 46055 | Accepted | Signed In-House | Randys Towing | Towing |  |  |  |  | Lupe | 25 | 1 | 4 | 2 | 1 | 0 | 14 | 17 | 17 | 10 | 1.7 | 0.68 |  | 2 | Zuly |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R5: 46055 | Zuly | Alvaro Manuel Vega Marti | High | Signed | Passenger | 46055 | Accepted | Signed In-House | Randys Towing | Towing |  |  |  |  | Jezel | 31 | 0 | 9 | 1 | 2 | 2 | 9 | 17 | 19 | 10 | 1.9 | 0.6129032258 |  | 3 | Arden |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R6: 46055 | Zuly | Antonio Martinez Martine | Medium | Signed | Driver | 46057 | Comparative | Pending Agreement | Delano’s towing | Towing |  |  |  |  | Zuly | 29 | 3 | 4 | 4 | 7 | 1 | 8 | 10 | 11 | 10 | 1.1 | 0.3793103448 |  | 4 | Jezel |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R7: 46055 | Lupe | Bianey Centeno  | Medium | Signed | Driver | 46055 | Accepted | Signed In-House | Sal's Auto Body Shop | Bodyshop |  | Yes |  |  | Genysys | 12 | 2 | 2 | 1 | 0 | 0 | 6 | 7 | 7 | 10 | 0.7 | 0.5833333333 |  | 5 | Genysys |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R8: 46055 | Zuly | Dadlila Briones  |  | Not Interested |  |  |  | Client doesn't want to p | Ximena with Envista Medi | Bodyshop |  |  |  |  | TOTAL | 97 | 6 | 19 | 8 | 10 | 3 | 37 | 51 | 54 | 40 | 1.35 | 0.5567010309 |  |  | TOTAL |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R9: 46055 | Genysys | Chris Cordero / Mother K |  | Rejected |  |  |  | Gap in treatment | BG Auto Body | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R10: 46055 | Zuly | Armando Jimenez / Brothe |  | Not Interested |  |  |  | Not_Interested | Augie Delano Towing | Towing |  |  |  |  | February 1-28, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11: 46056 | Zuly | Allen and Noriaga |  | Not Interested |  |  |  | No Answer (Calls/Text/Em | Randys Towing | Towing |  |  |  |  | BDRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12: 46056 | Zuly | Jhamia Mcgil | Rank X | Signed | Driver | 46057 | Accepted | Inconvenient time/Client | Randys Towing | Towing |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  | February Goal | 46 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R13: 46056 | Zuly | Janet F Henderson as the | Rank X | Signed | Passenger | 46057 | Accepted | Inconvenient time/Client | Independent | Independent |  |  |  |  | Ally | 4 | 0 | 0 | 2 | 0 | 0 | 1 | 2 | 2 | 2 | 1 | 0.5 |  |  | Total Signed  | 63 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R14: 46056 | Genysys | Emerito Cejudo | Rank X | Signed | Driver | 46056 | Accepted | Signed In-House | JC CUSTOMZ COLLISION CEN | Bodyshop |  | Yes |  |  | Grace | 8 | 0 | 1 | 2 | 1 | 0 | 3 | 4 | 4 | 2 | 2 | 0.5 |  |  | % to Goal | 1.369565217 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15: 46057 | Zuly | Francisca Lopez |  | Not Interested |  |  |  | No Answer (Calls/Text/Em | Distinctive Coach Auto B | Bodyshop |  |  |  |  | Queenie | 3 | 0 | 0 | 0 | 0 | 0 | 1 | 3 | 3 | 2 | 1.5 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: 46057 | Grace | Jose Bermudez |  | Referred_Out |  |  |  | Disputed liability and n | Family Chiropractic Clin | Chiro |  | Yes |  |  | TOTAL | 15 | 0 | 1 | 4 | 1 | 0 | 5 | 9 | 9 | 6 | 1.5 | 0.6 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17: 46057 | Zuly | Gloria Gloria G Gomez To | High | Signed | Driver | 46057 | Accepted | Signed In-House | A & A Automotive | Bodyshop |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R18: 46057 | Zuly | Alfredo Jr Vergara |  | Not Interested |  |  |  | Not_Interested | Randys Towing | Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: 46057 | Genysys | Ismael Sanchez | Rank X | Signed | Driver | 46057 | Accepted | Signed In-House | Impact Auto Body And Pai | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: 46057 | Genysys | Maria Ines Salvador | High | Signed | Driver | 46058 | Accepted | Pending Intake decision  | Impact Auto Body And Pai | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  | 0.2142857143 |  | 4.047619048 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: 46057 | Genysys | Maritza Sanchez Salvador | High | Signed | Passenger | 46058 | Accepted | Pending Intake decision  | Miguel with Impact Body  | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 46058 | Jezel | Maria Elena Delgado |  | Rejected |  |  |  | Owner of a parked vehicl | Primo's Auto Insurance | Insurance |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | s |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 46058 | Jezel | Zabihullah Farhad | Medium | Signed | Driver | 46068 | Accepted | Pending Intake on PD, TC | Titan Auto Body & Auto R | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 46058 | Zuly | Delma Gutierrez |  | Referred_Out |  |  |  | Work Comp | Independent | Independent |  |  |  |  | Signed In-House |  |  |  |  |  |  | Status of Liability (Ini |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 46058 | Lupe | Betuel Hernandez Guzman | Medium | Signed | Driver | 46058 | Accepted | Signed In-House | Fiesta Auto Insurance &  | Insurance |  | Yes |  |  | Field Rep | Low | Medium | High | Rank X | Total |  | Field Rep | Accepted | Disputed | Comparative |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 46058 | Jezel | Lizette Lizette |  | Rejected |  |  |  | No Injuries | J&W Auto Collision | Bodyshop |  | Yes |  |  | Lupe | 0 | 12 | 1 | 4 | 17 |  | Lupe | 15 | 2 | 0 |  |  |  |  |  |  | 4.25 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 46058 | Zuly | Lily Lily |  | Not Interested |  |  |  | Signed with another Law  | Randys Towing | Towing |  |  |  |  | Jezel | 0 | 15 | 0 | 2 | 17 |  | Jezel | 8 | 9 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 46058 | Zuly | Eduardo Solito  |  | Referred_Out |  |  |  | Work Comp | Vero from JM insurance | Insurance |  |  |  |  | Zuly | 0 | 2 | 4 | 4 | 10 |  | Zuly | 8 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 46059 | Lupe | Martha Garcia |  | Rejected |  |  |  | Minimal PD (Property Dam | Merced Auto Body | Bodyshop |  | Yes |  |  | Genysys | 0 | 1 | 3 | 3 | 7 |  | Genysys | 7 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 46059 | Zuly |  Joel Jack Zeidman |  | Referred_Out |  |  |  | Minimal PD (Property Dam | ACG-Kate Body Shop | Bodyshop |  |  |  |  | Grace | 0 | 2 | 1 | 1 | 4 |  | Grace | 3 | 1 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (988 rows skipped) ...
+FORMULAS:
+Q4 = COUNTIF(B:B,P4)
+R4 = COUNTIFS(B:B,P4,E:E,"Open")
+S4 = COUNTIFS(B:B,P4,E:E, "Rejected")
+T4 = COUNTIFS(B:B,P4,E:E, "Referred_Out")
+U4 = COUNTIFS(B:B,P4,E:E, "Not Interested")
+V4 = COUNTIFS(B:B,P4,E:E, "Signed Referred Out")
+W4 = COUNTIFS(B:B,P4,F:F, "driver")
+X4 = COUNTIFS(B:B,P4,E:E, "Signed")
+Y4 = SUM(V4,X4)
+AA4 = Y4/Z4
+AB4 = Y4/Q4
+Q5 = COUNTIF(B:B,P5)
+R5 = COUNTIFS(B:B,P5,E:E,"Open")
+S5 = COUNTIFS(B:B,P5,E:E, "Rejected")
+T5 = COUNTIFS(B:B,P5,E:E, "Referred_Out")
+
+===== SHEET "FRBDR_March 2026" — 134 non-empty rows =====
+R1: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Disposition | Facility | Type of Facility | Client's Location | FV Documentation |  |  | March 1-31, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2: 46072 | Grace | Stephanie Siu Ching Fung | Low | Signed Referred Out |  | 46098 | Accepted | Minimal PD (Property Dam | Active Auto Body | Chiro |  | Yes |  |  | FRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R3: 46083 | Zulema | Terry Cervantes | Rank X | Signed | Driver | 46083 | Disputed | Signed In-House | Leonard with Randy's Tow | Towing |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R4: 46083 | Jezel | Elvia Aguilarcastillo | Medium | Signed | Driver | 46083 | Accepted | Signed In-House | Cruz Collision Center | Bodyshop |  | Yes |  |  | Lupe | 27 | 0 | 3 | 0 | 2 | 1 | 10 | 21 | 22 | 10 | 2.2 | 0.8148148148 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R5: 46083 | Jezel | Adolfo Alba Medina | Medium | Signed | Driver | 46083 | Comparative | Signed In-House | Cali Dream Insurance | Insurance |  | Yes |  |  | Jezel | 47 | 4 | 11 | 4 | 8 | 0 | 15 | 20 | 20 | 10 | 2 | 0.4255319149 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R6: 46083 | Jezel | Tofiga Steven Vitale |  | Not Interested |  |  |  | Client doesn't want to p | George Iniquez/Cali Drea | Insurance |  | Yes |  |  | Zulema | 31 | 3 | 3 | 1 | 5 | 1 | 12 | 18 | 19 | 10 | 1.9 | 0.6129032258 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R7: 46083 | Jezel | Hayli Cassandra Jones | Medium | Open |  |  |  | Pending Intake on PD, TC | George Iniquez/Cali Drea | Insurance |  | Yes |  |  | Genysys | 16 | 0 | 2 | 3 | 0 | 3 | 5 | 9 | 12 | 10 | 1.2 | 0.75 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R8: 46083 | Jezel | Shawn Kim | Medium | Signed | Driver | 46085 | Accepted | Pending Intake on PD, TC | George Iniquez/Cali Drea | Insurance |  | Yes |  |  | TOTAL | 121 | 7 | 19 | 8 | 15 | 5 | 42 | 68 | 73 | 40 | 1.825 | 0.6033057851 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R9: 46083 | Jezel | Alonzo Brown |  | Rejected |  |  |  | Gap in treatment | Optimal Health and Welln | Chiro |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R10: 46083 | Zulema | Ana Quiroz  |  | Open |  |  |  | Pending Intake decision  | Alpha Performance | Bodyshop |  |  |  |  | March 1-31, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11: 46084 | Lupe | Mohit Mohit |  | Not Interested |  |  |  | Disputed liability and n | Independent | Independent |  | N/A |  |  | BDRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12: 46084 | Zulema | Alex Rodriguez  |  | Referred_Out |  |  |  | Work Comp | Independent | Independent |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R13: 46084 | Jezel | Gris Cardenas  |  | Rejected |  |  |  | At fault | Store | Independent |  |  |  |  | Queenie | 3 | 0 | 0 | 0 | 1 | 0 | 2 | 2 | 2 | 2 | 1 | 0.6666666667 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R14: 46084 | Jezel | Hany Hassan Rashad Moham | Medium | Signed | Driver | 46084 | Accepted | Contingency agreement ha | Cali Dream Insurance  | Insurance |  | Yes |  |  | Grace | 6 | 0 | 0 | 1 | 0 | 1 | 2 | 4 | 5 | 2 | 2.5 | 0.8333333333 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15: 46084 | Genysys | Arturo Jimenez | Low | Signed Referred Out |  | 46084 | Disputed | Work Comp | Lety from Envios |  |  |  |  |  | Ally | 2 | 0 | 0 | 0 | 0 | 0 | 2 | 2 | 2 | 2 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: 46085.46643518518 | Lupe | Diego Cruz |  | Rejected |  |  |  |  | Duran Detail Auto Body | Bodyshop |  | Yes |  |  | Miguel | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17: 46085.51594907408 | Zulema | Christopher Michael Baxt |  | Not Interested |  |  |  |  | Randy's towing | Towing |  |  |  |  | TOTAL | 11 | 0 | 0 | 1 | 1 | 1 | 6 | 8 | 9 | 8 | 1.125 | 1.375 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R18: 46085.524502314816 | Lupe | Gurjeet Singh | Medium | Signed | Driver | 46085 | Accepted |  | Central Valley Collision | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: 46085.592199074075 | Zulema | Ma Del Rosario Rivera So | Medium | Signed | Driver | 46085 | Accepted | Contingency agreement ha | JJ’s Auto Paint | Bodyshop |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: 46085.672002314815 | Jezel | Mohammad Naseeb Faqiri | Medium | Signed | Driver | 46085 | Disputed | Signed In-House | BS AUTOMOTIVE COLISION C | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: 46085.672002314815 | Jezel | Lily Delilah Pember pass | Medium | Signed | Passenger | 46087 | Accepted | Contingency agreement ha | BS AUTOMOTIVE COLISION C | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 46085.672002314815 | Jezel | Julia passenger of Moham |  | Not Interested |  |  |  |  | BS AUTOMOTIVE COLISION C | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 46085.672002314815 | Jezel | Giulia passenger of Moha |  | Not Interested |  |  |  |  | BS AUTOMOTIVE COLISION C | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 46085.672002314815 | Jezel | Star passenger of Mohamm |  | Not Interested |  |  |  |  | BS AUTOMOTIVE COLISION C | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 46085.672002314815 | Jezel | Lotta Janita Van Westree | Medium | Signed | Passenger | 46086 | Accepted | Signed In-House | BS AUTOMOTIVE COLISION C | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 46085.672002314815 | Jezel | Minou passenger of Moham |  | Not Interested |  |  |  | Client doesn't want to p | BS AUTOMOTIVE COLISION C | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 46085.672002314815 | Jezel | Joanna Fonseca | Medium | Signed | Driver | 46090 | Accepted | Signed In-House | Collision King of Tracy | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 46085.672002314815 | Zulema | Guillermo Ayala | Low | Signed Referred Out |  | 46100 | Accepted | Work Comp |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 46086 | Genysys | Madeleine Laura Woods  | Rank X | Signed | Driver | 46086 | Disputed | Signed In-House | Impact auto body and pai | Bodyshop |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 46087 | Zulema | Antonio Salazar |  | Rejected |  |  |  | No Injuries |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (1003 rows skipped) ...
+FORMULAS:
+Q4 = COUNTIF(B:B,P4)
+R4 = COUNTIFS(B:B,P4,E:E,"Open")
+S4 = COUNTIFS(B:B,P4,E:E, "Rejected")
+T4 = COUNTIFS(B:B,P4,E:E, "Referred_Out")
+U4 = COUNTIFS(B:B,P4,E:E, "Not Interested")
+V4 = COUNTIFS(B:B,P4,E:E, "Signed Referred Out")
+W4 = COUNTIFS(B:B,P4,F:F, "driver")
+X4 = COUNTIFS(B:B,P4,E:E, "Signed")
+Y4 = SUM(V4,X4)
+AA4 = Y4/Z4
+AB4 = Y4/Q4
+Q5 = COUNTIF(B:B,P5)
+R5 = COUNTIFS(B:B,P5,E:E,"Open")
+S5 = COUNTIFS(B:B,P5,E:E, "Rejected")
+T5 = COUNTIFS(B:B,P5,E:E, "Referred_Out")
+
+===== SHEET "FRBDR_April 2026" — 124 non-empty rows =====
+R1:  |  | Start date | End date |  | June | 10 | 2026 |  |  |  |  |  |  |  | April 1-30, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Report from June 1 to 10 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2:  |  | 46113 | 46183 |  | April | 1 | 2026 |  |  |  |  |  |  |  | FRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R3:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R4:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Lupe | 21 | 0 | 4 | 3 | 0 | 1 | 9 | 13 | 14 | 10 | 1.4 | 0.6666666667 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R5:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Jezel | 34 | 3 | 8 | 3 | 2 | 2 | 11 | 16 | 18 | 10 | 1.8 | 0.5294117647 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R6:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Zulema | 25 | 7 | 5 | 0 | 7 | 0 | 3 | 6 | 6 | 10 | 0.6 | 0.24 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R7:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Genysys | 10 | 0 | 1 | 4 | 1 | 1 | 4 | 3 | 4 | 10 | 0.4 | 0.4 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R8:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | TOTAL | 90 | 10 | 18 | 10 | 10 | 4 | 27 | 38 | 42 | 40 | 1.05 | 0.4666666667 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R10:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | April 1-30, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | BDRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R13:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Queenie | 2 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 2 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R14:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Grace | 4 | 1 | 2 | 0 | 0 | 0 | 1 | 1 | 1 | 2 | 0.5 | 0.25 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Ally | 11 | 0 | 2 | 4 | 3 | 0 | 2 | 2 | 2 | 2 | 1 | 0.1818181818 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: f | D | H | G | E |  |  |  |  |  |  |  |  |  |  | Miguel | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | #DIV/0! |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Disposition | Facility | Type of Facility | Client's Location | FV Documentation |  |  | TOTAL | 17 | 1 | 5 | 4 | 4 | 0 | 3 | 3 | 3 | 8 | 0.375 | 0.1764705882 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R18: 46099 | Jezel | Socorro Sanchez | Low | Signed Referred Out |  | 46114 | Accepted | Employment | Mad Dog Towing | Towing |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: 46072 | Lupe | Linda Ann Hamlin | High | Signed | Driver | 46114 | Disputed | Contingency agreement ha | GMB 525 W Main St Suite  | Independent |  | N/A |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: 46105 | Genysys | Fernanda Murillo Cortez | Low | Signed Referred Out |  | 46114 | Accepted | Successful Lead Referral | Field Representative Gen | Independent |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: 46132 | Genysys | David Michael Ginn | High | Signed | Driver | 46137 | Disputed | Contingency agreement ha | Gro Club | Marketing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 46113 | Jezel | Michelle Rubalcava | Medium | Signed Referred Out |  | 46113 | Accepted | Contingency agreement ha | Perfection Auto Body04/0 | Bodyshop | Client Referred out - Pe | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 46113 |  | Robert Z |  | Rejected |  |  |  | Not a PI case |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 46113 | Lupe | Felipe Lopez |  | Rejected |  |  |  | Client settled with PL/D | Independent | Independent |  | N/A |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 46113 | Lupe | Samantha Esquer | Medium | Signed | Driver | 46113 | Accepted | Contingency agreement ha | Tulare Fiesta Auto Insur | Insurance |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 46113 | Zulema | Filomeno Rivera Casareal |  | Not Interested |  |  |  | Signed with another Law  | Jody with Randy's Towing | Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 46114 | Ally | Marilyn Jimenez |  | Referred_Out |  |  |  | Disputed liability and n | Art's Auto Repairs | Bodyshop |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 46114 | Ally | Marilyn Jimenez daughter |  | Referred_Out |  |  |  | Disputed liability and n | Art's Auto Repairs | Bodyshop |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 46115 | Jezel | Rodolfo Barrales Espitia | High | Signed | Driver | 46118 | Accepted | Contingency agreement ha | Kustom Collision | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 46115 | Jezel | Araceli Villegas Ortiz | High | Signed | Passenger | 46118 | Accepted | Contingency agreement ha | Kustom Collision | Bodyshop |  | Yes |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (1003 rows skipped) ...
+FORMULAS:
+F1 = IF(D2="",, {TEXT(D2,"mmmm"), DAY(D2), YEAR(D2)})
+
+AE1 = CONCATENATE("Report from"," ",F1," ",G2," ","to"," ",G1," ",H1)
+D2 = TODAY()
+F2 = IF(C2="",, {TEXT(C2,"mmmm"), DAY(C2), YEAR(C2)})
+
+Q4 = COUNTIF(B:B,P4)
+R4 = COUNTIFS(B:B,P4,E:E,"Open")
+S4 = COUNTIFS(B:B,P4,E:E, "Rejected")
+T4 = COUNTIFS(B:B,P4,E:E, "Referred_Out")
+U4 = COUNTIFS(B:B,P4,E:E, "Not Interested")
+V4 = COUNTIFS(B:B,P4,E:E, "Signed Referred Out")
+W4 = COUNTIFS(B:B,P4,F:F, "driver")
+X4 = COUNTIFS(B:B,P4,E:E, "Signed")
+Y4 = SUM(V4,X4)
+AA4 = Y4/Z4
+AB4 = Y4/Q4
+
+===== SHEET "FRBDR_May 2026" — 106 non-empty rows =====
+R1:  |  | Start date | End date |  | June | 10 | 2026 |  |  |  |  |  |  |  | May 1-31, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Report from June 1 to 10 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2:  |  | 46143 | 46183 |  | May | 1 | 2026 |  |  |  |  |  |  |  | FRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R3:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R4:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Lupe | 20 | 2 | 3 | 5 | 0 | 1 | 5 | 9 | 10 | 10 | 1 | 0.5 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R5:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Jezel | 28 | 2 | 7 | 3 | 3 | 5 | 6 | 8 | 13 | 10 | 1.3 | 0.4642857143 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R6:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Zulema | 23 | 0 | 4 | 1 | 0 | 1 | 12 | 17 | 18 | 10 | 1.8 | 0.7826086957 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R7:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Genysys | 10 | 0 | 1 | 0 | 0 | 6 | 3 | 3 | 9 | 10 | 0.9 | 0.9 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R8:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | TOTAL | 81 | 4 | 15 | 9 | 3 | 13 | 26 | 37 | 50 | 40 | 1.25 | 0.6172839506 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R10:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | May 1-31, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | BDRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R13:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Queenie | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R14:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Grace | 4 | 0 | 1 | 0 | 2 | 0 | 1 | 1 | 1 | 2 | 0.5 | 0.25 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Ally | 3 | 0 | 0 | 1 | 0 | 2 | 0 | 0 | 2 | 2 | 1 | 0.6666666667 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: f | D | H | G | E |  |  |  |  |  |  |  |  |  |  | Miguel | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Disposition | Facility | Type of Facility | Client's Location | FV Documentation |  |  | TOTAL | 9 | 0 | 3 | 1 | 2 | 2 | 1 | 1 | 3 | 8 | 0.375 | 0.3333333333 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R18: 46136 | Zulema | Maria Isabel Urtiz a la  | Rank X | Signed | Driver | 46148 | Accepted | Contingency agreement ha | Delano’s Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: 46141 | Jezel | Sarrin Sterling | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: 46141 | Jezel | Darrin Sterling Sr | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: 46141 | Jezel | Ajanee Webb | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 46141 | Jezel | Sarrin Sterling as the M | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 46141 | Jezel | Sarrin Sterling as the M | Low | Signed Referred Out |  | 46148 | Accepted | Successful Lead Referral | BDR Grace Lanayon/ Karin |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 46121.51482366898 | Ally | Vondrai Skillern | Low | Signed Referred Out |  | 46154 | Disputed | Successful Lead Referral | Ana with Royal Road Coll |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 46121.51545586805 | Ally | Vondrai Skillern as the  | Low | Signed Referred Out |  | 46154 | Disputed | Successful Lead Referral | Ana with Royal Road Coll |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 46093 | Genysys | Luis Castillo | Low | Signed Referred Out |  | 46157 | Accepted | Lead Referred out - Succ | Independent |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 46143 | Zulema | Oscar Mandujano Ramirez | High | Signed | Driver | 46148 | Accepted | Contingency agreement ha | Delano's Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 46143 | Zulema | Aida Yolanda Ramirez Ato | High | Signed | Passenger | 46148 | Accepted | Contingency agreement ha | Delano's Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 46143 | Lupe | Erika Flores |  | Referred_Out |  |  |  | Disputed liability and n | Isaes Auto Body |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 46144 | Zulema | Mariana Pizano | Rank X | Signed | Driver | 46144 | Disputed | Contingency agreement ha |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (1003 rows skipped) ...
+FORMULAS:
+F1 = IF(D2="",, {TEXT(D2,"mmmm"), DAY(D2), YEAR(D2)})
+
+AE1 = CONCATENATE("Report from"," ",F1," ",G2," ","to"," ",G1," ",H1)
+D2 = TODAY()
+F2 = IF(C2="",, {TEXT(C2,"mmmm"), DAY(C2), YEAR(C2)})
+
+Q4 = COUNTIF(B:B,P4)
+R4 = COUNTIFS(B:B,P4,E:E,"Open")
+S4 = COUNTIFS(B:B,P4,E:E, "Rejected")
+T4 = COUNTIFS(B:B,P4,E:E, "Referred_Out")
+U4 = COUNTIFS(B:B,P4,E:E, "Not Interested")
+V4 = COUNTIFS(B:B,P4,E:E, "Signed Referred Out")
+W4 = COUNTIFS(B:B,P4,F:F, "driver")
+X4 = COUNTIFS(B:B,P4,E:E, "Signed")
+Y4 = SUM(V4,X4)
+AA4 = Y4/Z4
+AB4 = Y4/Q4
+
+===== SHEET "FRBDR_June 2026" — 74 non-empty rows =====
+R1:  |  | Start date | End date |  | June | 10 | 2026 |  |  |  |  |  |  |  | Jun 1-9, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Report from June 1 to 10 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2:  |  | 46143 | 46183 |  | May | 1 | 2026 |  |  |  |  |  |  |  | FRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R3:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R4:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Lupe | 14 | 1 | 0 | 0 | 0 | 1 | 6 | 12 | 13 | 10 | 1.3 | 0.9285714286 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R5:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Jezel | 13 | 0 | 3 | 3 | 0 | 2 | 4 | 5 | 7 | 10 | 0.7 | 0.5384615385 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R6:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Zulema | 4 | 0 | 0 | 1 | 0 | 0 | 2 | 3 | 3 | 10 | 0.3 | 0.75 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R7:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Genysys | 3 | 0 | 0 | 0 | 0 | 0 | 2 | 3 | 3 | 10 | 0.3 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R8:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | TOTAL | 34 | 1 | 3 | 4 | 0 | 3 | 14 | 23 | 26 | 40 | 0.65 | 0.7647058824 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R10:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Jun 1-9, 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | BDRS |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12:  |  | William Alberto Olaizola |  |  |  |  |  |  |  |  |  |  |  |  | Name | Total Leads | Open | Rejected | Referred Out | Not Interested | Signed Referred Out | Sign-up Unique Count | Signed In-House | Total Signed | Target | Achieved | Lead vs Sign Up Conversi |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R13:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Queenie | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R14:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Grace | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Ally | 6 | 1 | 1 | 2 | 1 | 0 | 0 | 1 | 1 | 2 | 0.5 | 0.1666666667 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: f | D | H | G | E |  |  |  |  |  |  |  |  |  |  | Miguel | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Disposition | Facility | Type of Facility | Client's Location | FV Documentation |  |  | TOTAL | 7 | 2 | 1 | 2 | 1 | 0 | 0 | 1 | 1 | 8 | 0.125 | 0.1428571429 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R18: 46174 | Genysys | Guillermo David Galindo  | High | Signed | Driver | 46174 | Accepted | Contingency agreement ha |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: 46099 | Jezel | Socorro Sanchez | Low | Signed Referred Out |  | 46178 | Accepted | Work Comp | Mad Dog Towing | Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: 46099 | Jezel | Socorro Sanchez | Low | Signed Referred Out |  | 46178 | Accepted | Work Comp | Mad Dog Towing | Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: 46174 | Lupe | Elisa Yvonne Garcia | Rank X | Signed | Driver | 46174 | Disputed | Contingency agreement ha | DH Machine Inc Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 46174 | Lupe | Rayleen Jenissa Garcia | Rank X | Signed Referred Out |  | 46174 | Disputed | Contingency agreement ha | DH Machine Inc Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 46174 | Lupe | Rayleen Jenissa Garcia m | Rank X | Signed | Passenger | 46174 | Disputed | Contingency agreement ha | DH Machine Inc Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 46174 | Lupe | Rayleen Jenissa Garcia m | Rank X | Signed | Passenger | 46174 | Disputed | Contingency agreement ha | DH Machine Inc Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 46174 | Jezel | Casey Rae Cooksey | Medium | Signed | Driver | 46174 | Accepted | Contingency agreement ha | Ace in the Hole Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 46174 | Jezel | Sela Maile | Medium | Signed | Driver | 46174 | Accepted | Contingency agreement ha | 925 Collision Body Shop |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 46174 | Lupe | Jose Mario Urena Vela | Medium | Signed | Driver | 46174 | Accepted | Contingency agreement ha | Active Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 46174 | Lupe | Jose Mario Urena Vela as | Medium | Signed | Passenger | 46174 | Accepted | Contingency agreement ha | Active Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 46174 | Lupe | Jose Mario Urena Vela as | Medium | Signed | Passenger | 46174 | Accepted | Contingency agreement ha | Active Towing |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 46174 | Lupe | Sally Marquez Guerrero | Medium | Signed | Driver | 46179 | Accepted | Contingency agreement ha | Gia with Extreme Car Car |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (1003 rows skipped) ...
+FORMULAS:
+F1 = IF(D2="",, {TEXT(D2,"mmmm"), DAY(D2), YEAR(D2)})
+
+AE1 = CONCATENATE("Report from"," ",F1," ",G2," ","to"," ",G1," ",H1)
+D2 = TODAY()
+F2 = IF(C2="",, {TEXT(C2,"mmmm"), DAY(C2), YEAR(C2)})
+
+Q4 = COUNTIF(B:B,P4)
+R4 = COUNTIFS(B:B,P4,E:E,"Open")
+S4 = COUNTIFS(B:B,P4,E:E, "Rejected")
+T4 = COUNTIFS(B:B,P4,E:E, "Referred_Out")
+U4 = COUNTIFS(B:B,P4,E:E, "Not Interested")
+V4 = COUNTIFS(B:B,P4,E:E, "Signed Referred Out")
+W4 = COUNTIFS(B:B,P4,F:F, "driver")
+X4 = COUNTIFS(B:B,P4,E:E, "Signed")
+Y4 = SUM(V4,X4)
+AA4 = Y4/Z4
+AB4 = Y4/Q4
+
+===== SHEET "DD" — 3084 non-empty rows =====
+R1: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Notes/Comments | Facilty | Type of Facility | Client's Location | 1 | Month |  |  |  |  |  |  |  |  |  | 
+R2: 45659 | Arden | Ardith Beverly Smith  | Low | Signed |  | 45665 | Disputed | High Damage | Mr. Kool's Collision | Low | Los Angeles | 1 | January 2025 |  |  |  |  | Mr. Kool's Collision | 12 |  |  |  | 434
+R3: 45659 | Jezel | TG Hue Yang | Low | Signed |  | 45659 | Accepted | High Damage | VIP Auto body | Low | Sacramento | 1 | January 2025 |  |  |  |  | VIP Auto body | 6 |  |  | Independent Lead | 155
+R4: 45659 | Jezel | Annie Vang- Passenger of | Low | Signed |  | 45659 | Accepted | High Damage | VIP Auto body | Low | Sacramento | 1 | January 2025 |  |  |  |  | Tony at Autobahn | 3 |  |  | Randy's Towing | 62
+R5: 45659 | Jezel | Annie Vang as the mother | Low | Signed |  | 45659 | Accepted | High Damage | VIP Auto body | Low | Sacramento | 1 | January 2025 |  |  |  |  | Johnny with Jurupa Valle | 1 |  |  | Delano Towing | 40
+R6: 45659 | Jezel | Annie Vang as the mother | Low | Signed |  | 45659 | Accepted | High Damage | VIP Auto body | Low | Sacramento | 1 | January 2025 |  |  |  |  | BG Auto | 2 |  |  | Extreme Car Care Center | 29
+R7: 45660 | Arden | Shanice Sholes | Medium | Signed |  | 45660 | Disputed |  | Tony at Autobahn | Low | Redondo Beach | 1 | January 2025 |  |  |  |  | Regino Auto Body Shop | 28 |  |  | Regino Auto Body Shop | 28
+R8: 45660 | Monica | Paris Lynn Del Cid | Low | Signed |  | 45660 | Accepted | High Damage | Johnny with Jurupa Valle | Low | San Jacinto | 1 | January 2025 |  |  |  |  |  | 0 |  |  | Xtreme Auto Collision &  | 26
+R9: 45659 | Arden | Josefina Gaitan  |  | Rejected |  |  |  | At fault | Tony at Autobahn |  |  | 1 | January 2025 |  |  |  |  | Xtreme Collision Auto an | 6 |  |  | Valenz Autobody, Loliz | 22
+R10: 45660 | Monica | Arahon Hubense Lopez Mat | Medium | Signed |  | 45662 | Disputed |  | BG Auto | Low | Pomona | 1 | January 2025 |  |  |  |  | Cruz Collision | 5 |  |  | Kustom Collision Center | 22
+R11: 45660 | Arden | Britcia Coral Gomez Herr | Low | Signed |  | 45660 | Accepted |  | Regino Auto Body Shop | Low | Los Angeles | 1 | January 2025 |  |  |  |  | Accident Recovery Modest | 1 |  |  | FAM Auto Body & Paint Co | 20
+R12: 45660 | Arden | Britcia Coral Gomez Herr | Low | Signed |  | 45660 | Accepted |  | Regino Auto Body Shop | Low | Los Angeles | 1 | January 2025 |  |  |  |  | Synergy Chiropractic & N | 1 |  |  | Envista Medical | 15
+R13: 45660 | Arden | Britcia Coral Gomez Herr | Low | Signed |  | 45660 | Accepted |  | Regino Auto Body Shop | Low | Los Angeles | 1 | January 2025 |  |  |  |  | A-Able Towing | 1 |  |  | Mad Dog Towing | 14
+R14: 45295 | Jezel | Pedro Gutierrez |  | Rejected |  |  |  | Owner of a parked vehicl |  |  |  | 1 | January 2024 |  |  |  |  | Trinity Towing | 2 |  |  | Fruitvale Collision Cent | 13
+R15: 45661 | Lupe | Amber Mae Balderaz | Low | Signed |  | 45661 | Disputed | High Damage | Xtreme Collision Auto an | Low | Madera | 1 | January 2025 |  |  |  |  | Walker Advertising | 1 |  |  | Mr. Kool's Collision | 12
+R16: 45661 | Lupe | Aaron Rodriguez |  | Open |  |  |  |  | Xtreme Collision Auto an |  |  | 1 | January 2025 |  |  |  |  | AV Chiro | 4 |  |  | Merced Auto Body | 12
+R17: 45662 | Jezel | Esmeralda Gonzalez Marti | Medium | Signed |  | 45662 | Accepted |  | Cruz Collision | Low | Stockton | 1 | January 2025 |  |  |  |  | Sal's Auto Body Shop | 1 |  |  | First Health Medical Cen | 12
+R18: 45662 | Jezel | Alexis Guadalupe Aguila  | Medium | Signed |  | 45662 | Accepted |  | Cruz Collision | Low | Stockton | 1 | January 2025 |  |  |  |  | Super Towing | 2 |  |  | Ten Eight Towing | 11
+R19: 45663 | Arden | Juanita Malia Martinez | Medium | Signed |  | 45666 | Accepted |  | Tony at Autobahn | Low | Los Angeles | 1 | January 2025 |  |  |  |  | Valenz Autobody, Loliz | 22 |  |  | Payless Towing | 10
+R20: 45663 | Monica | Tony Esparza |  | Open |  |  |  |  | BG Auto |  |  | 1 | January 2025 |  |  |  |  | Autobahn Collision | 1 |  |  | Mad Dog towing | 10
+R21: 45663 | Lupe | Anthony Allen Bianchi | Low | Signed |  | 45663 | Accepted |  | Accident Recovery Modest | Low | Modesto | 1 | January 2025 |  |  |  |  | Adam Auto Collision | 2 |  |  | BG Auto Body | 9
+R22: 45663 | Brizelle | Manuel Gabriel Sauceda J | Medium | Signed |  | 45663 | Accepted |  | Synergy Chiropractic & N | Medium | Visalia | 1 | January 2025 |  |  |  |  | Ten Eight Towing | 11 |  |  | Trends Auto Body- Luis R | 9
+R23: 45663 | Lupe | Yvonne Manuel | Low | Signed |  | 45663 | Accepted | High Damage | A-Able Towing | Low | Visalia | 1 | January 2025 |  |  |  |  | Kate Auto Collision | 2 |  |  | Maggie's Insurance | 8
+R24: 45663 | Brizelle | Bobby Michael Cook | HIgh | Signed |  | 45663 | Disputed |  | Trinity Towing |  | Taft | 1 | January 2025 |  |  |  |  | Precision Auto Repair &  | 1 |  |  | Slick Collision | 8
+R25: 45663 | Jezel | Tim Murphy |  | Signed Referred Out |  | 45665 |  |  | Walker Advertising |  |  | 1 | January 2025 |  |  |  |  | Dent Pro | 3 |  |  | Randy’s Towing-Jody | 8
+R26: 45664 | Arden | Robin Adam |  | Not Interested |  |  |  |  | AV Chiro |  |  | 1 | January 2025 |  |  |  |  | On Fire Collision | 3 |  |  | Jurupa Valley Collision | 7
+R27: 45664 | Monica | Rebeca Orozco for the es |  | Rejected |  |  |  |  |  |  |  | 1 | January 2025 |  |  |  |  | Central Valley Collision | 4 |  |  | Tim with Celebrity Body  | 7
+R28: 45664 | Lupe | Dora Leticia Garibo Espi | Low | Signed |  | 45672 | Accepted | High Damage | Sal's Auto Body Shop | Low | Fresno | 1 | January 2025 |  |  |  |  | JL Auto Detailed  | 1 |  |  | VIP Auto body | 6
+R29: 45664 | Jezel | Juana Lopez Chiche |  | Referred_Out |  |  |  | Referred to Deldar Legal | Super Towing |  |  | 1 | January 2025 |  |  |  |  | Raskey Chiro | 2 |  |  | Xtreme Collision Auto an | 6
+R30: 45664 | Monica | Alexa Nicole Zuniga |  | Rejected |  |  |  |  | Valenz Autobody, Loliz |  |  | 1 | January 2025 |  |  |  |  | Kustom Collision Center | 22 |  |  | Kate Auto Collision Grou | 6
+... (3365 rows skipped) ...
+FORMULAS:
+N2 = IF(A2:A3401="",, TEXT(A2:A3401,"mmmm yyyy"))
+S2 = UNIQUE(J2:J3401)
+T2 = SUMIFS(M2:M3401,J2:J3401,S2)
+W2 = SORT(S2:T3401,T2:T3401,false)
+T3 = SUMIFS(M3:M3402,J3:J3402,S3)
+T4 = SUMIFS(M4:M3403,J4:J3403,S4)
+T5 = SUMIFS(M5:M3404,J5:J3404,S5)
+T6 = SUMIFS(M6:M3405,J6:J3405,S6)
+T7 = SUMIFS(M7:M3406,J7:J3406,S7)
+T8 = SUMIFS(M8:M3407,J8:J3407,S8)
+T9 = SUMIFS(M9:M3408,J9:J3408,S9)
+T10 = SUMIFS(M10:M3409,J10:J3409,S10)
+T11 = SUMIFS(M11:M3410,J11:J3410,S11)
+T12 = SUMIFS(M12:M3411,J12:J3411,S12)
+T13 = SUMIFS(M13:M3412,J13:J3412,S13)
+
+===== SHEET "Sep-Dec Queenie" — 448 non-empty rows =====
+R1: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Notes/Comments | Facilty | Type of Facility | Client's Location | 1 | 
+R2: 45902 | Grace | Jane Doe |  | Not Interested |  |  |  |  | Independent Lead | Independent |  | 1 | September 2025
+R3: 45908 | Ally | Delfina Juarez / Pablo w |  | Rejected |  |  |  | Disputed liability and n | Pablo with Cali Auto Col | Body Shop |  | 1 | September 2025
+R4: 45915 | Grace | Barbara / Joan Pacheco |  | Not Interested |  |  |  | No Answer (Calls/Text/Em | Panther Collision  | Body Shop |  | 1 | September 2025
+R5: 45917 | Grace | Axel Jose Solis Molina / | Medium | Signed | Driver | 45917 | Accepted | Signed In-House | Slick Collision | Body Shop |  | 1 | September 2025
+R6: 45925 | Grace | Jesus Fuentes |  | Open |  |  |  | No Answer (Calls/Text/Em | Panther Collision  | Body Shop |  | 1 | September 2025
+R7: 45926 | Grace | Claudia Milena Parrado M | Medium | Signed | Driver | 45926 | Accepted | Signed In-House | AW collision  | Body Shop |  | 1 | September 2025
+R8: 45926 | Grace | Edgar Sanchez |  | Rejected |  |  |  |  | Dr. Davis Chiropractor | Chiro |  | 1 | September 2025
+R9: 45896 | Jezel | Jennifer Andrea Hernande | Medium | Signed | Driver | 45901 | Accepted | Signed In-House | Accident Recovery Center | Chiro |  | 1 | August 2025
+R10: 45902 | Zuly | Elizabeth Noble  |  | Rejected |  |  |  | At fault | Alpha Performance Body S | Body Shop |  | 1 | September 2025
+R11: 45902 | Lupe | Bisente A. Gracia Jr  | Medium | Signed | Driver | 45902 | Accepted | Signed In-House | Xtreme Auto Collision &  | Body Shop |  | 1 | September 2025
+R12: 45903 | Jezel | Anthony Keith  |  | Rejected |  |  |  | Disputed liability and n | Prime Collision Center | Body Shop |  | 1 | September 2025
+R13: 45903 | Jezel | Jose Perez |  | Referred_Out |  |  |  | Med Mal | Independent Lead | Independent |  | 1 | September 2025
+R14: 45903 | Claudia/Ally | Filiberto Meza Vega | Medium | Signed | Driver | 45903 | Accepted | Signed In-House | Art's Auto Repair | Body Shop |  | 1 | September 2025
+R15: 45905 | Jezel | Christina Monae Dixon | Medium | Signed | Driver | 45905 | Accepted | Signed In-House | Kustom Collision- Ralph  | Body Shop |  | 1 | September 2025
+R16: 45905 | Jezel | Christina Monae Dixon as | Medium | Signed | Passenger | 45905 | Accepted | Signed In-House | Kustom Collision- Ralph  | Body Shop |  | 1 | September 2025
+R17: 45905 | Arden | Mario Perez | Low | Signed Referred Out |  | 45925 | Accepted | Minimal PD (Property Dam | Regino Auto Body Shop | Body Shop |  | 1 | September 2025
+R18: 45905 | Arden | Silvio Xavier Gomez Guti | Low | Signed Referred Out |  | 45925 | Accepted | Minimal PD (Property Dam | Regino Auto Body Shop | Body Shop |  | 1 | September 2025
+R19: 45905 | Arden | Kahlil Tevaron Kirton |  | Open |  |  |  | Signed In-House | Existing Client Anthony  | Independent |  | 1 | September 2025
+R20: 45905 | Arden | Acai Berg |  | Rejected |  |  |  | Pending Intake on Client | Existing Client Anthony  | Independent |  | 1 | September 2025
+R21: 45905 | Zuly | Norma Esther Casarez | Medium | Signed | Driver | 45908 | Accepted | Signed In-House | Envista Medical | Chiro |  | 1 | September 2025
+R22: 45908 | Jezel | Jaime Gonzalez Jr | Medium | Signed | Driver | 45908 | Accepted | Signed In-House | Rios Auto Body Shop | Body Shop |  | 1 | September 2025
+R23: 45908 | Jezel | Sonny Garcia | Medium | Signed | Passenger | 45908 | Accepted | Signed In-House | Rios Auto Body Shop | Body Shop |  | 1 | September 2025
+R24: 45908 | Lupe | Kay with Stark Auto Sale |  | Rejected |  |  |  | Not a PI case | Independent Lead | Independent |  | 1 | September 2025
+R25: 45909 | Lupe | Daniel Benjamin Nguyen | Medium | Signed | Driver | 45909 | Accepted | Signed In-House | James Mobile Auto Repair | Body Shop |  | 1 | September 2025
+R26: 45910 | Jezel | Alvaro Piza Mariche | High | Signed | Driver | 45910 | Accepted | Signed In-House | Perfection Auto Body | Body Shop |  | 1 | September 2025
+R27: 45910 | Jezel | Luis Eduardo Luna Cortes | High | Signed | Passenger | 45910 | Accepted | Signed In-House | Perfection Auto Body | Body Shop |  | 1 | September 2025
+R28: 45910 | Jezel | Mei Lin Chang | Medium | Signed | Driver | 45910 | Accepted | Signed In-House | Optimal Health Wellness  | Chiro |  | 1 | September 2025
+R29: 45910 | Jezel | Samuel Syte Chang | Medium | Signed | Passenger | 45910 | Accepted | Signed In-House | Optimal Health Wellness  | Chiro |  | 1 | September 2025
+R30: 45910 | Lupe | Marin Hernandez Lopez | Medium | Signed | Driver | 45910 | Accepted | Signed In-House | Golden State Towing  | Towing |  | 1 | September 2025
+... (412 rows skipped) ...
+R443: 46020 | Jezel | Fernando Castro Nunez | Medium | Signed | Driver | 46020 | Accepted | Signed In-House | Perfection Auto Body | Bodyshop |  | 1 | December 2025
+R444: 46020 | Jezel | Oscar Alonso Castro Nune |  | Open |  |  |  | Pending Agreement | Perfection Auto Body | Bodyshop |  | 1 | December 2025
+R445: 46021 | Jezel | Lazaro Jaimes |  | Rejected |  |  |  | At fault | Dino Body Shop | Bodyshop |  | 1 | December 2025
+R446: 46021 | Lupe | Lalo Daniel Gutierrez |  | Open |  |  |  | No Answer (Calls/Text/Em | William Auto Body Collis | Bodyshop |  | 1 | December 2025
+R447: 46021 | Queenie | Maribel Murillo Troncoso | Medium | Signed | Driver | 46021 | Accepted | Signed In-House | Xtrene Auto Collision an | Bodyshop |  | 1 | December 2025
+R448: 46022 | Jezel | Miryam Perez |  | Rejected |  |  |  | Client settled with PL/D | Rocky - Infinity Auto Bo | Bodyshop |  | 1 | December 2025
+
+===== SHEET "Dashboard" — 46 non-empty rows =====
+R1:  |  | Start date | End date |  | June | 8 | 2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2:  |  | 46174 | 46181 |  | June | 1 | 2026 |  |  |  |  |  |  |  |  |  |  | Report from June 1 to 8  |  |  |  |  |  |  |  | 
+R3:  |  |  |  |  | 46183 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R4:  |  |  |  |  |  |  |  |  |  |  |  |  | Role | Name | Total leads | Open | Rejected | Referred_Out | Not_Interested | Signed Referred Out | Sign-up Unique Count | Signed | Total sign up | Target | Achieved | Conversion
+R5:  |  |  |  |  |  |  |  |  |  |  |  |  | FR | Lupe | 2 | 0 | 0 | 0 | 0 | 0 | 1 | 2 | 2 | 10 | 0.2 | 1
+R6:  |  |  |  |  |  |  |  |  |  |  |  |  | FR | Jezel | 4 | 0 | 0 | 1 | 0 | 0 | 2 | 3 | 3 | 10 | 0.3 | 0.75
+R7:  |  |  |  |  |  |  |  |  |  |  |  |  | FR | Zulema | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 10 | 0 | 0
+R8:  |  |  |  |  |  |  |  |  |  |  |  |  | FR | Genysys | 2 | 0 | 0 | 0 | 0 | 0 | 1 | 2 | 2 | 10 | 0.2 | 1
+R9:  |  |  |  |  |  |  |  |  |  |  |  |  |  | TOTAL | 9 | 0 | 0 | 2 | 0 | 0 | 4 | 7 | 7 | 40 | 0.175 | 0.7777777778
+R10:  |  |  |  |  |  |  |  |  |  |  |  |  | BDR | Queenie | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 
+R11:  |  |  |  |  |  |  |  |  |  |  |  |  | BDR | Grace | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 2 | 0.5 | 1
+R12:  |  |  |  |  |  |  |  |  |  |  |  |  | BDR | Ally | 2 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0
+R13:  |  |  |  |  |  |  |  |  |  |  |  |  | BDR | Miguel | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 
+R14: Date | FR | Lead Name | Value | Outcome | Classification | SUD | Liability | Notes/Comments | Facility | Type of Facility | Client's Location |  |  | TOTAL | 3 | 1 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 8 | 0.125 | 0.375
+R15: 46176.43717 | Jezel | Joel Peter Zuniga  | Rank X | Signed | Driver | 46177 | Accepted | Contingency agreement ha | Art's Body Shop |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: 46176.43717 | Jezel | Gina Garcia | Rank X | Signed | Passenger | 46176 | Accepted | Minimal PD (Property Dam | Existing client Diana Da |  |  |  |  |  | Signed In-House |  |  |  |  |  |  |  | Status of Liability (Ini |  |  | 
+R17: 46176.52873 | Jezel | Pedro Jesus Vasquez | Medium | Signed | Driver | 46176 | Accepted | Minimal PD (Property Dam | Existing client Diana Da |  |  |  |  |  | Agent | Low | Medium | High | Rank X | Total |  |  | Agent | Accepted | Disputed | Comparative
+R18: 46176.62829 | Ally | Christopher Saavedra |  | Open |  |  | Disputed | Successful Lead Referral | The body shop Yuba City |  |  |  |  | FR | Lupe | 0 | 0 | 0 | 2 | 2 |  | FR | Lupe | 0 | 2 | 0
+R19: 46176.79609 | Zulema | Katonya Randle |  | Referred_Out |  |  | Disputed | Successful Lead Referral | The body shop Yuba City |  |  |  |  | FR | Jezel | 0 | 1 | 0 | 2 | 3 |  | FR | Jezel | 3 | 1 | 0
+R20: 46177.68488 | Genysys | Krystal Evelin Lopez  | Rank X | Signed | Driver | 46176 | Disputed |  |  |  |  |  |  | FR | Zulema | 0 | 0 | 0 | 0 | 0 |  | FR | Zulema | 0 | 1 | 0
+R21: 46177.68488 | Genysys | Santos Emilia Jorge moth | Rank X | Signed | Passenger | 46178 | Disputed |  |  |  |  |  |  | FR | Genysys | 0 | 0 | 0 | 2 | 2 |  | FR | Genysys | 0 | 2 | 0
+R22: 46177.71229 | Grace | Andrea Guzman / Sergio G | Rank X | Signed |  |  | Disputed |  |  |  |  |  |  | BDR | Grace | 0 | 0 | 0 | 1 | 1 |  | BDR | Grace | 0 | 1 | 0
+R23: 46177.79031 | Ally | Melissa Antonio Cruz |  | Rejected |  |  | Disputed |  |  |  |  |  |  | BDR | Ally | 0 | 0 | 0 | 0 | 0 |  | BDR | Ally | 0 | 2 | 0
+R24: 46178.50567 | Lupe | Cecilia Annette Espinoza | Rank X | Signed | Driver | 46178 | Disputed |  |  |  |  |  |  | BDR | Queenie | 0 | 0 | 0 | 0 | 0 |  | BDR | Queenie | 0 | 0 | 0
+R25: 46178.50567 | Lupe | Raul Simental Cobian | Rank X | Signed | Passenger | 46178 | Disputed |  |  |  |  |  |  |  | Total | 0 | 1 | 0 | 7 |  |  |  | Total | 3 | 9 | 0
+R26: 46178.75948 | Jezel | Mohammad Mohammadi  |  | Referred_Out |  |  | Disputed |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Signed Referred Out |  |  |  |  |  |  |  | Status of Liability (Ini |  |  | 
+R29:  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | Agent | Low | Medium | High | Total |  |  |  | Agent | Accepted | Disputed | Comparative
+R30:  |  |  |  |  |  |  |  |  |  |  |  |  |  | FR | Lupe | 0 | 0 | 0 | 0 |  |  | FR | Lupe | 0 | 0 | 0
+... (3019 rows skipped) ...
+FORMULAS:
+F1 = IF(D2="",, {TEXT(D2,"mmmm"), DAY(D2), YEAR(D2)})
+
+F2 = IF(C2="",, {TEXT(C2,"mmmm"), DAY(C2), YEAR(C2)})
+
+S2 = CONCATENATE("Report from"," ",F1," ",G2," ","to"," ",G1," ",H1)
+F3 = TODAY()
+P5 = SUMIFS(DD!$M$2:$M3055,DD!$B$2:$B3055,$O5,DD!$A$2:$A3055,">="&$C$2,DD!$A$2:$A3055,"<="&$D$2)
+Q5 = SUMIFS(DD!$M$2:$M3055,DD!$B$2:$B3055,$O5,DD!$E$2:$E3055,$Q$4,DD!$A$2:$A3055,">="&$C$2,DD!$A$2:$A3055,"<="&$D$2)
+R5 = SUMIFS(DD!$M$2:$M3055,DD!$B$2:$B3055,$O5,DD!$E$2:$E3055,$R$4,DD!$A$2:$A3055,">="&$C$2,DD!$A$2:$A3055,"<="&$D$2)
+S5 = SUMIFS(DD!$M$2:$M3055,DD!$B$2:$B3055,$O5,DD!$E$2:$E3055,$S$4,DD!$A$2:$A3055,">="&$C$2,DD!$A$2:$A3055,"<="&$D$2)
+T5 = SUMIFS(DD!$M$2:$M3055,DD!$B$2:$B3055,$O5,DD!$E$2:$E3055,$T$4,DD!$A$2:$A3055,">="&$C$2,DD!$A$2:$A3055,"<="&$D$2)
+U5 = SUMIFS(DD!$M$2:$M3055,DD!$B$2:$B3055,$O5,DD!$E$2:$E3055,$U$4,DD!$G$2:$G3055,">="&$C$2,DD!$G$2:$G3055,"<="&$D$2)
+V5 = SUMIFS(DD!$M$2:$M3055,DD!$B$2:$B3055,$O5,DD!$F$2:$F3055,"<>*Passenger*",DD!$E2:$E3055,"signed",DD!$A$2:$A3055,">="&$C$2,DD!$A$2:$A3055,"<="&$D$2)
+W5 = SUMIFS(DD!$M$2:$M3055,DD!$B$2:$B3055,$O5,DD!$E$2:$E3055,$W$4,DD!$A$2:$A3055,">="&$C$2,DD!$A$2:$A3055,"<="&$D$2)
+X5 = W5+U5
+Z5 = X5/Y5
+AA5 = iferror((U5+W5)/P5,"")
+
+===== SHEET "YTD_2026" — 109 non-empty rows =====
+R1:  | Date | FR | Lead Name | Value | Outcome | Classification | SUD |  |  | Field Rep | January |  |  | February |  |  | March |  |  | April |  |  | May |  |  | June |  |  | July |  |  | August |  |  | Septmeber |  |  | October |  |  | November |  |  | December |  | 
+R2: January | 46024 | Queenie | Eric Morales Hernandez |  | Not Interested |  |  |  |  |  | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-U
+R3: January | 46024 | Queenie | Marla Rubio |  | Not Interested |  |  |  |  | Jezel | 1 | 8 | 9 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R4: January | 46024 | Jezel | Maria Juana |  | Referred_Out |  |  |  |  | Lupe | 0 | 9 | 9 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R5: January | 46025 | Lupe | Cheenouj Vang | Rank X | Signed | Driver | 46027 |  |  | Zuly | 2 | 17 | 19 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R6: January | 46025 | Lupe | Gia Yang | Rank X | Signed | Passenger | 46027 |  |  | Genysys | 0 | 4 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R7: January | 46027 | Lupe | Ahmad Kaihan Rahmany | Medium | Signed | Driver | 46027 |  |  | Ally | 3 | 4 | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R8: January | 46027 | Grace | Jimmy Doe |  | Rejected |  |  |  |  | Grace | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R9: January | 46027 | Zuly | Esther Leyva |  | Referred_Out |  |  |  |  | Queenie | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R10: January | 46027 | Zuly | Esther Leyva | Low | Signed Referred Out |  | 46043 |  |  | TOTAL | 7 | 44 | 51 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R11: January | 46027 | Zuly | Diana Vasquez |  | Referred_Out |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12: January | 46027 | Lupe | David Leyva |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R13: January | 46027 | Zuly | Avery Marie Gonzalez | Medium | Signed | Driver | 46027 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R14: January | 46027 | Monica | Quynh Ntuyen |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15: January | 46027 | Zuly | Obed Ramos |  | Open |  |  |  |  | YTD Summary as of Januar |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: January | 46027 | Zuly | Peter Todd Hollar  | Rank X | Signed | Driver | 46027 |  |  | Field Rep | Signed Referred Out | Signed In-House | TOTAL SIGN-UP |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17: January | 46027 | Genysys | Mequanent (Mike) Fasil  |  | Not Interested |  |  |  |  | Jezel | 1 | 8 | 9 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R18: January | 46027 | Zuly | Daniela Flores | Rank X | Signed | Driver | 46027 |  |  | Lupe | 0 | 9 | 9 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: January | 46015 | Genysys | Faviola Castañeda Mendoz | Rank X | Signed | Driver | 46027 |  |  | Zuly | 2 | 17 | 19 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: January | 46028 | Lupe | Lisa Dominguez |  | Referred_Out |  |  |  |  | Genysys | 0 | 4 | 4 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: January | 46028 | Lupe | Adriana Margarita Becerr | Medium | Signed | Driver | 46028 |  |  | Ally | 3 | 4 | 7 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: January | 46028 | Zuly | Abigail Grace Coleman | Medium | Signed | Driver | 46029 |  |  | Grace | 1 | 0 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: January | 46028 | Zuly | William Alexander Hernan | Medium | Signed | Passenger | 46030 |  |  | Queenie | 0 | 2 | 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: January | 46028 | Zuly | Abigail Grace Coleman mo | Medium | Signed | Passenger | 46030 |  |  | TOTAL | 7 | 44 | 51 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: January | 46028 | Zuly | Abigail Grace Coleman mo | Medium | Signed | Passenger | 46031 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: January | 46028 | Zuly | Abigail Grace Coleman mo | Medium | Signed | Passenger | 46030 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: January | 46029 | Lupe | Julia Marie Ford | Medium | Signed | Driver | 46030 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: January | 46029 | Genysys | Ana Reyes |  | Referred_Out |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: January | 46029 | Genysys | Roberto Michael Gutierre |  | Not Interested |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: January | 46029 | Ally | Kevin Alvarez |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (1684 rows skipped) ...
+FORMULAS:
+L3 = COUNTIFS(C:C,K3,A:A, "january", F:F, "signed referred out")
+M3 = COUNTIFS(C:C,K3,A:A, "january", F:F, "signed")
+N3 = SUM(L3:M3)
+O3 = COUNTIFS(F:F,N3,D:D, "february", I:I, "signed referred out")
+P3 = COUNTIFS(F:F,N3,D:D, "january", I:I, "signed")
+Q3 = SUM(O3:P3)
+R3 = COUNTIFS(I:I,Q3,G:G, "january", L:L, "signed referred out")
+S3 = COUNTIFS(I:I,Q3,G:G, "january", L:L, "signed")
+T3 = SUM(R3:S3)
+U3 = COUNTIFS(L:L,T3,J:J, "january", O:O, "signed referred out")
+V3 = COUNTIFS(L:L,T3,J:J, "january", O:O, "signed")
+W3 = SUM(U3:V3)
+X3 = COUNTIFS(O:O,W3,M:M, "january", R:R, "signed referred out")
+Y3 = COUNTIFS(O:O,W3,M:M, "january", R:R, "signed")
+Z3 = SUM(X3:Y3)
+
+===== SHEET "YTD_2025-1st" — 997 non-empty rows =====
+R1: Date | Month | FR | Lead Name | Value | Outcome | classification |  | Field Rep | January |  |  | February |  |  | March |  |  | April |  |  | May |  |  | June |  |  | July |  |  | August |  |  | Septmeber |  |  | October |  |  | November |  |  | December |  | 
+R2: 45659 | January | Arden | Ardith Beverly Smith  | Low | Signed |  |  |  | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Referred Out | Signed In-House | TOTAL SIGN-UP | Signed Ref
+R3: 45659 | January | Jezel | TG Hue Yang | Low | Signed |  |  | Brizelle | 0 | 13 | 13 | 0 | 11 | 11 | 1 | 13 | 14 | 1 | 15 | 16 | 0 | 21 | 21 | 8 | 14 | 22 | 0 | 17 | 17 | 0 | 7 | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R4: 45659 | January | Jezel | Annie Vang- Passenger of | Low | Signed |  |  | Monica | 2 | 14 | 16 | 2 | 1 | 3 | 0 | 7 | 7 | 2 | 14 | 16 | 0 | 13 | 13 | 3 | 6 | 9 | 2 | 5 | 7 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R5: 45659 | January | Jezel | Annie Vang as the mother | Low | Signed |  |  | Jezel | 1 | 10 | 11 | 1 | 6 | 7 | 1 | 9 | 10 | 2 | 8 | 10 | 2 | 4 | 6 | 2 | 4 | 6 | 1 | 16 | 17 | 2 | 5 | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R6: 45659 | January | Jezel | Annie Vang as the mother | Low | Signed |  |  | Lupe | 0 | 7 | 7 | 3 | 8 | 11 | 1 | 9 | 10 | 0 | 2 | 2 | 3 | 9 | 12 | 1 | 6 | 7 | 0 | 12 | 12 | 1 | 5 | 6 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R7: 45660 | January | Arden | Shanice Sholes | Medium | Signed |  |  | Arden | 0 | 8 | 8 | 1 | 2 | 3 | 0 | 6 | 6 | 1 | 10 | 11 | 2 | 2 | 4 | 4 | 1 | 5 | 0 | 5 | 5 | 1 | 6 | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R8: 45660 | January | Monica | Paris Lynn Del Cid | Low | Signed |  |  | Claud | - | - | - | - | - | - | 0 | 0 | 0 | 0 | 6 | 6 | 0 | 7 | 7 | 4 | 4 | 8 | 0 | 4 | 4 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R9: 45659 | January | Arden | Josefina Gaitan  |  | Rejected |  |  | Fran | - | - | - | - | - | - | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R10: 45660 | January | Monica | Arahon Hubense Lopez Mat | Medium | Signed |  |  | Zuly | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R11: 45660 | January | Arden | Britcia Coral Gomez Herr | Low | Signed |  |  | TOTAL | 3 | 52 | 55 | 7 | 28 | 35 | 3 | 44 | 47 | 6 | 55 | 61 | 7 | 57 | 64 | 22 | 35 | 57 | 3 | 59 | 62 | 6 | 24 | 30 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+R12: 45660 | January | Arden | Britcia Coral Gomez Herr | Low | Signed |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R13: 45660 | January | Arden | Britcia Coral Gomez Herr | Low | Signed |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R14: 45295 | January | Jezel | Pedro Gutierrez |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15: 45661 | January | Lupe | Amber Mae Balderaz | Low | Signed |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R16: 45661 | January | Lupe | Aaron Rodriguez |  | Open |  |  | YTD Summary as of August |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17: 45662 | January | Jezel | Esmeralda Gonzalez Marti | Medium | Signed |  |  | Field Rep | Signed Referred Out | Signed In-House | TOTAL SIGN-UP |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R18: 45662 | January | Jezel | Alexis Guadalupe Aguila  | Medium | Signed |  |  | Brizelle | 10 | 111 | 121 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R19: 45663 | January | Arden | Juanita Malia Martinez | Medium | Signed |  |  | Monica | 12 | 60 | 72 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R20: 45663 | January | Monica | Tony Esparza |  | Open |  |  | Jezel | 12 | 62 | 74 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R21: 45663 | January | Lupe | Anthony Allen Bianchi | Low | Signed |  |  | Lupe | 9 | 58 | 67 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 45663 | January | Brizelle | Manuel Gabriel Sauceda J | Medium | Signed |  |  | Fran | 0 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 45663 | January | Lupe | Yvonne Manuel | Low | Signed |  |  | Arden | 9 | 40 | 49 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 45663 | January | Brizelle | Bobby Michael Cook | HIgh | Signed |  |  | Claud | 5 | 21 | 26 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 45663 | January | Jezel | Tim Murphy |  | Referred_Out |  |  | Zuly | 0 | 1 | 1 | Started going out in the |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 45664 | January | Arden | Robin Adam |  | Not Interested |  |  | TOTAL | 57 | 354 | 411 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 45664 | January | Monica | Rebeca Orozco for the es |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 45664 | January | Lupe | Dora Leticia Garibo Espi | Low | Signed |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 45664 | January | Jezel | Juana Lopez Chiche |  | Referred_Out |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 45664 | January | Monica | Alexa Nicole Zuniga |  | Rejected |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (1684 rows skipped) ...
+FORMULAS:
+J3 = COUNTIFS(C:C,I3,B:B, "january", F:F, "signed referred out")
+K3 = COUNTIFS(C:C,I3,B:B, "january",F:F, "signed")
+L3 = SUM(J3:K3)
+M3 = COUNTIFS(C:C,I3,B:B, "february", F:F, "signed referred out")
+N3 = COUNTIFS(C:C,I3,B:B, "february", F:F, "signed")
+O3 = SUM(M3:N3)
+P3 = COUNTIFS(C:C,I3,B:B,"march", F:F, "signed referred out")
+Q3 = COUNTIFS(C:C,I3,B:B, "march",F:F, "signed")
+R3 = SUM(P3:Q3)
+S3 = COUNTIFS(C:C,I3,B:B, "april", F:F,"signed referred out")
+T3 = COUNTIFS(C:C,I3,B:B,"april", F:F, "signed")
+U3 = SUM(S3:T3)
+V3 = COUNTIFS(C:C,I3,B:B, "may",F:F, "signed referred out")
+W3 = COUNTIFS(C:C,I3,B:B,"may",F:F,"signed")
+X3 = SUM(V3:W3)
+
+===== SHEET "Drops" — 33 non-empty rows =====
+R1: FR | Name | Case Manager | SUD | Value | Facility | Reason | Drop completion date | Case Duration
+R2: Brizelle | Jose Marcio Puerto Marti | Jesse Montejano | 45768 | Medium | Ten Eight Towing | Multiple claimants, smal | 45849 | 81
+R3: Jezel | Maria Elizabeth Villuend | Sarah Quesea | 45673 | Medium | Kustom Collision | Unresponsive client  | 45854 | 181
+R4: Jezel | Mary Kay Williams | Jelai Allejos | 45777 | Medium | FAM Auto Body | There is a body cam foot | 45855 | 78
+R5: Lupe | Pedro Damian Jacobo Guar | Aylin Macias | 45699 | Low | Accident Recovery Modest |  Insufficient evidence t | 45854 | 155
+R6: Claud | Askari Shamon Livingston | Charlotte Quijano | 45790 | Rank X | Majestic Auto Craft LLC | Client is at fault | 45855 | 65
+R7: Brizelle | Diego Moz Rodriguez | Sarah Quesea | 45315 | Low | Patrick Lee | Denied Liability, Denied | 45855 | 540
+R8: Brizelle | Bobby Michael Cook | Johnc | 45663 | High | Trinity Towing | Client is at fault and n | 45856 | 193
+R9: Brizelle | Alexa Nathalie Gonzalez  | Sarah Quesea  | 45246 | High | Trends Collision Center  | Difficulty in liability | 45846 | 600
+R10: Lupe | Nicolasa Venegas Aguilar | Octavio  | 45763 | Low |  Extreme Auto Collision | No coverage from def, CL | 45863 | 100
+R11: Jezel | Margie Dung Vuong | Kim Luzon | 45847 | Low | Dr. Bao - Pain-Injury Cl | Client is at fault | 45875 | 28
+R12: Jezel | Margie Dung Vuong as mot | Kim Luzon | 45847 | Low | Dr. Bao - Pain-Injury Cl | Client is at fault | 45875 | 28
+R13: Brizelle | Ashley Marie Ochoa | Jelai Allejos | 45602 | Medium | Camino Real Auto Body | Client is at fault | 45888 | 286
+R14: Brizelle | Cesar Giovanni Rubio | CJ Arellano | 45769 | Low | Patrick Lee | PL and DEF have no cover | 45888 | 119
+R15: Brizelle | Passenger of Cesar Giova | CJ Arellano | 45764 | Low | Patrick Lee | PL and DEF have no cover | 45888 | 124
+R16: Jezel | John Ted Lamb Jr | Jelai Allejos | 45729 | Medium | Walker Advertising | Client is unresposive an | 45889 | 160
+R17: Jezel | Daniel Alejandro Oliva M | Octavio Millan | 45737 | Low | Frutivale Collision | PL and DEF have no cover | 45877 | 140
+R18: Brizelle | Sergio Misael Acosta Car | Arthur Garcia | 45783 | Medium | Diamond Club Towing | Client is at fault | 45884 | 101
+R19: Jezel | Arizbeth Solorio Reyes | Maria Salas | 45867 | Rank X | Walker Advertising | PL and DEF have no cover | 45888 | 21
+R20: Jezel | Arizbeth Solorio Reyes a | Octavio Millan | 45867 | Rank X | Walker Advertising | PL and DEF have no cover | 45889 | 22
+R21: Arden | Rudy Ulises Zepeda | CJ Arellano | 45567 | Medium | AV Chiro | Client is unresposive an | 45903 | 336
+R22: Arden | Reyna Rosalia Gonzalez P | Arthur Garcia | 45603 | High | Regino Auto Body | Client is at fault | 45902 | 299
+R23: Arden | Reyna Rosalia Gonzalez P | Rod Diaz | 45603 | High | Regino Auto Body | Client is at fault | 45903 | 300
+R24: Arden | Curtis Jerry Jones II | Kim Luzon | 45768 | Medium | Maggie’s A1 Insurance | Client is unresposive an | 45902 | 134
+R25: Monica | Daniel Garcia Ruiz | CJ Arellano | 45823 | Low | Valenz Autobody | This is a city claim-rej | 45903 | 80
+R28: FR | Name | SUD | Value | Facility | CM Requesting Drop | Drop Approver | Reason | Drop completion date
+R29: Jezel | Mayra Alcazar-Lopez as t | 45966 | High | Mad Dog Towing | Vanessa Sotelo |  | This is one of the passe | 45996
+R30: Jezel | Sara Marcelino Antonio | 45979 | Rank X | Los Romeros Insurance Se | Arthur Garcia |  | Client had a previous at | 45995
+... (964 rows skipped) ...
+FORMULAS:
+I2 = H2-D2
+I3 = H3-D3
+I4 = H4-D4
+I5 = H5-D5
+I6 = H6-D6
+I7 = H7-D7
+I8 = H8-D8
+I9 = H9-D9
+I10 = H10-D10
+I11 = H11-D11
+I12 = H12-D12
+
+===== SHEET "Sheet53" — 783 non-empty rows =====
+R1: We are excited to serve  | Outcome | Disposition | Value | Potential Client's Name |  |  | 
+R2: Arden Burrow / Andres AB | Not_Interested | Not_Interested |  | Amanda Smith |  | Total of leads | 782
+R3: Arden Burrow / Creatived | Referred_Out | Minimal PD (Property Dam |  | George Codi |  | Total Sign-ups | 363
+R4: Arden Burrows | Signed |  | Low | Natalia Maria Rodriguez |  | Conversion rate | 0.4642
+R5: Arden Burrows | Not interested |  |  | Angie Lockhart |  |  | 
+R6: Arden Burrows | Rejected |  |  | Luis Alejandro Linares |  |  | 
+R7: Arden Burrows | Rejected | Gap in treatment |  | Enedina Mehlos |  |  | 
+R8: Arden Burrows | Rejected | Gap in treatment |  | Maria Perez |  |  | 
+R9: Arden Burrows | Rejected | At fault |  | Jose Orozco |  |  | 
+R10: Arden Burrows | Not_Interested | Client doesn't want to p |  | Seann Thomas |  |  | 
+R11: Arden Burrows | Referred_Out | Disputed liability and n |  | Timothy Ray Campbell |  |  | 
+R12: Arden Burrows (717-864-8 | Rejected | Gap in treatment |  | Luis Jimenez |  |  | 
+R13: Arden Burrows / Adreas B | Rejected |  |  | Michael Frankling |  |  | 
+R14: Arden Burrows / Andres A | Signed | Contingency agreement ha | Medium | Claudio Gomez Romero |  |  | 
+R15: Arden Burrows / Andres A | Signed | Contingency agreement ha | Low | Antonio Luna Serrano |  |  | 
+R16: Arden Burrows / Andres A | Signed | Contingency agreement ha | Low | Jonathan Omar Torres Fri |  |  | 
+R17: Arden Burrows / Andres A | Signed |  | Medium | Patricia M Ramirez Resen |  |  | 
+R18: Arden Burrows / Angel fr | Referred_Out | Disputed liability and n |  | Shane Polston Lowery |  |  | 
+R19: Arden Burrows / Angel fr | Signed | Contingency agreement ha | Low | Jose Alfredo Chavez |  |  | 
+R20: Arden Burrows / Angel fr | Signed | Contingency agreement ha | Low | Aydi Chavez |  |  | 
+R21: Arden Burrows / Angel fr | Signed | Contingency agreement ha | Low | Aydi Chavez as the mothe |  |  | 
+R22: Arden Burrows / Autobahn | Signed |  | Medium | Maria Teresa Lazo |  |  | 
+R23: Arden Burrows / AV Chiro | Rejected |  |  | Karen Adams |  |  | 
+R24: Arden Burrows / AV Chiro | Signed | Contingency agreement ha | Low | Ernesto Jr Escobar |  |  | 
+R25: Arden Burrows / AV Chiro | Signed | Contingency agreement ha | Low | Juana Maria Gamez |  |  | 
+R26: Arden Burrows / AV Chiro | Signed | Contingency agreement ha | Medium | Jose Ivan Dominguez Cast |  |  | 
+R27: Arden Burrows / AV Chiro | Signed |  | Medium | Marlene Ofaolain |  |  | 
+R28: Arden Burrows / AV Chiro | Rejected | Disputed liability and n |  | Paul Smith |  |  | 
+R29: Arden Burrows / AV Chiro | Not_Interested | Invalid/No Contact Info |  | Cortell Franklin |  |  | 
+R30: Arden Burrows / AV Chiro | Signed | Contingency agreement ha | Low | David Jackson |  |  | 
+... (747 rows skipped) ...
+R778: Vince Jaime / Sara with  | Signed | Contingency agreement ha | Medium | Irma Aguilar as the moth |  |  | 
+R779: Vince Jaime / Trends Aut | Rejected | At fault |  | Rod Thornburg |  |  | 
+R780: Vince Jaime / Trends Aut | Rejected | No Injuries |  | Julies Moran |  |  | 
+R781: Vince Jaime / Trends Aut | Signed | Contingency agreement ha | Medium | Geovany Lopez Gonzalez |  |  | 
+R782: Vince Jaime / Trends Sar | Rejected | No Injuries |  | Cindy Iribe |  |  | 
+R783: Vince Navarro / Frederic | Signed | Contingency agreement ha | Low | Carlos Edward Jimenez |  |  | 
+
+===== SHEET "Case Status" — 107 non-empty rows =====
+R1: Month | FR/BDR | Lead Name | Client Full Name | Value | Outcome | SUD | Liability Post Intakes | Status as of 12.20
+R2: September | Brizelle | Sandra I. Moreno | Sandra I. Moreno | Low | Signed | 45537 |  | Treating
+R3: September | Lupe | Gil Ledesma Jr. | Gil Ledesma Jr. | Medium | Signed | 45544 |  | Draft demand/Still treat
+R4: September | Lupe | Antonio Benjamin Orozco  | Antonio Benjamin Orozco  | Low | Signed | 45545 |  | Treating
+R5: September | Monica | Erik Elijah Valenzuela | Erik Elijah Valenzuela | Low | Signed | 45541 |  | Demand out/Still treatin
+R6: September | Arden | Jorge Andre Montoya Delg | Jorge Andre Montoya Delg | Medium | Signed | 45544 |  | Treating
+R7: September | Arden | Lesley Michelle Rodrigue | Lesley Michelle Rodrigue | Medium | Signed | 45541 |  | Treating
+R8: September | Lupe | Passenger Lucy Marie Ceb | Lucy Marie Ceballos | Medium | Signed | 45546 |  | Closed/Dropping
+R9: September | Lupe | Carolina Luna Galvan | Carolina Luna Galvan | High | Signed | 45547 |  | Treating
+R10: September | Brizelle | Cristianna Hernandez Pon | Cristianna Hernandez Pon | Low | Signed | 45547 |  | Demand out/Still treatin
+R11: September | Arden | Faavae Pele | Faavae Pele | Low | Signed | 45552 |  | Treating
+R12: September | Lupe | Eugene Ray Urrutia | Eugene Ray Urrutia | Medium | Signed | 45555 |  | Treating
+R13: September | Brizelle | Ruben Delgadillo | Ruben Delgadillo | Medium | Signed | 45553 |  | Treating
+R14: September | Brizelle | Deanna Diaz as Passenger | Deanna Diaz | Medium | Signed | 45553 |  | Treating
+R15: September | Brizelle | Jose Eduardo De La Rosa  | Jose Eduardo De La Rosa  | Medium | Signed | 45553 |  | Treating
+R16: September | Brizelle | Jose Eduardo De La Rosa  | Jose Eduardo De La Rosa  | Medium | Signed | 45553 |  | Treating
+R17: September | Brizelle | Jasmin Esperanza Almazan | Jasmin Esperanza Almazan | Low | Signed | 45554 |  | Closed/Dropping
+R18: September | Brizelle | Joe Jeremiah Nunez Passe | Joe Jeremiah Nunez | Low | Signed | 45554 |  | Closed/Dropping
+R19: September | Lupe | Juan Antonio Navarro Gar | Juan Antonio Navarro Gar | Medium | Signed | 45555 |  | Drafting Referral
+R20: September | Lupe | Luz Maria Troncoso Marti | Luz Maria Troncoso Marti | Medium | Signed | 45555 |  | Treating
+R21: September | Monica | Estefania Jimenez | Estefania Jimenez | Medium | Signed | 45556 |  | Settled pending docs
+R22: September | Monica | Hector Becerra Montoya | Hector Becerra Montoya | Medium | Signed | 45556 |  | Closed/Dropping
+R23: September | Monica | Graciela Becerra (Passen | Graciela Becerra | Medium | Signed | 45556 |  | Closed/Dropping
+R24: September | Jezel | Mitra Delsoz | Mitra Delsoz | Medium | Signed | 45557 |  | Treating
+R25: September | Jezel | Mitra Delsoz as the Moth | Zoha Akbari | Medium | Signed | 45558 |  | Treating
+R26: September | Monica | Valerie Sanchez | Valerie Sanchez | High | Signed | 45557 |  | Closed/Dropping
+R27: September | Brizelle | Rigoberto Marroquin | Rigoberto Marroquin | Low | Signed | 45558 |  | Treating
+R28: September | Brizelle | Cirila Hernandez De Marr | Cirila Hernandez De Marr | Low | Signed | 45558 |  | Treating
+R29: September | Jezel | Rohullah Jackphar | Rohullah Jackphar | Medium | Signed | 45559 |  | Settlement Negotiation
+R30: September | Arden | Maria De Jesus Garcia Ga | Maria De Jesus Garcia Ga | Low | Signed | 45562 |  | Treating
+... (955 rows skipped) ...
+
+===== SHEET "Referred Out Cases" — 14 non-empty rows =====
+R1: Date | FR | Lead Name | Value | Outcome | Facility | Law Firm | Status as of 1.7
+R2: 45628 | Jezel | Cyrus Afkhami |  | Referred_Out | West Side Urgent Care | Referred to Workers Comp | CP 12022024 There was no
+R3: 45628 | Jezel | Jesus Aguilar |  | Referred_Out |  | Referred to Workers Comp | MR 12022024 WC Referral 
+R4: 45628 | Brizelle | Hunter Thomas |  | Referred_Out | Randy's towing | Referred to Employment L | CP 12022024 There was no
+R5: 45629 | Lupe | Elibet Hernandez Cortes |  | Referred_Out | Xtreme Collision Auto an |  Sharen Heshy Ghatan | GS12032024 Referred out 
+R6: 45630 | Brizelle | Irene Maya  |  | Referred_Out | Memo 10/8 Towing  | Referral for WC | FC 12042024 Pending refe
+R7: 45630 | Monica | Crystal Vazquez  |  | Referred_Out |  |  Injured Workers Law Gro | GS12022024 Pending Intak
+R8: 45636 | Lupe | Isidro Molina Venegas |  | Referred_Out | Duran Detail Auto Body S | Referred to Sharen Ghata | REJECTED - No Physical I
+R9: 45637 | Arden | Ruben Lopez / Dawn |  | Referred_Out | Creative Auto Works | Referred to Sharen Ghata | MR 12112024 PNC will dis
+R10: 45643 | Brizelle | Jason Cauley |  | Referred_Out | Adam Auto Collision Grou | Referred to Sharen Ghata | MR 12172024 Referral due
+R11: 45639 | Jezel | Mikaela Smith |  | Referred_Out | Tustin Lead | Referred to Sharen Ghata | KV They will determine w
+R12: 45646 | Jezel | Habib Rahman |  | Referred_Out | West Sacramento Urgent C | Referred to IWLG | MR 12212024 Refererd to 
+R13: 45652 | Jezel | Andey Arikel |  | Referred_Out | Davis urgent care | Referred to LLA | MR 12262024 Employment R
+R14: 45652 | Jezel | Andey Arikel |  | Referred_Out | Davis urgent care | Referred to IWLG | MR 16262024 WC Referral 
+... (964 rows skipped) ...
+
+===== SHEET "Intakes Meeting" — 17 non-empty rows =====
+R1: Date | FR/BDR | Lead Name | Value | Outcome | SUD | Meeting Notes
+R2: 45555 | Lupe | Juan Antonio Navarro Gar | Medium | Signed | 45555 | Medium-High tagging. Pos
+R3: 45555 | Lupe | Luz Maria Troncoso Marti | Medium | Signed | 45555 | 
+R4: 45556 | Monica | Estefania Jimenez Torres | Medium | Signed | 45556 | No comments from JF and 
+R5: 45556 | Monica | Hector Becerra Montoya | Medium | Signed | 45556 | No comments from JF and 
+R6: 45556 | Monica | Graciela Becerra | Medium | Signed | 45556 | 
+R7: 45557 | Jezel | Mitra Delsoz | Medium | Signed | 45557 | No comments from JF and 
+R8: 45557 | Monica | Valerie Sanchez | High | Signed | 45557 | As per Gab, DEF vehicle 
+R9: 45558 | Brizelle | Rigoberto Marroquin | Low | Signed | 45558 | No comments from Senior 
+R10: 45558 | Brizelle | Cirila Hernandez De Marr | Low | Signed | 45558 | 
+R11: 45559 | Jezel | Rohullah Jackphar  | Medium | Signed | 45559 | No comments from JF and 
+R12: 45561 | Arden | Maria De Jesus Garcia Ga | Low | Signed | 45562 | No comments from JF and 
+R13: 45562 | Lupe | Miguel Angel Arroyo Orte | Medium | Signed | 45562 | No comments from JF and 
+R14: 45562 | Arden | Monisha Kapri Taylor | Low | Signed | 45562 | No comments from JF and 
+R15: 45561 | Monica | Pauline Joan Norris | Low | Signed | 45562 | No comments from JF and 
+R16: 45565 | Monica | Jose Bernabe Lozada-Cort | Low | Signed | 45566 | No comments from JF and 
+R17: 45566 | Monica | Yeymy Sarahi Lozada | Low | Signed | 45566 | No comments from JF and 
+... (963 rows skipped) ...
+
+===== SHEET "FR Cases 2025" — 43 non-empty rows =====
+R1: Field Rep | Client | SUD | Source | Intakes Meeting Decision | Case Review | Deadline of Review | CM 2nd Intake | PD 2nd Intake | Post Intake SOL | Post Intake SOL
+R2: Arden | Ardith Beverly Smith  | 45299 | Mr. Kool's |  |  |  |  |  |  | 
+R3: Jezel | TG Hue Yang | 45659 | VIP Auto body |  |  |  |  |  |  | 
+R4: Jezel | Annie Vang | 45659 | VIP Auto body |  |  |  |  |  |  | 
+R5: Jezel | Annie Vang as the mother | 45659 | VIP Auto body |  |  |  |  |  |  | 
+R6: Jezel | Annie Vang as the mother | 45659 | VIP Auto body |  |  |  |  |  |  | 
+R7: Arden | Shanice Sholes | 45660 | Tony at Autobahn |  |  |  |  |  |  | 
+R8: Monica | Paris Lynn Del Cid | 45660 | Johnny with Jurupa Valle |  |  |  |  |  |  | 
+R9: Monica | Arahon Hubense Lopez Mat | 45296 | BG Auto |  |  |  |  |  |  | 
+R10: Arden | Britcia Coral Gomez Herr | 45660 | Regino |  |  |  |  |  |  | 
+R11: Arden | Britcia Coral Gomez Herr | 45660 | Regino |  |  |  |  |  |  | 
+R12: Arden | Britcia Coral Gomez Herr | 45660 | Regino |  |  |  |  |  |  | 
+R13: Lupe | Amber Mae Balderaz | 45295 | Xtreme Collision Auto an |  |  |  |  |  |  | 
+R14: Jezel | Esmeralda Gonzalez Marit | 45662 | Cruz Collision |  |  |  |  |  |  | 
+R15: Jezel | Alexis Rodriguez Aguila | 45662 | Cruz Collision |  |  |  |  |  |  | 
+R16: Arden | Juanita Martinez | 45666 | Tony at Autobahn |  |  |  |  |  |  | 
+R17: Lupe | Anthony Bianchi | 45663 | Accident Recovery Modest |  |  |  |  |  |  | 
+R18: Brizelle | Manuel Gabriel Sauceda J | 45663 | Synergy Chiropractic & N |  |  |  |  |  |  | 
+R19: Lupe | Yvonne Manuel | 45663 | A-Able Towing |  |  |  |  |  |  | 
+R20: Brizelle | Bobby Michael Cook | 45663 | Trinity Towing |  |  |  |  |  |  | 
+R21: Lupe | Dora Leticia Garibo Espi | 45672 | Sal's Auto Body Shop |  |  |  |  |  |  | 
+R22: Brizelle | Maria Estella Gutierrez | 45666 | Adam Auto Collision |  |  |  |  |  |  | 
+R23: Brizelle | Gerardo Hernandez Reyes | 45666 | Ten Eight Towing |  |  |  |  |  |  | 
+R24: Brizelle | Gerardo Hernandez Reyes  | 45666 | Ten Eight Towing |  |  |  |  |  |  | 
+R25: Brizelle | Gerardo Hernandez Reyes  | 45666 | Ten Eight Towing |  |  |  |  |  |  | 
+R26: Brizelle | Gerardo Hernandez Reyes  | 45666 | Ten Eight Towing |  |  |  |  |  |  | 
+R27: Brizelle | Enrique Mederos Gonzalez | 45666 | Kate Auto Collision |  |  |  |  |  |  | 
+R28: Brizelle | Eva Paola Perez Gonzalez | 45666 | Kate Auto Collision |  |  |  |  |  |  | 
+R29: Monica | Angelina Galvan  | 45669 | Valenz Autobody |  |  |  |  |  |  | 
+R30: Monica | Francisco Lopez | 45669 | Valenz Autobody |  |  |  |  |  |  | 
+... (964 rows skipped) ...

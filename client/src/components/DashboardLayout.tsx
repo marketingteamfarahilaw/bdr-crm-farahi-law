@@ -59,6 +59,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   ] },
   { title: "Agent Tools", items: [
     { icon: BarChart3, label: "Reports", path: "/reports", level: "all" },
+    { icon: FileBarChart2, label: "Team Reports", path: "/team-reports", level: "manage" },
     { icon: Phone, label: "Call Analytics", path: "/call-analytics", level: "all" },
     { icon: ClipboardList, label: "Call Logs", path: "/call-logs", level: "all" },
     { icon: Sparkles, label: "Agent Performance", path: "/agent-performance", level: "all" },

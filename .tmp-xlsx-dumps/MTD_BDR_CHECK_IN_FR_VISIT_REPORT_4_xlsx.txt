@@ -1,0 +1,122 @@
+FILE: MTD BDR CHECK-IN & FR VISIT REPORT (4).xlsx
+SHEETS (3): JUNE 2026 | SIGN UPS PER FACILITY | FR Sign Ups vs Unique Facility 
+
+===== SHEET "JUNE 2026" — 193 non-empty rows =====
+R2: BUSINESS DEVELOPMENT REP |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R4:  | MTD CHECK-IN & FR VISIT  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R5:  | 46174 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R7:  | NAME | NO. OF BDR FACILITIES | MTD AVERAGE CHECK-IN (4  | MTD AVERAGE FR VISIT (2  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R8:  | GRACE | 43 | 0.1162790698 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R9:  | ALLY | 25 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R10:  | QUEENIE | 0 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R11:  | MIGUEL | 0 | 0 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R12:  | TOTAL | 68 | 0.02906976744 | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R15:  | GRACE LANAYON |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R17:  | FACILITY NAME | 1ST CHECK-IN | # | 2ND CHECK-IN | # | 3RD CHECK-IN | # | 4TH CHECK-IN | # | TOTAL CHECK-IN |  | 1ST VISIT | # | 2ND VISIT | # | TOTAL VISIT |  | 
+R18: 1 | Wills Auto Body  | 46175 | 2 |  |  |  |  |  |  | 2 |  |  |  |  |  | 0 |  | 
+R19: 2 | KINGSPOINT Foot and Ankl | 46175 | 2 |  |  |  |  |  |  | 2 |  |  |  |  |  | 0 |  | 
+R20: 3 | West Market Auto Body  | 46175 | 1 |  |  |  |  |  |  | 1 |  |  |  |  |  | 0 |  | 
+R21: 4 | Santa Clara Auto Care  | 46175 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R22: 5 | Union Body Shop | 46175 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R23: 6 | Chiropractor USA  | 46176 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R24: 7 | New Hope Chiropractic Sa | 46176 | 3 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R25: 8 | Mission Chiropractic | 46176 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R26: 9 | JP Auto Body Shop -Redwo | 46176 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R27: 10 | FixAll Auto Collision | 46176 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R28: 11 | AW Collision of San Jose | 46176 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R29: 12 | Element Chiropractic Wel | 46176 | 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R30: 13 | C G & E Auto Body | 46176 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+... (1161 rows skipped) ...
+FORMULAS:
+D8 = K63/C8
+E8 = Q63/C8
+C12 = SUM(C8:C11)
+D12 = AVERAGE(D8:D11)
+E12 = AVERAGE(E8:E11)
+K18 = D18+F18+H18+J18
+Q18 = N18+P18
+K19 = D19+F19+H19+J19
+Q19 = N19+P19
+K20 = D20+F20+H20+J20
+Q20 = N20+P20
+K63 = SUM(K18:K20)
+Q63 = SUM(Q18:Q20)
+D149 = K165/C149
+E149 = Q165/C149
+
+===== SHEET "SIGN UPS PER FACILITY" — 21 non-empty rows =====
+R1: SIGN UPS PER FACILITY |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R3:  |  |  |  | JANUARY |  |  |  |  | FEBRUARY |  |  |  |  | MARCH |  |  |  |  | APRIL |  |  |  |  | TOTAL |  |  |  |  |  |  |  
+R4: BDR/ FR | NAME | FACILITY NAME | LOCATION | HIGH | MEDIUM | LOW | RANK X | TOTAL | HIGH | MEDIUM | LOW | RANK X | TOTAL | HIGH | MEDIUM | LOW | RANK X | TOTAL | HIGH | MEDIUM | LOW | RANK X | TOTAL | HIGH | MEDIUM | LOW | RANK X | TOTAL |  |  | 
+R5: BDR | GRACE | ABC |  | 1 |  |  | 1 | 2 | 2 |  |  |  | 2 |  | 3 |  | 2 | 5 |  | 1 |  |  | 1 | 3 | 4 | 0 | 3 | 10 |  |  | 
+R6: BDR | ALLY | Juan Luis Perez Salazar | Long Beach |  | 1 |  |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R7: BDR | ALLY | Kahlon Lovepreet Singh | Van Nuys |  | 1 |  |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R8: BDR | ALLY | Ashley De La Torre | San Bernandino  | 1 |  |  |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R9: BDR | ALLY | Marcelo De La Torre Jr | San Bernandino  | 1 |  |  |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R10: BDR | ALLY | Toby Talamante | Long Beach |  |  | 1 |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R11: BDR | ALLY | Marisa Villalobos | Long Beach |  |  | 1 |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R12: BDR | ALLY | Cynthia Gutierrez | Long Beach |  |  | 1 |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R13: BDR | ALLY | Triston Tyler Liu Koo /  | San Bernandino  |  |  |  |  | 0 |  | 1 |  |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R14: BDR | ALLY | Yesenia Sanchez Flores | San Bernandino  |  |  |  |  | 0 |  | 1 |  |  | 1 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R15: BDR | ALLY | Rosa Monica Garcia Garci | Long Beach |  |  |  |  | 0 |  |  |  |  | 0 |  | 1 |  |  | 1 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R16: BDR | ALLY | Cassandra Nicole Aleman | Long Beach |  |  |  |  | 0 |  |  |  |  | 0 |  | 1 |  |  | 1 |  |  |  |  | 0 |  |  |  |  | 1 |  |  | 
+R17: BDR | ALLY | Margarette Mary Mike | San Bernandino  |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  | 1 | 1 |  |  |  |  | 1 |  |  | 
+R18: BDR | ALLY | Remedios Fernandez / Own | San Bernandino  |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  | 1 | 1 |  |  |  |  | 1 |  |  | 
+R19: BDR | ALLY | Vondrai Skillern | San Bernandino  |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  | 1 |  | 0 |  |  | 
+R20: BDR | ALLY | Vondrai Skillern as the  | San Bernandino  |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  | 1 |  | 0 |  |  | 
+R21: FR |  |  |  |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  | 
+R22:  |  |  |  |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  |  |  | 0 |  |  | 
+... (964 rows skipped) ...
+FORMULAS:
+I5 = SUm(E5:H5)
+N5 = SUm(J5:M5)
+S5 = SUm(O5:R5)
+X5 = SUm(T5:W5)
+Y5 = E5+J5+O5+T5
+Z5 = F5+K5+P5+U5
+AA5 = G5+L5+Q5+V5
+AB5 = H5+M5+R5+W5
+AC5 = I5+N5+S5+X5
+I6 = SUm(E6:H6)
+N6 = SUm(J6:M6)
+S6 = SUm(O6:R6)
+X6 = SUm(T6:W6)
+AC6 = I6+N6+S6+X6
+I7 = SUm(E7:H7)
+
+===== SHEET "FR Sign Ups vs Unique Facility " — 30 non-empty rows =====
+R1: FR & BDR Sign Ups vs Uni |  |  |  |  |  |  |  |  | 
+R3:  | 46143 |  |  |  |  |  | 46143 |  | 
+R4: FR NAME | TOTAL SIGN-UPS | NAME OF FACILITY | NO. OF SIGN-UP |  |  | BDR NAME | TOTAL SIGN-UPS | NAME OF FACILITY | NO. OF SIGN-UP
+R5: Genysys | 9 |  |  |  |  | Ally | 2 |  | 
+R6:  |  | 714 Kustomz Auto Body &  | 1 |  |  |  |  | Ana with Royal Road Coll | 2
+R7:  |  | Independent | 2 |  |  | Grace | 1 |  | 
+R8:  |  | Jonathan BG Auto Body | 5 |  |  |  |  | Dr. Diba of proactive ch | 1
+R9:  |  | Sanchez Auto Body Shop | 1 |  |  |  |  |  | 
+R10: Jezel | 13 |  |  |  |  | TOTAL | 3 |  | 3
+R11:  |  | All Foreign and Domestic | 5 |  |  |  |  |  | 
+R12:  |  | JW Collision | 1 |  |  |  |  |  | 
+R13:  |  | Modesto Collision / Pro  | 1 |  |  |  |  |  | 
+R14:  |  | Miracle Body Shop | 1 |  |  |  |  |  | 
+R15:  |  | Oakland Collision Center | 1 |  |  |  |  |  | 
+R16:  |  | Randys towiin | 1 |  |  |  |  |  | 
+R17:  |  | Reyes Auto Body Shop | 2 |  |  |  |  |  | 
+R18:  |  | Stockton Family Chiropra | 1 |  |  |  |  |  | 
+R19: Lupe | 10 |  |  |  |  |  |  |  | 
+R20:  |  | Central Valley Collision | 1 |  |  |  |  |  | 
+R21:  |  | Freeway Insurance | 2 |  |  |  |  |  | 
+R22:  |  | Independent | 2 |  |  |  |  |  | 
+R23:  |  | First Health Medical Cen | 1 |  |  |  |  |  | 
+R24:  |  | Michael's Towing | 1 |  |  |  |  |  | 
+R25:  |  | Steve’s towing | 3 |  |  |  |  |  | 
+R26: Zulema | 18 |  |  |  |  |  |  |  | 
+R27:  |  | Delano's Towing | 8 |  |  |  |  |  | 
+R28:  |  | Randy's Towing | 6 |  |  |  |  |  | 
+R29:  |  | Aguilera Chiropractic | 1 |  |  |  |  |  | 
+R30:  |  | Independent | 3 |  |  |  |  |  | 
+... (961 rows skipped) ...
+FORMULAS:
+H10 = SUM(H4:H9)
+J10 = SUM(J4:J9)
+B32 = SUM(B4:B29)
+D32 = SUM(D4:D30)

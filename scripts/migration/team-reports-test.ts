@@ -1,0 +1,17 @@
+import "dotenv/config";
+import { getSignupReport, getLeadsTargetReport, getCallActivityReport, getNewFacilitiesReport } from "../../server/teamReports";
+const may = { from: new Date("2026-05-01T07:00:00Z"), to: new Date("2026-06-01T06:59:59Z") };
+const s = await getSignupReport(may);
+console.log("=== MAY SIGN-UPS per member (Excel: Genysys 9, Jezel 13, Lupe 10, Zulema 18 | BDR Ally 2, Grace 1) ===");
+for (const m of s?.perMember ?? []) console.log(`${m.role} ${m.member}: ${m.total} sign-ups, ${m.uniqueFacilities} unique facilities`);
+const l = await getLeadsTargetReport(may);
+console.log("\n=== MAY LEADS & TARGETS ===");
+for (const m of l?.members ?? []) console.log(`${m.role} ${m.member}: leads ${m.total}, signed ${m.totalSigned}, target ${m.target}, achieved ${m.achievedPct}%, conv ${m.conversionPct}%`);
+console.log("FR TOTAL:", JSON.stringify(l?.totals.FR));
+const june = { from: new Date("2026-06-01T07:00:00Z"), to: new Date() };
+const c = await getCallActivityReport(june);
+console.log("\n=== JUNE MTD CALL ACTIVITY ===");
+for (const a of c?.perAgent ?? []) console.log(`${a.rep}: ${a.totalCalls} calls, ${(a.totalSec/3600).toFixed(1)}h, ${a.activeDays} active days`);
+const f = await getNewFacilitiesReport(may);
+console.log("\n=== MAY NEW FACILITIES (Excel: Grace +10, Ally +9, Queenie +5, Miguel +9 = 33) ===");
+for (const r of f?.reps ?? []) console.log(`${r.rep}: start ${r.startCount}, +${r.addedCount}, active ${r.active}`);

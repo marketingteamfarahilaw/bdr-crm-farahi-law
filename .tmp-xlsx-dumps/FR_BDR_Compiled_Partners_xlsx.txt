@@ -1,0 +1,106 @@
+FILE: FR _ BDR Compiled Partners.xlsx
+SHEETS (2): Sheet1 | Sheet2
+
+===== SHEET "Sheet1" — 328 non-empty rows =====
+R1: Updated 4/14/2026 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2: Agent  | Type | Name of the facility | Contact Person | Address  | City | Phone | Clean Phone | Phone 2 | Phone 3 | Email Address | Notes | Specialty | Last partner in FLF |  | 
+R3: BDR Ally | Body Shop | Art's Auto Repairs | Arturo | 1342 W Cowles St Long Be | Long Beach | 562-314-9536 | 5623149536 |  |  | artsautorepairs@yahoo.co | BDR Facilities |  |  |  | BDR Ally
+R4: BDR Ally | Body Shop | Auto Refocusing | Gloria | 151 S Wineville Ave Ste  | Ontario | (909) 390-8285 | 9093908285 |  |  | gloria.autofocus@gmail.c | BDR Facilities |  |  |  | FR Genysys
+R5: BDR Ally | Body Shop | Cali Auto Collision 2 | Pablo (owner) | 12691 San Fernando Rd, S | Sylmar | 747-210-9495 | 7472109495 |  |  |  | BDR Facilities |  |  |  | BDR Grace
+R6: BDR Ally | Body Shop | Cali Auto Collision 3 | Pablo (owner) | 7834 Sepulveda Boulevard | Van Nuys | 347-481-3485 | 3474813485 |  |  | caliautocollision@gmail. | BDR Facilities |  |  |  | FR Jezel
+R7: BDR Ally | Body Shop | Dave's Auto Body | Pillar & Anthony | 1224 W Merrill Ave Rialt | Rialto | 909 820 6466 | 9098206466 |  |  | davesautobody_10@hotmail | BDR Facilities |  |  |  | FR Lupe
+R8: BDR Ally | Body Shop | Ernie's Auto Collision | Jasmin | 16611 Mojave Dr, Victorv | Victorville | 760-951-3393 | 7609513393 |  |  |  | BDR Facilities |  |  |  | BDR Miguel
+R9: BDR Ally | Chiropractor | McMorris Chiropractic |  | 577 N D St #100, San Ber | San Bernardino | (909) 763-2011 | 9097632011 |  |  |  | no website, no posts |  | FR Claudia |  | BDR Queenie
+R10: BDR Ally | Body Shop | Royal Road Collision Cen | Sebastian & Anna | 1364 S Camino Real #unit | Bernardino | (951) 376-9883 | 9513769883 | 6178525208 |  |  |  |  | Ally |  | FR Zulema
+R11: BDR Ally | Body Shop | Sabina's Body Shop | Carmen | 17610 Catalpa St Suite F | Hesperia | 760-483-1179 | 7604831179 |  |  |  | BDR Facilities |  |  |  | 
+R12: BDR Ally | Body Shop | Unique Auto Collision | Hamlet  | 8115 Orion Ave. Van Nuys | Van Nuys | 424-355-2772 | 4243552772 |  |  | autocollision.uique@gmai | Rental Available |  | Lester |  | 
+R13: BDR Ally | Body Shop | Walnut Auto Body & Glass | John (manager) | 3970 Valley Blvd #E, Wal | Walnut | 909-598-2376 | 9095982376 |  |  | walnutabg@gmail.com | BDR Facilities |  |  |  | 
+R14: FR Genysys | Body Shop | Abel's Auto Body | Mario | 311 Tremont St Chula Vis | Chula Vista | 619-476-1113 | 6194761113 | 6197457327 |  |  | - They do undercarriage  |  | Moni |  | 
+R15: FR Genysys | Body Shop | All Valley Collision | Joe / Rene | 26793 Madison Ave STE 10 | Murrieta | 951-698-7877 | 9516987877 |  |  | allvalleycollision@gmail |  |  | Moni |  | 
+R16: FR Genysys | Body Shop | BG Auto Body | Jesus and Jonathon | 6461 Clara St Bell Garde | Bell Gardens | (323) 742-7807 Jesus: (3 | 3239723852 |  |  | bgauto6461@gmail.com |  |  | Moni |  | 
+R17: FR Genysys |  | Body Shop & Paint |  | 6410 Industrial Avenue # | Riverside | 951-347-9031 | 9513479031 |  |  |  |  |  |  |  | 
+R18: FR Genysys | Body Shop | Body Works Collision Cen | Monica Albin | 26871 Hobie Cir Ste C1 M | Murrieta | 951-696-4779 | 9516964779 |  |  | monica@bodyworkscollisio |  |  | Moni |  | 
+R19: FR Genysys |  | Dominguez Collusion Rene |  | 1915 Sepulveda Blvd Torr | Torrance | 310 548-6356 | 3105486356 |  |  |  |  |  |  |  | 
+R20: FR Genysys |  | Espinoza Auto Reconditio |  | 945 W Foothill Blvd, Azu | Azusa | 16262101550 | 6262101550 |  |  |  |  |  |  |  | 
+R21: FR Genysys | Body shop | Excellence Body Shop |  | 1135 W State St Ontario  | Ontario | 18775140522 | 8775140522 |  |  |  | this phone number was on |  |  |  | 
+R22: FR Genysys |  | Exclusive Autobody & Cus |  | 33310 Bailey Park Blvd M | Menifee | 9513964986 | 9513964986 |  |  |  |  |  |  |  | 
+R23: FR Genysys | Body Shop | Gencorp Autobody Shop | Kenneth/William  | 27271 Ethanac Rd STE 105 | Menifee | 951-526-6850 | 9515266850 | 9514767146 |  |  info@gencorpautobodysho |  |  | Moni |  | 
+R24: FR Genysys | Body Shop | Impact auto body and pai |  | 5555 W Pico Blvd, Los An | Los Angeles | 562-567-1082 | 5625671082 | 3239385555 |  |  |  |  |  |  | 
+R25: FR Genysys | Body Shop | J.L Auto Detail Body & P | Jose | 2376 Main St Riverside 9 | Riverside | 951-901-5608 | 9519015608 |  |  | jlamobiledetail@gmail.co |  |  | Moni |  | 
+R26: FR Genysys | Body Shop | Jurupa Valley Collision | Johnny | 1821 Container Cir River | Riverside | 9512618600 | 9512618600 |  |  |  |  |  | Moni |  | 
+R27: FR Genysys |  | KUSTOMS AUTOBODY & PAINT |  | 4081 Holt Blvd Unit B Mo | Montclair | 909 971-3668 | 9099713668 |  |  |  |  |  |  |  | 
+R28: FR Genysys | Body Shop | Leo's Paint & Body |  | 424 1/2 N Main St Lake E | Lake Elsinore | 951-746-6266 | 9517466266 |  |  | leospaintnbody@gmail.com |  |  |  |  | 
+R29: FR Genysys |  | Los De Santiagos Auto Bo |  | 29770 Bradley Rd E Menif | Menifee | 951-355-1905 | 9513551905 |  |  |  |  |  |  |  | 
+R30: FR Genysys |  | Mint Collision |  | 5072 W Mission Blvd Mont | Montclair | 909-590-5488 | 9095905488 |  |  |  |  |  |  |  | 
+... (964 rows skipped) ...
+FORMULAS:
+N3 = IFERROR( VLOOKUP(G3,#REF!,8,false),"")
+N4 = IFERROR( VLOOKUP(G4,#REF!,8,false),"")
+N5 = IFERROR( VLOOKUP(G5,#REF!,8,false),"")
+N6 = IFERROR( VLOOKUP(G6,#REF!,8,false),"")
+N7 = IFERROR( VLOOKUP(G7,#REF!,8,false),"")
+N8 = IFERROR( VLOOKUP(G8,#REF!,8,false),"")
+N11 = IFERROR( VLOOKUP(G11,#REF!,8,false),"")
+N13 = IFERROR( VLOOKUP(G13,#REF!,8,false),"")
+N20 = IFERROR( VLOOKUP(G20,#REF!,8,false),"")
+N22 = IFERROR( VLOOKUP(G22,#REF!,8,false),"")
+N28 = IFERROR( VLOOKUP(G28,#REF!,8,false),"")
+N29 = IFERROR( VLOOKUP(G29,#REF!,8,false),"")
+N30 = IFERROR( VLOOKUP(G30,#REF!,8,false),"")
+N37 = IFERROR( VLOOKUP(G37,#REF!,8,false),"")
+G94 = 14082933674
+
+===== SHEET "Sheet2" — 444 non-empty rows =====
+R1: UPDATED 6/2/2026 |  |  |  |  |  |  |  |  |  |  |  |  | 
+R2: Agent  | Type | Name of the facility | Contact Person | Address  | City | Phone | Clean Phone | Phone 2 | Phone 3 | Email Address | Notes | Specialty | Last partner in FLF
+R3: Ally | Body Shop | Art's Auto Repairs | Arturo | 1342 W Cowles St Long Be | Long Beach | 562-314-9536 | 5623149536 |  |  | artsautorepairs@yahoo.co | BDR Facilities |  | 
+R4: Ally | Body Shop | Auto Refocusing | Gloria | 151 S Wineville Ave Ste  | Ontario | (909) 390-8285 | 9093908285 |  |  | gloria.autofocus@gmail.c | BDR Facilities |  | 
+R5: Ally | Body Shop | Cali Auto Collision 2 | Pablo (owner) | 12691 San Fernando Rd, S | Sylmar | 747-210-9495 | 7472109495 |  |  |  | BDR Facilities |  | 
+R6: Ally | Body Shop | Cali Auto Collision 3 | Pablo (owner) | 7834 Sepulveda Boulevard | Van Nuys | 347-481-3485 | 3474813485 |  |  | caliautocollision@gmail. | BDR Facilities |  | 
+R7: Ally | Body Shop | Dave's Auto Body | Pillar & Anthony | 1224 W Merrill Ave Rialt | Rialto | 909 820 6466 | 9098206466 |  |  | davesautobody_10@hotmail | BDR Facilities |  | 
+R8: Ally | Body Shop | Ernie's Auto Collision | Jasmin | 16611 Mojave Dr, Victorv | Victorville | 760-951-3393 | 7609513393 |  |  |  | BDR Facilities |  | 
+R9: Ally | Chiropractor | McMorris Chiropractic |  | 577 N D St #100, San Ber | San Bernardino | (909) 763-2011 | 9097632011 |  |  |  | no website, no posts |  | FR Claudia
+R10: Ally | Body Shop | Royal Road Collision Cen | Sebastian & Anna | 1364 S Camino Real #unit | Bernardino | (951) 376-9883 | 9513769883 | 6178525208 |  |  |  |  | Ally
+R11: Ally | Body Shop | Sabina's Body Shop | Carmen | 17610 Catalpa St Suite F | Hesperia | 760-483-1179 | 7604831179 |  |  |  | BDR Facilities |  | 
+R12: Ally | Body Shop | Unique Auto Collision | Hamlet  | 8115 Orion Ave. Van Nuys | Van Nuys | 424-355-2772 | 4243552772 |  |  | autocollision.uique@gmai | Rental Available |  | Lester
+R13: Ally | Body Shop | Walnut Auto Body & Glass | John (manager) | 3970 Valley Blvd #E, Wal | Walnut | 909-598-2376 | 9095982376 |  |  | walnutabg@gmail.com | BDR Facilities |  | 
+R14: Genysys | Body Shop | 714 Kustomz Auto Body &  |  | 1916 W 1st St, Santa Ana | Santa ana |  | 7146813982 |  |  |  |  |  | 
+R15: Genysys | Chiropractor | Advanced Chiropractic Sp |  | 8810 S Sepulveda Blvd, L | Los Angeles | 3103884157 | 3103884157 |  |  |  | For Genysys, no posts,  |  | https://advancedspinespo
+R16: Genysys | Towing | BAJA BOYZ TOWING INC |  | 86110 Avenue 54, Coachel | Coachella | 7606010564 | 7606010564 |  |  |  |  |  | 
+R17: Genysys | Body Shop | BG Auto Body INC | Jesus | 6461 Clara St, Bell Gard | Bell Gardens | 3239723852 | 3239723852 |  |  |  |  |  | 
+R18: Genysys | Body Shop | Broski's Body & Paint |  | 10918 Norwalk Blvd, Sant | Santa Fe Springs | 5629469436 | 5629469436 |  |  |  | no website |  | 
+R19: Genysys | Body Shop | Califas auto body |  | 1301 E Orangethorpe Ave  | Fullerton | 7147356425 | 7147356425 |  |  |  | no website |  | 
+R20: Genysys | Body Shop | Certified Collision Repa |  | 424 1/2 N Main St, Lake  | Lake Elsinore |  | 9514517233 |  |  |  |  |  | 
+R21: Genysys | Towing | Compas Gruas Los Angeles |  | 345 S Alexandria Ave, Lo | Los Angeles | 2132705362 | 2132705362 |  |  |  | no website |  | 
+R22: Genysys | Chiropractor | Del Rio Chiropractic Cli |  | 12100 Imperial Hwy. Suit | Norwalk | 5626516300 | 5626516300 |  |  |  | no website |  | 
+R23: Genysys | Body Shop | Economy Paint & Collisio |  | 2587 Rubidoux Blvd, Rive | Riverside | 9517870227 | 9517870227 |  |  |  |  |  | 
+R24: Genysys | Body shop | Excellence Body Shop |  | 1135 W State St Ontario  | Ontario | 18775140522 | 8775140522 | 9092179806 |  |  | this phone number was on |  | 
+R25: Genysys | Body Shop | Gencorp Autobody Shop | Kenneth/William  | 27271 Ethanac Rd STE 105 | Menifee | 951-526-6850 | 9515266850 | 9514767146 |  |  info@gencorpautobodysho |  |  | Moni
+R26: Genysys | Body Shop | Grove Body Shop |  | 10242 Garden Grove Blvd, | Garden Grove | 7145376460 | 7145376460 |  |  |  |  |  | 
+R27: Genysys | Chiropractor | Hess Rehabilitation & Ch |  | 1120 W La Palma Ave #9,  | Anaheim |  | 7143560981 |  |  | Hessrehabanaheim@gmail.c | Pens, Spanish, English,  |  | 
+R28: Genysys | Body Shop | Impact auto body and pai |  | 5555 W Pico Blvd, Los An | Los Angeles | 562-567-1082 | 5625671082 | 3239385555 |  |  | Nick owner, Miguel Manag |  | 
+R29: Genysys | Body Shop | J&R 101 Auto Body Shop |  | 870 N Western Ave C, Los | Los Angeles | 3238541793 | 3238541793 |  |  |  | no website |  | 
+R30: Genysys | Body Shop | JC CUSTOMZ COLLISION CEN | Chris | 9241 Sonrisa St, Bellflo | Bellflower | (562) 804-6482 | 5628046482 |  |  |  |  |  | 
+... (408 rows skipped) ...
+R439: Zulema | Chiropractor | Trends Collision Center |  | 2701 Calloway Dr Bakersf | Bakersfield | 6615893427 | 6615893427 |  |  | jryanchiropractic@gmail. |  |  | Zulema
+R440: Zulema | Body Shop | Trinity Towing |  | 3816 Fruitvale Ave, Bake | Bakersfield | 661-587-0945 | 6615870945 |  |  |  | warm |  | Brizelle
+R441: Zulema | Towing | Ten Eight Towing | Karina | 4386 Turcon Ave Bakersfi | Bakersfield | 661-864-0749 | 6618640749 |  |  |  |  |  | Brizelle
+R442: Zulema | Body Shop | Trends Collision Center | Sara/Manuel | 4321 Stine Rd Bakersfiel | Bakersfield | 661-398-2029 | 6613982029 |  |  |  | Hot |  | Brizelle
+R443: Zulema | Towing | Trinity Towing | Kristy | 10016 Rosedale Hwy Baker | Bakersfield | 661-679-7277 | 6616797277 |  |  |  |  |  | Brizelle
+R444: Zulema | Body Shop | Express Body Works  |  | 1838 Girard St, Delano,  | Delano |  | 6617252757 |  |  |  |  |  | 
+FORMULAS:
+N3 = IFERROR( VLOOKUP(G3,#REF!,8,false),"")
+N4 = IFERROR( VLOOKUP(G4,#REF!,8,false),"")
+N5 = IFERROR( VLOOKUP(G5,#REF!,8,false),"")
+N6 = IFERROR( VLOOKUP(G6,#REF!,8,false),"")
+N7 = IFERROR( VLOOKUP(G7,#REF!,8,false),"")
+N8 = IFERROR( VLOOKUP(G8,#REF!,8,false),"")
+N11 = IFERROR( VLOOKUP(G11,#REF!,8,false),"")
+N13 = IFERROR( VLOOKUP(G13,#REF!,8,false),"")
+N35 = IFERROR( VLOOKUP(G35,#REF!,8,false),"")
+N126 = IFERROR( VLOOKUP(G126,#REF!,8,false),"")
+N148 = IFERROR( VLOOKUP(G148,#REF!,8,false),"")
+N330 = IFERROR( VLOOKUP(G330,#REF!,8,false),"")
+N333 = IFERROR( VLOOKUP(G333,#REF!,8,false),"")
+N351 = IFERROR( VLOOKUP(G351,#REF!,8,false),"")
+N373 = IFERROR( VLOOKUP(G373,#REF!,8,false),"")

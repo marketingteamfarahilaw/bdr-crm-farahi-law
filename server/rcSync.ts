@@ -265,6 +265,7 @@ export async function syncRecentCalls(
       summary: `[Synced] ${r.direction ?? "Outbound"} call — ${r.result ?? ""} (${durationStr}). ${r.from?.phoneNumber ?? "?"} → ${r.to?.phoneNumber ?? "?"}`,
       repId: attribution?.repId ?? facility.assignedRepId ?? undefined,
       repName: attribution?.repName ?? r.from?.name ?? facility.assignedRepName ?? undefined,
+      direction: r.direction ?? "Outbound",
       fromRingCentral: 1,
       rcCallId: id,
       rcSessionId: sessionId || undefined,

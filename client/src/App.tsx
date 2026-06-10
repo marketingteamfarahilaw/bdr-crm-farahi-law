@@ -38,6 +38,7 @@ import FilevineSettingsPage from "./pages/FilevineSettings";
 import SettingsPage from "./pages/Settings";
 import ProfilePage from "./pages/Profile";
 import ReportsCenter from "./pages/ReportsCenter";
+import TeamReports from "./pages/TeamReports";
 import CallAnalytics from "./pages/CallAnalytics";
 import CallLogs from "./pages/CallLogs";
 import AgentPerformance from "./pages/AgentPerformance";
@@ -128,6 +129,7 @@ function Router() {
 
         {/* Reports Center */}
         <Route path="/reports" component={ReportsCenter} />
+        <Route path="/team-reports" component={TeamReports} />
 
         {/* Call Analytics */}
         <Route path="/call-analytics" component={CallAnalytics} />

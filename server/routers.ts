@@ -93,6 +93,7 @@ import { fromZonedTime } from "date-fns-tz";
  *  (Pacific) local time, returning the matching UTC instant for DB comparison. */
 const laDate = (s: string) => fromZonedTime(s, "America/Los_Angeles");
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
+import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -740,6 +741,25 @@ export const appRouter = router({
 
   // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
   intake: intakeRouter,
+
+  // Team Reports — live replacements for the BDR/FR Excel report workbooks.
+  teamReports: (() => {
+    const range = z.object({
+      from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    });
+    const toRange = (i: { from: string; to: string }) => ({
+      from: laDate(`${i.from}T00:00:00`),
+      to: laDate(`${i.to}T23:59:59`),
+    });
+    return router({
+      checkinsVisits: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getCheckinVisitReport(toRange(input)); }),
+      signups: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupReport(toRange(input)); }),
+      newFacilities: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getNewFacilitiesReport(toRange(input)); }),
+      callActivity: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getCallActivityReport(toRange(input)); }),
+      leadsTargets: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getLeadsTargetReport(toRange(input)); }),
+    });
+  })(),
 
   reports: router({
     // Agents available to report on: agents see only themselves; managers see all.
