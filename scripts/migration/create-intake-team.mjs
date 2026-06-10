@@ -15,10 +15,10 @@ const TEAM = [
   { name: "Felix Cedillo",    email: "felix@farahilaw.com",   role: "intake_agent" },   // Specialist
   { name: "Karen Vega",       email: "karenv@farahilaw.com",  role: "intake_agent" },   // Specialist
   { name: "George Iniguez",   email: "gi@farahilaw.com",      role: "intake_agent" },   // Specialist
-  { name: "Melanie Vigueria", email: "melanie@farahilaw.com", role: "intake_agent" },   // Frontline
-  { name: "Hugo Cachu",       email: "hugoc@farahilaw.com",   role: "intake_agent" },   // Frontline
-  { name: "Ernesto De Sucre", email: "ernestd@farahilaw.com", role: "intake_agent" },   // Frontline
-  { name: "Gizhel Flores",    email: "gizhel@farahilaw.com",  role: "intake_agent" },   // Frontline
+  { name: "Melanie Vigueria", email: "melanie@farahilaw.com", role: "intake_frontline" }, // Frontline
+  { name: "Hugo Cachu",       email: "hugoc@farahilaw.com",   role: "intake_frontline" }, // Frontline
+  { name: "Ernesto De Sucre", email: "ernestd@farahilaw.com", role: "intake_frontline" }, // Frontline
+  { name: "Gizhel Flores",    email: "gizhel@farahilaw.com",  role: "intake_frontline" }, // Frontline
 ];
 
 const hashPassword = (pw) => {

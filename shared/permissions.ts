@@ -6,8 +6,9 @@
 //   fr_manager      — sees ALL BD/FR data, cannot assign roles
 //   bdr_agent       — BDR tools, scoped to their OWN data only
 //   fr_agent        — FR tools, scoped to their OWN data only
-//   intake_manager  — the Intake (AI Case Desk) side ONLY, sees all intake data + intake settings
-//   intake_agent    — the Intake side ONLY, works the shared lead queue
+//   intake_manager   — the Intake (AI Case Desk) side ONLY, sees all intake data + intake settings
+//   intake_agent     — Intake Specialist: works the shared lead queue
+//   intake_frontline — Intake Frontline: first-touch call takers (same desk access today)
 //   admin/user      — legacy values (admin → treated as super_admin; user → treated as bdr_agent)
 //
 // HARD WALL: intake roles never see BD/FR data (facilities, partner calls,
@@ -16,7 +17,7 @@
 
 export type Role =
   | "super_admin" | "bdr_manager" | "fr_manager" | "bdr_agent" | "fr_agent"
-  | "intake_manager" | "intake_agent"
+  | "intake_manager" | "intake_agent" | "intake_frontline"
   | "admin" | "user";
 
 export const ROLE_LABELS: Record<string, string> = {
@@ -27,12 +28,13 @@ export const ROLE_LABELS: Record<string, string> = {
   fr_agent: "FR Agent",
   intake_manager: "Intake Manager",
   intake_agent: "Intake Specialist",
+  intake_frontline: "Intake Frontline",
   admin: "Admin (legacy)",
   user: "Unassigned",
 };
 
 // Roles offered in the assignment picker.
-export const ASSIGNABLE_ROLES = ["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent"] as const;
+export const ASSIGNABLE_ROLES = ["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent", "intake_frontline"] as const;
 
 export function normalizeRole(role?: string | null): Role {
   if (role === "admin") return "super_admin";   // legacy admin == super admin
@@ -72,7 +74,7 @@ export const canAssignRoles = (r?: string | null) => isSuperAdmin(r);
 /** An intake-side role (NOT the super admin — used to hide the BD/FR app from them). */
 export const isIntakeOnly = (r?: string | null) => {
   const n = normalizeRole(r);
-  return n === "intake_manager" || n === "intake_agent";
+  return n === "intake_manager" || n === "intake_agent" || n === "intake_frontline";
 };
 
 /** Can open the Intake side: the intake team + the super admin. */

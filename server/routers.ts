@@ -165,7 +165,7 @@ export const appRouter = router({
       return all.map(({ passwordHash, ...u }) => ({ ...u, hasPassword: Boolean(passwordHash) }));
     }),
     setRole: protectedProcedure
-      .input(z.object({ userId: z.number(), role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent"]) }))
+      .input(z.object({ userId: z.number(), role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent", "intake_frontline"]) }))
       .mutation(async ({ ctx, input }) => {
         if (!canAssignRoles(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only the super admin can assign roles." });
         if (input.userId === ctx.user.id && input.role !== "super_admin") {
@@ -192,7 +192,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
-        role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent"]),
+        role: z.enum(["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent", "intake_frontline"]),
         password: z.string().min(6),
       }))
       .mutation(async ({ ctx, input }) => {

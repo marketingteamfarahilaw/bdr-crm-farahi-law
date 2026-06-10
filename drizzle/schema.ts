@@ -18,7 +18,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin", "super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent", "intake_frontline"]).default("user").notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }), // scrypt salt:hash for email+password login
   agentName: varchar("agentName", { length: 100 }), // Links user to BDR agent data (e.g. 'Gracel', 'Queenie', 'Ally', 'Miguel', 'Rupert')
   ringoutMyLocation: varchar("ringoutMyLocation", { length: 30 }), // Phone number for RingOut first-leg call (e.g. +12025551234)

@@ -494,7 +494,7 @@ export const intakeRouter = router({
       return db
         .select({ id: users.id, name: users.name, email: users.email, role: users.role })
         .from(users)
-        .where(inArray(users.role, ["intake_manager", "intake_agent"]));
+        .where(inArray(users.role, ["intake_manager", "intake_agent", "intake_frontline"]));
     }),
   }),
 
