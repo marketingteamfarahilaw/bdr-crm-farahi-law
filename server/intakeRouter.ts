@@ -10,7 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { fromZonedTime } from "date-fns-tz";
 import { protectedProcedure, router } from "./_core/trpc";
-import { canSeeIntake, canManageIntake } from "@shared/permissions";
+import { canSeeIntake, canManageIntake, isIntakeOnly } from "@shared/permissions";
 import { getDb, getSetting, setSetting } from "./db";
 import { intakeLeads, piClients, users } from "../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
@@ -467,9 +467,15 @@ export const intakeRouter = router({
     syncNow: intakeProcedure
       .input(z.object({ lookbackMinutes: z.number().min(5).max(43200).optional() }).optional())
       .mutation(async ({ ctx, input }) => {
+        // Only INTAKE members' extensions feed the intake desk. The super admin
+        // can browse intake, but syncing their own (BD-side) extension here
+        // would pollute intake_calls with BDR/admin calls.
+        if (!isIntakeOnly(ctx.user.role)) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Intake call sync runs per intake member — each Intake Specialist connects their own RingCentral, and their calls flow in automatically." });
+        }
         const token = await getValidRCTokenForUser(ctx.user.id);
         if (!token) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Connect your RingCentral first (Intake → RingCentral)." });
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Connect your RingCentral first (Intake → Settings)." });
         }
         const res = await syncIntakeCalls(token, {
           agent: { id: ctx.user.id, name: String(ctx.user.name ?? ctx.user.email ?? "Unknown") },
