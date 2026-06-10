@@ -19,7 +19,8 @@ import { invokeLLM } from "./_core/llm";
 const LA_TZ = "America/Los_Angeles";
 
 export const INTAKE_CASE_TYPES = [
-  "auto_accident", "slip_fall", "dog_bite", "premises", "work_injury",
+  "auto_accident", "motorcycle", "bicycle", "pedestrian", "truck",
+  "slip_fall", "dog_bite", "premises", "work_injury",
   "medical_malpractice", "product_liability", "wrongful_death", "other",
 ] as const;
 export type IntakeCaseType = (typeof INTAKE_CASE_TYPES)[number];
@@ -41,7 +42,7 @@ export type InjuryFlags = {
 
 export type IntakeExtraction = {
   isPotentialClient: boolean;
-  callPurpose: "new_case" | "follow_up" | "existing_client" | "solicitation" | "wrong_number" | "other";
+  callPurpose: "new_case" | "follow_up" | "existing_client" | "adjuster" | "internal" | "solicitation" | "wrong_number" | "other";
   subject: string;                        // 3-6 word call title, e.g. "Inquiry About Ankle Injury"
   firstName: string | null;
   lastName: string | null;
@@ -60,6 +61,7 @@ export type IntakeExtraction = {
   injuryFlags: InjuryFlags;
   treatmentStatus: "none" | "er_visit" | "hospitalized" | "ongoing" | "completed" | "unknown";
   treatmentDetails: string | null;
+  treatmentGap: "no_gap" | "over_3_weeks" | "unknown";   // firm acceptance rule: a 3+ week treatment gap disqualifies "quality"
   employment: "employed_full_time" | "employed_part_time" | "self_employed" | "unemployed" | "retired" | "student" | "disabled" | "unknown";
   liabilityAssessment: "clear_other_party" | "mostly_other_party" | "shared" | "unclear" | "client_at_fault" | "unknown";
   liabilityNotes: string | null;
@@ -93,13 +95,54 @@ export type QualificationRubric = {
   caps: string[];      // which caps were applied, for transparency
 };
 
+export type FirmCriteria = {
+  qualified: boolean;          // case type is on the firm's accepted list
+  quality: boolean;            // qualified + property damage + injuries + ER/doctor treatment + no 3-week gap
+  missing: string[];           // which quality criteria are unmet or unknown
+};
+
 export type IntakeAnalysis = {
   extraction: IntakeExtraction;
   solDate: Date | null;
   solRisk: "ok" | "warning" | "urgent" | "expired" | "unknown";
   rubric: QualificationRubric;
   tier: "hot" | "qualified" | "review" | "unqualified";
+  firmCriteria: FirmCriteria;
 };
+
+// ─── Farahi acceptance criteria (deterministic — mirrors the intake sheet) ───
+// Qualified lead: case type is Auto, Motorcycle, Bicycle, Pedestrian, Semi/
+// Truck, Slip & Fall, or general Personal Injury.
+// Quality lead: qualified AND property damage available AND client has
+// injuries AND went to ER/Urgent Care or is treating with a doctor AND did
+// NOT skip treatment for more than 3 weeks.
+
+const QUALIFIED_CASE_TYPES = new Set([
+  "auto_accident", "motorcycle", "bicycle", "pedestrian", "truck",
+  "slip_fall", "dog_bite", "premises", "wrongful_death", "product_liability",
+]);
+
+export function evaluateFirmCriteria(x: Pick<IntakeExtraction, "caseType" | "propertyDamage" | "injuries" | "injurySeverity" | "treatmentStatus" | "treatmentGap">): FirmCriteria {
+  const qualified = !!(x.caseType && QUALIFIED_CASE_TYPES.has(x.caseType));
+  const missing: string[] = [];
+  if (!qualified) missing.push(x.caseType ? "Case type not on the accepted list" : "Case type unknown");
+
+  const hasPropertyDamage = !!(x.propertyDamage && x.propertyDamage.trim());
+  if (!hasPropertyDamage) missing.push("Property damage not confirmed");
+
+  const hasInjuries = !!(x.injuries && x.injuries.trim()) && x.injurySeverity !== "none";
+  if (!hasInjuries) missing.push("Injuries not confirmed");
+
+  const treating = ["er_visit", "hospitalized", "ongoing", "completed"].includes(x.treatmentStatus);
+  if (!treating) missing.push("ER/doctor treatment not confirmed");
+
+  const noGap = x.treatmentGap !== "over_3_weeks";
+  if (!noGap) missing.push("Skipped treatment for more than 3 weeks");
+  else if (x.treatmentGap === "unknown") missing.push("Treatment gap not asked");
+
+  const quality = qualified && hasPropertyDamage && hasInjuries && treating && x.treatmentGap === "no_gap";
+  return { qualified, quality, missing };
+}
 
 // ─── California statute of limitations (deterministic) ───────────────────────
 // Conservative deadlines an intake desk should work to — not legal advice:
@@ -165,7 +208,7 @@ const EXTRACTION_SCHEMA = {
   type: "object",
   properties: {
     isPotentialClient: { type: "boolean" },
-    callPurpose: { type: "string", enum: ["new_case", "follow_up", "existing_client", "solicitation", "wrong_number", "other"] },
+    callPurpose: { type: "string", enum: ["new_case", "follow_up", "existing_client", "adjuster", "internal", "solicitation", "wrong_number", "other"] },
     subject: { type: "string" },
     firstName: nullableString, lastName: nullableString, phone: nullableString, email: nullableString,
     preferredLanguage: nullableString, callerName: nullableString, callerRelationship: nullableString, clientLocation: nullableString,
@@ -189,6 +232,7 @@ const EXTRACTION_SCHEMA = {
     },
     treatmentStatus: { type: "string", enum: ["none", "er_visit", "hospitalized", "ongoing", "completed", "unknown"] },
     treatmentDetails: nullableString,
+    treatmentGap: { type: "string", enum: ["no_gap", "over_3_weeks", "unknown"] },
     employment: { type: "string", enum: ["employed_full_time", "employed_part_time", "self_employed", "unemployed", "retired", "student", "disabled", "unknown"] },
     liabilityAssessment: { type: "string", enum: ["clear_other_party", "mostly_other_party", "shared", "unclear", "client_at_fault", "unknown"] },
     liabilityNotes: nullableString,
@@ -207,7 +251,7 @@ const EXTRACTION_SCHEMA = {
     "isPotentialClient", "callPurpose", "subject", "firstName", "lastName", "phone", "email", "preferredLanguage",
     "callerName", "callerRelationship", "clientLocation", "caseType", "incidentDate", "incidentLocation",
     "incidentDescription", "injuries", "injurySeverity", "injuryFlags", "treatmentStatus", "treatmentDetails",
-    "employment", "liabilityAssessment", "liabilityNotes", "policeReport", "defendantInsured", "defendantInsurer",
+    "treatmentGap", "employment", "liabilityAssessment", "liabilityNotes", "policeReport", "defendantInsured", "defendantInsurer",
     "clientInsurer", "umCoverage", "healthInsurance", "propertyDamage", "lostWages", "priorAttorney",
     "governmentEntity", "referredBy", "clientFactorScore", "summary", "keyPoints", "redFlags",
     "missingInfo", "suggestedQuestions", "recommendation",
@@ -241,10 +285,12 @@ Context: the call happened on ${todayLA} (California time)${meta.direction ? `, 
 Rules:
 - The transcript may be in Spanish or mixed Spanish/English — understand it either way, but write every output field in ENGLISH. Set preferredLanguage to the language the caller spoke ("Spanish", "English", …).
 - isPotentialClient: true only when the call is about a potential or ongoing injury case for the caller or someone they represent. Telemarketers, vendors, wrong numbers, court/insurance adjusters → false. INTERNAL calls between firm staff (coworkers coordinating work, scheduling meetings/video calls, IT/marketing/BD colleagues, anyone who clearly works at or with Farahi Law) → false, callPurpose "other" — an injury case must actually be discussed for someone to be a potential client.
-- callPurpose: "new_case" (first contact about an injury), "follow_up" (continuing an earlier intake conversation), "existing_client" (already signed, asking about their case), "solicitation", "wrong_number", or "other".
+- callPurpose: "new_case" (first contact about an injury), "follow_up" (continuing an earlier intake conversation), "existing_client" (a signed client asking about their own case), "adjuster" (an insurance company, adjuster, medical provider, pharmacy, lien company, or records office calling ABOUT a client or claim — very common), "internal" (firm staff talking to each other), "solicitation" (sales/marketing to the firm), "wrong_number" (caller reached the wrong place), or "other".
 - subject: a 3-6 word title for the call, like "Inquiry About Ankle Injury" or "Car Accident Legal Consultation".
 - injuryFlags — the auditor screeners. fracture/headInjury: "diagnosed" only if a doctor confirmed it, "suspected" if symptoms point at it (hit their head, dizziness, memory gaps → headInjury suspected). lossOfConsciousness: did they black out, even briefly. surgery: "completed" or "recommended" by a doctor. scarring: visible scars/lacerations. permanentImpairment: "likely" for amputation/paralysis/permanent restrictions, "possible" if lasting limitations are mentioned. priorInjurySameRegion: prior injuries or claims involving the same body part (pre-existing condition risk).
 - employment: their work situation if mentioned — drives the lost-wages claim.
+- caseType: pick the most specific — "motorcycle"/"bicycle"/"pedestrian"/"truck" (semi/commercial truck) when the caller was on/hit by one; plain car collisions are "auto_accident".
+- treatmentGap: "over_3_weeks" if the caller went 3+ weeks without ANY treatment after the incident (or stopped treating for 3+ weeks); "no_gap" if treatment started promptly and continued; "unknown" if not discussed.
 - incidentDate: resolve relative mentions ("last Tuesday", "two weeks ago", "el quince de marzo") against the call date above and return "YYYY-MM-DD". If only a month or rough period is given, use the 15th of that month. If truly unknown, null.
 - liabilityAssessment: who appears at fault — "clear_other_party" (rear-ended, hit while parked, defect…), "mostly_other_party", "shared", "unclear", "client_at_fault", or "unknown".
 - injurySeverity: "catastrophic" (death, brain/spinal injury, amputation, multiple surgeries), "severe" (fracture, surgery needed, hospitalization), "moderate" (soft tissue with ongoing treatment, herniation), "minor" (bruises, brief soreness), "none", or "unknown".
@@ -280,7 +326,8 @@ Rules:
 
     const { solDate, solRisk } = computeSol(x.caseType, incident, x.governmentEntity);
     const { rubric, tier } = scoreLead(x, solRisk);
-    return { extraction: x, solDate, solRisk, rubric, tier };
+    const firmCriteria = evaluateFirmCriteria(x);
+    return { extraction: x, solDate, solRisk, rubric, tier, firmCriteria };
   } catch (e: any) {
     console.warn("[intakeAI] analyzeIntakeTranscript failed:", e?.message ?? e);
     return null;

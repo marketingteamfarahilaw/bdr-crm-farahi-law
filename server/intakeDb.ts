@@ -16,7 +16,7 @@ import {
   type IntakeLead,
 } from "../drizzle/schema";
 import { getDb } from "./db";
-import { computeSol, scoreLead, type IntakeAnalysis, type IntakeExtraction } from "./intakeAI";
+import { computeSol, scoreLead, evaluateFirmCriteria, type IntakeAnalysis, type IntakeExtraction } from "./intakeAI";
 
 const onlyDigits = (s?: string | null) => (s || "").replace(/\D/g, "");
 export const last10 = (s?: string | null) => { const d = onlyDigits(s); return d.length >= 10 ? d.slice(-10) : d; };
@@ -224,6 +224,7 @@ export function extractionViewFromLead(lead: IntakeLead): IntakeExtraction {
     injurySeverity: (lead.injurySeverity as any) ?? "unknown",
     treatmentStatus: (lead.treatmentStatus as any) ?? "unknown",
     treatmentDetails: lead.treatmentDetails,
+    treatmentGap: (stored.treatmentGap as any) ?? "unknown",
     liabilityAssessment: (lead.liabilityAssessment as any) ?? "unknown",
     liabilityNotes: lead.liabilityNotes,
     policeReport: (lead.policeReport as any) ?? "unknown",
@@ -250,7 +251,8 @@ export async function rescoreLead(leadId: number): Promise<IntakeLead | null> {
   const view = extractionViewFromLead(lead);
   const { solDate, solRisk } = computeSol(view.caseType, lead.incidentDate ?? null, view.governmentEntity);
   const { rubric, tier } = scoreLead(view, solRisk);
-  const aiAnalysis = { ...((lead.aiAnalysis as any) ?? {}), extraction: view, rubric };
+  const firmCriteria = evaluateFirmCriteria(view);
+  const aiAnalysis = { ...((lead.aiAnalysis as any) ?? {}), extraction: view, rubric, firmCriteria };
   await updateIntakeLead(leadId, {
     solDate, solRisk,
     qualificationScore: rubric.total, qualificationTier: tier,
@@ -286,6 +288,7 @@ export async function applyAnalysisToLead(leadId: number, analysis: IntakeAnalys
     ...((lead.aiAnalysis as any) ?? {}),
     extraction: { ...((lead.aiAnalysis as any)?.extraction ?? {}), ...x },
     rubric: analysis.rubric,
+    firmCriteria: analysis.firmCriteria,
     humanEdited,
     lastAnalyzedAt: new Date().toISOString(),
   };
@@ -328,7 +331,7 @@ export async function createLeadFromAnalysis(
     solDate: analysis.solDate, solRisk: analysis.solRisk as any,
     qualificationScore: analysis.rubric.total, qualificationTier: analysis.tier as any,
     aiSummary: x.summary,
-    aiAnalysis: { extraction: x, rubric: analysis.rubric, humanEdited: [], lastAnalyzedAt: new Date().toISOString() },
+    aiAnalysis: { extraction: x, rubric: analysis.rubric, firmCriteria: analysis.firmCriteria, humanEdited: [], lastAnalyzedAt: new Date().toISOString() },
     aiRecommendation: x.recommendation,
     createdById: opts.createdById,
   });
@@ -358,8 +361,8 @@ export async function getIntakeDashboardStats() {
   for (const c of todayCalls) {
     if (c.purpose === "new_case" || c.purpose === "follow_up") triageToday.potentialClients++;
     else if (c.purpose === "existing_client") triageToday.existingClients++;
-    else if (c.purpose === "solicitation") triageToday.adjustersVendors++;
-    else if (c.purpose === "wrong_number" || c.purpose === "other") triageToday.wrongNumberOther++;
+    else if (c.purpose === "adjuster" || c.purpose === "solicitation") triageToday.adjustersVendors++;
+    else if (c.purpose === "wrong_number" || c.purpose === "internal" || c.purpose === "other") triageToday.wrongNumberOther++;
     else triageToday.noRecording++; // not analyzed — no recording / too short
   }
 

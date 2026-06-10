@@ -14,7 +14,7 @@ const base: IntakeExtraction = {
   callerName: null, callerRelationship: null, clientLocation: "Bakersfield, CA",
   caseType: "auto_accident", incidentDate: null, incidentLocation: null, incidentDescription: null,
   injuries: "neck and back pain", injurySeverity: "moderate",
-  treatmentStatus: "er_visit", treatmentDetails: null,
+  treatmentStatus: "er_visit", treatmentDetails: null, treatmentGap: "no_gap",
   liabilityAssessment: "clear_other_party", liabilityNotes: null, policeReport: "yes",
   defendantInsured: "yes", defendantInsurer: "State Farm", clientInsurer: null,
   umCoverage: "unknown", healthInsurance: null, propertyDamage: null, lostWages: "yes",

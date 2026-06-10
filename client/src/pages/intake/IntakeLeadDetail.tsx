@@ -23,7 +23,7 @@ import {
   Loader2, Pencil, X, Check, Trash2, PlayCircle, ChevronDown, ChevronUp,
   FileText, StickyNote, Scale, Flag, UserRound,
 } from "lucide-react";
-import { STATUS_META, TIER_META, SOL_META, CASE_TYPES, leadName, Chip, ScoreRing, IntakeGuard, fmtDur } from "./shared";
+import { STATUS_META, TIER_META, SOL_META, CASE_TYPES, leadName, Chip, ScoreRing, IntakeGuard, fmtDur, FirmCriteriaChips } from "./shared";
 
 const YNU_OPTS = [["yes", "Yes"], ["no", "No"], ["unknown", "Unknown"]] as const;
 const SEVERITY_OPTS = [["catastrophic", "Catastrophic"], ["severe", "Severe"], ["moderate", "Moderate"], ["minor", "Minor"], ["none", "None"], ["unknown", "Unknown"]] as const;
@@ -308,6 +308,15 @@ export default function IntakeLeadDetail() {
                     <p className="text-sm text-muted-foreground">Not analyzed yet — link a call with a transcript or use “Re-run AI”.</p>
                   ) : (
                     <>
+                      {analysis.firmCriteria && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Firm criteria</span>
+                          <FirmCriteriaChips fc={analysis.firmCriteria} />
+                          {!analysis.firmCriteria.quality && (analysis.firmCriteria.missing ?? []).length > 0 && (
+                            <span className="text-[11px] text-muted-foreground">— {(analysis.firmCriteria.missing as string[]).join(" · ")}</span>
+                          )}
+                        </div>
+                      )}
                       {lead.aiSummary && <p className="text-sm text-foreground leading-relaxed">{lead.aiSummary}</p>}
                       <div className="grid grid-cols-2 gap-x-5 gap-y-3 pt-1">
                         <RubricBar label="Liability" value={rubric.liability ?? 0} max={30} />

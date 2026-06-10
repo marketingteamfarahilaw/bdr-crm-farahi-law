@@ -48,7 +48,7 @@ const pick = (map: Record<string, readonly [string, string]>, v?: string | null)
   return hit ? [hit[0], hit[1] as Tone] : ["—", "gray"];
 };
 
-const VIEWS = ["All", "High Value", "Evidence Gaps", "Coverage Gaps", "SOL Risk", "Open"] as const;
+const VIEWS = ["All", "Quality Leads", "High Value", "Evidence Gaps", "Coverage Gaps", "SOL Risk", "Open"] as const;
 
 export default function IntakeAuditor() {
   const [, navigate] = useLocation();
@@ -60,7 +60,9 @@ export default function IntakeAuditor() {
     let list = (leads ?? []) as any[];
     const x = (l: any) => l.aiAnalysis?.extraction ?? {};
     const fl = (l: any) => x(l).injuryFlags ?? {};
-    if (view === "High Value") {
+    if (view === "Quality Leads") {
+      list = list.filter((l) => x(l) && l.aiAnalysis?.firmCriteria?.quality);
+    } else if (view === "High Value") {
       list = list.filter((l) =>
         ["severe", "catastrophic"].includes(l.injurySeverity) ||
         (l.qualificationScore ?? 0) >= 75 ||
@@ -82,7 +84,7 @@ export default function IntakeAuditor() {
   }, [leads, view, search]);
 
   const COLS = [
-    "Score", "Severity", "Case Type", "Liability", "Police Report", "Fracture", "TBI / Head", "LOC",
+    "Score", "Firm Qualified", "Quality Lead", "Severity", "Case Type", "Liability", "Police Report", "Fracture", "TBI / Head", "LOC",
     "Surgery", "Scarring", "Perm. Impair.", "Prior Injury", "Treatment", "Their Carrier", "Client Carrier",
     "UM/UIM", "Health Ins.", "Lost Wages", "Employment", "Prior Attorney", "Govt. Entity", "SOL",
     "Incident", "Status", "Assigned",
@@ -136,8 +138,11 @@ export default function IntakeAuditor() {
                       const ex = l.aiAnalysis?.extraction ?? {};
                       const f = ex.injuryFlags ?? {};
                       const tier = l.qualificationTier;
+                      const fc = l.aiAnalysis?.firmCriteria;
                       const cells: Array<[string, Tone] | string> = [
                         [String(l.qualificationScore ?? "—"), (tier === "hot" ? "red" : tier === "qualified" ? "teal" : tier === "review" ? "yellow" : "gray") as Tone],
+                        [fc ? (fc.qualified ? "Qualified" : "Not Qualified") : "—", (fc?.qualified ? "teal" : fc ? "red" : "gray") as Tone],
+                        [fc ? (fc.quality ? "Quality ✓" : "Pending") : "—", (fc?.quality ? "teal" : fc ? "yellow" : "gray") as Tone],
                         pick(V.severity as any, l.injurySeverity),
                         l.caseType ? CASE_TYPES[l.caseType] ?? l.caseType : "—",
                         pick(V.liability as any, l.liabilityAssessment),

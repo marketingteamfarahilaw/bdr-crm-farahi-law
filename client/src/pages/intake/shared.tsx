@@ -34,6 +34,10 @@ export const SOL_META: Record<string, { label: string; cls: string }> = {
 
 export const CASE_TYPES: Record<string, string> = {
   auto_accident: "Auto Accident",
+  motorcycle: "Motorcycle",
+  bicycle: "Bicycle",
+  pedestrian: "Pedestrian",
+  truck: "Truck / Semi",
   slip_fall: "Slip & Fall",
   dog_bite: "Dog Bite",
   premises: "Premises Liability",
@@ -43,6 +47,22 @@ export const CASE_TYPES: Record<string, string> = {
   wrongful_death: "Wrongful Death",
   other: "Other",
 };
+
+/** Firm acceptance chips — Qualified (accepted case type) and Quality
+ *  (property damage + injuries + ER/doctor treatment + no 3-week gap). */
+export function FirmCriteriaChips({ fc }: { fc?: { qualified: boolean; quality: boolean; missing?: string[] } | null }) {
+  if (!fc) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5" title={(fc.missing ?? []).join("\n") || "All criteria met"}>
+      <span className={`text-[10px] font-semibold rounded-md border px-1.5 py-0.5 ${fc.qualified ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" : "bg-secondary text-muted-foreground border-border"}`}>
+        {fc.qualified ? "Qualified ✓" : "Not Qualified"}
+      </span>
+      <span className={`text-[10px] font-semibold rounded-md border px-1.5 py-0.5 ${fc.quality ? "bg-primary/15 text-primary border-primary/30" : "bg-amber-400/20 text-amber-700 dark:text-amber-300 border-amber-500/30"}`}>
+        {fc.quality ? "Quality Lead ✓" : "Quality pending"}
+      </span>
+    </span>
+  );
+}
 
 export const leadName = (l: { firstName?: string | null; lastName?: string | null; callerName?: string | null; phone?: string | null }) =>
   [l.firstName, l.lastName].filter(Boolean).join(" ") || l.callerName || l.phone || "Unknown caller";

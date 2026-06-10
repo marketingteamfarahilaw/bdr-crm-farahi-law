@@ -86,9 +86,13 @@ export default function IntakeCalls() {
                                 ? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
                                 : c.callPurpose === "existing_client"
                                 ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30"
+                                : c.callPurpose === "adjuster"
+                                ? "bg-amber-400/20 text-amber-700 dark:text-amber-300 border-amber-500/30"
                                 : "bg-secondary text-muted-foreground border-border"}`}>
                               {c.callPurpose === "new_case" || c.callPurpose === "follow_up" ? "Intake Call"
                                 : c.callPurpose === "existing_client" ? "Existing Client"
+                                : c.callPurpose === "adjuster" ? "Insurance / Adjuster"
+                                : c.callPurpose === "internal" ? "Internal"
                                 : c.callPurpose === "solicitation" ? "Solicitation"
                                 : c.callPurpose === "wrong_number" ? "Wrong Number" : "Other"}
                             </span>
