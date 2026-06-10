@@ -7,7 +7,9 @@ import { analyzeIntakeTranscript, computeSol, scoreLead, type IntakeExtraction }
 
 // ── 1) Deterministic checks ───────────────────────────────────────────────────
 const base: IntakeExtraction = {
-  isPotentialClient: true, callPurpose: "new_case",
+  isPotentialClient: true, callPurpose: "new_case", subject: "Car Accident Inquiry",
+  injuryFlags: { fracture: "no_indication", headInjury: "no_indication", lossOfConsciousness: "unknown", surgery: "no_indication", scarring: "no_indication", permanentImpairment: "no_indication", priorInjurySameRegion: "unknown" },
+  employment: "employed_full_time",
   firstName: "Maria", lastName: "Lopez", phone: null, email: null, preferredLanguage: "Spanish",
   callerName: null, callerRelationship: null, clientLocation: "Bakersfield, CA",
   caseType: "auto_accident", incidentDate: null, incidentLocation: null, incidentDescription: null,

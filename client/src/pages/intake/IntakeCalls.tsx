@@ -78,12 +78,25 @@ export default function IntakeCalls() {
                         ? <PhoneIncoming className="w-4 h-4 text-emerald-500 shrink-0" />
                         : <PhoneOutgoing className="w-4 h-4 text-sky-500 shrink-0" />}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-foreground">
-                          <span className="font-medium">{c.callerName || (c.direction === "Inbound" ? c.fromNumber : c.toNumber) || "Unknown"}</span>
-                          <span className="text-muted-foreground"> · {c.callDate ? format(new Date(c.callDate), "MMM d, h:mm a") : "—"} · {fmtDur(c.durationSeconds)} · {c.callResult ?? ""}</span>
+                        <p className="text-sm text-foreground flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{c.subject || c.callerName || (c.direction === "Inbound" ? c.fromNumber : c.toNumber) || "Unknown"}</span>
+                          {c.callPurpose && (
+                            <span className={`text-[10px] font-semibold rounded-md border px-1.5 py-0.5 ${
+                              c.callPurpose === "new_case" || c.callPurpose === "follow_up"
+                                ? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
+                                : c.callPurpose === "existing_client"
+                                ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30"
+                                : "bg-secondary text-muted-foreground border-border"}`}>
+                              {c.callPurpose === "new_case" || c.callPurpose === "follow_up" ? "Intake Call"
+                                : c.callPurpose === "existing_client" ? "Existing Client"
+                                : c.callPurpose === "solicitation" ? "Solicitation"
+                                : c.callPurpose === "wrong_number" ? "Wrong Number" : "Other"}
+                            </span>
+                          )}
+                          <span className="text-muted-foreground font-normal">{c.callDate ? format(new Date(c.callDate), "MMM d, h:mm a") : "—"} · {fmtDur(c.durationSeconds)} · {c.callResult ?? ""}</span>
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {c.agentName ? `${c.agentName}` : ""}{c.aiSummary ? ` — ${c.aiSummary}` : c.transcript ? "" : " — no transcript (no recording)"}
+                          {c.callerName || (c.direction === "Inbound" ? c.fromNumber : c.toNumber) || ""}{c.agentName ? ` → ${c.agentName}` : ""}{c.aiSummary ? ` — ${c.aiSummary}` : c.transcript ? "" : " — no transcript (no recording)"}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">

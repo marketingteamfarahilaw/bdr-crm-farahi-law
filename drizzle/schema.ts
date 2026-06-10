@@ -874,6 +874,8 @@ export const intakeCalls = mysqlTable("intake_calls", {
   transcriptLang: varchar("transcriptLang", { length: 20 }),
   aiProcessed: int("aiProcessed").default(0),
   aiSummary: text("aiSummary"),
+  subject: varchar("subject", { length: 255 }),                   // AI short title, e.g. "Inquiry About Ankle Injury"
+  callPurpose: varchar("callPurpose", { length: 40 }),            // new_case | follow_up | existing_client | solicitation | wrong_number | other
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type IntakeCall = typeof intakeCalls.$inferSelect;

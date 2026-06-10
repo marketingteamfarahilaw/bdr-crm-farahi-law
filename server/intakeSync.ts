@@ -125,6 +125,8 @@ export async function syncIntakeCalls(
         transcriptLang: tr.language ?? null,
         aiProcessed: analysis ? 1 : 0,
         aiSummary: analysis?.extraction.summary ?? null,
+        subject: analysis?.extraction.subject?.slice(0, 255) || null,
+        callPurpose: analysis?.extraction.callPurpose ?? null,
       });
       if (!analysis) continue;
 

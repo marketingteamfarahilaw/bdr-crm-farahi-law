@@ -26,9 +26,23 @@ export type IntakeCaseType = (typeof INTAKE_CASE_TYPES)[number];
 
 type YNU = "yes" | "no" | "unknown";
 
+/** Auditor-style clinical screeners — the high-value signals a PI auditor
+ *  looks for. "diagnosed"/"present" = the caller stated it; "suspected"/
+ *  "possible" = symptoms point at it but it's unconfirmed. */
+export type InjuryFlags = {
+  fracture: "diagnosed" | "suspected" | "no_indication";
+  headInjury: "diagnosed" | "suspected" | "no_indication";          // TBI / concussion signals
+  lossOfConsciousness: "yes" | "no" | "unknown";
+  surgery: "completed" | "recommended" | "no_indication";
+  scarring: "present" | "possible" | "no_indication";
+  permanentImpairment: "likely" | "possible" | "no_indication";
+  priorInjurySameRegion: "yes" | "no" | "unknown";
+};
+
 export type IntakeExtraction = {
   isPotentialClient: boolean;
   callPurpose: "new_case" | "follow_up" | "existing_client" | "solicitation" | "wrong_number" | "other";
+  subject: string;                        // 3-6 word call title, e.g. "Inquiry About Ankle Injury"
   firstName: string | null;
   lastName: string | null;
   phone: string | null;
@@ -43,8 +57,10 @@ export type IntakeExtraction = {
   incidentDescription: string | null;
   injuries: string | null;
   injurySeverity: "none" | "minor" | "moderate" | "severe" | "catastrophic" | "unknown";
+  injuryFlags: InjuryFlags;
   treatmentStatus: "none" | "er_visit" | "hospitalized" | "ongoing" | "completed" | "unknown";
   treatmentDetails: string | null;
+  employment: "employed_full_time" | "employed_part_time" | "self_employed" | "unemployed" | "retired" | "student" | "disabled" | "unknown";
   liabilityAssessment: "clear_other_party" | "mostly_other_party" | "shared" | "unclear" | "client_at_fault" | "unknown";
   liabilityNotes: string | null;
   policeReport: YNU;
@@ -150,14 +166,30 @@ const EXTRACTION_SCHEMA = {
   properties: {
     isPotentialClient: { type: "boolean" },
     callPurpose: { type: "string", enum: ["new_case", "follow_up", "existing_client", "solicitation", "wrong_number", "other"] },
+    subject: { type: "string" },
     firstName: nullableString, lastName: nullableString, phone: nullableString, email: nullableString,
     preferredLanguage: nullableString, callerName: nullableString, callerRelationship: nullableString, clientLocation: nullableString,
     caseType: { type: ["string", "null"], enum: [...INTAKE_CASE_TYPES, null] },
     incidentDate: nullableString, incidentLocation: nullableString, incidentDescription: nullableString,
     injuries: nullableString,
     injurySeverity: { type: "string", enum: ["none", "minor", "moderate", "severe", "catastrophic", "unknown"] },
+    injuryFlags: {
+      type: "object",
+      properties: {
+        fracture: { type: "string", enum: ["diagnosed", "suspected", "no_indication"] },
+        headInjury: { type: "string", enum: ["diagnosed", "suspected", "no_indication"] },
+        lossOfConsciousness: ynu,
+        surgery: { type: "string", enum: ["completed", "recommended", "no_indication"] },
+        scarring: { type: "string", enum: ["present", "possible", "no_indication"] },
+        permanentImpairment: { type: "string", enum: ["likely", "possible", "no_indication"] },
+        priorInjurySameRegion: ynu,
+      },
+      required: ["fracture", "headInjury", "lossOfConsciousness", "surgery", "scarring", "permanentImpairment", "priorInjurySameRegion"],
+      additionalProperties: false,
+    },
     treatmentStatus: { type: "string", enum: ["none", "er_visit", "hospitalized", "ongoing", "completed", "unknown"] },
     treatmentDetails: nullableString,
+    employment: { type: "string", enum: ["employed_full_time", "employed_part_time", "self_employed", "unemployed", "retired", "student", "disabled", "unknown"] },
     liabilityAssessment: { type: "string", enum: ["clear_other_party", "mostly_other_party", "shared", "unclear", "client_at_fault", "unknown"] },
     liabilityNotes: nullableString,
     policeReport: ynu, defendantInsured: ynu, defendantInsurer: nullableString, clientInsurer: nullableString,
@@ -172,10 +204,10 @@ const EXTRACTION_SCHEMA = {
     recommendation: { type: "string" },
   },
   required: [
-    "isPotentialClient", "callPurpose", "firstName", "lastName", "phone", "email", "preferredLanguage",
+    "isPotentialClient", "callPurpose", "subject", "firstName", "lastName", "phone", "email", "preferredLanguage",
     "callerName", "callerRelationship", "clientLocation", "caseType", "incidentDate", "incidentLocation",
-    "incidentDescription", "injuries", "injurySeverity", "treatmentStatus", "treatmentDetails",
-    "liabilityAssessment", "liabilityNotes", "policeReport", "defendantInsured", "defendantInsurer",
+    "incidentDescription", "injuries", "injurySeverity", "injuryFlags", "treatmentStatus", "treatmentDetails",
+    "employment", "liabilityAssessment", "liabilityNotes", "policeReport", "defendantInsured", "defendantInsurer",
     "clientInsurer", "umCoverage", "healthInsurance", "propertyDamage", "lostWages", "priorAttorney",
     "governmentEntity", "referredBy", "clientFactorScore", "summary", "keyPoints", "redFlags",
     "missingInfo", "suggestedQuestions", "recommendation",
@@ -210,6 +242,9 @@ Rules:
 - The transcript may be in Spanish or mixed Spanish/English — understand it either way, but write every output field in ENGLISH. Set preferredLanguage to the language the caller spoke ("Spanish", "English", …).
 - isPotentialClient: true only when the call is about a potential or ongoing injury case for the caller or someone they represent. Telemarketers, vendors, wrong numbers, court/insurance adjusters → false.
 - callPurpose: "new_case" (first contact about an injury), "follow_up" (continuing an earlier intake conversation), "existing_client" (already signed, asking about their case), "solicitation", "wrong_number", or "other".
+- subject: a 3-6 word title for the call, like "Inquiry About Ankle Injury" or "Car Accident Legal Consultation".
+- injuryFlags — the auditor screeners. fracture/headInjury: "diagnosed" only if a doctor confirmed it, "suspected" if symptoms point at it (hit their head, dizziness, memory gaps → headInjury suspected). lossOfConsciousness: did they black out, even briefly. surgery: "completed" or "recommended" by a doctor. scarring: visible scars/lacerations. permanentImpairment: "likely" for amputation/paralysis/permanent restrictions, "possible" if lasting limitations are mentioned. priorInjurySameRegion: prior injuries or claims involving the same body part (pre-existing condition risk).
+- employment: their work situation if mentioned — drives the lost-wages claim.
 - incidentDate: resolve relative mentions ("last Tuesday", "two weeks ago", "el quince de marzo") against the call date above and return "YYYY-MM-DD". If only a month or rough period is given, use the 15th of that month. If truly unknown, null.
 - liabilityAssessment: who appears at fault — "clear_other_party" (rear-ended, hit while parked, defect…), "mostly_other_party", "shared", "unclear", "client_at_fault", or "unknown".
 - injurySeverity: "catastrophic" (death, brain/spinal injury, amputation, multiple surgeries), "severe" (fracture, surgery needed, hospitalization), "moderate" (soft tissue with ongoing treatment, herniation), "minor" (bruises, brief soreness), "none", or "unknown".

@@ -323,6 +323,35 @@ export default function IntakeLeadDetail() {
                       {(rubric.caps ?? []).length > 0 && (
                         <p className="text-[11px] text-amber-600 dark:text-amber-400">Score capped: {(rubric.caps as string[]).join("; ")}</p>
                       )}
+                      {/* Auditor screeners — only the ones with a finding */}
+                      {(() => {
+                        const fl: any = extraction.injuryFlags ?? {};
+                        const flags: Array<[string, string, boolean]> = [
+                          ["Fracture", fl.fracture, fl.fracture && fl.fracture !== "no_indication"],
+                          ["TBI / Head", fl.headInjury, fl.headInjury && fl.headInjury !== "no_indication"],
+                          ["Lost consciousness", fl.lossOfConsciousness, fl.lossOfConsciousness === "yes"],
+                          ["Surgery", fl.surgery, fl.surgery && fl.surgery !== "no_indication"],
+                          ["Scarring", fl.scarring, fl.scarring && fl.scarring !== "no_indication"],
+                          ["Perm. impairment", fl.permanentImpairment, fl.permanentImpairment && fl.permanentImpairment !== "no_indication"],
+                          ["Prior injury same region", fl.priorInjurySameRegion, fl.priorInjurySameRegion === "yes"],
+                        ];
+                        const active = flags.filter(([, , show]) => show);
+                        if (!active.length) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {active.map(([label, val]) => (
+                              <span key={label} className={`text-[10px] font-semibold rounded-md border px-1.5 py-0.5 ${
+                                val === "diagnosed" || val === "present" || val === "completed" || val === "likely" || (label === "Lost consciousness" && val === "yes")
+                                  ? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
+                                  : label === "Prior injury same region"
+                                  ? "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30"
+                                  : "bg-amber-400/20 text-amber-700 dark:text-amber-300 border-amber-500/30"}`}>
+                                {label}: {String(val).replace(/_/g, " ")}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       {lead.aiRecommendation && (
                         <div className="rounded-xl bg-primary/5 border border-primary/15 px-4 py-3">
                           <p className="text-[11px] font-semibold uppercase tracking-wide text-primary mb-1 flex items-center gap-1.5"><Flag className="w-3 h-3" /> Recommendation</p>

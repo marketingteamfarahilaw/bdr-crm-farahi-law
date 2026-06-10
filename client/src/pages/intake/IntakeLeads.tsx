@@ -6,6 +6,7 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ const ALL = "__all__";
 export default function IntakeLeads() {
   const [, navigate] = useLocation();
   const utils = trpc.useUtils();
+  const { user } = useAuth();
 
   // Seed filters from ?status= / ?tier= (dashboard tiles link here).
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -30,13 +32,19 @@ export default function IntakeLeads() {
   const [tier, setTier] = useState<string>(params.get("tier") ?? ALL);
   const [caseType, setCaseType] = useState<string>(ALL);
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<"all" | "mine">("all");
 
-  const { data: leads, isLoading } = trpc.intake.leads.list.useQuery({
+  const { data: allLeads, isLoading } = trpc.intake.leads.list.useQuery({
     status: status === ALL ? undefined : (status as any),
     tier: tier === ALL ? undefined : (tier as any),
     caseType: caseType === ALL ? undefined : caseType,
     search: search.trim() || undefined,
   });
+  const leads = useMemo(() => {
+    const list = (allLeads ?? []) as any[];
+    if (tab === "mine") return list.filter((l) => l.assignedToId === user?.id || (!l.assignedToId && l.createdById === user?.id));
+    return list;
+  }, [allLeads, tab, user?.id]);
 
   // ── New lead (manual) ──
   const [addOpen, setAddOpen] = useState(false);
@@ -75,7 +83,17 @@ export default function IntakeLeads() {
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-[10px] bg-primary flex items-center justify-center shrink-0"><Inbox className="w-[18px] h-[18px] text-primary-foreground" /></div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>Lead Queue</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>Lead Queue</h1>
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    {([["all", "All Leads"], ["mine", "My Leads"]] as const).map(([k, label]) => (
+                      <button key={k} onClick={() => setTab(k)}
+                        className={`text-xs font-medium px-3 py-1.5 transition-colors ${tab === k ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:text-foreground"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <p className="text-sm text-muted-foreground">{leads?.length ?? 0} lead{(leads?.length ?? 0) === 1 ? "" : "s"} — AI-scored, newest first.</p>
               </div>
             </div>
@@ -136,6 +154,7 @@ export default function IntakeLeads() {
                       <th className="px-4 py-2.5 font-semibold">Lead</th>
                       <th className="px-4 py-2.5 font-semibold">Case</th>
                       <th className="px-4 py-2.5 font-semibold">Score</th>
+                      <th className="px-4 py-2.5 font-semibold">Summary</th>
                       <th className="px-4 py-2.5 font-semibold">SOL</th>
                       <th className="px-4 py-2.5 font-semibold">Status</th>
                       <th className="px-4 py-2.5 font-semibold">Assigned</th>
@@ -156,6 +175,9 @@ export default function IntakeLeads() {
                             <ScoreRing score={l.qualificationScore} tier={l.qualificationTier} size={36} />
                             {l.qualificationTier && <Chip meta={TIER_META[l.qualificationTier]} />}
                           </div>
+                        </td>
+                        <td className="px-4 py-3 max-w-[280px]">
+                          <p className="text-xs text-muted-foreground truncate" title={l.aiSummary ?? ""}>{l.aiSummary ?? "—"}</p>
                         </td>
                         <td className="px-4 py-3"><Chip meta={SOL_META[l.solRisk ?? "unknown"]} /></td>
                         <td className="px-4 py-3"><Chip meta={STATUS_META[l.status]} /></td>

@@ -183,6 +183,13 @@ export function extractionViewFromLead(lead: IntakeLead): IntakeExtraction {
     ...stored,
     isPotentialClient: true,
     callPurpose: (stored.callPurpose as any) ?? "new_case",
+    subject: (stored.subject as any) ?? "",
+    injuryFlags: (stored.injuryFlags as any) ?? {
+      fracture: "no_indication", headInjury: "no_indication", lossOfConsciousness: "unknown",
+      surgery: "no_indication", scarring: "no_indication", permanentImpairment: "no_indication",
+      priorInjurySameRegion: "unknown",
+    },
+    employment: (stored.employment as any) ?? "unknown",
     firstName: lead.firstName, lastName: lead.lastName, phone: lead.phone, email: lead.email,
     preferredLanguage: lead.preferredLanguage, callerName: lead.callerName,
     callerRelationship: lead.callerRelationship, clientLocation: lead.clientLocation,
