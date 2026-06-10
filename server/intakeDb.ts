@@ -5,7 +5,7 @@
  * facility CRM helpers so the two sides stay decoupled.
  */
 import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { fromZonedTime } from "date-fns-tz";
+import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import {
   intakeCalls,
   intakeLeadEvents,
@@ -78,6 +78,30 @@ export async function linkCallToLead(callId: number, leadId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   await db.update(intakeCalls).set({ leadId }).where(eq(intakeCalls.id, callId));
+}
+
+/** Calls whose recording hadn't been attached yet when first synced.
+ *  RingCentral can take several minutes to publish a recording — we re-check
+ *  these in a 5–90 minute window so a real client call never slips through
+ *  untranscribed (and we stop retrying after that, e.g. internal calls that
+ *  are never recorded). */
+export async function listRecordinglessRecentCalls(agentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const now = Date.now();
+  return db
+    .select()
+    .from(intakeCalls)
+    .where(and(
+      eq(intakeCalls.agentId, agentId),
+      eq(intakeCalls.aiProcessed, 0),
+      eq(intakeCalls.hasRecording, 0),
+      gte(intakeCalls.callDate, new Date(now - 90 * 60 * 1000)),
+      lte(intakeCalls.callDate, new Date(now - 5 * 60 * 1000)),
+      sql`${intakeCalls.durationSeconds} >= 15`,
+      sql`${intakeCalls.rcCallId} IS NOT NULL`,
+    ))
+    .limit(30);
 }
 
 // ─── Leads ────────────────────────────────────────────────────────────────────
@@ -317,12 +341,27 @@ export async function getIntakeDashboardStats() {
   const db = await getDb();
   if (!db) return null;
   const now = new Date();
-  const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);   // server local ≈ UTC; fine-grained KPIs use LA on the client
+  // "Today" = the California calendar day, consistent with the rest of the CRM.
+  const dayStart = fromZonedTime(`${formatInTimeZone(now, "America/Los_Angeles", "yyyy-MM-dd")}T00:00:00`, "America/Los_Angeles");
   const weekStart = new Date(now.getTime() - 7 * 86400000);
 
   const leads = await db.select().from(intakeLeads).orderBy(desc(intakeLeads.createdAt)).limit(1000);
-  const callsToday = await db.select({ n: sql<number>`COUNT(*)` }).from(intakeCalls).where(gte(intakeCalls.callDate, dayStart));
+  const todayCalls = await db
+    .select({ purpose: intakeCalls.callPurpose, rec: intakeCalls.hasRecording, dur: intakeCalls.durationSeconds })
+    .from(intakeCalls)
+    .where(gte(intakeCalls.callDate, dayStart));
   const callsWeek = await db.select({ n: sql<number>`COUNT(*)` }).from(intakeCalls).where(gte(intakeCalls.callDate, weekStart));
+
+  // Triage: what happened to today's calls — so "17 calls, 0 leads" reads as
+  // "screened out", not "broken".
+  const triageToday = { potentialClients: 0, existingClients: 0, adjustersVendors: 0, wrongNumberOther: 0, noRecording: 0 };
+  for (const c of todayCalls) {
+    if (c.purpose === "new_case" || c.purpose === "follow_up") triageToday.potentialClients++;
+    else if (c.purpose === "existing_client") triageToday.existingClients++;
+    else if (c.purpose === "solicitation") triageToday.adjustersVendors++;
+    else if (c.purpose === "wrong_number" || c.purpose === "other") triageToday.wrongNumberOther++;
+    else triageToday.noRecording++; // not analyzed — no recording / too short
+  }
 
   const by = (f: (l: IntakeLead) => boolean) => leads.filter(f).length;
   const decided = leads.filter((l) => ["qualified", "signed", "unqualified", "referred_out", "lost"].includes(l.status));
@@ -336,8 +375,9 @@ export async function getIntakeDashboardStats() {
     signed: by((l) => l.status === "signed"),
     qualifiedRate: decided.length ? Math.round((qualifiedish / decided.length) * 100) : 0,
     solUrgent: by((l) => (l.solRisk === "urgent" || l.solRisk === "expired") && !["signed", "lost", "unqualified", "referred_out", "duplicate"].includes(l.status)),
-    callsToday: Number(callsToday[0]?.n ?? 0),
+    callsToday: todayCalls.length,
     callsThisWeek: Number(callsWeek[0]?.n ?? 0),
+    triageToday,
     tierBreakdown: {
       hot: by((l) => l.qualificationTier === "hot"),
       qualified: by((l) => l.qualificationTier === "qualified"),

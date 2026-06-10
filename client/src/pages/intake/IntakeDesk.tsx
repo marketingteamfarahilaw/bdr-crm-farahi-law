@@ -100,7 +100,16 @@ export default function IntakeDesk() {
               </div>
               <div className="divide-y divide-border">
                 {(stats?.recentLeads ?? []).length === 0 && (
-                  <p className="px-5 py-8 text-sm text-muted-foreground text-center">No leads yet — they appear automatically as intake calls come in.</p>
+                  <div className="px-5 py-8 text-center">
+                    {(stats?.callsToday ?? 0) > 0 ? (
+                      <>
+                        <p className="text-sm font-medium text-foreground">All {stats?.callsToday} calls today were screened out — no new potential clients yet.</p>
+                        <p className="text-xs text-muted-foreground mt-1.5">Insurance adjusters, existing clients, wrong numbers and internal calls never become leads. When a real injured caller comes in, the lead appears here automatically, scored.</p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No leads yet — they appear automatically as intake calls come in.</p>
+                    )}
+                  </div>
                 )}
                 {(stats?.recentLeads ?? []).map((l: any) => (
                   <button key={l.id} onClick={() => navigate(`/intake/leads/${l.id}`)}
@@ -123,6 +132,26 @@ export default function IntakeDesk() {
 
             {/* Tier pipeline + status mix */}
             <div className="lg:col-span-2 space-y-4">
+              {/* Today's call triage — where the calls went */}
+              {(stats?.callsToday ?? 0) > 0 && stats?.triageToday && (
+                <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
+                  <p className="text-sm font-semibold text-foreground mb-3">Today's call triage</p>
+                  {([
+                    ["Potential clients", stats.triageToday.potentialClients, "text-emerald-600 dark:text-emerald-400"],
+                    ["Existing clients", stats.triageToday.existingClients, "text-sky-600 dark:text-sky-400"],
+                    ["Adjusters / vendors", stats.triageToday.adjustersVendors, "text-amber-600 dark:text-amber-400"],
+                    ["Wrong number / other", stats.triageToday.wrongNumberOther, "text-muted-foreground"],
+                    ["No recording / too short", stats.triageToday.noRecording, "text-muted-foreground"],
+                  ] as const).map(([label, n, cls]) => (
+                    <div key={label} className="flex items-center justify-between py-1 text-sm">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className={`font-semibold ${cls}`}>{n}</span>
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-muted-foreground mt-2 pt-2 border-t border-border">Only potential-client calls with real case content become leads — everything else is filtered automatically.</p>
+                </div>
+              )}
+
               <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
                 <p className="text-sm font-semibold text-foreground mb-4">Qualification mix</p>
                 {(["hot", "qualified", "review", "unqualified"] as const).map((t) => {

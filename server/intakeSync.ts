@@ -23,6 +23,7 @@ import {
   getExistingIntakeRcCallIds,
   getExistingIntakeRcSessionIds,
   linkCallToLead,
+  listRecordinglessRecentCalls,
   updateIntakeCall,
 } from "./intakeDb";
 
@@ -36,6 +37,84 @@ export type IntakeSyncResult = {
   leadsUpdated: number;
   skippedRecent: number;
 };
+
+/** Transcribe one recorded call, run the AI extraction, and create/update the
+ *  matching lead. Shared by the main sync loop and the late-recording retry. */
+async function processRecordedCall(opts: {
+  callId: number;
+  recordingUrl: string;
+  accessToken: string;
+  direction: string | null;
+  callerNumber: string | null;
+  durationSecs: number;
+  callDate: Date | null;
+  agent: { id: number; name: string };
+}): Promise<{ transcribed: boolean; leadCreated: boolean; leadUpdated: boolean }> {
+  const out = { transcribed: false, leadCreated: false, leadUpdated: false };
+  const { callId, direction, callerNumber, durationSecs, agent } = opts;
+
+  const authedUrl = `${opts.recordingUrl}?access_token=${opts.accessToken}`;
+  const tr = await transcribeAudio({ audioUrl: authedUrl });
+  if ("error" in tr || !tr.text) return out;
+  out.transcribed = true;
+
+  const analysis = await analyzeIntakeTranscript(tr.text, {
+    direction,
+    callerNumber,
+    agentName: agent.name,
+    callDate: opts.callDate ?? undefined,
+  });
+
+  await updateIntakeCall(callId, {
+    transcript: tr.text.slice(0, 60000),
+    transcriptLang: tr.language ?? null,
+    aiProcessed: analysis ? 1 : 0,
+    aiSummary: analysis?.extraction.summary ?? null,
+    subject: analysis?.extraction.subject?.slice(0, 255) || null,
+    callPurpose: analysis?.extraction.callPurpose ?? null,
+  });
+  if (!analysis) return out;
+
+  const x = analysis.extraction;
+  const isCaseCall = x.isPotentialClient && (x.callPurpose === "new_case" || x.callPurpose === "follow_up");
+  if (!isCaseCall) return out; // solicitors / wrong numbers / existing clients stay as plain call rows
+
+  // HARD substance gate: never auto-create a lead from a call with zero
+  // case content (internal/colleague chatter the LLM mis-flags). The call
+  // stays in Calls & Transcripts where a human can "Create lead" if real.
+  const hasSubstance = !!(x.caseType || x.injuries || x.incidentDescription || x.incidentDate);
+  if (!hasSubstance) return out;
+
+  const existingLead = callerNumber ? await findOpenLeadByPhone(callerNumber) : null;
+  if (existingLead) {
+    await linkCallToLead(callId, existingLead.id);
+    await applyAnalysisToLead(existingLead.id, analysis);
+    await addLeadEvent({
+      leadId: existingLead.id,
+      eventType: "call_linked",
+      title: `${direction ?? "Call"} (${Math.floor(durationSecs / 60)}m ${durationSecs % 60}s) — AI re-analyzed`,
+      detail: x.summary,
+      payload: { callId, rubric: analysis.rubric, tier: analysis.tier },
+      actorId: agent.id,
+      actorName: agent.name,
+    });
+    out.leadUpdated = true;
+  } else {
+    const leadId = await createLeadFromAnalysis(analysis, { phone: callerNumber, source: "phone", createdById: agent.id });
+    await linkCallToLead(callId, leadId);
+    await addLeadEvent({
+      leadId,
+      eventType: "created",
+      title: "Lead created from intake call (AI)",
+      detail: x.summary,
+      payload: { callId, rubric: analysis.rubric, tier: analysis.tier },
+      actorId: agent.id,
+      actorName: agent.name,
+    });
+    out.leadCreated = true;
+  }
+  return out;
+}
 
 export async function syncIntakeCalls(
   accessToken: string,
@@ -108,69 +187,53 @@ export async function syncIntakeCalls(
     if (!recordingUrl || durationSecs <= 0) continue;
 
     try {
-      const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
-      const tr = await transcribeAudio({ audioUrl: authedUrl });
-      if ("error" in tr || !tr.text) continue;
-      result.transcribed++;
-
-      const analysis = await analyzeIntakeTranscript(tr.text, {
-        direction,
-        callerNumber,
-        agentName: opts.agent.name,
-        callDate,
+      const r = await processRecordedCall({
+        callId, recordingUrl, accessToken, direction, callerNumber, durationSecs, callDate,
+        agent: opts.agent,
       });
-
-      await updateIntakeCall(callId, {
-        transcript: tr.text.slice(0, 60000),
-        transcriptLang: tr.language ?? null,
-        aiProcessed: analysis ? 1 : 0,
-        aiSummary: analysis?.extraction.summary ?? null,
-        subject: analysis?.extraction.subject?.slice(0, 255) || null,
-        callPurpose: analysis?.extraction.callPurpose ?? null,
-      });
-      if (!analysis) continue;
-
-      const x = analysis.extraction;
-      const isCaseCall = x.isPotentialClient && (x.callPurpose === "new_case" || x.callPurpose === "follow_up");
-      if (!isCaseCall) continue; // solicitors / wrong numbers / existing clients stay as plain call rows
-
-      // HARD substance gate: never auto-create a lead from a call with zero
-      // case content (internal/colleague chatter the LLM mis-flags). The call
-      // stays in Calls & Transcripts where a human can "Create lead" if real.
-      const hasSubstance = !!(x.caseType || x.injuries || x.incidentDescription || x.incidentDate);
-      if (!hasSubstance) continue;
-
-      const existingLead = callerNumber ? await findOpenLeadByPhone(callerNumber) : null;
-      if (existingLead) {
-        await linkCallToLead(callId, existingLead.id);
-        await applyAnalysisToLead(existingLead.id, analysis);
-        await addLeadEvent({
-          leadId: existingLead.id,
-          eventType: "call_linked",
-          title: `${direction} call (${Math.floor(durationSecs / 60)}m ${durationSecs % 60}s) — AI re-analyzed`,
-          detail: x.summary,
-          payload: { callId, rubric: analysis.rubric, tier: analysis.tier },
-          actorId: opts.agent.id,
-          actorName: opts.agent.name,
-        });
-        result.leadsUpdated++;
-      } else {
-        const leadId = await createLeadFromAnalysis(analysis, { phone: callerNumber, source: "phone", createdById: opts.agent.id });
-        await linkCallToLead(callId, leadId);
-        await addLeadEvent({
-          leadId,
-          eventType: "created",
-          title: "Lead created from intake call (AI)",
-          detail: x.summary,
-          payload: { callId, rubric: analysis.rubric, tier: analysis.tier },
-          actorId: opts.agent.id,
-          actorName: opts.agent.name,
-        });
-        result.leadsCreated++;
-      }
+      if (r.transcribed) result.transcribed++;
+      if (r.leadCreated) result.leadsCreated++;
+      if (r.leadUpdated) result.leadsUpdated++;
     } catch (e: any) {
       console.warn(`[intakeSync] processing failed for call ${id}:`, e?.response?.status ?? e?.message ?? e);
     }
+  }
+
+  // ── Second chance: late-attached recordings ────────────────────────────────
+  // RingCentral can publish a recording several minutes AFTER the call shows in
+  // the log. Calls first synced without one are re-checked for ~90 minutes so a
+  // real client call never slips through untranscribed.
+  try {
+    const pending = await listRecordinglessRecentCalls(opts.agent.id);
+    for (const p of pending) {
+      if (!p.rcCallId) continue;
+      try {
+        const rec = await axios
+          .get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${encodeURIComponent(p.rcCallId)}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: { view: "Detailed" },
+          })
+          .catch(() => null);
+        const lateUrl: string | null = rec?.data?.recording?.contentUri ?? null;
+        if (!lateUrl) continue;
+
+        await updateIntakeCall(p.id, { hasRecording: 1 });
+        const callerNumber = p.direction === "Inbound" ? p.fromNumber : p.toNumber;
+        const r = await processRecordedCall({
+          callId: p.id, recordingUrl: lateUrl, accessToken,
+          direction: p.direction, callerNumber,
+          durationSecs: p.durationSeconds ?? 0, callDate: p.callDate,
+          agent: opts.agent,
+        });
+        if (r.transcribed) result.transcribed++;
+        if (r.leadCreated) result.leadsCreated++;
+        if (r.leadUpdated) result.leadsUpdated++;
+      } catch (e: any) {
+        console.warn(`[intakeSync] late-recording retry failed for call ${p.id}:`, e?.response?.status ?? e?.message ?? e);
+      }
+    }
+  } catch (e: any) {
+    console.warn("[intakeSync] late-recording pass failed:", e?.message ?? e);
   }
 
   return result;
