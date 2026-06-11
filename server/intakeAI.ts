@@ -275,9 +275,9 @@ export async function analyzeIntakeTranscript(transcriptText: string, meta: Inta
   const todayLA = formatInTimeZone(meta.callDate ?? new Date(), LA_TZ, "EEEE, MMMM d, yyyy");
   try {
     const llmResp = await invokeLLM({
-      // Intake runs a STRONGER model than the BD recaps — misclassifying a real
+      // Intake runs the newest flagship model — misclassifying a real
       // potential client as "wrong number" loses a case; the cost delta is noise.
-      model: process.env.INTAKE_LLM_MODEL ?? "gpt-4o",
+      model: process.env.INTAKE_LLM_MODEL ?? "gpt-5.5",
       messages: [
         {
           role: "system",

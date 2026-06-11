@@ -298,7 +298,16 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 4096
+  // GPT-5 / o-series reasoning models reject `max_tokens` (they require
+  // `max_completion_tokens`) and spend part of the budget on reasoning before
+  // producing output — give them a larger cap so extractions never come back
+  // empty. Older models keep the original parameter.
+  const modelId = String(payload.model);
+  if (/^(gpt-5|o\d)/.test(modelId)) {
+    payload.max_completion_tokens = 16384;
+  } else {
+    payload.max_tokens = 4096;
+  }
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
