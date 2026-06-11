@@ -48,6 +48,7 @@ import IntakeLeadsPage from "./pages/intake/IntakeLeads";
 import IntakeLeadDetailPage from "./pages/intake/IntakeLeadDetail";
 import IntakeCallsPage from "./pages/intake/IntakeCalls";
 import IntakeAuditorPage from "./pages/intake/IntakeAuditor";
+import IntakeAgentsPage from "./pages/intake/IntakeAgents";
 import IntakeSettingsPage from "./pages/intake/IntakeSettings";
 import { isIntakeOnly } from "@shared/permissions";
 import { RingCentralProvider } from "./components/RingCentralWidget";
@@ -75,6 +76,7 @@ function Router() {
         <Route path="/intake/leads/:id" component={IntakeLeadDetailPage} />
         <Route path="/intake/calls" component={IntakeCallsPage} />
         <Route path="/intake/auditor" component={IntakeAuditorPage} />
+        <Route path="/intake/agents" component={IntakeAgentsPage} />
         <Route path="/intake/settings" component={IntakeSettingsPage} />
 
         <Route path="/map" component={CaliforniaMapPage} />

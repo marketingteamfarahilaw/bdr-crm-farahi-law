@@ -38,27 +38,25 @@ export type IntakeSyncResult = {
   skippedRecent: number;
 };
 
-/** Transcribe one recorded call, run the AI extraction, and create/update the
- *  matching lead. Shared by the main sync loop and the late-recording retry. */
-async function processRecordedCall(opts: {
+/** Run the AI extraction over a ready transcript and create/update the
+ *  matching lead. Shared by the RingCentral sync (post-Whisper) and the
+ *  AI voice-agent webhook (Retell delivers the transcript directly). */
+export async function routeAnalyzedTranscript(opts: {
   callId: number;
-  recordingUrl: string;
-  accessToken: string;
+  transcript: string;
+  transcriptLang?: string | null;
   direction: string | null;
   callerNumber: string | null;
   durationSecs: number;
   callDate: Date | null;
-  agent: { id: number; name: string };
+  agent: { id: number | null; name: string };
+  /** When false (voice-agent test mode), analyze + store but never touch leads. */
+  createLeads?: boolean;
 }): Promise<{ transcribed: boolean; leadCreated: boolean; leadUpdated: boolean }> {
-  const out = { transcribed: false, leadCreated: false, leadUpdated: false };
+  const out = { transcribed: true, leadCreated: false, leadUpdated: false };
   const { callId, direction, callerNumber, durationSecs, agent } = opts;
 
-  const authedUrl = `${opts.recordingUrl}?access_token=${opts.accessToken}`;
-  const tr = await transcribeAudio({ audioUrl: authedUrl });
-  if ("error" in tr || !tr.text) return out;
-  out.transcribed = true;
-
-  const analysis = await analyzeIntakeTranscript(tr.text, {
+  const analysis = await analyzeIntakeTranscript(opts.transcript, {
     direction,
     callerNumber,
     agentName: agent.name,
@@ -66,8 +64,8 @@ async function processRecordedCall(opts: {
   });
 
   await updateIntakeCall(callId, {
-    transcript: tr.text.slice(0, 60000),
-    transcriptLang: tr.language ?? null,
+    transcript: opts.transcript.slice(0, 60000),
+    transcriptLang: opts.transcriptLang ?? null,
     aiProcessed: analysis ? 1 : 0,
     aiSummary: analysis?.extraction.summary ?? null,
     subject: analysis?.extraction.subject?.slice(0, 255) || null,
@@ -84,8 +82,20 @@ async function processRecordedCall(opts: {
   // stays in Calls & Transcripts where a human can "Create lead" if real.
   const hasSubstance = !!(x.caseType || x.injuries || x.incidentDescription || x.incidentDate);
   if (!hasSubstance) return out;
+  if (opts.createLeads === false) return out; // voice-agent test mode: stop before lead creation
 
-  const existingLead = callerNumber ? await findOpenLeadByPhone(callerNumber) : null;
+  // Same phone number usually means the same caller — but a clinic/body shop
+  // refers MANY clients from one line. Merge only when the extracted person
+  // matches the lead (or one side has no name); different names = new lead.
+  let existingLead = callerNumber ? await findOpenLeadByPhone(callerNumber) : null;
+  if (existingLead) {
+    const nf = (x.firstName ?? "").trim().toLowerCase();
+    const ef = (existingLead.firstName ?? "").trim().toLowerCase();
+    const nl = (x.lastName ?? "").trim().toLowerCase();
+    const el = (existingLead.lastName ?? "").trim().toLowerCase();
+    const differentPerson = (nf && ef && nf !== ef) || (nl && el && nl !== el);
+    if (differentPerson) existingLead = null;
+  }
   if (existingLead) {
     await linkCallToLead(callId, existingLead.id);
     await applyAnalysisToLead(existingLead.id, analysis);
@@ -100,7 +110,7 @@ async function processRecordedCall(opts: {
     });
     out.leadUpdated = true;
   } else {
-    const leadId = await createLeadFromAnalysis(analysis, { phone: callerNumber, source: "phone", createdById: agent.id });
+    const leadId = await createLeadFromAnalysis(analysis, { phone: callerNumber, source: "phone", createdById: agent.id ?? undefined });
     await linkCallToLead(callId, leadId);
     await addLeadEvent({
       leadId,
@@ -114,6 +124,32 @@ async function processRecordedCall(opts: {
     out.leadCreated = true;
   }
   return out;
+}
+
+/** Whisper-transcribe one recorded RingCentral call, then route it. */
+async function processRecordedCall(opts: {
+  callId: number;
+  recordingUrl: string;
+  accessToken: string;
+  direction: string | null;
+  callerNumber: string | null;
+  durationSecs: number;
+  callDate: Date | null;
+  agent: { id: number; name: string };
+}): Promise<{ transcribed: boolean; leadCreated: boolean; leadUpdated: boolean }> {
+  const authedUrl = `${opts.recordingUrl}?access_token=${opts.accessToken}`;
+  const tr = await transcribeAudio({ audioUrl: authedUrl });
+  if ("error" in tr || !tr.text) return { transcribed: false, leadCreated: false, leadUpdated: false };
+  return routeAnalyzedTranscript({
+    callId: opts.callId,
+    transcript: tr.text,
+    transcriptLang: tr.language ?? null,
+    direction: opts.direction,
+    callerNumber: opts.callerNumber,
+    durationSecs: opts.durationSecs,
+    callDate: opts.callDate,
+    agent: opts.agent,
+  });
 }
 
 export async function syncIntakeCalls(

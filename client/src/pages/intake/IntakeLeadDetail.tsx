@@ -417,7 +417,7 @@ export default function IntakeLeadDetail() {
                         <p className="text-xs text-muted-foreground truncate">{c.agentName ? `Handled by ${c.agentName}` : ""}{c.aiSummary ? ` — ${c.aiSummary}` : ""}</p>
                       </div>
                       {c.hasRecording === 1 && (
-                        <audio controls preload="none" className="h-8 max-w-[260px]" src={`/api/intake-recording/${c.id}`} />
+                        <audio controls preload="none" className="h-8 max-w-[260px]" src={c.recordingUrl ?? `/api/intake-recording/${c.id}`} />
                       )}
                       {c.transcript && (
                         <button onClick={() => setOpenTranscripts((p) => ({ ...p, [c.id]: !p[c.id] }))}

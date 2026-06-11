@@ -105,7 +105,7 @@ export default function IntakeCalls() {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {c.hasRecording === 1 && (
-                          <audio controls preload="none" className="h-8 max-w-[220px]" src={`/api/intake-recording/${c.id}`} />
+                          <audio controls preload="none" className="h-8 max-w-[220px]" src={c.recordingUrl ?? `/api/intake-recording/${c.id}`} />
                         )}
                         {c.transcript && (
                           <button onClick={() => setOpenRows((p) => ({ ...p, [c.id]: !p[c.id] }))}

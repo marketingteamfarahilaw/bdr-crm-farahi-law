@@ -10,10 +10,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { fromZonedTime } from "date-fns-tz";
 import { protectedProcedure, router } from "./_core/trpc";
-import { canSeeIntake, canManageIntake, isIntakeOnly } from "@shared/permissions";
+import { canSeeIntake, canManageIntake, isIntakeOnly, isSuperAdmin } from "@shared/permissions";
 import { getDb, getSetting, setSetting } from "./db";
-import { intakeLeads, piClients, users } from "../drizzle/schema";
-import { eq, inArray } from "drizzle-orm";
+import { intakeCalls, intakeLeads, piClients, users } from "../drizzle/schema";
+import { desc, eq, inArray } from "drizzle-orm";
 import {
   addLeadEvent,
   applyAnalysisToLead,
@@ -29,6 +29,7 @@ import {
   listLeadEvents,
   rescoreLead,
   updateIntakeLead,
+  VOICE_AGENT_NAME,
 } from "./intakeDb";
 import { analyzeIntakeTranscript, INTAKE_CASE_TYPES } from "./intakeAI";
 import { syncIntakeCalls } from "./intakeSync";
@@ -410,11 +411,15 @@ export const intakeRouter = router({
         from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
       }).optional())
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        // While the voice agent is in TEST mode, Maya's calls show only for
+        // the super admin — the team's view stays exactly as before.
+        const mode = (await getSetting("voice_agent_mode")) ?? "test";
         return listIntakeCalls({
           unlinkedOnly: input?.unlinkedOnly,
           from: input?.from ? laDay(input.from) : undefined,
           to: input?.to ? laDay(input.to, true) : undefined,
+          excludeVoiceAgent: mode !== "live" && !isSuperAdmin(ctx.user.role),
         });
       }),
 
@@ -483,6 +488,54 @@ export const intakeRouter = router({
         });
         return { success: true as const, ...res };
       }),
+  }),
+
+  // ─── AI Voice Agent (Maya / Retell) ────────────────────────────────────────
+  // TEST PHASE: super admin only — the team gets it when testing is approved.
+  agents: router({
+    setMode: intakeProcedure
+      .input(z.object({ mode: z.enum(["test", "live"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!isSuperAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Voice agent is in testing — super admin only." });
+        await setSetting("voice_agent_mode", input.mode);
+        return { success: true as const, mode: input.mode };
+      }),
+    status: intakeProcedure.query(async ({ ctx }) => {
+      if (!isSuperAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Voice agent is in testing — super admin only." });
+      const [agentId, token, mode] = await Promise.all([
+        getSetting("voice_agent_id"),
+        getSetting("voice_agent_webhook_token"),
+        getSetting("voice_agent_mode"),
+      ]);
+      let live: { name: string; language: string; voice: string } | null = null;
+      if (agentId && process.env.RETELL_API_KEY) {
+        try {
+          const r = await fetch(`https://api.retellai.com/get-agent/${agentId}`, {
+            headers: { Authorization: `Bearer ${process.env.RETELL_API_KEY}` },
+          });
+          if (r.ok) {
+            const j: any = await r.json();
+            live = { name: j.agent_name ?? "Voice Agent", language: j.language ?? "?", voice: j.voice_id ?? "?" };
+          }
+        } catch { /* Retell unreachable — show config only */ }
+      }
+      const db = await getDb();
+      let recent: any[] = [];
+      if (db) {
+        recent = await db.select().from(intakeCalls)
+          .where(eq(intakeCalls.agentName, VOICE_AGENT_NAME))
+          .orderBy(desc(intakeCalls.callDate)).limit(25);
+      }
+      return {
+        configured: !!agentId,
+        agentId,
+        webhookReady: !!token,
+        mode: (mode ?? "test") as "test" | "live",
+        live,
+        recent,
+        stats: { calls: recent.length, leadsCreated: recent.filter((c) => c.leadId).length },
+      };
+    }),
   }),
 
   // ─── Team + settings ────────────────────────────────────────────────────────

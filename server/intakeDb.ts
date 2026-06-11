@@ -18,6 +18,9 @@ import {
 import { getDb } from "./db";
 import { computeSol, scoreLead, evaluateFirmCriteria, type IntakeAnalysis, type IntakeExtraction } from "./intakeAI";
 
+/** Display name for the AI voice agent's calls — also the test-mode filter key. */
+export const VOICE_AGENT_NAME = "Maya — AI Voice Agent";
+
 const onlyDigits = (s?: string | null) => (s || "").replace(/\D/g, "");
 export const last10 = (s?: string | null) => { const d = onlyDigits(s); return d.length >= 10 ? d.slice(-10) : d; };
 
@@ -61,12 +64,13 @@ export async function getExistingIntakeRcSessionIds(ids: string[]): Promise<Set<
   return new Set(rows.map((r) => r.rcSessionId).filter((x): x is string => !!x));
 }
 
-export async function listIntakeCalls(filters?: { leadId?: number; unlinkedOnly?: boolean; from?: Date; to?: Date; limit?: number }) {
+export async function listIntakeCalls(filters?: { leadId?: number; unlinkedOnly?: boolean; from?: Date; to?: Date; limit?: number; excludeVoiceAgent?: boolean }) {
   const db = await getDb();
   if (!db) return [];
   const conds: any[] = [];
   if (filters?.leadId) conds.push(eq(intakeCalls.leadId, filters.leadId));
   if (filters?.unlinkedOnly) conds.push(sql`${intakeCalls.leadId} IS NULL`);
+  if (filters?.excludeVoiceAgent) conds.push(sql`(${intakeCalls.agentName} IS NULL OR ${intakeCalls.agentName} <> ${VOICE_AGENT_NAME})`);
   if (filters?.from) conds.push(gte(intakeCalls.callDate, filters.from));
   if (filters?.to) conds.push(lte(intakeCalls.callDate, filters.to));
   let q = db.select().from(intakeCalls);

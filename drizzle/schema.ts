@@ -871,6 +871,7 @@ export const intakeCalls = mysqlTable("intake_calls", {
   rcCallId: varchar("rcCallId", { length: 64 }),
   rcSessionId: varchar("rcSessionId", { length: 64 }),
   hasRecording: int("hasRecording").default(0),
+  recordingUrl: varchar("recordingUrl", { length: 600 }),         // direct playback URL (AI voice-agent calls); RC calls use /api/intake-recording
   transcript: longtext("transcript"),                             // long calls exceed TEXT's 64KB — MySQL truncates silently
   transcriptLang: varchar("transcriptLang", { length: 20 }),
   aiProcessed: int("aiProcessed").default(0),

@@ -10,6 +10,7 @@ import { registerMapsProxy } from "./mapsProxy";
 import { registerUberWebhook } from "./uberWebhook";
 import { registerGoogleAuth } from "./googleAuth";
 import { registerRecordingProxy } from "./recordingProxy";
+import { registerVoiceAgentWebhook } from "./voiceAgentWebhook";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -64,6 +65,7 @@ async function startServer() {
   registerUberWebhook(app);
   registerGoogleAuth(app);
   registerRecordingProxy(app);
+  registerVoiceAgentWebhook(app);
   // tRPC API
   app.use(
     "/api/trpc",
