@@ -275,6 +275,9 @@ export async function analyzeIntakeTranscript(transcriptText: string, meta: Inta
   const todayLA = formatInTimeZone(meta.callDate ?? new Date(), LA_TZ, "EEEE, MMMM d, yyyy");
   try {
     const llmResp = await invokeLLM({
+      // Intake runs a STRONGER model than the BD recaps — misclassifying a real
+      // potential client as "wrong number" loses a case; the cost delta is noise.
+      model: process.env.INTAKE_LLM_MODEL ?? "gpt-4o",
       messages: [
         {
           role: "system",
@@ -285,6 +288,7 @@ Context: the call happened on ${todayLA} (California time)${meta.direction ? `, 
 Rules:
 - The transcript may be in Spanish or mixed Spanish/English — understand it either way, but write every output field in ENGLISH. Set preferredLanguage to the language the caller spoke ("Spanish", "English", …).
 - isPotentialClient: true only when the call is about a potential or ongoing injury case for the caller or someone they represent. Telemarketers, vendors, wrong numbers, court/insurance adjusters → false. INTERNAL calls between firm staff (coworkers coordinating work, scheduling meetings/video calls, IT/marketing/BD colleagues, anyone who clearly works at or with Farahi Law) → false, callPurpose "other" — an injury case must actually be discussed for someone to be a potential client.
+- BIAS WHEN UNSURE: anyone inquiring about hiring the firm or getting legal representation for an injury is a potential client (new_case) UNLESS the transcript clearly shows they are already a signed client of THIS firm. A human dismissing a false lead costs seconds; a missed real client costs a case. This includes case types the firm may not accept (medical malpractice, employment…) — still extract them as new_case; the qualification layer decides acceptance, not you.
 - callPurpose: "new_case" (first contact about an injury), "follow_up" (continuing an earlier intake conversation), "existing_client" (a signed client asking about their own case), "adjuster" (an insurance company, adjuster, medical provider, pharmacy, lien company, or records office calling ABOUT a client or claim — very common), "internal" (firm staff talking to each other), "solicitation" (sales/marketing to the firm), "wrong_number" (caller reached the wrong place), or "other".
 - subject: a 3-6 word title for the call, like "Inquiry About Ankle Injury" or "Car Accident Legal Consultation".
 - injuryFlags — the auditor screeners. fracture/headInjury: "diagnosed" only if a doctor confirmed it, "suspected" if symptoms point at it (hit their head, dizziness, memory gaps → headInjury suspected). lossOfConsciousness: did they black out, even briefly. surgery: "completed" or "recommended" by a doctor. scarring: visible scars/lacerations. permanentImpairment: "likely" for amputation/paralysis/permanent restrictions, "possible" if lasting limitations are mentioned. priorInjurySameRegion: prior injuries or claims involving the same body part (pre-existing condition risk).

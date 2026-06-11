@@ -57,6 +57,8 @@ export type ToolChoice =
 
 export type InvokeParams = {
   messages: Message[];
+  /** Per-call model override (e.g. the intake analysis runs a stronger model). */
+  model?: string;
   tools?: Tool[];
   toolChoice?: ToolChoice;
   tool_choice?: ToolChoice;
@@ -280,7 +282,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   } = params;
 
   const payload: Record<string, unknown> = {
-    model: process.env.LLM_MODEL ?? "gpt-4o-mini",
+    model: params.model ?? process.env.LLM_MODEL ?? "gpt-4o-mini",
     messages: messages.map(normalizeMessage),
   };
 
