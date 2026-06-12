@@ -9,9 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { format, formatDistanceToNow } from "@/lib/datetime";
 import { toast } from "sonner";
+import { isSuperAdmin } from "@shared/permissions";
 import {
   Sparkles, PhoneCall, Flame, Gauge, Inbox, Scale, AlertTriangle,
-  RefreshCw, ArrowUpRight, ClipboardList, Loader2,
+  RefreshCw, ArrowUpRight, ClipboardList, Loader2, PauseCircle, PlayCircle,
 } from "lucide-react";
 import { STATUS_META, TIER_META, SOL_META, CASE_TYPES, leadName, Chip, ScoreRing, IntakeGuard } from "./shared";
 
@@ -40,14 +41,37 @@ export default function IntakeDesk() {
     onError: (e) => toast.error(e.message),
   });
 
+  const setAutomation = trpc.intake.automation.set.useMutation({
+    onSuccess: (r) => { toast.success(r.paused ? "Intake automation paused — zero AI spend." : "Intake automation resumed."); utils.intake.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+
   const firstName = (user?.name ?? "there").split(" ")[0];
   const tiers = stats?.tierBreakdown;
   const tierTotal = tiers ? tiers.hot + tiers.qualified + tiers.review + tiers.unqualified : 0;
+  const paused = (stats as any)?.automationPaused;
 
   return (
     <IntakeGuard>
       <div className="min-h-full bg-background p-6 lg:p-8 overflow-y-auto" style={{ height: "100%" }}>
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* Management pause banner */}
+          {paused && (
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <PauseCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Intake automation is paused by management</p>
+                  <p className="text-xs text-muted-foreground">New calls are not being captured or analyzed (no AI cost). All existing leads, calls, and transcripts stay available below.</p>
+                </div>
+              </div>
+              {isSuperAdmin(user?.role) && (
+                <Button size="sm" className="gap-2" disabled={setAutomation.isPending} onClick={() => setAutomation.mutate({ paused: false })}>
+                  <PlayCircle className="w-4 h-4" /> Resume automation
+                </Button>
+              )}
+            </div>
+          )}
           {/* Hero */}
           <header className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 lg:p-8 shadow-sm">
             <div className="absolute -right-12 -top-12 w-52 h-52 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(139,92,246,0.14), transparent 70%)" }} />

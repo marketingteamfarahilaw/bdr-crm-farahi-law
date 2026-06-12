@@ -1291,6 +1291,10 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         const lookbackMinutes = input?.lookbackMinutes ?? 1440;
         // Intake team members sync into the Intake Case Desk, never the facility CRM.
         if (isIntakeOnly(ctx.user.role)) {
+          const { getSetting } = await import("./db");
+          if ((await getSetting("intake_automation")) === "paused") {
+            throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Intake automation is paused by management — call processing is temporarily off." });
+          }
           const ownTok = await getValidRCTokenForUser(ctx.user.id);
           if (!ownTok) {
             throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Connect your RingCentral account first — open the RingCentral page and click “Connect my RingCentral”." });

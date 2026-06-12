@@ -27,6 +27,13 @@ export function registerVoiceAgentWebhook(app: Express) {
         return;
       }
 
+      // Management kill switch — while intake automation is paused, accept the
+      // webhook (so Retell doesn't retry) but process nothing.
+      if ((await getSetting("intake_automation")) === "paused") {
+        res.json({ ok: true, paused: true });
+        return;
+      }
+
       const event = String(req.body?.event ?? "");
       const call = req.body?.call ?? {};
       const retellId: string = String(call.call_id ?? "");

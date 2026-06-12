@@ -18,6 +18,7 @@ import { getValidRCToken, getValidRCTokenForUser } from "../crmRouter";
 import { syncRecentCalls } from "../rcSync";
 import { syncIntakeCalls } from "../intakeSync";
 import { listConnectedRcUsers, setUserRcLastSync } from "../crmDb";
+import { getSetting } from "../db";
 import { isIntakeOnly } from "@shared/permissions";
 // Note: RingCentral auto-connect via JWT has been removed.
 // Agents now log in to RingCentral directly through the embedded widget UI.
@@ -118,9 +119,14 @@ function startRingCentralAutoSync() {
       //    facility CRM; BD/FR calls flow into contact_logs as before.
       let connected: Awaited<ReturnType<typeof listConnectedRcUsers>> = [];
       try { connected = await listConnectedRcUsers(); } catch (e: any) { console.warn("[rcSync] listConnectedRcUsers failed:", e?.message ?? e); }
+      // Management kill switch: while paused, intake calls are NOT pulled or
+      // transcribed (zero Whisper/LLM spend). BDR/FR sync is unaffected.
+      let intakePaused = false;
+      try { intakePaused = (await getSetting("intake_automation")) === "paused"; } catch { /* default active */ }
       for (const u of connected) {
         const display = String(u.userName ?? u.ownerName ?? u.userEmail ?? "Unknown");
         try {
+          if (isIntakeOnly(u.userRole) && intakePaused) continue;
           const token = await getValidRCTokenForUser(u.userId);
           if (!token) continue; // not connected / refresh expired — they'll reconnect
           if (isIntakeOnly(u.userRole)) {

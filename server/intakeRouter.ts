@@ -58,6 +58,14 @@ const intakeManagerProcedure = intakeProcedure.use(({ ctx, next }) => {
 const LEAD_STATUSES = ["new", "reviewing", "qualified", "unqualified", "referred_out", "signed", "lost", "duplicate"] as const;
 const YNU = z.enum(["yes", "no", "unknown"]);
 
+/** Management kill switch — blocks every token-spending intake operation
+ *  (sync, transcription, AI analysis) while leaving all data readable. */
+async function assertIntakeActive() {
+  if ((await getSetting("intake_automation")) === "paused") {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Intake automation is paused by management — AI processing is temporarily off." });
+  }
+}
+
 /** Build the Filevine webhook payload from a lead row. */
 function leadToWebhookPayload(lead: any, trigger: IntakeLeadPayload["trigger"], agent: string | null): IntakeLeadPayload {
   const redFlags: string[] = ((lead.aiAnalysis as any)?.extraction?.redFlags ?? []) as string[];
@@ -114,8 +122,21 @@ export const intakeRouter = router({
   // ─── Dashboard ──────────────────────────────────────────────────────────────
   dashboard: router({
     stats: intakeProcedure.query(async () => {
-      return (await getIntakeDashboardStats()) ?? null;
+      const stats = (await getIntakeDashboardStats()) ?? null;
+      const automationPaused = (await getSetting("intake_automation")) === "paused";
+      return stats ? { ...stats, automationPaused } : null;
     }),
+  }),
+
+  /** Management kill switch — super admin only. */
+  automation: router({
+    set: intakeProcedure
+      .input(z.object({ paused: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!isSuperAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only the super admin can pause/resume intake automation." });
+        await setSetting("intake_automation", input.paused ? "paused" : "active");
+        return { success: true as const, paused: input.paused };
+      }),
   }),
 
   // ─── Leads (the queue) ──────────────────────────────────────────────────────
@@ -346,6 +367,7 @@ export const intakeRouter = router({
         const text = transcripts.join("\n\n").slice(0, 48000) || [lead.incidentDescription, lead.notes].filter(Boolean).join("\n\n");
         if (!text.trim()) throw new TRPCError({ code: "BAD_REQUEST", message: "No transcripts or description to analyze yet." });
 
+        await assertIntakeActive();
         const analysis = await analyzeIntakeTranscript(text, { callDate: new Date() });
         if (!analysis) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI analysis failed — try again." });
         const updated = await applyAnalysisToLead(input.id, analysis);
@@ -363,6 +385,7 @@ export const intakeRouter = router({
     analyzeText: intakeProcedure
       .input(z.object({ leadId: z.number().optional(), text: z.string().min(20).max(48000) }))
       .mutation(async ({ ctx, input }) => {
+        await assertIntakeActive();
         const analysis = await analyzeIntakeTranscript(input.text, { callDate: new Date() });
         if (!analysis) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI analysis failed — try again." });
         if (input.leadId) {
@@ -448,6 +471,7 @@ export const intakeRouter = router({
         const callerNumber = call.direction === "Inbound" ? call.fromNumber : call.toNumber;
         let id: number;
         if (call.transcript) {
+          await assertIntakeActive();
           const analysis = await analyzeIntakeTranscript(call.transcript, {
             direction: call.direction, callerNumber, agentName: call.agentName, callDate: call.callDate,
           });
@@ -472,6 +496,7 @@ export const intakeRouter = router({
     syncNow: intakeProcedure
       .input(z.object({ lookbackMinutes: z.number().min(5).max(43200).optional() }).optional())
       .mutation(async ({ ctx, input }) => {
+        await assertIntakeActive();
         // Only INTAKE members' extensions feed the intake desk. The super admin
         // can browse intake, but syncing their own (BD-side) extension here
         // would pollute intake_calls with BDR/admin calls.
