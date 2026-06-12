@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import Login from "@/pages/Login";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -66,6 +66,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Sparkles, label: "Agent Performance", path: "/agent-performance", level: "all" },
     { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
     { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
+    { icon: Navigation, label: "Field Mode (Mobile)", path: "/field", level: "fr" },
     { icon: Receipt, label: "Expenses", path: "/bdr/expenses", level: "all" },
     { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards", level: "bdr" },
     { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },

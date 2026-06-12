@@ -49,6 +49,7 @@ import IntakeLeadDetailPage from "./pages/intake/IntakeLeadDetail";
 import IntakeCallsPage from "./pages/intake/IntakeCalls";
 import IntakeAuditorPage from "./pages/intake/IntakeAuditor";
 import IntakeAgentsPage from "./pages/intake/IntakeAgents";
+import FieldApp from "./pages/field/FieldApp";
 import IntakeSettingsPage from "./pages/intake/IntakeSettings";
 import { isIntakeOnly } from "@shared/permissions";
 import { RingCentralProvider } from "./components/RingCentralWidget";
@@ -63,6 +64,11 @@ function Router() {
   // Intake roles live in their own world: their home IS the Intake Desk.
   const { user } = useAuth();
   const intakeHome = isIntakeOnly(user?.role);
+  const [location] = useLocation();
+
+  // FIELD MODE — the FR team's phone/tablet experience. Full-screen with its
+  // own bottom-tab navigation; deliberately rendered OUTSIDE the sidebar shell.
+  if (location.startsWith("/field")) return <FieldApp />;
 
   return (
     <DashboardLayout>
