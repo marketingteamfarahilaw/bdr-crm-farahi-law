@@ -168,7 +168,9 @@ export default function FieldApp() {
             <p className="text-[11px] text-muted-foreground mt-0.5">{agentName} · {format(new Date(), "EEE, MMM d")}</p>
           </div>
         </div>
-        <button onClick={() => navigate("/")} className="text-xs text-muted-foreground flex items-center gap-1 px-2 py-1.5 rounded-lg border border-border">
+        <button
+          onClick={() => { sessionStorage.setItem("exit-field", "1"); navigate("/"); }}
+          className="text-xs text-muted-foreground flex items-center gap-1 px-2 py-1.5 rounded-lg border border-border">
           <ArrowLeft className="w-3.5 h-3.5" /> Full CRM
         </button>
       </header>

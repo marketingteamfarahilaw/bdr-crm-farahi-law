@@ -51,7 +51,7 @@ import IntakeAuditorPage from "./pages/intake/IntakeAuditor";
 import IntakeAgentsPage from "./pages/intake/IntakeAgents";
 import FieldApp from "./pages/field/FieldApp";
 import IntakeSettingsPage from "./pages/intake/IntakeSettings";
-import { isIntakeOnly } from "@shared/permissions";
+import { isIntakeOnly, normalizeRole } from "@shared/permissions";
 import { RingCentralProvider } from "./components/RingCentralWidget";
 import type { CallEndData } from "./components/RingCentralWidget";
 import { trpc } from "./lib/trpc";
@@ -69,6 +69,18 @@ function Router() {
   // FIELD MODE — the FR team's phone/tablet experience. Full-screen with its
   // own bottom-tab navigation; deliberately rendered OUTSIDE the sidebar shell.
   if (location.startsWith("/field")) return <FieldApp />;
+
+  // FRs opening the installed app on a phone/tablet land straight in Field
+  // Mode — the "Full CRM" button inside sets a session flag to escape here.
+  if (
+    location === "/" &&
+    normalizeRole(user?.role) === "fr_agent" &&
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 900px)").matches &&
+    !sessionStorage.getItem("exit-field")
+  ) {
+    return <FieldApp />;
+  }
 
   return (
     <DashboardLayout>

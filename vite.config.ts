@@ -175,6 +175,16 @@ const plugins = [
         { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },
         { src: "icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
       ],
+      // Long-press the installed app icon (Android) → jump straight to Field Mode.
+      shortcuts: [
+        {
+          name: "Field Mode",
+          short_name: "Field",
+          description: "Log visits, leads, and expenses on the go",
+          url: "/field",
+          icons: [{ src: "icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+        },
+      ],
     },
     workbox: {
       globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
