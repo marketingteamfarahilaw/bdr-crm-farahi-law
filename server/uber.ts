@@ -69,19 +69,62 @@ export async function fetchOrderReceipt(orderId: string): Promise<any> {
 
 const money = (v: any): number => (typeof v?.value === "number" ? v.value / 100000 : 0);
 
+// Street-name tokens we ignore when comparing (suffixes/directionals/units).
+const STREET_STOP = new Set(["st", "street", "ave", "avenue", "blvd", "boulevard", "rd", "road", "dr", "drive", "ln", "lane", "way", "ct", "court", "pl", "place", "hwy", "highway", "pkwy", "parkway", "ste", "suite", "unit", "apt", "fl", "floor", "n", "s", "e", "w", "north", "south", "east", "west", "the"]);
+const streetNum = (a: unknown): string => (String(a ?? "").match(/\d+/) || [])[0] || "";
+const streetTokens = (a: unknown): string[] => String(a ?? "").toLowerCase().split(/[,#]/)[0].replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w && w.length > 1 && !/^\d+$/.test(w) && !STREET_STOP.has(w));
+type LatLng = { lat: number; lng: number };
+const haversine = (a: LatLng, b: LatLng): number => { const R = 6371000, dLat = ((b.lat - a.lat) * Math.PI) / 180, dLng = ((b.lng - a.lng) * Math.PI) / 180; const h = Math.sin(dLat / 2) ** 2 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+
+async function geocode(address: string): Promise<{ lat: number; lng: number } | null> {
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) return null;
+  try {
+    const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&region=us&key=${key}`);
+    const j = await r.json();
+    const loc = j?.results?.[0]?.geometry?.location;
+    return loc ? { lat: loc.lat, lng: loc.lng } : null;
+  } catch { return null; }
+}
+
+/**
+ * Match an Uber delivery address to a partner facility, accurately:
+ *  1) Text: same street number AND a shared street-name token (city confirms
+ *     but isn't required — handles missing/garbled city).
+ *  2) Geocode fallback: geocode the delivery address and pick the nearest
+ *     facility within 200m (facilities are geocoded with lat/long).
+ */
 export async function matchFacilityByAddress(address: string, city: string): Promise<{ id: number; name: string } | null> {
   const db = await getDb();
   if (!db || !address) return null;
-  const num = (address.match(/\d+/) || [])[0];
+  const rows = await db.select({ id: facilities.id, name: facilities.name, address: facilities.address, city: facilities.city, latitude: facilities.latitude, longitude: facilities.longitude }).from(facilities);
+
+  // 1) Text match — street number + street-name token overlap.
+  const num = streetNum(address);
+  const toks = new Set(streetTokens(address));
   const cityL = (city || "").toLowerCase().trim();
-  const head = address.toLowerCase().slice(0, 14);
-  const rows = await db.select({ id: facilities.id, name: facilities.name, address: facilities.address, city: facilities.city }).from(facilities);
+  let textHit: { id: number; name: string } | null = null;
   for (const f of rows) {
-    if (!f.address) continue;
-    const fnum = (String(f.address).match(/\d+/) || [])[0];
+    if (!f.address || !num || streetNum(f.address) !== num) continue;
+    const ftoks = streetTokens(f.address);
+    const shares = ftoks.some((t) => toks.has(t));
+    if (!shares) continue;
     const sameCity = !!cityL && !!f.city && String(f.city).toLowerCase().trim() === cityL;
-    const sameNum = !!num && num === fnum;
-    if (sameNum && (sameCity || String(f.address).toLowerCase().includes(head))) return { id: f.id, name: f.name };
+    if (sameCity) return { id: f.id, name: f.name }; // strongest: number + street + city
+    if (!textHit) textHit = { id: f.id, name: f.name };
+  }
+  if (textHit) return textHit;
+
+  // 2) Geocode fallback — nearest facility within 200m of the delivery point.
+  const pt = await geocode([address, city].filter(Boolean).join(", "));
+  if (pt) {
+    let best: { id: number; name: string } | null = null, bestD = 200;
+    for (const f of rows) {
+      if (!f.latitude || !f.longitude) continue;
+      const dmeters = haversine(pt, { lat: Number(f.latitude), lng: Number(f.longitude) });
+      if (dmeters < bestD) { bestD = dmeters; best = { id: f.id, name: f.name }; }
+    }
+    if (best) return best;
   }
   return null;
 }
