@@ -285,15 +285,34 @@ function ownerNameCandidates(user: { name?: string | null; agentName?: string | 
   return Array.from(out);
 }
 
-/** Throws unless the user is a manager or owns the facility (by id or name). */
-async function assertFacilityAccess(user: { id: number; role: any; name?: string | null; agentName?: string | null }, facilityId: number): Promise<void> {
+/** Throws unless the user is a manager or owns the facility (by id or name).
+ *  When `includeActivity` is set (read-only endpoints), also grants access if
+ *  the user has personally contacted the facility — so an agent can open a
+ *  partner from their own call log even when it's assigned to a teammate
+ *  (covering calls, transfers, shared lines). Write endpoints keep the strict
+ *  owner-only check (includeActivity stays false). */
+async function assertFacilityAccess(
+  user: { id: number; role: any; name?: string | null; agentName?: string | null },
+  facilityId: number,
+  includeActivity = false,
+): Promise<void> {
   if (seesAllData(user.role)) return;
   const f = await getFacilityById(facilityId);
   if (!f) throw new TRPCError({ code: "NOT_FOUND", message: "Facility not found" });
   const cands = ownerNameCandidates(user).map((s) => s.toLowerCase());
   const ownById = f.assignedRepId != null && f.assignedRepId === user.id;
   const ownByName = !!f.assignedRepName && cands.includes(String(f.assignedRepName).toLowerCase());
-  if (!ownById && !ownByName) throw new TRPCError({ code: "FORBIDDEN", message: "You don't have access to this facility." });
+  if (ownById || ownByName) return;
+  if (includeActivity) {
+    const db = await getDb();
+    if (db) {
+      const logs = await db.select({ repId: contactLogs.repId, repName: contactLogs.repName })
+        .from(contactLogs).where(eq(contactLogs.facilityId, facilityId)).limit(300);
+      const hasActivity = logs.some((l) => l.repId === user.id || (l.repName && cands.includes(String(l.repName).toLowerCase())));
+      if (hasActivity) return;
+    }
+  }
+  throw new TRPCError({ code: "FORBIDDEN", message: "You don't have access to this facility." });
 }
 
 /** Throws unless the user is a manager or owns the facility the row belongs to. */
@@ -373,7 +392,7 @@ export const crmRouter = router({
     get: crmProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
-        await assertFacilityAccess(ctx.user, input.id);
+        await assertFacilityAccess(ctx.user, input.id, true);
         const facility = await getFacilityById(input.id);
         if (!facility) throw new TRPCError({ code: "NOT_FOUND", message: "Facility not found" });
         const [contactHistory, tasks, leadsSent, totalLeads, referrals] = await Promise.all([
@@ -564,7 +583,7 @@ export const crmRouter = router({
   contactLogs: router({
     list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
-      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listContactLogs(input.facilityId); }),
+      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId, true); return listContactLogs(input.facilityId); }),
 
     create: crmProcedure
       .input(
@@ -610,7 +629,7 @@ export const crmRouter = router({
   tasks: router({
     listByFacility: crmProcedure
       .input(z.object({ facilityId: z.number() }))
-      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listTasksByFacility(input.facilityId); }),
+      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId, true); return listTasksByFacility(input.facilityId); }),
 
     listMine: crmProcedure
       .input(z.object({ status: z.enum(["open", "completed"]).optional() }))
@@ -672,7 +691,7 @@ export const crmRouter = router({
   leadsSent: router({
     list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
-      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listLeadsSent(input.facilityId); }),
+      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId, true); return listLeadsSent(input.facilityId); }),
 
     upsert: crmProcedure
       .input(
@@ -695,7 +714,7 @@ export const crmRouter = router({
   referrals: router({
     list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
-      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listReferrals(input.facilityId); }),
+      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId, true); return listReferrals(input.facilityId); }),
 
     create: crmProcedure
       .input(z.object({
@@ -1458,7 +1477,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   facilityLeads: router({
     list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
-      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listFacilityLeads(input.facilityId); }),
+      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId, true); return listFacilityLeads(input.facilityId); }),
 
     create: crmProcedure
       .input(z.object({
@@ -1519,7 +1538,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   gratitude: router({
     list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
-      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listGratitudeActions(input.facilityId); }),
+      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId, true); return listGratitudeActions(input.facilityId); }),
 
     create: crmProcedure
       .input(z.object({
@@ -1554,7 +1573,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
   updates: router({
     list: crmProcedure
       .input(z.object({ facilityId: z.number() }))
-      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId); return listFacilityUpdates(input.facilityId); }),
+      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId, true); return listFacilityUpdates(input.facilityId); }),
 
     create: crmProcedure
       .input(z.object({
