@@ -1,0 +1,216 @@
+{
+  "renamed": [
+    {
+      "id": 451106,
+      "oldName": "Active Chiropactor (some maybe active)",
+      "newName": "Kings Canyon Chiropractic",
+      "oldCategory": "chiropractor"
+    },
+    {
+      "id": 450984,
+      "oldName": "ABS Collision Center",
+      "newName": "24 Hour Auto Service",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451302,
+      "oldName": "Exotic Motorsports Collision Center",
+      "newName": "Almaden Family Chiropractic",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451862,
+      "oldName": "Ralfi's Collision Center",
+      "newName": "D Collision",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451298,
+      "oldName": "Tip Top Auto Body Shop",
+      "newName": "Dynamic Auto Workz",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451008,
+      "oldName": "Laguna Hills Chiropractor - Lakeview Chiropractic",
+      "newName": "Gilroy Family Chiropractic",
+      "oldCategory": "chiropractor"
+    },
+    {
+      "id": 451010,
+      "oldName": "Empire Collision Center",
+      "newName": "Inland Chiropractic & Medical Weightloss",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451300,
+      "oldName": "Dynamic Auto Workz",
+      "newName": "IRON CHIROPRACTIC",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451016,
+      "oldName": "Fix Auto Upland",
+      "newName": "Mauro's Body Shop",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451132,
+      "oldName": "Hess Rehabilitation & Chiropractic Centers, Inc.",
+      "newName": "Precision Collision center",
+      "oldCategory": "chiropractor"
+    },
+    {
+      "id": 451024,
+      "oldName": "Impact Fix Collision Center",
+      "newName": "Re-LAX Chiropractic + Wellness",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451029,
+      "oldName": "Mauro's Body Shop",
+      "newName": "Socal Spine Rehab and Wellness",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451282,
+      "oldName": "Leo's Paint & Body",
+      "newName": "V&G AUTO REPAIR",
+      "oldCategory": "body_shop"
+    },
+    {
+      "id": 451036,
+      "oldName": "Ricardo Garcia Chiropractic Clinic",
+      "newName": "Yuba Sutter Chiropractic",
+      "oldCategory": "chiropractor"
+    }
+  ],
+  "imported": [
+    {
+      "name": "San Diego Auto Repair & Collision",
+      "agent": "Ally",
+      "phone": "619-304-2869"
+    }
+  ],
+  "flagged": [
+    {
+      "id": 450683,
+      "crmName": "LA PUENTE PAINT & BODY",
+      "teamName": "LA PUENTE PAINT & BODY",
+      "matchedSlot": "phone2",
+      "agent": "Genysys"
+    },
+    {
+      "id": 450738,
+      "crmName": "PACHECO'S BODY SHOP",
+      "teamName": "PACHECO'S BODY SHOP",
+      "matchedSlot": "phone2",
+      "agent": "Grace"
+    },
+    {
+      "id": 450837,
+      "crmName": "A&G TOWING AND RECOVERY",
+      "teamName": "A&G TOWING AND RECOVERY",
+      "matchedSlot": "phone2",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450870,
+      "crmName": "Dean Martin Towing + Recovery",
+      "teamName": "Dean Martin Towing + Recovery",
+      "matchedSlot": "phone2",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450906,
+      "crmName": "Greenway Auto Body",
+      "teamName": "Greenway Auto Body",
+      "matchedSlot": "phone2",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451493,
+      "crmName": "Lark Chiropractic",
+      "teamName": "Lark Chiropractic",
+      "matchedSlot": "phone2",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450924,
+      "crmName": "Martin Auto Color",
+      "teamName": "Martin Auto Color",
+      "matchedSlot": "phone3",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450932,
+      "crmName": "Neto",
+      "teamName": "Neto",
+      "matchedSlot": "phone2",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450973,
+      "crmName": "West Coast Tow 2",
+      "teamName": "West Coast Tow 2",
+      "matchedSlot": "phone2",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450989,
+      "crmName": "Cedar Pointe Chiropractic Group",
+      "teamName": "Artisan Collision",
+      "matchedSlot": "phone2",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451017,
+      "crmName": "ProColor Collision San Marcos",
+      "teamName": "McDowell Family Chiropractic Inc.",
+      "matchedSlot": "phone2",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451028,
+      "crmName": "Sanchez Chiropractic and Wellness",
+      "teamName": "Sanchez Chiropractic and Wellness",
+      "matchedSlot": "phone2",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451048,
+      "crmName": "Dr. Tyler Sports Medicine & Chiropractic",
+      "teamName": "Dr. Tyler Sports Medicine & Chiropractic",
+      "matchedSlot": "phone2",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451064,
+      "crmName": "Zaker Chiropractic",
+      "teamName": "Zaker Chiropractic",
+      "matchedSlot": "phone2",
+      "agent": "Queenie"
+    }
+  ],
+  "ambiguousReverted": [
+    {
+      "id": 450917,
+      "keptName": "Kingsburg Towing",
+      "teamFileConflict": [
+        "Kingsburg Towing",
+        "Mel's Towing"
+      ],
+      "phone": "5598960511"
+    },
+    {
+      "id": 451009,
+      "keptName": "Fix Auto Upland",
+      "teamFileConflict": [
+        "Empire Collision Center",
+        "Fix Auto Upland",
+        "Impact Fix Collision Center"
+      ],
+      "phone": "3109276416"
+    }
+  ]
+}
