@@ -1,0 +1,5184 @@
+{
+  "updated": [
+    {
+      "id": 450654,
+      "before": {
+        "name": "Art's Auto Repairs",
+        "phone": "562-314-9536",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Long Beach",
+        "address": "1342 W Cowles St Long Beach CA, 90813"
+      }
+    },
+    {
+      "id": 450655,
+      "before": {
+        "name": "Auto Refocusing",
+        "phone": "(909) 390-8285",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Ontario",
+        "address": "151 S Wineville Ave Ste F Ontario, CA 91761"
+      }
+    },
+    {
+      "id": 450656,
+      "before": {
+        "name": "Cali Auto Collision 2",
+        "phone": "747-210-9495",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sylmar",
+        "address": "12691 San Fernando Rd, Sylmar, CA 91342, United States"
+      }
+    },
+    {
+      "id": 450657,
+      "before": {
+        "name": "Cali Auto Collision 3",
+        "phone": "347-481-3485",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Van Nuys",
+        "address": "7834 Sepulveda Boulevard Van Nuys CA 91405"
+      }
+    },
+    {
+      "id": 450658,
+      "before": {
+        "name": "Dave's Auto Body",
+        "phone": "909 820 6466",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Rialto",
+        "address": "1224 W Merrill Ave Rialto CA 92367"
+      }
+    },
+    {
+      "id": 450659,
+      "before": {
+        "name": "Ernie's Auto Collision",
+        "phone": "760-951-3393",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Victorville",
+        "address": "16611 Mojave Dr, Victorville, CA 92395, United States"
+      }
+    },
+    {
+      "id": 450660,
+      "before": {
+        "name": "McMorris Chiropractic",
+        "phone": "(909) 763-2011",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "San Bernardino",
+        "address": "577 N D St #100, San Bernardino, CA 92401"
+      }
+    },
+    {
+      "id": 450661,
+      "before": {
+        "name": "Royal Road Collision Center",
+        "phone": "(951) 376-9883",
+        "phone2": "6178525208",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bernardino",
+        "address": "1364 S Camino Real #unit 100 San Bernandino CA 92408"
+      }
+    },
+    {
+      "id": 451836,
+      "before": {
+        "name": "Sabina's Body Shop",
+        "phone": "760-483-1179",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Hesperia",
+        "address": "17610 Catalpa St Suite F Hesperia, CA 92345"
+      }
+    },
+    {
+      "id": 450663,
+      "before": {
+        "name": "Unique Auto Collision",
+        "phone": "424-355-2772",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Van Nuys",
+        "address": "8115 Orion Ave. Van Nuys Ca 91406"
+      }
+    },
+    {
+      "id": 600001,
+      "before": {
+        "name": "San Diego Auto Repair & Collision",
+        "phone": "619-304-2869",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Diego,",
+        "address": "3877 42nd St, San Diego, CA 92105"
+      }
+    },
+    {
+      "id": 450665,
+      "before": {
+        "name": "714 Kustomz Auto Body & Paint",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa ana",
+        "address": "1916 W 1st St, Santa Ana, CA 92703"
+      }
+    },
+    {
+      "id": 450666,
+      "before": {
+        "name": "Advanced Chiropractic Spine & Sports Medicine",
+        "phone": "3103884157",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Los Angeles",
+        "address": "8810 S Sepulveda Blvd, Los Angeles, CA 90045"
+      }
+    },
+    {
+      "id": 450667,
+      "before": {
+        "name": "BAJA BOYZ TOWING INC",
+        "phone": "7606010564",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Coachella",
+        "address": "86110 Avenue 54, Coachella, CA 92236"
+      }
+    },
+    {
+      "id": 450668,
+      "before": {
+        "name": "BG Auto Body INC",
+        "phone": "3239723852",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bell Gardens",
+        "address": "6461 Clara St, Bell Gardens, CA 90201"
+      }
+    },
+    {
+      "id": 450669,
+      "before": {
+        "name": "Broski's Body & Paint",
+        "phone": "5629469436",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa Fe Springs",
+        "address": "10918 Norwalk Blvd, Santa Fe Springs, CA 90670"
+      }
+    },
+    {
+      "id": 450670,
+      "before": {
+        "name": "Califas auto body",
+        "phone": "7147356425",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fullerton",
+        "address": "1301 E Orangethorpe Ave unit G, Fullerton, CA 92831"
+      }
+    },
+    {
+      "id": 450671,
+      "before": {
+        "name": "Certified Collision Repair",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Lake Elsinore",
+        "address": "424 1/2 N Main St, Lake Elsinore, CA 92530"
+      }
+    },
+    {
+      "id": 450672,
+      "before": {
+        "name": "Compas Gruas Los Angeles",
+        "phone": "2132705362",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Los Angeles",
+        "address": "345 S Alexandria Ave, Los Angeles, CA 90020"
+      }
+    },
+    {
+      "id": 450673,
+      "before": {
+        "name": "Del Rio Chiropractic Clinic",
+        "phone": "5626516300",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Norwalk",
+        "address": "12100 Imperial Hwy. Suite 103, Norwalk, CA 90650"
+      }
+    },
+    {
+      "id": 450674,
+      "before": {
+        "name": "Economy Paint & Collision",
+        "phone": "9517870227",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Riverside",
+        "address": "2587 Rubidoux Blvd, Riverside, CA 92509"
+      }
+    },
+    {
+      "id": 450675,
+      "before": {
+        "name": "Excellence Body Shop",
+        "phone": "18775140522",
+        "phone2": "9092179806",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Ontario",
+        "address": "1135 W State St Ontario CA 91762"
+      }
+    },
+    {
+      "id": 450676,
+      "before": {
+        "name": "Gencorp Autobody Shop",
+        "phone": "951-526-6850",
+        "phone2": "9514767146",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Menifee",
+        "address": "27271 Ethanac Rd STE 105, Menifee, CA 92585, United States"
+      }
+    },
+    {
+      "id": 450677,
+      "before": {
+        "name": "Grove Body Shop",
+        "phone": "7145376460",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Garden Grove",
+        "address": "10242 Garden Grove Blvd, Garden Grove, CA 92843"
+      }
+    },
+    {
+      "id": 451132,
+      "before": {
+        "name": "Hess Rehabilitation & Chiropractic Centers, Inc.",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Anaheim",
+        "address": "1120 W La Palma Ave #9, Anaheim, CA 92801"
+      }
+    },
+    {
+      "id": 450679,
+      "before": {
+        "name": "Impact auto body and paint",
+        "phone": "562-567-1082",
+        "phone2": "3239385555",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "5555 W Pico Blvd, Los Angeles CA 90019"
+      }
+    },
+    {
+      "id": 450680,
+      "before": {
+        "name": "J&R 101 Auto Body Shop",
+        "phone": "3238541793",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "870 N Western Ave C, Los Angeles, CA 90029"
+      }
+    },
+    {
+      "id": 450681,
+      "before": {
+        "name": "JC CUSTOMZ COLLISION CENTER",
+        "phone": "(562) 804-6482",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bellflower",
+        "address": "9241 Sonrisa St, Bellflower, CA 90706"
+      }
+    },
+    {
+      "id": 450682,
+      "before": {
+        "name": "Jurupa Valley Collision",
+        "phone": "9512618600",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Riverside",
+        "address": "1821 Container Cir Riverside 92509"
+      }
+    },
+    {
+      "id": 450683,
+      "before": {
+        "name": "LA PUENTE PAINT & BODY",
+        "phone": null,
+        "phone2": "6264044738",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "La Puente",
+        "address": "16046 Abbey St, La Puente, CA 91744"
+      }
+    },
+    {
+      "id": 450684,
+      "before": {
+        "name": "Nuway Insurance",
+        "phone": "7146353700",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Anaheim",
+        "address": "800 W La Palma Ave, Anaheim, CA 92801"
+      }
+    },
+    {
+      "id": 450685,
+      "before": {
+        "name": "pc auto custom",
+        "phone": "7144769511",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Anaheim",
+        "address": "10700 W Katella Ave b, Anaheim, CA 92804"
+      }
+    },
+    {
+      "id": 450686,
+      "before": {
+        "name": "Regino Rojas Auto Body Shop #1",
+        "phone": "2136662012",
+        "phone2": "3239238285",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "4200 S Vermont Ave, Los Angeles, CA 90037"
+      }
+    },
+    {
+      "id": 450687,
+      "before": {
+        "name": "Rueda's Body Shop",
+        "phone": "6265238932",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Pomona",
+        "address": "3973 E Mission Blvd, Pomona, CA 91766"
+      }
+    },
+    {
+      "id": 450688,
+      "before": {
+        "name": "Santa Clarita Auto Center",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Santa Clarita",
+        "address": "26536 Ruether Ave Unit 601, Santa Clarita, CA 91350"
+      }
+    },
+    {
+      "id": 450689,
+      "before": {
+        "name": "The LA Chiropractor",
+        "phone": "3104787775",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Los Angeles",
+        "address": "2080 Century Pk E #1503, Los Angeles, CA 90067"
+      }
+    },
+    {
+      "id": 450690,
+      "before": {
+        "name": "The Well Chiropractic",
+        "phone": "3104706039",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Los Angeles",
+        "address": "2940 Westwood Blvd # 2, Los Angeles, CA 90064"
+      }
+    },
+    {
+      "id": 450691,
+      "before": {
+        "name": "Uribe Towing Service",
+        "phone": "3105908301",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "La Palma",
+        "address": null
+      }
+    },
+    {
+      "id": 450692,
+      "before": {
+        "name": "VIP Collision Center",
+        "phone": "(909) 277-5651",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Pomona",
+        "address": "905 W 2nd St, Pomona, CA 91766"
+      }
+    },
+    {
+      "id": 450693,
+      "before": {
+        "name": "Soma Collision Repair",
+        "phone": "4082608292",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "San Jose",
+        "address": "360 Kiely Blvd Ste 215, San Jose, CA 95129"
+      }
+    },
+    {
+      "id": 450694,
+      "before": {
+        "name": "24/7 AUTOBODY",
+        "phone": "6503623228",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Redwood City",
+        "address": "3012 Spring St, Redwood City, CA 94063"
+      }
+    },
+    {
+      "id": 450695,
+      "before": {
+        "name": "5 Stars Auto Body Repair",
+        "phone": "6503653797",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Redwood City",
+        "address": "871 Charter St, Redwood City, CA 94063"
+      }
+    },
+    {
+      "id": 451186,
+      "before": {
+        "name": "A1 CHIROPRACTIC",
+        "phone": "6506364433",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "South San Francisco",
+        "address": "1180 San Mateo Ave, South San Francisco, CA 94080, United States"
+      }
+    },
+    {
+      "id": 450697,
+      "before": {
+        "name": "Active Auto Body",
+        "phone": "4087343400",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sunnyvale",
+        "address": "1281 Forgewood Avenue Sunnyvale CA 94089"
+      }
+    },
+    {
+      "id": 450698,
+      "before": {
+        "name": "Alioto’s Garage",
+        "phone": "6503697991",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Redwood city",
+        "address": "545 Standish St, Redwood City, CA 94063, United States"
+      }
+    },
+    {
+      "id": 450699,
+      "before": {
+        "name": "All Makes Auto Body Shop",
+        "phone": "6503430257",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Mateo",
+        "address": "71 21st Ave Suite B, San Mateo, CA 94403, United States"
+      }
+    },
+    {
+      "id": 450700,
+      "before": {
+        "name": "Angelo's Towing San Diego",
+        "phone": "6197028888",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "San Diego",
+        "address": "1177 S 26th St, San Diego, CA 92113"
+      }
+    },
+    {
+      "id": 450701,
+      "before": {
+        "name": "Arcadia Chiropractic Center",
+        "phone": "4083921200",
+        "phone2": "4153778678",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "1729 Junction Ave San Jose, CA 95112"
+      }
+    },
+    {
+      "id": 450702,
+      "before": {
+        "name": "Arcaro's Auto Body Repair, Inc.",
+        "phone": "7603256400",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Palm Springs",
+        "address": "340 W Del Sol Rd, Palm Springs, CA 92262, United States"
+      }
+    },
+    {
+      "id": 450703,
+      "before": {
+        "name": "ASSURANCE COLLISION",
+        "phone": "4083685196",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "96 San Jose Ave, San Jose, CA 95125, United States"
+      }
+    },
+    {
+      "id": 450704,
+      "before": {
+        "name": "Avenue Body Shop",
+        "phone": "4158644417",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Francisco",
+        "address": "333 S Van Ness Ave San Francisco, CA 94103"
+      }
+    },
+    {
+      "id": 450705,
+      "before": {
+        "name": "AW Collision of San Jose",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": null,
+        "address": "1150 S Bascom Ave #17, San Jose, CA 95128"
+      }
+    },
+    {
+      "id": 450706,
+      "before": {
+        "name": "Bay One Collision Auto Body Shop",
+        "phone": "6504684005",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Redwood City",
+        "address": "815 Woodside Way San Mateo, CA 94401"
+      }
+    },
+    {
+      "id": 450707,
+      "before": {
+        "name": "Bloom Auto Collision & Repair",
+        "phone": "4087531327",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa Clara",
+        "address": "2555 Lafayette St #115, Santa Clara, CA 95050, United States"
+      }
+    },
+    {
+      "id": 450708,
+      "before": {
+        "name": "Blossom Valley Collision",
+        "phone": "4089984954",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "1176 Auzerais Ave, San Jose, CA 95126"
+      }
+    },
+    {
+      "id": 450709,
+      "before": {
+        "name": "C G & E Auto Body",
+        "phone": "6264474442",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Arcadia",
+        "address": "423 S 1st Ave, Arcadia, CA 91006"
+      }
+    },
+    {
+      "id": 450710,
+      "before": {
+        "name": "Chico Economy Towing",
+        "phone": "5303450173",
+        "phone2": "5305134831",
+        "phone3": null,
+        "category": "other",
+        "city": "Chico",
+        "address": "1200 E Eaton Rd, Chico CA 95973"
+      }
+    },
+    {
+      "id": 450711,
+      "before": {
+        "name": "Darryl's Collision Center",
+        "phone": "9258903375",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Antioch",
+        "address": "2504 Devpar Ct Antioch CA 94509"
+      }
+    },
+    {
+      "id": 450712,
+      "before": {
+        "name": "Dave's Towing Service",
+        "phone": "7603225441",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Palm Springs",
+        "address": "370 W San Rafael Dr UNIT 9 Palm Springs CA 92262"
+      }
+    },
+    {
+      "id": 450713,
+      "before": {
+        "name": "Deer Valley Chiropractic",
+        "phone": "9257577571",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Antioch",
+        "address": "3381 Deer Valley Rd, Antioch, CA 94531"
+      }
+    },
+    {
+      "id": 450714,
+      "before": {
+        "name": "Doan’s Auto Body & Paint",
+        "phone": "5304062269",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Woodland",
+        "address": "44 Harter Ave, Woodland, CA 95776, United States"
+      }
+    },
+    {
+      "id": 450715,
+      "before": {
+        "name": "Dr. Paul Chen DC",
+        "phone": "6262875088",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "San Gabriel",
+        "address": "525 S San Gabriel Blvd San Gabriel CA 91776"
+      }
+    },
+    {
+      "id": 450716,
+      "before": {
+        "name": "Dr. Thomas Gallardo Chiropractor",
+        "phone": "4156239258",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Alameda",
+        "address": "2504 Santa Clara Ave ste 1-2 Alameda CA 94501"
+      }
+    },
+    {
+      "id": 450717,
+      "before": {
+        "name": "Eddie's Lincoln Auto Body",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": null,
+        "address": "68 Harold Ave Suite 101 Santa Clara,CA 95050"
+      }
+    },
+    {
+      "id": 450718,
+      "before": {
+        "name": "Element Chiropractic Wellness",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": null,
+        "address": "1941 O’Farrell St Ste 108 San Mateo, CA 94403"
+      }
+    },
+    {
+      "id": 450719,
+      "before": {
+        "name": "Family Chiropractic Clinic",
+        "phone": "5106720063",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "San Francisco",
+        "address": "14341 San Pablo Ave. San Pablo CA 94806 / 5321 Elkhorn Blvd. sacramento CA 95842 / 222 7th St #1, San Francisco CA 94103"
+      }
+    },
+    {
+      "id": 451145,
+      "before": {
+        "name": "Filos Collision",
+        "phone": "4159317920",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "14341 San Pablo Ave. San Pablo CA 94806/5321 Elkhorn Blvd. sacramento CA 95842/222 7th St #1, San Francisco CA 94103"
+      }
+    },
+    {
+      "id": 450721,
+      "before": {
+        "name": "Finish Line Collision",
+        "phone": "4082988660",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "1190 N 13th St, San Jose CA 95112"
+      }
+    },
+    {
+      "id": 450722,
+      "before": {
+        "name": "Fix Auto Rocklin",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": null,
+        "address": "584 Lincoln Blvd, Lincoln, CA 95648"
+      }
+    },
+    {
+      "id": 540012,
+      "before": {
+        "name": "FixAll Auto Collision",
+        "phone": "4083202416",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "525 W San Carlos St, San Jose, CA 95126, United States"
+      }
+    },
+    {
+      "id": 450724,
+      "before": {
+        "name": "Good Life Chiropractic",
+        "phone": "4087481133",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "175 Tully Rd, San Jose, CA 95111"
+      }
+    },
+    {
+      "id": 451141,
+      "before": {
+        "name": "Holmes Chiropractic",
+        "phone": "4088711200",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Campbell",
+        "address": "280 E Hamilton Ave, Campbell, CA 95008, United States"
+      }
+    },
+    {
+      "id": 451178,
+      "before": {
+        "name": "Independent Repair Service",
+        "phone": "5105388113",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Hayward",
+        "address": "839 Smalley Ave, Hayward, CA 94541"
+      }
+    },
+    {
+      "id": 450727,
+      "before": {
+        "name": "J & T Advanced Collision Center",
+        "phone": "4158643699",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Francisco",
+        "address": "240 12th St, San Francisco, CA 94103, United States"
+      }
+    },
+    {
+      "id": 450728,
+      "before": {
+        "name": "J&P Auto Body & Paint",
+        "phone": "3237283101",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Monterey Park",
+        "address": "257 W Pomona Blvd, Monterey Park, CA 91754, United States"
+      }
+    },
+    {
+      "id": 451159,
+      "before": {
+        "name": "Jerry's Towing",
+        "phone": "8185859548",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Canoga Park",
+        "address": "7140 Remmet Ave #7, Canoga Park, CA 91303"
+      }
+    },
+    {
+      "id": 450730,
+      "before": {
+        "name": "JP Auto Body Shop -Redwood City",
+        "phone": "4086616300",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "694 Quinn Ave b2, San Jose, CA 95112"
+      }
+    },
+    {
+      "id": 450731,
+      "before": {
+        "name": "KIMS AUTO BODY",
+        "phone": "3109820422",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Carson",
+        "address": "2605 E Tyler St. Carson CA 90810"
+      }
+    },
+    {
+      "id": 450732,
+      "before": {
+        "name": "KINGSPOINT Foot and Ankle Specialists",
+        "phone": "9516746841",
+        "phone2": "9097829308",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Wildomar",
+        "address": "21535 Palomar St, Wildomar CA 92595"
+      }
+    },
+    {
+      "id": 450733,
+      "before": {
+        "name": "Luciano’s Collision Center",
+        "phone": "4082947633",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa Clara",
+        "address": "1300 Norman Ave, Santa Clara CA 95054"
+      }
+    },
+    {
+      "id": 450734,
+      "before": {
+        "name": "New beginnings Chiro Richard Westbrook",
+        "phone": "14086911835",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Milpitas",
+        "address": "107 Minnis Cir, Milpitas, CA 95035, United States"
+      }
+    },
+    {
+      "id": 450735,
+      "before": {
+        "name": "New Hope Chiropractic San Jose Chiropractor",
+        "phone": "4083149302",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa Clara",
+        "address": "2767 Scott Blvd, Santa Clara CA 95050"
+      }
+    },
+    {
+      "id": 450736,
+      "before": {
+        "name": "Oakland Collision Center",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": null,
+        "address": "3740 Cincinnati Ave, Rocklin, CA 95765"
+      }
+    },
+    {
+      "id": 451147,
+      "before": {
+        "name": "One Stop Auto Collision",
+        "phone": "8313736004",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Monterey",
+        "address": "24551 Silver Cloud Ct Suite 201 Monterey CA 93940"
+      }
+    },
+    {
+      "id": 450738,
+      "before": {
+        "name": "PACHECO'S BODY SHOP",
+        "phone": "3103105260",
+        "phone2": "3103105260",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "2514 S Central Ave, Los Angeles CA 90011"
+      }
+    },
+    {
+      "id": 450739,
+      "before": {
+        "name": "Panther Collision Center",
+        "phone": "4082431440",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa Clara",
+        "address": "1486 Jefferson St, Santa Clara CA 95050"
+      }
+    },
+    {
+      "id": 451163,
+      "before": {
+        "name": "Precise Collision",
+        "phone": "7602382438",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Palm Springs",
+        "address": "375 E. Sunny Dunes Rd Palm Springs CA 92264"
+      }
+    },
+    {
+      "id": 450741,
+      "before": {
+        "name": "Premier Body Shop, LLC",
+        "phone": "4084894674",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa Clara",
+        "address": "2517 El Camino Real, Santa Clara CA 95051"
+      }
+    },
+    {
+      "id": 451165,
+      "before": {
+        "name": "ProActive Chiro",
+        "phone": "4089700770",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa Clara",
+        "address": "380 Martin Ave Santa Clara CA 95050"
+      }
+    },
+    {
+      "id": 450743,
+      "before": {
+        "name": "Revive Spine and Wellness Chiropractic",
+        "phone": "4155638777",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Francisco",
+        "address": "2715 Geary Blvd, San Francisco, CA 94118"
+      }
+    },
+    {
+      "id": 450744,
+      "before": {
+        "name": "Riverside Collision Center",
+        "phone": "3107988777",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Redondo Beach",
+        "address": "403 N Pacific Coast Hwy Ste 201 Redondo Beach CA 90277"
+      }
+    },
+    {
+      "id": 450745,
+      "before": {
+        "name": "Roberts Collision Center Inc.",
+        "phone": "9514948700",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Riverside",
+        "address": "2805 Main St, Riverside CA 92501"
+      }
+    },
+    {
+      "id": 451167,
+      "before": {
+        "name": "Romo's Towing",
+        "phone": "5595836895",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Hanford",
+        "address": "224 E 6th St Hanford CA 93230"
+      }
+    },
+    {
+      "id": 450747,
+      "before": {
+        "name": "Ryland Auto Body & Repair Inc",
+        "phone": "9168001117",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Wesr Sacramento",
+        "address": "2228 Rice Ave, West Sacramento, CA 95691"
+      }
+    },
+    {
+      "id": 450748,
+      "before": {
+        "name": "San Jose Auto Injury Clinic- Dr. Ahmad R. Rafii, D.C.",
+        "phone": "4082933674",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "1660 Almaden Express way San Jose CA 95125"
+      }
+    },
+    {
+      "id": 451183,
+      "before": {
+        "name": "Santa Clara Auto Care",
+        "phone": "6503623928",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Redwood City",
+        "address": "1175 Shasta St Redwood City, CA 94063"
+      }
+    },
+    {
+      "id": 450750,
+      "before": {
+        "name": "Slick collision center",
+        "phone": "5592754823",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "4625 N Golden State Blvd Fresno CA 93722"
+      }
+    },
+    {
+      "id": 450751,
+      "before": {
+        "name": "Spine and Sport Chiropractic",
+        "phone": "4085806663",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "1105 E William St San Jose CA 95116"
+      }
+    },
+    {
+      "id": 451652,
+      "before": {
+        "name": "Total Healing & Wellness",
+        "phone": "4082583200",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "San Jose",
+        "address": "135 N JACKSON AVE, SUITE 201 SAN JOSE CA 95116"
+      }
+    },
+    {
+      "id": 451143,
+      "before": {
+        "name": "Union Body Shop",
+        "phone": "3102120766",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Torrance",
+        "address": "2211 Torrance Blvd Torrance CA 90501"
+      }
+    },
+    {
+      "id": 450754,
+      "before": {
+        "name": "United spine care",
+        "phone": "3232661595",
+        "phone2": "3236745995",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "3357 Union Pacific Ave Los Angeles CA 90023"
+      }
+    },
+    {
+      "id": 450755,
+      "before": {
+        "name": "Vertex Collision Center",
+        "phone": "2132910505",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Los Angeles",
+        "address": "3250 Wilshire Blvd Suite 1501 Los Angeles CA 90010"
+      }
+    },
+    {
+      "id": 451170,
+      "before": {
+        "name": "West Market Auto Body",
+        "phone": "18186960110",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Canoga Park",
+        "address": "21430 Ingomar St.,Canoga Park CA 91304"
+      }
+    },
+    {
+      "id": 450757,
+      "before": {
+        "name": "Will's Auto Body Shop",
+        "phone": "8316820285",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Salinas",
+        "address": "312 E Market St, Salinas CA 93901"
+      }
+    },
+    {
+      "id": 451218,
+      "before": {
+        "name": "007 Towing",
+        "phone": "(916) 391-1100",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sacramento",
+        "address": "6350 27th St, Sacramento, CA 95822, United States"
+      }
+    },
+    {
+      "id": 451810,
+      "before": {
+        "name": "ABC AutoBody",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "430 E 10th St, Pittsburg, CA 94565"
+      }
+    },
+    {
+      "id": 450760,
+      "before": {
+        "name": "Accident and Injury Relief Center",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": null,
+        "address": null
+      }
+    },
+    {
+      "id": 451113,
+      "before": {
+        "name": "accident center- Dr. Origel",
+        "phone": "916861-0028",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Gold River",
+        "address": "11226 Gold Express Drive, Suite 201, Gold River, California 95670, United States"
+      }
+    },
+    {
+      "id": 451665,
+      "before": {
+        "name": "Ace In The Hole Towing",
+        "phone": "2095711234",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Modesto",
+        "address": "1630 E Hatch Rd Modesto CA 95351"
+      }
+    },
+    {
+      "id": 451656,
+      "before": {
+        "name": "Allen’s auto body",
+        "phone": "9167816111",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Roseville",
+        "address": "801 Riverside Ave Ste #102 ​Roseville, CA 95678"
+      }
+    },
+    {
+      "id": 450764,
+      "before": {
+        "name": "American River Chiropractic- Dr. Stirton",
+        "phone": "5306711057",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Yuba City",
+        "address": "211 Teegarden Ave, Yuba City, CA 95991, United States"
+      }
+    },
+    {
+      "id": 450765,
+      "before": {
+        "name": "AutoBody Solutions LLC",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": null,
+        "address": "5681 Franklin Blvd # N1, Sacramento, CA 95824"
+      }
+    },
+    {
+      "id": 451114,
+      "before": {
+        "name": "Baja insurance services",
+        "phone": "(916) 776-6362",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Rancho Cordova",
+        "address": "2280 Vehicle Dr Suite 110, Rancho Cordova, CA 95670"
+      }
+    },
+    {
+      "id": 450767,
+      "before": {
+        "name": "Bobby's Auto Body And Paint",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": null,
+        "address": "6685 Stockton Blvd Ste 7, Sacramento, CA 95823"
+      }
+    },
+    {
+      "id": 451677,
+      "before": {
+        "name": "Bunn’s Collision",
+        "phone": "9162867766",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Sacramento",
+        "address": "1589 W. El Camino AveSTE 109 Sacramento CA 95833"
+      }
+    },
+    {
+      "id": 450769,
+      "before": {
+        "name": "Cal Truck Body & Paint",
+        "phone": "17074128388",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fairfield",
+        "address": "321 State St, Fairfield, CA 94533, United States"
+      }
+    },
+    {
+      "id": 450770,
+      "before": {
+        "name": "California liberty insurance",
+        "phone": "(209) 556-7558",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Lodi",
+        "address": "804 N Cluff Ave, Lodi CA 95240"
+      }
+    },
+    {
+      "id": 450771,
+      "before": {
+        "name": "castro insurance agency",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Modesto",
+        "address": "1001 8th Street, Modesto, California 95354"
+      }
+    },
+    {
+      "id": 451663,
+      "before": {
+        "name": "Chilton Auto Body",
+        "phone": "8776292007",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Sacramento",
+        "address": "8119 Scottsdale Dr Ste E, Sacramento CA 95828"
+      }
+    },
+    {
+      "id": 540019,
+      "before": {
+        "name": "Collision King of Tracy",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": null,
+        "address": "504 E 10th St, Oakland, CA 94606"
+      }
+    },
+    {
+      "id": 450774,
+      "before": {
+        "name": "Collision Repair Inc",
+        "phone": "510-900-8151",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Oakland",
+        "address": "6426 Shattuck Ave., Oakland CA 94609"
+      }
+    },
+    {
+      "id": 450775,
+      "before": {
+        "name": "Cruz Collision Center",
+        "phone": "925-473-1589",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Pittsburg",
+        "address": "598 E 3rd St suite a, Pittsburg, CA 94565"
+      }
+    },
+    {
+      "id": 451192,
+      "before": {
+        "name": "Davis Urgent Care",
+        "phone": "(916) 546-1600",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sacramento",
+        "address": "6224 Turner Rd Suite A, Sacramento, CA 95829"
+      }
+    },
+    {
+      "id": 450777,
+      "before": {
+        "name": "Diablos auto Collision",
+        "phone": "(530) 759-9110",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "Davis",
+        "address": "4515 Fermi Pl #105, Davis, CA 95618"
+      }
+    },
+    {
+      "id": 450778,
+      "before": {
+        "name": "Dynamic Collision Manteca",
+        "phone": "209-949-1999",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Stockton",
+        "address": "720 E Hammer Ln Suite E-9,Stockton CA 95210"
+      }
+    },
+    {
+      "id": 451122,
+      "before": {
+        "name": "EMMANUEL TOWING",
+        "phone": "9164270118",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "6685 stockton Blvd Ste 1 Sacramento CA 95823"
+      }
+    },
+    {
+      "id": 450780,
+      "before": {
+        "name": "FAM Auto body & Paint Collision center",
+        "phone": "2099721929",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Manteca",
+        "address": "3011 E Palm Ave Suite 102 manteca CA 95337"
+      }
+    },
+    {
+      "id": 451195,
+      "before": {
+        "name": "Fruitvale Collision Center",
+        "phone": "(209) 740-8422",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Stockton",
+        "address": "740 S San Joaquin St, Stockton, CA 95203"
+      }
+    },
+    {
+      "id": 450782,
+      "before": {
+        "name": "Geweke auto & rv collision center",
+        "phone": "510-532-2050 / 510-220-1240",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Oakland",
+        "address": "3009 Foothill Blvd, Oakland, CA 94601"
+      }
+    },
+    {
+      "id": 451197,
+      "before": {
+        "name": "Golden Gate Collision",
+        "phone": "209-368-0561",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Lodi",
+        "address": "102 Hansen Dr, Lodi CA 95240"
+      }
+    },
+    {
+      "id": 450784,
+      "before": {
+        "name": "Greenhaven Chiropractic",
+        "phone": "510-527-2639",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Berkeley",
+        "address": "1085 Eastshore Hwy, Berkeley ca 94710"
+      }
+    },
+    {
+      "id": 451115,
+      "before": {
+        "name": "Hayes Chiropractic",
+        "phone": "9164216463",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "376 Florin Rd, Sacramento 95831"
+      }
+    },
+    {
+      "id": 450786,
+      "before": {
+        "name": "In Motion Chiropractic",
+        "phone": "209-368-6639",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Lodi",
+        "address": "820 S. Fairmont St. Lodi CA 95240"
+      }
+    },
+    {
+      "id": 450787,
+      "before": {
+        "name": "Jeeo Health Center Dr. Gurwinder Bath Chiropractic Inc:",
+        "phone": "19164215915",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "6540 Stockton Blvd # 2, Sacramento CA 95823"
+      }
+    },
+    {
+      "id": 451116,
+      "before": {
+        "name": "Kustom collision center",
+        "phone": "(916) 550 0350",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "2628 El Camino Ave c-1, Sacramento, CA 95821"
+      }
+    },
+    {
+      "id": 451199,
+      "before": {
+        "name": "lifeline chiropractic",
+        "phone": "2094623047",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Stockton",
+        "address": "1414 Bourbon St, Stockton, CA 95204, United States"
+      }
+    },
+    {
+      "id": 450790,
+      "before": {
+        "name": "Los Romeros Insurance",
+        "phone": "9164897246",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Carmichael",
+        "address": "7220 Fair Oaks Blvd # B Carmichael CA 95608"
+      }
+    },
+    {
+      "id": 450791,
+      "before": {
+        "name": "Luxury Collision Center",
+        "phone": "(209) 227-8047",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Stockton",
+        "address": "2028 E Main St Stockton CA 95205"
+      }
+    },
+    {
+      "id": 451657,
+      "before": {
+        "name": "Mad Dog Towing",
+        "phone": "(209) 408-0411",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "1216 6th St Modesto CA 95354"
+      }
+    },
+    {
+      "id": 450793,
+      "before": {
+        "name": "Manuel Lopez body and frame",
+        "phone": "209-408-0411 / 209-455-4599",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "1216 6th St Modesto, CA 95354"
+      }
+    },
+    {
+      "id": 450794,
+      "before": {
+        "name": "Martinez Auto care",
+        "phone": "(209) 948-1386",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Stockton",
+        "address": "2303 West Ln, Stockton, CA 95205, United States"
+      }
+    },
+    {
+      "id": 450795,
+      "before": {
+        "name": "miracle auto pairing and collision",
+        "phone": "916-923-1462",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sacramento",
+        "address": "1333 Silica Ave, Sacramento CA 95815"
+      }
+    },
+    {
+      "id": 450796,
+      "before": {
+        "name": "Natomas chiropractic",
+        "phone": "(916) 317-3775",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sacramento",
+        "address": "2505 Arden Way, Sacramento, CA 95825"
+      }
+    },
+    {
+      "id": 451382,
+      "before": {
+        "name": "Natomas Urgent Care",
+        "phone": "5306748772",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Yuba City",
+        "address": "871 Garden Hwy, Yuba City, CA 95991, United States"
+      }
+    },
+    {
+      "id": 450798,
+      "before": {
+        "name": "New Saigon Auto Collision",
+        "phone": "916-285-9277",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "4381 Gateway Park Blvd #530, Sacramento CA 95834"
+      }
+    },
+    {
+      "id": 451486,
+      "before": {
+        "name": "NorCal auto body",
+        "phone": "(916) 947-9110",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "Sacramento",
+        "address": "4321 Truxel Rd f4, Sacramento, CA 95834"
+      }
+    },
+    {
+      "id": 450800,
+      "before": {
+        "name": "Optimal Health Wellness Clinic",
+        "phone": "(916) 421-7163",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sacramento",
+        "address": "6161 Stockton Blvd Sacramento CA 95824"
+      }
+    },
+    {
+      "id": 450801,
+      "before": {
+        "name": "pacific urgent care",
+        "phone": "5307553849",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Yuba City",
+        "address": "600 Franklin Ave, Yuba City, CA 95991, United States"
+      }
+    },
+    {
+      "id": 451117,
+      "before": {
+        "name": "Page Auto Body & Repair",
+        "phone": "(916) 583 2632",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "6590 Stockton Blvd, Sacramento, CA 95823, United States"
+      }
+    },
+    {
+      "id": 450803,
+      "before": {
+        "name": "Pain Injury Rehab Clinic",
+        "phone": "209-475-9500",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "Stockton",
+        "address": "1782 W Hammer Ln, Stockton, CA 95209, United States"
+      }
+    },
+    {
+      "id": 451671,
+      "before": {
+        "name": "Pereira auto body",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Berkeley",
+        "address": "1425 San Pablo Ave, Berkeley, CA 94702, United States"
+      }
+    },
+    {
+      "id": 451123,
+      "before": {
+        "name": "Perfection Auto Body",
+        "phone": "(916) 395-9571",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "6452 Stockton Blvd, Sacramento, CA 95823"
+      }
+    },
+    {
+      "id": 450806,
+      "before": {
+        "name": "Premier Chiropractic",
+        "phone": "(916) 686-4475",
+        "phone2": "9166583374",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Elk Grove",
+        "address": "9901 Kent St Ste 4 Elk Grove CA 95624"
+      }
+    },
+    {
+      "id": 451208,
+      "before": {
+        "name": "Prime Collision",
+        "phone": "209-922-9091",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Stockton",
+        "address": "1538 Nellis St B, Stockton CA 95205"
+      }
+    },
+    {
+      "id": 450808,
+      "before": {
+        "name": "primos auto insurance",
+        "phone": "2094777777",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Stockton",
+        "address": "4560 N Pershing Ave a, Stockton, CA 95207, United States"
+      }
+    },
+    {
+      "id": 450809,
+      "before": {
+        "name": "Pronto insurance services",
+        "phone": "2094631498",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Stockton",
+        "address": "108 W Hazelton Ave, Stockton, CA 95203"
+      }
+    },
+    {
+      "id": 450810,
+      "before": {
+        "name": "restoration health and wellness center",
+        "phone": "9165731006",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Sacramento",
+        "address": "4615 Mack rd Sacramento CA 95823"
+      }
+    },
+    {
+      "id": 450811,
+      "before": {
+        "name": "Reyes Body & Frame Richmond",
+        "phone": "916-421-2400",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Sacramento",
+        "address": "2400 Florin Rd Ste E, Sacramento, CA 95822, United States"
+      }
+    },
+    {
+      "id": 450812,
+      "before": {
+        "name": "Ringer Chiropractic",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": null,
+        "address": "90302"
+      }
+    },
+    {
+      "id": 451666,
+      "before": {
+        "name": "Rooker’s Collision Center",
+        "phone": "209-210-0225",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Stockton",
+        "address": "2027 West March Lane Suite 1 Stockton CA 95207"
+      }
+    },
+    {
+      "id": 450814,
+      "before": {
+        "name": "Roseville registration services",
+        "phone": "15104787636",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Richmond",
+        "address": "999 W Cutting Blvd SUITE 12, Richmond, CA 94804, United States"
+      }
+    },
+    {
+      "id": 450815,
+      "before": {
+        "name": "Sacramento Spinal Specialists",
+        "phone": "5308868300",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Auburn",
+        "address": "357 Nevada St, Auburn CA 95603"
+      }
+    },
+    {
+      "id": 451662,
+      "before": {
+        "name": "signature collision",
+        "phone": "9167077945",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Roseville",
+        "address": "801 Riverside Ave. Suite 106 Roseville CA 95678"
+      }
+    },
+    {
+      "id": 451421,
+      "before": {
+        "name": "Sol Insurance Services",
+        "phone": "9164885560",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Sacramento",
+        "address": "3000 Arden Way suite 1-A, Sacramento, CA 95825"
+      }
+    },
+    {
+      "id": 450818,
+      "before": {
+        "name": "Stockton Family Chiropractic",
+        "phone": "279-282-8458",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sacramento",
+        "address": "6340 Sky Creek Dr Sacramento CA 95828"
+      }
+    },
+    {
+      "id": 451660,
+      "before": {
+        "name": "Sun City Towing",
+        "phone": "(209) 645-4931",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Stockton",
+        "address": "3740 West Lane Stockton CA 95204"
+      }
+    },
+    {
+      "id": 451119,
+      "before": {
+        "name": "Sunnyvale imaging center",
+        "phone": "209-466-1234",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Stockton",
+        "address": "3020 N Pacific Ave, Stockton, CA 95204, United States"
+      }
+    },
+    {
+      "id": 451668,
+      "before": {
+        "name": "Super Towing",
+        "phone": "(916) 833-5822",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Carmichael",
+        "address": "3408 Hunter Ln, Carmichael CA 95608"
+      }
+    },
+    {
+      "id": 450822,
+      "before": {
+        "name": "The Body shop of Yuba city",
+        "phone": "(408) 738-0232",
+        "phone2": null,
+        "phone3": null,
+        "category": "imaging_center",
+        "city": "Sunnyvale",
+        "address": "3009 Foothill Blvd, Oakland, CA 94601"
+      }
+    },
+    {
+      "id": 450823,
+      "before": {
+        "name": "Titan Auto Body shop",
+        "phone": "(888) 893-9593",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Sacramento",
+        "address": "4730 Myrtle Ave, Sacramento, CA 95841, United States"
+      }
+    },
+    {
+      "id": 450824,
+      "before": {
+        "name": "Tony Bao's insurance services",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Modesto",
+        "address": "1001 8th St #2c, Modesto, CA 95354"
+      }
+    },
+    {
+      "id": 451213,
+      "before": {
+        "name": "Trinos Auto Body",
+        "phone": "530-645-7213",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Yuba City",
+        "address": "802 Forbes Ave, Yuba City CA 95991"
+      }
+    },
+    {
+      "id": 450826,
+      "before": {
+        "name": "Ultimate Collision Center",
+        "phone": "(916) 572-7699",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sacramento",
+        "address": "3320 Kiessig Ave STE 2, Sacramento, CA 95823"
+      }
+    },
+    {
+      "id": 451219,
+      "before": {
+        "name": "United Garage Body Shop",
+        "phone": "5108939438",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Oakland",
+        "address": "504 East 10th Street Oakland CA 94606"
+      }
+    },
+    {
+      "id": 450828,
+      "before": {
+        "name": "united towing",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Tracy",
+        "address": "2210 N MacArthur Dr Ste A, Tracy, CA 95376"
+      }
+    },
+    {
+      "id": 450829,
+      "before": {
+        "name": "UNIVERSAL AUTO REPAIR",
+        "phone": "916-969-3053",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sacramento",
+        "address": "1825 Fulton Ave d, Sacramento CA 95825"
+      }
+    },
+    {
+      "id": 451216,
+      "before": {
+        "name": "urgent care Stockton",
+        "phone": "916-768-9614",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Citrus Heights",
+        "address": "5912 Auburn Blvd #4, Citrus Heights, CA 95621, United States"
+      }
+    },
+    {
+      "id": 450831,
+      "before": {
+        "name": "VIP Collision Center - Auto Body Shop",
+        "phone": "925-432-1323",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Pittsburg",
+        "address": "499 E 10th St, Pittsburg, CA 94565, United States"
+      }
+    },
+    {
+      "id": 450832,
+      "before": {
+        "name": "WEST COAST AUTO BODY & PAINT",
+        "phone": "5107060919",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Oakland",
+        "address": "2759 77th Ave, Oakland, CA 94605, United States"
+      }
+    },
+    {
+      "id": 450833,
+      "before": {
+        "name": "Yang Advanced Chiropractic Group",
+        "phone": "(209) 952-9696",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "Stockton",
+        "address": "1148 W Hammer Ln Stockton, CA 95209"
+      }
+    },
+    {
+      "id": 450834,
+      "before": {
+        "name": "9TH STREET COLLISION AND TOWING",
+        "phone": "559 876 7727",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Sanger",
+        "address": "1204 9th street Sanger, CA 93657"
+      }
+    },
+    {
+      "id": 451703,
+      "before": {
+        "name": "A- Max Insurance",
+        "phone": "559 660 5262",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Madera",
+        "address": "36752 Ave 12, Madera, CA 93636"
+      }
+    },
+    {
+      "id": 450836,
+      "before": {
+        "name": "A-Able Towing Able",
+        "phone": "559-738-1011",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "2412 E Main St, Visalia, CA 93292, United States"
+      }
+    },
+    {
+      "id": 450837,
+      "before": {
+        "name": "A&G TOWING AND RECOVERY",
+        "phone": "559 299 6053 / Kortney- 559 649 5731",
+        "phone2": "5596495731",
+        "phone3": null,
+        "category": "other",
+        "city": "Clovis",
+        "address": "2973 Larkin Ave, Clovis, CA 93612"
+      }
+    },
+    {
+      "id": 451273,
+      "before": {
+        "name": "A&J Towing",
+        "phone": "559-734-3891",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "822 N Ben Maddox Way, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450839,
+      "before": {
+        "name": "A1 Repair & Collision",
+        "phone": "559 674-1997",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Madera",
+        "address": "10842 Rd 28 1/2, Madera, CA 93637, United States"
+      }
+    },
+    {
+      "id": 451709,
+      "before": {
+        "name": "Academy West Insurance",
+        "phone": "209-526-1284",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Modesto",
+        "address": "112 El Vista Ave, Modesto, CA 95354, United States"
+      }
+    },
+    {
+      "id": 450841,
+      "before": {
+        "name": "Ace Auto Care and Service",
+        "phone": "(559) 709‑5444",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "South Central Valley",
+        "address": "600 N 8th St, Fowler, CA 93625, United States"
+      }
+    },
+    {
+      "id": 451274,
+      "before": {
+        "name": "Action Towing",
+        "phone": "559-999-0728",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "3643 E Belmont Ave, Fresno, CA 93702"
+      }
+    },
+    {
+      "id": 450843,
+      "before": {
+        "name": "Active Towing",
+        "phone": "559-686-6777",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Tulare",
+        "address": "449 N K St, Tulare, CA 93274"
+      }
+    },
+    {
+      "id": 450844,
+      "before": {
+        "name": "Advanced Chiropractic",
+        "phone": "559 467 5752",
+        "phone2": "5595564151",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Tulare",
+        "address": "2450 E Tulare Ave, Tulare, CA 93274, United States"
+      }
+    },
+    {
+      "id": 450845,
+      "before": {
+        "name": "Affordable Keyesorian Auto Insurance Fresno CA",
+        "phone": "559 661 1045",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Madera",
+        "address": "1521 N Schnoor St #101, Madera, CA 93637"
+      }
+    },
+    {
+      "id": 450846,
+      "before": {
+        "name": "All State Towing",
+        "phone": "559 659 3197",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Firebaugh",
+        "address": "1475 12th St. Firebaugh CA 93622"
+      }
+    },
+    {
+      "id": 450847,
+      "before": {
+        "name": "Anderson's Tow Stockton",
+        "phone": "559-739-8874",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "1920 E Mineral King Ave, Visalia, CA 93292, United States"
+      }
+    },
+    {
+      "id": 451712,
+      "before": {
+        "name": "Angel's Towing",
+        "phone": "559 802 3858",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "202 S Burke St, Visialia, Ca 93292"
+      }
+    },
+    {
+      "id": 450849,
+      "before": {
+        "name": "ARK Towing",
+        "phone": "559 655 1234",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Mendota",
+        "address": "2187 7th St., Mendota, CA 9640"
+      }
+    },
+    {
+      "id": 450850,
+      "before": {
+        "name": "Art's Auto Body & Paint",
+        "phone": "(559) 661-0792",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Madera",
+        "address": "1908 Modoc St, Madera, CA 93637"
+      }
+    },
+    {
+      "id": 450851,
+      "before": {
+        "name": "ASAP Towing",
+        "phone": "559 500 1630",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "3850 N. Stanford Ave Fresno CA 93727"
+      }
+    },
+    {
+      "id": 451237,
+      "before": {
+        "name": "Blackstone Chiropractic Clinic",
+        "phone": "209-818-1841",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "1301 Martin Ave D, Modesto, CA 95350, United States"
+      }
+    },
+    {
+      "id": 450853,
+      "before": {
+        "name": "Brothers Collision & Auto Repair",
+        "phone": "559 213 4022",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "2308 E Santa Ana Ave, Fresno, CA 93726"
+      }
+    },
+    {
+      "id": 451700,
+      "before": {
+        "name": "C&J Auto Body & Paint",
+        "phone": "(559) 977 7898",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "2005 W Hedges Ave, Fresno, CA 93728"
+      }
+    },
+    {
+      "id": 451696,
+      "before": {
+        "name": "Caesar Dents And Autobody",
+        "phone": "559-234 2300",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "1574 N. Blackstone Avenue Suite #108 Fresno, CA 93703"
+      }
+    },
+    {
+      "id": 451238,
+      "before": {
+        "name": "Caruthers Towing",
+        "phone": "559 797 2528",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Clovis",
+        "address": "1146 Barstow Ave Unit G, Clovis, CA 93612"
+      }
+    },
+    {
+      "id": 451693,
+      "before": {
+        "name": "Central Valley Chiropractic",
+        "phone": "(559) 227-4840",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "4025 S Golden State Blvd Fresno CA 93725"
+      }
+    },
+    {
+      "id": 450858,
+      "before": {
+        "name": "Central Valley Collision Center - Fresno",
+        "phone": "559 618 6310",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "4533 E Belmont Ave, Fresno, CA 93702"
+      }
+    },
+    {
+      "id": 450859,
+      "before": {
+        "name": "Chiropractic Health Center- Modesto",
+        "phone": "(559) 226-1695",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "3248 E Shields Ave Ste E Fresno, CA 93726"
+      }
+    },
+    {
+      "id": 450860,
+      "before": {
+        "name": "Choice Auto Body",
+        "phone": "209 202 3289",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Merced",
+        "address": "251 W 11th St, Merced, CA 95341, United States"
+      }
+    },
+    {
+      "id": 451246,
+      "before": {
+        "name": "Chowchilla Auto Body",
+        "phone": "559-746-6964",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "2121 E Mineral King Ave, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450862,
+      "before": {
+        "name": "CHRIS&SONS TRANSPORT LLC",
+        "phone": "Phone: (209) 722-8020 Fax: (209) 722-6721",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Merced",
+        "address": "505 W 18th Street, Merced, CA 95340"
+      }
+    },
+    {
+      "id": 450863,
+      "before": {
+        "name": "Chuy's Autobody And Collision Inc",
+        "phone": "559-375-1557 / can receive text ar 559 681 8538",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "3951 E Cesar Chavez Blvd Fresno, CA 93702"
+      }
+    },
+    {
+      "id": 450864,
+      "before": {
+        "name": "City Wide Towing",
+        "phone": "(559) 298‑4133",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Clovis",
+        "address": "1125 Barstow Ave, Clovis, CA 93612, USA"
+      }
+    },
+    {
+      "id": 451240,
+      "before": {
+        "name": "Clovis Autopro",
+        "phone": "559 659 1234",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Firebaugh",
+        "address": "1298 N St. Ste C, Firebaugh CA 93622"
+      }
+    },
+    {
+      "id": 450866,
+      "before": {
+        "name": "Clovis Collision Center",
+        "phone": "209-416-5799",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "5283 Jerusalem Ct #5, Modesto, CA 95356, United States"
+      }
+    },
+    {
+      "id": 450867,
+      "before": {
+        "name": "Complete Collision Works",
+        "phone": "(559) 288-9521",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "2481 N Sunnyside Ave, Fresno, CA 93727"
+      }
+    },
+    {
+      "id": 450868,
+      "before": {
+        "name": "Cortez & Sons Towing",
+        "phone": "209 946 9661",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Stockton",
+        "address": "2383 N Wilson Way, Stockton, CA 95205"
+      }
+    },
+    {
+      "id": 450869,
+      "before": {
+        "name": "D & B Towing",
+        "phone": "559 330 5658",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Kerman",
+        "address": "3689 S State Ave, Kerman, CA 93630"
+      }
+    },
+    {
+      "id": 450870,
+      "before": {
+        "name": "Dean Martin Towing + Recovery",
+        "phone": "559-636-8248, REuben ( 559 579 2552)",
+        "phone2": "5595792552",
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "1700 E Goshen Ave STE C, Visalia, CA 93292, United States"
+      }
+    },
+    {
+      "id": 451222,
+      "before": {
+        "name": "DKN America's Body Shop",
+        "phone": "(559) 453-7051",
+        "phone2": "5593673337",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "1229 N Sierra Vista Ave, Fresno, CA 93703"
+      }
+    },
+    {
+      "id": 450872,
+      "before": {
+        "name": "Don Valenzuela's Autobody",
+        "phone": "559 410 8724",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Hanford",
+        "address": "129 W 4th St, Hanford, Ca 93230"
+      }
+    },
+    {
+      "id": 451107,
+      "before": {
+        "name": "Dooley Family Chiropractic",
+        "phone": "(559) 449-9777",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "5665 N Blackstone Ave #107 Fresno, CA 93710"
+      }
+    },
+    {
+      "id": 450874,
+      "before": {
+        "name": "Double D Towing Service",
+        "phone": "209 957 5757",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Stockton",
+        "address": "625 S Monroe St, Stockton, CA 95203"
+      }
+    },
+    {
+      "id": 450875,
+      "before": {
+        "name": "Downtown Motors Tow Service",
+        "phone": "559-643-0911",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Reedley",
+        "address": "1810 13th St Suite 10, Reedley, CA 93654"
+      }
+    },
+    {
+      "id": 451223,
+      "before": {
+        "name": "Dura-Glo Paint & Body Inc.",
+        "phone": "(559) 389-0479",
+        "phone2": "5595383437",
+        "phone3": "2097524244",
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "4141 E Belmont Ave, Fresno, CA 93702"
+      }
+    },
+    {
+      "id": 450877,
+      "before": {
+        "name": "Duran Detail Auto Body",
+        "phone": "559 665 2924",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Merced",
+        "address": "54 Kings Ave, Chowchilla, CA 93610"
+      }
+    },
+    {
+      "id": 450878,
+      "before": {
+        "name": "E Towing",
+        "phone": "(559) 847-5494",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Selma",
+        "address": "9749 S Shaft Ave, Selma, CA 93662"
+      }
+    },
+    {
+      "id": 451250,
+      "before": {
+        "name": "Economy Paint and Body",
+        "phone": "(559) 802-5758",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "1738 E Finni Ct, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450880,
+      "before": {
+        "name": "Extreme Car Care Center",
+        "phone": "559 298 1113",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Clovis",
+        "address": "735 Barstow Ave, Clovis, CA 93612, United States"
+      }
+    },
+    {
+      "id": 450881,
+      "before": {
+        "name": "Feel Good Chiropractor",
+        "phone": "559 395 5479",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Madera",
+        "address": "24294 Ave 18, Madera, CA 93638"
+      }
+    },
+    {
+      "id": 450882,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service - Cedar & Shields",
+        "phone": "559 655 1000",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Mendota",
+        "address": "450 Oiler St. #A,Mendota, CA 93640"
+      }
+    },
+    {
+      "id": 450883,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Fresno",
+        "phone": "559 838 4640",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "125 E Barstow Ave STE 150 Fresno Ca 93710"
+      }
+    },
+    {
+      "id": 450884,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Hanford",
+        "phone": "559 491 4600",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Hanford",
+        "address": "300 N 11th Ave, Hanford, CA 93230"
+      }
+    },
+    {
+      "id": 450885,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Madera 1",
+        "phone": "559 655 5555",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Mendota",
+        "address": "1490 Fourth St., Mendota, CA 93640"
+      }
+    },
+    {
+      "id": 450886,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Madera 2",
+        "phone": "559 424 5500",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "3064 north cedar Ave, Fresno CA"
+      }
+    },
+    {
+      "id": 450887,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Merced",
+        "phone": "559 415 6979",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Hanford",
+        "address": "568 N 11th Avenue, Hanford, CA 93230"
+      }
+    },
+    {
+      "id": 450888,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Sanger",
+        "phone": "(559) 664-8800",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Madera",
+        "address": "208 E Yosemite Ave, Madera, CA 93638"
+      }
+    },
+    {
+      "id": 450889,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Selma",
+        "phone": "(559) 549-0275",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Madera",
+        "address": "1410 Country Club Drive; Suite #120, Madera, CA, 93638"
+      }
+    },
+    {
+      "id": 450890,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Tulare",
+        "phone": "(559) 255-7121",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "4842 Cesar Chavez Blvd Ste. #103, Fresno, CA 93727"
+      }
+    },
+    {
+      "id": 450891,
+      "before": {
+        "name": "Fiesta Auto Insurance & Tax Service- Visalia2",
+        "phone": "209 383 9500",
+        "phone2": "2093839500",
+        "phone3": null,
+        "category": "other",
+        "city": "Merced",
+        "address": "1102 W 16th St. Merced 95340"
+      }
+    },
+    {
+      "id": 450892,
+      "before": {
+        "name": "First Choice Auto Body Shop",
+        "phone": "209-303-5902",
+        "phone2": "2094027795",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "5225 Pentecost Dr #7, Modesto, CA 95356, United States"
+      }
+    },
+    {
+      "id": 450893,
+      "before": {
+        "name": "First Health Medical Center",
+        "phone": "559 435 3331",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "6592 N First St, Fresno, CA 93710"
+      }
+    },
+    {
+      "id": 451251,
+      "before": {
+        "name": "Fix Auto- Modesto",
+        "phone": "(209) 284-0993",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "553 S 7th St, Modesto, CA 95351"
+      }
+    },
+    {
+      "id": 450895,
+      "before": {
+        "name": "Fortner’s Fast Towing",
+        "phone": "559-761-2000",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "4473 E Buckingham Way,"
+      }
+    },
+    {
+      "id": 450896,
+      "before": {
+        "name": "Fortner’s Towing- Home",
+        "phone": "559 522 6734",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "720 E Race Ave, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450897,
+      "before": {
+        "name": "Freedom Towing",
+        "phone": "(559) 222-7609",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "3279 W Lansing Way ,"
+      }
+    },
+    {
+      "id": 451109,
+      "before": {
+        "name": "Freeway Insurance",
+        "phone": "(559) 625-1100",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Visalia",
+        "address": "1813 W Caldwell Ave Ste B Visalia, CA 93277"
+      }
+    },
+    {
+      "id": 451252,
+      "before": {
+        "name": "Gagnos Automotive",
+        "phone": "559 362 3457",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "201 N Valley Oaks Dr, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450900,
+      "before": {
+        "name": "GIA Auto Paint & Collision",
+        "phone": "559-638-4101",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Reedley",
+        "address": "718 I St, Reedley, CA 93654"
+      }
+    },
+    {
+      "id": 450901,
+      "before": {
+        "name": "GIA Insurance (Firebaugh)",
+        "phone": "559 618 4199",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Sanger",
+        "address": "2407 Jensen Ave #103, Sanger, CA 93657"
+      }
+    },
+    {
+      "id": 450902,
+      "before": {
+        "name": "GIA Insurance (Mendota)",
+        "phone": "559-891-1300",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Selma",
+        "address": "2660 Whitson St Suite 102, Selma, CA 93662, United States"
+      }
+    },
+    {
+      "id": 450903,
+      "before": {
+        "name": "Golden State Towing",
+        "phone": "800-200-5150",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Turlock",
+        "address": "305 N Kilroy Rd, Turlock, CA 95380"
+      }
+    },
+    {
+      "id": 450904,
+      "before": {
+        "name": "Gong Chiropractic, a Certified DOT Examiner, Brent Gong DC",
+        "phone": "209-549-2215",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Modesto",
+        "address": "1012 Carver Rd, Modesto, CA 95350, United States"
+      }
+    },
+    {
+      "id": 450905,
+      "before": {
+        "name": "Gonzales towing & transportation",
+        "phone": "559-718-0877",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "1004 W MICHIGAN AVE, FRESNO, CA, 93705-3912"
+      }
+    },
+    {
+      "id": 450906,
+      "before": {
+        "name": "Greenway Auto Body",
+        "phone": "559-690-7628/ 559-701-9237",
+        "phone2": "5597019237",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "208 S Dunworth St, Visalia CA 93292"
+      }
+    },
+    {
+      "id": 451706,
+      "before": {
+        "name": "H Towing 559",
+        "phone": "209-261-4067",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Merced",
+        "address": "1088 E Childs Ave, Merced, CA 95341, United States"
+      }
+    },
+    {
+      "id": 451343,
+      "before": {
+        "name": "Haney Chiropractic",
+        "phone": "(559) 900-5818",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Clovis",
+        "address": "1237 Barstow Ave, Clovis, CA 93612"
+      }
+    },
+    {
+      "id": 450909,
+      "before": {
+        "name": "Hernandez Auto Repair",
+        "phone": "907-244-6828",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "809 S Santa Fe St, Visalia, CA 93277, United States"
+      }
+    },
+    {
+      "id": 451271,
+      "before": {
+        "name": "Horine Chiropractic",
+        "phone": "559-373-4000",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Madera",
+        "address": "401 N E St STE P, Madera, CA 93638"
+      }
+    },
+    {
+      "id": 451233,
+      "before": {
+        "name": "Isais Paint and Body",
+        "phone": "559-661-2129",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Madera",
+        "address": "811 S Gateway Dr, Madera, CA 93637"
+      }
+    },
+    {
+      "id": 451241,
+      "before": {
+        "name": "J And B Auto Body",
+        "phone": "209-338-0840",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "622 7th St, Modesto, CA 95354, United States"
+      }
+    },
+    {
+      "id": 451711,
+      "before": {
+        "name": "James Mobile Auto Repair LLC",
+        "phone": "559-734-1141",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "1843 E Main St, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 451108,
+      "before": {
+        "name": "Katlyn",
+        "phone": "559-225-3335",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "5132 N Fresno St, Fresno, CA 93710"
+      }
+    },
+    {
+      "id": 540027,
+      "before": {
+        "name": "Keith L. Olsen, DC",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "2230 E Main St, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450916,
+      "before": {
+        "name": "Kings Canyon Chiropractic",
+        "phone": "(209) 236-0555/209-672-7201",
+        "phone2": "2096727201",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Modesto",
+        "address": "215 Needham St, Modesto, CA 95351"
+      }
+    },
+    {
+      "id": 450917,
+      "before": {
+        "name": "Kingsburg Towing",
+        "phone": "(559) 896-0511",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Selma",
+        "address": "1475 Canal St, Selma, CA 93662, United States"
+      }
+    },
+    {
+      "id": 451493,
+      "before": {
+        "name": "Lark Chiropractic",
+        "phone": "(559) 227-2273 / Letty- 559 519 8166",
+        "phone2": "5595198166",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "7161 N Howard St #100, Fresno CA 93720"
+      }
+    },
+    {
+      "id": 450919,
+      "before": {
+        "name": "Llanos Towing Fresno",
+        "phone": "(559) 255‑4981",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "4619 E. White Ave, Fresno, CA 93702- Main Location 1040 Holland Ave, Clovis, CA 93612"
+      }
+    },
+    {
+      "id": 451714,
+      "before": {
+        "name": "Lopez Towing",
+        "phone": "559-733-3868",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "1920 E Mineral King Ave A, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 451275,
+      "before": {
+        "name": "Mac Body shop",
+        "phone": "559 644 8888",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "6638 N Blackstone Ave, Fresno, CA 93710"
+      }
+    },
+    {
+      "id": 451683,
+      "before": {
+        "name": "Major auto body shop",
+        "phone": "559-721-7338",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "3616 W Nielsen Ave, Fresno, CA 93706, United States"
+      }
+    },
+    {
+      "id": 450923,
+      "before": {
+        "name": "Mariscal Service Body Shop",
+        "phone": "209-571-1048",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "4619 Spyres Way, Modesto, CA 95356"
+      }
+    },
+    {
+      "id": 450924,
+      "before": {
+        "name": "Martin Auto Color",
+        "phone": "5596881065",
+        "phone2": null,
+        "phone3": "6192009196",
+        "category": "other",
+        "city": "Tulare",
+        "address": "1231 N Cherry St, Tulare, CA 93274"
+      }
+    },
+    {
+      "id": 540029,
+      "before": {
+        "name": "Mel's Towing",
+        "phone": "(559) 896-0511",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "South Central Valley",
+        "address": "13226 S Amber Ave, Kingsburg, CA 93631"
+      }
+    },
+    {
+      "id": 451227,
+      "before": {
+        "name": "Merced Auto Body",
+        "phone": "5595703879",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "1555 N Clark St ,Fresno CA 93703"
+      }
+    },
+    {
+      "id": 450927,
+      "before": {
+        "name": "Metro Towing",
+        "phone": "5596554626",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Mendota",
+        "address": "1297 Oller St, Mendota, CA 93640"
+      }
+    },
+    {
+      "id": 450928,
+      "before": {
+        "name": "MICHAEL'S TOWING",
+        "phone": "5596747094",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Madera",
+        "address": "2816 Golden State Blvd, Madera, CA 93637"
+      }
+    },
+    {
+      "id": 450929,
+      "before": {
+        "name": "Moreno's Auto Body",
+        "phone": "5597345469",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "125 N Liberty St, Visalia, CA 93292, United States"
+      }
+    },
+    {
+      "id": 451697,
+      "before": {
+        "name": "Myers Towing",
+        "phone": "5597619076",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "4533 E Floradora Ave, Fresno, CA 93703"
+      }
+    },
+    {
+      "id": 450931,
+      "before": {
+        "name": "Nelly's Auto Repair",
+        "phone": "5599810655",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Madera",
+        "address": "17676 Baldwin St, Madera, CA 93638, United States"
+      }
+    },
+    {
+      "id": 450932,
+      "before": {
+        "name": "Neto",
+        "phone": "5597325603",
+        "phone2": "5597323914",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "2000 E Mineral King Ave, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450933,
+      "before": {
+        "name": "Next Level Conceptz",
+        "phone": "5594858468",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "1497 N Blackstone Ave, Fresno, CA 93703"
+      }
+    },
+    {
+      "id": 451689,
+      "before": {
+        "name": "Nick's Towing",
+        "phone": "5598322525",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "7065 N Weber Ave, Fresno, CA 93722, United States"
+      }
+    },
+    {
+      "id": 450935,
+      "before": {
+        "name": "On The Go Towing",
+        "phone": "5598977596",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "South Central Valley",
+        "address": "2031 Simpson St, Kingsburg, CA 93631"
+      }
+    },
+    {
+      "id": 451257,
+      "before": {
+        "name": "P & S Auto Body Shop",
+        "phone": "5596971068",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "210 S Cain St suit n, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450937,
+      "before": {
+        "name": "Palmdale Urgent + Care",
+        "phone": "5597341300",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "111 E Douglas Ave Visalia CA 93292"
+      }
+    },
+    {
+      "id": 451258,
+      "before": {
+        "name": "Payless Autobody",
+        "phone": "5593460417",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "5794 E Shields Ave, Fresno, CA 93727"
+      }
+    },
+    {
+      "id": 451259,
+      "before": {
+        "name": "Peña’s Autobody",
+        "phone": "2095052115",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "143 E Whitmore Ave STE. C, Modesto, CA 95358, United"
+      }
+    },
+    {
+      "id": 450940,
+      "before": {
+        "name": "Performance Body Works",
+        "phone": "5592527459",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "4491 E Belmont Ave, Fresno, CA 93702"
+      }
+    },
+    {
+      "id": 540031,
+      "before": {
+        "name": "Premier Paint & Body",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "615 N 7th St, Modesto, CA 95354, United States"
+      }
+    },
+    {
+      "id": 450942,
+      "before": {
+        "name": "Quality Auto Services",
+        "phone": "2094509043",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Modesto",
+        "address": "609 N 7th St, Modesto, CA 95354, United States"
+      }
+    },
+    {
+      "id": 450943,
+      "before": {
+        "name": "Richard’s towing services",
+        "phone": "5595843200",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "South Central Valley",
+        "address": "9246 Lacey Blvd, Hanford, CA 93230, United States"
+      }
+    },
+    {
+      "id": 451681,
+      "before": {
+        "name": "Rons Towing",
+        "phone": "5598644140",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Caruthers",
+        "address": "13034 S Elm Ave, Caruthers, CA 93609"
+      }
+    },
+    {
+      "id": 450945,
+      "before": {
+        "name": "Ruben’s Automotive",
+        "phone": "5599360393",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "230 S Dunworth St, Visalia, CA 93292, United States"
+      }
+    },
+    {
+      "id": 451708,
+      "before": {
+        "name": "S&L Towing",
+        "phone": "2095547099",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Modesto",
+        "address": "1001 8th St Suite B, Modesto, CA 95354"
+      }
+    },
+    {
+      "id": 450947,
+      "before": {
+        "name": "Saenz Chiropractic- Maureen",
+        "phone": "5594990856",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Fresno",
+        "address": "1902 E McKinley Ave, Fresno, CA 93703, United States"
+      }
+    },
+    {
+      "id": 451228,
+      "before": {
+        "name": "Sal's Auto Body Shop",
+        "phone": "5595944723",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "1100 Rocky Hill Dr, Exeter, CA 93221"
+      }
+    },
+    {
+      "id": 450949,
+      "before": {
+        "name": "Salmeri Insurance Agency, Inc.",
+        "phone": "5593431863",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "1661 W Noble Ave., Visalia CA 93292"
+      }
+    },
+    {
+      "id": 450950,
+      "before": {
+        "name": "Sanger Auto Body and Paint",
+        "phone": "5592997100",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Clovis",
+        "address": "297 N Minnewawa Ave, Clovis, CA 93612"
+      }
+    },
+    {
+      "id": 451263,
+      "before": {
+        "name": "Santa Fe Body Shop",
+        "phone": "5596369675",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "702 N Ben Maddox Way, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450952,
+      "before": {
+        "name": "Sierra Towing",
+        "phone": "5596613729",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Madera",
+        "address": "28804 Oregon Ave, Madera CA 93638"
+      }
+    },
+    {
+      "id": 450953,
+      "before": {
+        "name": "Silver Bridge Towing Service",
+        "phone": "2095751185",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Modesto",
+        "address": "1221 Scenic Dr, Modesto, CA 95350, United States"
+      }
+    },
+    {
+      "id": 451707,
+      "before": {
+        "name": "Simonian Towing",
+        "phone": "2098185108",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Modesto",
+        "address": "621 10th St, Modesto, CA 95354"
+      }
+    },
+    {
+      "id": 450955,
+      "before": {
+        "name": "Steve's towing Service",
+        "phone": "5593071684",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "631 N Maple Ave Fresno, CA 93702"
+      }
+    },
+    {
+      "id": 451111,
+      "before": {
+        "name": "Synergy Chiropractic & Natural Health",
+        "phone": "5596738888",
+        "phone2": "5599160563",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Madera",
+        "address": "1929 Howard Rd, Madera, CA 93637"
+      }
+    },
+    {
+      "id": 450957,
+      "before": {
+        "name": "TERANS TOWING & MINOR REPAIR",
+        "phone": "2093129119",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Modesto",
+        "address": "1825 Clayton Ave, Modesto, CA 95350"
+      }
+    },
+    {
+      "id": 450958,
+      "before": {
+        "name": "Tip's complete automotive and towing",
+        "phone": "8183712128",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "800 N Burks st, Visalia CA 93292"
+      }
+    },
+    {
+      "id": 450959,
+      "before": {
+        "name": "Tires to Go & Towing",
+        "phone": "5592865887",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Fresno",
+        "address": "3646 S Elm Ave, Fresno, CA 93706"
+      }
+    },
+    {
+      "id": 450960,
+      "before": {
+        "name": "Tom's Body and Paint, Inc. formerly Tom's Towing",
+        "phone": "5597313915",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "808 E Acequia Ave, Visalia, CA 93292, United States"
+      }
+    },
+    {
+      "id": 451229,
+      "before": {
+        "name": "Torres Auto Body, Inc.",
+        "phone": "5597362659",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "1119 E Douglas Ave, Visalia CA 93292"
+      }
+    },
+    {
+      "id": 450962,
+      "before": {
+        "name": "Torres Body Shop- Madera",
+        "phone": "2093544136",
+        "phone2": "2092334493",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Merced",
+        "address": "1254 W 16th St, Merced, CA 95340, United States"
+      }
+    },
+    {
+      "id": 450963,
+      "before": {
+        "name": "Tow Pro",
+        "phone": "5597361178",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "744 N Ben Maddox Way, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 450964,
+      "before": {
+        "name": "Trends Auto Body",
+        "phone": "5595921300",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Exeter",
+        "address": "490 N \"F\" Street Exeter CA 93221"
+      }
+    },
+    {
+      "id": 450965,
+      "before": {
+        "name": "Triple G Collision repair",
+        "phone": "5594851608",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "1560 N Blackstone Ave, Fresno CA 93703"
+      }
+    },
+    {
+      "id": 450966,
+      "before": {
+        "name": "Triple H Auto Body LLC",
+        "phone": "5592663518",
+        "phone2": "5592663518",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "1445 N Thesta St, Fresno, CA 93703,"
+      }
+    },
+    {
+      "id": 451105,
+      "before": {
+        "name": "Unavision Insurance Center",
+        "phone": "5596358266",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "1808 South Central St Visalia, CA 93277"
+      }
+    },
+    {
+      "id": 450968,
+      "before": {
+        "name": "USA Towing & Auto Center",
+        "phone": "5593232020",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Clovis",
+        "address": "1024 San Jose Ave, Clovis, CA 93612"
+      }
+    },
+    {
+      "id": 450969,
+      "before": {
+        "name": "Valencia Auto Repair",
+        "phone": "5595680155",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Visalia",
+        "address": "19847 Orange Belt Dr Strathmore, CA 93267"
+      }
+    },
+    {
+      "id": 451232,
+      "before": {
+        "name": "Vejar Auto Collision",
+        "phone": "5592864750",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "2345 W Belmont Ave Fresno CA 93728"
+      }
+    },
+    {
+      "id": 450971,
+      "before": {
+        "name": "Villarreal Paint & Body",
+        "phone": "2793002078",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "5118 E Clinton Way #103, Fresno, CA 93727"
+      }
+    },
+    {
+      "id": 450972,
+      "before": {
+        "name": "Visalia green smog",
+        "phone": "5593236200",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "Clovis",
+        "address": "650 W Alluvial Ave, Clovis, CA 93611, United States"
+      }
+    },
+    {
+      "id": 450973,
+      "before": {
+        "name": "West Coast Tow 2",
+        "phone": "5596735739",
+        "phone2": "5597067827",
+        "phone3": null,
+        "category": "other",
+        "city": "Madera",
+        "address": "701 S I St, Madera, CA 93637"
+      }
+    },
+    {
+      "id": 450974,
+      "before": {
+        "name": "West Coast Tow 3",
+        "phone": "5595627561",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": "179 S Elmwood Ave, Lindsay, CA 93247"
+      }
+    },
+    {
+      "id": 451245,
+      "before": {
+        "name": "Westside Chiropractic",
+        "phone": "2094802908",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Modesto",
+        "address": "582 S 9th St, Modesto, CA 95351"
+      }
+    },
+    {
+      "id": 450976,
+      "before": {
+        "name": "William Auto Body Collision Repair",
+        "phone": "5598366114",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Hanford",
+        "address": "116 Urton St, Hanford, CA 93230, United States"
+      }
+    },
+    {
+      "id": 450977,
+      "before": {
+        "name": "Willow Creek Healthcare Center",
+        "phone": "5597487447",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Visalia",
+        "address": null
+      }
+    },
+    {
+      "id": 450978,
+      "before": {
+        "name": "Zylstra Automotive & Diesel",
+        "phone": "5595142915",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Madera",
+        "address": "24294 Avenue 18, Madera, CA 93638"
+      }
+    },
+    {
+      "id": 450979,
+      "before": {
+        "name": "Abel's Auto Body",
+        "phone": "6267818396",
+        "phone2": "3236410093",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "4921 W Jefferson Blvd, Los Angeles, CA 90016"
+      }
+    },
+    {
+      "id": 451841,
+      "before": {
+        "name": "Body Shop & Paint",
+        "phone": "9092535567",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Riverside",
+        "address": "6410 Industrial Avenue #B Riverside CA 92504"
+      }
+    },
+    {
+      "id": 450981,
+      "before": {
+        "name": "Downtown Auto Collision",
+        "phone": "6618554044",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Palmdale",
+        "address": "2270 E Palmdale Blvd f, Palmdale, CA 93550"
+      }
+    },
+    {
+      "id": 450982,
+      "before": {
+        "name": "Leo's Paint & Body",
+        "phone": "8189617889",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "North Hollywood",
+        "address": "11568 Vanowen St, North Hollywood, CA 91606"
+      }
+    },
+    {
+      "id": 450983,
+      "before": {
+        "name": "Sanchez Auto Body Shop",
+        "phone": "6619327859",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "3111 Edison Hwy. Bakersfield, CA 93307"
+      }
+    },
+    {
+      "id": 450985,
+      "before": {
+        "name": "A-Able Towing",
+        "phone": "5304412225",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Yuba city",
+        "address": "437 Century Park Dr Ste A, Yuba City, CA 95991"
+      }
+    },
+    {
+      "id": 450984,
+      "before": {
+        "name": "ABS Collision Center",
+        "phone": "9098291188",
+        "phone2": "9092412026",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fontana",
+        "address": "17250 Valley Blvd, Fontana, CA 92335"
+      }
+    },
+    {
+      "id": 450987,
+      "before": {
+        "name": "Agape Chiropractic BP Inc.",
+        "phone": "9098600148",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": null,
+        "address": "406 S Prospectors Rd, Diamond Bar, CA 91765"
+      }
+    },
+    {
+      "id": 450990,
+      "before": {
+        "name": "Asante Chiropractic - Testing - Beauty",
+        "phone": "5629271116",
+        "phone2": "3102667767",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Downey",
+        "address": "11822 Downey Ave, Downey, CA 90241"
+      }
+    },
+    {
+      "id": 450991,
+      "before": {
+        "name": "Autobahn Collision Center",
+        "phone": "9093476911",
+        "phone2": "3236169880",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fontana",
+        "address": "18000 Foothill Blvd, Fontana, CA 92335"
+      }
+    },
+    {
+      "id": 450993,
+      "before": {
+        "name": "Banana’s Towing",
+        "phone": "6192316986",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "San Diego",
+        "address": "1411 W Palm St, San Diego, CA 92101"
+      }
+    },
+    {
+      "id": 450994,
+      "before": {
+        "name": "Be Better Chiropractic",
+        "phone": "4088477246",
+        "phone2": "4087107242",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Gilroy",
+        "address": "7881 Church St A, Gilroy, CA 95020"
+      }
+    },
+    {
+      "id": 450995,
+      "before": {
+        "name": "Bostock Chiropractic Offices",
+        "phone": "4082697111",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "San Jose",
+        "address": "1711 Branham Ln a12, San Jose, CA 95118"
+      }
+    },
+    {
+      "id": 450996,
+      "before": {
+        "name": "Caliber Collision",
+        "phone": "9512424118",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Moreno Valley",
+        "address": "12470 Back Way, Moreno Valley, CA 92553"
+      }
+    },
+    {
+      "id": 450989,
+      "before": {
+        "name": "Cedar Pointe Chiropractic Group",
+        "phone": "9513560000",
+        "phone2": "9099889494",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Corona",
+        "address": "623 N Main St D6, Corona, CA 92878"
+      }
+    },
+    {
+      "id": 450992,
+      "before": {
+        "name": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+        "phone": "6262336366",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": null,
+        "address": "2149 E Garvey Ave N suite a-5, West Covina, CA 91791"
+      }
+    },
+    {
+      "id": 450999,
+      "before": {
+        "name": "Complete Chiropractic Wellness Center",
+        "phone": "9512686380",
+        "phone2": "9512686380",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Riverside",
+        "address": "12490 Magnolia Ave ste A-B Riverside 92503"
+      }
+    },
+    {
+      "id": 451005,
+      "before": {
+        "name": "D Collision",
+        "phone": "6614017000",
+        "phone2": "4242854444",
+        "phone3": "3109276416",
+        "category": "body_shop",
+        "city": "Santa Clarita",
+        "address": "26516 Ruether Ave Unit 301, Santa Clarita, CA 91350"
+      }
+    },
+    {
+      "id": 451001,
+      "before": {
+        "name": "Diamond Bar Chiropractic",
+        "phone": "8185525000",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Glendale",
+        "address": "1101 N Pacific Ave, Glendale, CA 91202"
+      }
+    },
+    {
+      "id": 451754,
+      "before": {
+        "name": "Diamond Valley Towing",
+        "phone": "9097873031",
+        "phone2": "7142909911",
+        "phone3": null,
+        "category": "other",
+        "city": "Rialto",
+        "address": "1850 N Riverside Ave #190, Rialto, CA 92376"
+      }
+    },
+    {
+      "id": 451003,
+      "before": {
+        "name": "Downey Health and Wellness Center: Cathrine Zarrabi DC",
+        "phone": "4088478555",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "Gilroy",
+        "address": "8010 Wayland Ln # 1B, Gilroy, CA 95020"
+      }
+    },
+    {
+      "id": 451300,
+      "before": {
+        "name": "Dynamic Auto Workz",
+        "phone": "6614704723",
+        "phone2": "6619471881",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Palmdale",
+        "address": "38122 6th St # Palmdale CA 93550"
+      }
+    },
+    {
+      "id": 451010,
+      "before": {
+        "name": "Empire Collision Center",
+        "phone": "9099209111",
+        "phone2": "9097026822",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Upland",
+        "address": "1116 W 9th St, Upland, CA 91786"
+      }
+    },
+    {
+      "id": 451006,
+      "before": {
+        "name": "Exotic Motorsports Collision Center",
+        "phone": "9513311049",
+        "phone2": "9515755101",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Temecula Wildomar",
+        "address": "41910 C St, Temecula, CA 92592\n23335 Peggy Lane, Wildomar, California, 92595"
+      }
+    },
+    {
+      "id": 451009,
+      "before": {
+        "name": "Fix Auto Upland",
+        "phone": "3109276416",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "5294 Valley Blvd #2, Los Angeles, CA 90032"
+      }
+    },
+    {
+      "id": 451024,
+      "before": {
+        "name": "Impact Fix Collision Center",
+        "phone": "9095669600",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fontana",
+        "address": "15750 Arrow Blvd Space L, Fontana, CA 92335"
+      }
+    },
+    {
+      "id": 451012,
+      "before": {
+        "name": "IRON CHIROPRACTIC",
+        "phone": "8057913177",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Simi Valley",
+        "address": "1236 E Los Angeles Ave Ste C, Simi Valley, CA 93065"
+      }
+    },
+    {
+      "id": 451008,
+      "before": {
+        "name": "Laguna Hills Chiropractor - Lakeview Chiropractic",
+        "phone": "9498296927",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Laguna Hills",
+        "address": "22982 La Cadena Dr Ste 12, Laguna Hills, CA 92653"
+      }
+    },
+    {
+      "id": 540039,
+      "before": {
+        "name": "Leary Sport & Spine Chiropractic",
+        "phone": null,
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Lake Forest",
+        "address": "25691 Atlantic Ocean Dr b11, Lake Forest, CA 92630"
+      }
+    },
+    {
+      "id": 451013,
+      "before": {
+        "name": "Life Balance Chiropractic",
+        "phone": "9495879990",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Lake Forest",
+        "address": "25691 Atlantic Ocean Dr b11, Lake Forest, CA 92630"
+      }
+    },
+    {
+      "id": 451015,
+      "before": {
+        "name": "Lifestyle Chiropractic & Wellness",
+        "phone": "3103203005",
+        "phone2": "3103101296",
+        "phone3": "5627250316",
+        "category": "chiropractor",
+        "city": "Torrance",
+        "address": "22788 S. Western Avenue Torrance CA 90501"
+      }
+    },
+    {
+      "id": 451029,
+      "before": {
+        "name": "Mauro's Body Shop",
+        "phone": "9512120565",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Bernardino",
+        "address": "2424 E 3rd St, San Bernardino, CA 92410"
+      }
+    },
+    {
+      "id": 451018,
+      "before": {
+        "name": "Nova Auto Craft",
+        "phone": "9099462424",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Upland",
+        "address": "585 N Mountain Ave Suite C-1, Upland, CA 91786"
+      }
+    },
+    {
+      "id": 451019,
+      "before": {
+        "name": "Pain Free Life - Glendale",
+        "phone": "3233174771",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Downey",
+        "address": "8301 E Florence Ave suite 205, Downey, CA 90240"
+      }
+    },
+    {
+      "id": 451021,
+      "before": {
+        "name": "ProCare Medical Group",
+        "phone": "6199978700",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "La Mesa",
+        "address": "8300 University Ave, La Mesa, CA 91942"
+      }
+    },
+    {
+      "id": 451017,
+      "before": {
+        "name": "ProColor Collision San Marcos",
+        "phone": "7607981484",
+        "phone2": "6197319385",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Marcos",
+        "address": "1895 Diamond St, San Marcos, CA 92078, 375 State Pl, Escondido, CA 92029,"
+      }
+    },
+    {
+      "id": 451023,
+      "before": {
+        "name": "Ralfi's Collision Center",
+        "phone": "9096815148",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Nuevo",
+        "address": "20385 Hansen Avenue Nuevo 92567"
+      }
+    },
+    {
+      "id": 451280,
+      "before": {
+        "name": "Reyes Body Shop",
+        "phone": "6194761113",
+        "phone2": "6197457327",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Chula Vista",
+        "address": "311 Tremont St Chula Vista 91911"
+      }
+    },
+    {
+      "id": 451026,
+      "before": {
+        "name": "Ricardo Garcia Chiropractic Clinic",
+        "phone": "8188359517",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Van Nuys",
+        "address": "18607 Ventura Blvd Suite 302, Tarzana, CA 91356"
+      }
+    },
+    {
+      "id": 451027,
+      "before": {
+        "name": "Royal Collision Center",
+        "phone": "9098855459",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Bernardino",
+        "address": "1030 N D St, San Bernardino, CA 92410"
+      }
+    },
+    {
+      "id": 451028,
+      "before": {
+        "name": "Sanchez Chiropractic and Wellness",
+        "phone": "8316820487",
+        "phone2": "8318698780",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Seaside",
+        "address": "1523 Del Monte Blvd, Seaside, CA 93955"
+      }
+    },
+    {
+      "id": 451281,
+      "before": {
+        "name": "Tadeos Auto Body",
+        "phone": "9513479031",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Riverside",
+        "address": "6410 Industrial Avenue #B Riverside CA 92504"
+      }
+    },
+    {
+      "id": 451296,
+      "before": {
+        "name": "Tip Top Auto Body Shop",
+        "phone": "9099313267",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Upland",
+        "address": "1710 W Foothill Blvd Unit B, Upland, CA 91786"
+      }
+    },
+    {
+      "id": 451033,
+      "before": {
+        "name": "Valenz Autobody",
+        "phone": "6267090349",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Pomona",
+        "address": "890 W 1st St Pomona CA 91766"
+      }
+    },
+    {
+      "id": 451753,
+      "before": {
+        "name": "Vortec's Auto Body",
+        "phone": "9099612644",
+        "phone2": "9099062155",
+        "phone3": "7607993104",
+        "category": "body_shop",
+        "city": "Rialto",
+        "address": "625 S Riverside Ave Suite J, Rialto, CA 92376"
+      }
+    },
+    {
+      "id": 451035,
+      "before": {
+        "name": "Wellness and Injury Centers",
+        "phone": "4248002488",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Los Angeles",
+        "address": "8929 S Sepulveda Blvd #100, Los Angeles, CA 90045"
+      }
+    },
+    {
+      "id": 451037,
+      "before": {
+        "name": "A & A Automotive",
+        "phone": "3109956291",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Torrance, San Pedro, and Newport Beach",
+        "address": "2583 Pacific Coast Hwy, Torrance, CA 90505"
+      }
+    },
+    {
+      "id": 451812,
+      "before": {
+        "name": "Agape Health & Wellness Center",
+        "phone": "5596751301",
+        "phone2": "5594783070",
+        "phone3": "5597161609",
+        "category": "medical_clinic",
+        "city": "Madera",
+        "address": "1211 E Yosemite Ave Madera, CA 93638"
+      }
+    },
+    {
+      "id": 451039,
+      "before": {
+        "name": "Aguilera Health & Wellness Center",
+        "phone": "5107860400",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "Hayward",
+        "address": "27689 Industrial Blvd Hayward, CA 94545"
+      }
+    },
+    {
+      "id": 451316,
+      "before": {
+        "name": "Alpha performance",
+        "phone": "4089950770",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "San Jose",
+        "address": "680 N 13th St, San Jose, CA 95112"
+      }
+    },
+    {
+      "id": 451041,
+      "before": {
+        "name": "Auto Collision Group 2nd Location",
+        "phone": "5593795677",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Porterville",
+        "address": "878 W Morton Ave C, Porterville, CA 93257"
+      }
+    },
+    {
+      "id": 451042,
+      "before": {
+        "name": "Chiropractic Wellness Center- Milpitas",
+        "phone": "5599670596",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Visalia",
+        "address": "1920 E Mineral King Ave, Visalia, CA 93292"
+      }
+    },
+    {
+      "id": 451043,
+      "before": {
+        "name": "Cochran Auto Body & Royal Auto Body & Paint",
+        "phone": "6269602346",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Baldwin Park",
+        "address": "14540 Ramona Blvd ste 211, Baldwin Park, CA 91706"
+      }
+    },
+    {
+      "id": 451044,
+      "before": {
+        "name": "Community Chiropractic Group",
+        "phone": "8056536021",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Ventura",
+        "address": "378 N Ventura Ave, Ventura, CA 93001"
+      }
+    },
+    {
+      "id": 451045,
+      "before": {
+        "name": "Delano Acupuncture & Chiropractic Center",
+        "phone": "8053145128",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Santa Maria",
+        "address": "416 E Main St, Santa Maria, CA 93454"
+      }
+    },
+    {
+      "id": 451723,
+      "before": {
+        "name": "Delcas Auto Collision,Inc",
+        "phone": "4088367200",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Milpitas",
+        "address": "200 Serra Way #16, Milpitas, CA 95035, United States"
+      }
+    },
+    {
+      "id": 451307,
+      "before": {
+        "name": "Dr. Christy Anthony, MD",
+        "phone": "3103518185",
+        "phone2": "3239362563",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "5220 West Pico Blvd, Los Angeles, CA 90019"
+      }
+    },
+    {
+      "id": 451048,
+      "before": {
+        "name": "Dr. Tyler Sports Medicine & Chiropractic",
+        "phone": "5596271710",
+        "phone2": "5597992655",
+        "phone3": "5596271711",
+        "category": "chiropractor",
+        "city": "Visalia",
+        "address": "1628 S Court St, Visalia, CA 93277"
+      }
+    },
+    {
+      "id": 451400,
+      "before": {
+        "name": "Fairfield Auto Body Shop",
+        "phone": "6617211234",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Delano",
+        "address": "1224 Jefferson St Ste. 3, Delano, CA 93215"
+      }
+    },
+    {
+      "id": 451050,
+      "before": {
+        "name": "Focus Chiropractic Center",
+        "phone": "8317599234",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Salinas",
+        "address": "756 Vertin Ave c, Salinas, CA 93901"
+      }
+    },
+    {
+      "id": 451051,
+      "before": {
+        "name": "Hadaya Chiropractic Inc.",
+        "phone": "3233004040",
+        "phone2": "3236331823",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Glendale",
+        "address": "435 Arden Avenue, Suite 530 Glendale, CA 91203"
+      }
+    },
+    {
+      "id": 451719,
+      "before": {
+        "name": "Lau’s Auto",
+        "phone": "8182455007",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Pasadena",
+        "address": "369 S Fair Oaks Ave, Pasadena, CA 91105"
+      }
+    },
+    {
+      "id": 451720,
+      "before": {
+        "name": "National Auto Body",
+        "phone": "2097656983",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Manteca",
+        "address": "198 Button Ave, Manteca, CA 95336"
+      }
+    },
+    {
+      "id": 451313,
+      "before": {
+        "name": "Paul’s Auto Body Shop",
+        "phone": "5592754242",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Fresno",
+        "address": "4203 West Shaw, Fresno CA 93722"
+      }
+    },
+    {
+      "id": 451055,
+      "before": {
+        "name": "Pura Vida Chiropractic- Jessica",
+        "phone": "8188384900",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "San Fernando",
+        "address": "1123 Celis St, San Fernando, CA 91340"
+      }
+    },
+    {
+      "id": 451097,
+      "before": {
+        "name": "R & P Towing",
+        "phone": "6619472455",
+        "phone2": "6617149075",
+        "phone3": null,
+        "category": "other",
+        "city": "Palmdale",
+        "address": "615 W Ave Q #E, Palmdale, CA 93351"
+      }
+    },
+    {
+      "id": 451057,
+      "before": {
+        "name": "Reliance Auto Collision & Rental",
+        "phone": "3106991994",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Los Angeles",
+        "address": "8315 Hindry Ave, Los Angeles, CA 90045"
+      }
+    },
+    {
+      "id": 451058,
+      "before": {
+        "name": "Richard's Universal Towing & Hauling",
+        "phone": "8056185645",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Oxnard",
+        "address": "1345 North Oxnard Blvd Oxnard, CA 93030"
+      }
+    },
+    {
+      "id": 451059,
+      "before": {
+        "name": "Schraders Auto Craft",
+        "phone": "2098248505",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Manteca",
+        "address": "198 Button Ave, Manteca, CA 95336"
+      }
+    },
+    {
+      "id": 451780,
+      "before": {
+        "name": "Sonoma County Collision Repair",
+        "phone": "7608366555",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Palm Springs",
+        "address": "2150 E Tahquitz Canyon Way Ste 5 Palm Springs, CA 92262"
+      }
+    },
+    {
+      "id": 451061,
+      "before": {
+        "name": "Titanium Towing",
+        "phone": "6613802947",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Bakersfield",
+        "address": "3920 Buck Owens Blvd, Bakersfield, CA 93308"
+      }
+    },
+    {
+      "id": 451062,
+      "before": {
+        "name": "Xtreme Auto Collision & Glass- Fresno",
+        "phone": "7077741382",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Santa Rosa",
+        "address": "1 Sebastopol Rd bldg e, Santa Rosa, CA 95407"
+      }
+    },
+    {
+      "id": 451063,
+      "before": {
+        "name": "Xtreme Auto Collision- Madera",
+        "phone": "6262409406",
+        "phone2": "6265060854",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Azusa",
+        "address": "950 W Foothill Blvd, Azusa, CA 91702"
+      }
+    },
+    {
+      "id": 451064,
+      "before": {
+        "name": "Zaker Chiropractic",
+        "phone": "7078492169",
+        "phone2": "7075788485",
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Santa Rosa",
+        "address": "112 Commercial Ct STE 19, Santa Rosa, CA 95407"
+      }
+    },
+    {
+      "id": 451065,
+      "before": {
+        "name": "Auto Collision Group Of Bakersfield",
+        "phone": "6613632205",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "3115 Edison Hwy, Bakersfield, CA 93307"
+      }
+    },
+    {
+      "id": 451099,
+      "before": {
+        "name": "Camino Real Body Shop",
+        "phone": "6618331111",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "2031 17th St #1 Bakersfield 93301"
+      }
+    },
+    {
+      "id": 451318,
+      "before": {
+        "name": "CCthechiro",
+        "phone": "6614731300",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Bakersfield",
+        "address": "6950 District Blv Bakersfield Ca 93313"
+      }
+    },
+    {
+      "id": 451319,
+      "before": {
+        "name": "Celebrity Body Works",
+        "phone": "6613729045",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "901 Sacramento St. Bakersfield, CA 93305"
+      }
+    },
+    {
+      "id": 451320,
+      "before": {
+        "name": "Core Chiropractic + Wellness",
+        "phone": "6614601400",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Bakersfield",
+        "address": "6916 Mc Cutchen Rd Suite 100, Bakersfield, CA 93313"
+      }
+    },
+    {
+      "id": 451321,
+      "before": {
+        "name": "Delano Towing",
+        "phone": "6612137392",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Bakersfield",
+        "address": "24 E Pachco Rd Bakersfield CA 93307"
+      }
+    },
+    {
+      "id": 451071,
+      "before": {
+        "name": "Diamond Club Towing",
+        "phone": "8185431544",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Santa Ana",
+        "address": "1039 17th St, Santa Ana, CA 93301, United States"
+      }
+    },
+    {
+      "id": 451072,
+      "before": {
+        "name": "Distinctive Coach Auto & Body",
+        "phone": "6613776534",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "128 E 21st St. #130&126 Bakersfield, CA 93305"
+      }
+    },
+    {
+      "id": 451100,
+      "before": {
+        "name": "El Guatemala Body Shop",
+        "phone": "6614109355",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "9730 Brimhall Rd Ste 3 Bakersfield, CA 93312"
+      }
+    },
+    {
+      "id": 451074,
+      "before": {
+        "name": "Envista Medical Center",
+        "phone": "6617219000",
+        "phone2": null,
+        "phone3": null,
+        "category": "medical_clinic",
+        "city": "Delano",
+        "address": "315 High St., Delano, CA 93215"
+      }
+    },
+    {
+      "id": 451075,
+      "before": {
+        "name": "Express Body Works",
+        "phone": "6612814932",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "1223 Washington St. #B Bakersfield, CA 93305"
+      }
+    },
+    {
+      "id": 451076,
+      "before": {
+        "name": "Gold Star Collision",
+        "phone": "6618372727",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "3157 Gibson St, Bakersfield, CA 93308"
+      }
+    },
+    {
+      "id": 451805,
+      "before": {
+        "name": "Haynes Chiropractic",
+        "phone": "6613244565",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Bakersfield",
+        "address": "1000 18th St, Bakersfield, CA 93301"
+      }
+    },
+    {
+      "id": 451324,
+      "before": {
+        "name": "Jaime Auto Repair",
+        "phone": "6613168498",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "1430 E California ave, Bakersfield CA 93307"
+      }
+    },
+    {
+      "id": 451079,
+      "before": {
+        "name": "JJ's Autobody And Paint",
+        "phone": "6615870700",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "3900 Coffee Rd. #3 Bakersfield, CA 93308"
+      }
+    },
+    {
+      "id": 451080,
+      "before": {
+        "name": "JM Insurance Services",
+        "phone": "6618176857",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Bakersfield",
+        "address": "8032 Di Miller Drive Bakersfield 93307"
+      }
+    },
+    {
+      "id": 451081,
+      "before": {
+        "name": "Keepers Transformation House",
+        "phone": "6613222875",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Bakersfield",
+        "address": "3865 Stockdale Hwy Bakersfield CA 93309"
+      }
+    },
+    {
+      "id": 451082,
+      "before": {
+        "name": "Pain Clinics of Central California",
+        "phone": "6617467926",
+        "phone2": "6613197757",
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Shafter",
+        "address": "101 Walker St. Shafter, CA 93263"
+      }
+    },
+    {
+      "id": 451327,
+      "before": {
+        "name": "PayLess Towing",
+        "phone": "6614894397",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Bakersfield",
+        "address": "205 E 5th St Bakersfiield CA 93307"
+      }
+    },
+    {
+      "id": 451084,
+      "before": {
+        "name": "ProColor Collision Bakersfield",
+        "phone": "6614018637",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "3115 Edison Hwy, Bakersfield, CA 93307"
+      }
+    },
+    {
+      "id": 451751,
+      "before": {
+        "name": "Randy's Towing",
+        "phone": "6613020293",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Bakersfield",
+        "address": "125 N Chester Ave, Bakersfield, CA 93308"
+      }
+    },
+    {
+      "id": 451149,
+      "before": {
+        "name": "Ryan's Chiro",
+        "phone": "8336042814",
+        "phone2": null,
+        "phone3": null,
+        "category": "chiropractor",
+        "city": "Bakersfield",
+        "address": "8303 Brimhall Rd. #1500 Bakersfield, CA 93312"
+      }
+    },
+    {
+      "id": 451087,
+      "before": {
+        "name": "San Joaquin Collision",
+        "phone": "6613257700",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "1400 Washington St. Bakersfield, CA 93305"
+      }
+    },
+    {
+      "id": 451328,
+      "before": {
+        "name": "Savage Auto Body",
+        "phone": "6615011019",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "4900 Lisa Marie Ct, Bakersfield, CA 93313"
+      }
+    },
+    {
+      "id": 451092,
+      "before": {
+        "name": "Ten Eight Towing",
+        "phone": "6618640749",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Bakersfield",
+        "address": "4386 Turcon Ave Bakersfield, Ca 93308"
+      }
+    },
+    {
+      "id": 451093,
+      "before": {
+        "name": "Trends Collision Center",
+        "phone": "6613982029",
+        "phone2": null,
+        "phone3": null,
+        "category": "body_shop",
+        "city": "Bakersfield",
+        "address": "4321 Stine Rd Bakersfield, CA 93313"
+      }
+    },
+    {
+      "id": 451329,
+      "before": {
+        "name": "Trinity Towing",
+        "phone": "6615870945",
+        "phone2": null,
+        "phone3": null,
+        "category": "other",
+        "city": "Bakersfield",
+        "address": "3816 Fruitvale Ave, Bakersfield, CA 93308"
+      }
+    }
+  ],
+  "imported": [
+    {
+      "name": "24 Hour Auto Service",
+      "phone": "909-829-1188",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Almaden Family Chiropractic",
+      "phone": "805-422-3333",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Artisan Collision",
+      "phone": "909-988-9494",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Avenue Body Shop – Ventura",
+      "phone": "626-233-6366",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Gilroy Family Chiropractic",
+      "phone": "949-829-6927",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Inland Chiropractic & Medical Weightloss",
+      "phone": "909-920-9111",
+      "agent": "Miguel"
+    },
+    {
+      "name": "McDowell Family Chiropractic Inc.",
+      "phone": "619-731-9385",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Precision Collision center",
+      "phone": "909-730-0773",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Re-LAX Chiropractic + Wellness",
+      "phone": "909-566-9600",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Socal Spine Rehab and Wellness",
+      "phone": "951-212-0565",
+      "agent": "Miguel"
+    },
+    {
+      "name": "V&G AUTO REPAIR",
+      "phone": "951-746-6266",
+      "agent": "Miguel"
+    },
+    {
+      "name": "Yuba Sutter Chiropractic",
+      "phone": "323-780-1838",
+      "agent": "Miguel"
+    }
+  ],
+  "excelDupNames": [
+    "Ten Eight Towing",
+    "Trends Collision Center",
+    "Trinity Towing",
+    "Express Body Works"
+  ]
+}

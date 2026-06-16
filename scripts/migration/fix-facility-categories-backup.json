@@ -1,14 +1,950 @@
 [
   {
-    "id": 450990,
+    "id": 450693,
+    "name": "Soma Collision Repair",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 450701,
+    "name": "Arcadia Chiropractic Center",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450705,
+    "name": "AW Collision of San Jose",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450709,
+    "name": "C G & E Auto Body",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 450717,
+    "name": "Eddie's Lincoln Auto Body",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 450724,
+    "name": "Good Life Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450728,
+    "name": "J&P Auto Body & Paint",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 450731,
+    "name": "KIMS AUTO BODY",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450734,
+    "name": "New beginnings Chiro Richard Westbrook",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450735,
+    "name": "New Hope Chiropractic San Jose Chiropractor",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450736,
+    "name": "Oakland Collision Center",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450743,
+    "name": "Revive Spine and Wellness Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450744,
+    "name": "Riverside Collision Center",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 450750,
+    "name": "Slick collision center",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450751,
+    "name": "Spine and Sport Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450754,
+    "name": "United spine care",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450755,
+    "name": "Vertex Collision Center",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 450764,
+    "name": "American River Chiropractic- Dr. Stirton",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450765,
+    "name": "AutoBody Solutions LLC",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450767,
+    "name": "Bobby's Auto Body And Paint",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450770,
+    "name": "California liberty insurance",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 450777,
+    "name": "Diablos auto Collision",
+    "from": "medical_clinic",
+    "to": "body_shop"
+  },
+  {
+    "id": 450784,
+    "name": "Greenhaven Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450790,
+    "name": "Los Romeros Insurance",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 450791,
+    "name": "Luxury Collision Center",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450794,
+    "name": "Martinez Auto care",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450796,
+    "name": "Natomas chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450798,
+    "name": "New Saigon Auto Collision",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 450801,
+    "name": "pacific urgent care",
+    "from": "body_shop",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 450806,
+    "name": "Premier Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450808,
+    "name": "primos auto insurance",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 450809,
+    "name": "Pronto insurance services",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 450810,
+    "name": "restoration health and wellness center",
+    "from": "other",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 450812,
+    "name": "Ringer Chiropractic",
+    "from": "other",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450815,
+    "name": "Sacramento Spinal Specialists",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450818,
+    "name": "Stockton Family Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450822,
+    "name": "The Body shop of Yuba city",
+    "from": "imaging_center",
+    "to": "body_shop"
+  },
+  {
+    "id": 450823,
+    "name": "Titan Auto Body shop",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450832,
+    "name": "WEST COAST AUTO BODY & PAINT",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450833,
+    "name": "Yang Advanced Chiropractic Group",
+    "from": "medical_clinic",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450839,
+    "name": "A1 Repair & Collision",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450841,
+    "name": "Ace Auto Care and Service",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450844,
+    "name": "Advanced Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450845,
+    "name": "Affordable Keyesorian Auto Insurance Fresno CA",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 450853,
+    "name": "Brothers Collision & Auto Repair",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450860,
+    "name": "Choice Auto Body",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450872,
+    "name": "Don Valenzuela's Autobody",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450881,
+    "name": "Feel Good Chiropractor",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450882,
+    "name": "Fiesta Auto Insurance & Tax Service - Cedar & Shields",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 450883,
+    "name": "Fiesta Auto Insurance & Tax Service- Fresno",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 450890,
+    "name": "Fiesta Auto Insurance & Tax Service- Tulare",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 450893,
+    "name": "First Health Medical Center",
+    "from": "chiropractor",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 450900,
+    "name": "GIA Auto Paint & Collision",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450931,
+    "name": "Nelly's Auto Repair",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450942,
+    "name": "Quality Auto Services",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450947,
+    "name": "Saenz Chiropractic- Maureen",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 450964,
+    "name": "Trends Auto Body",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450969,
+    "name": "Valencia Auto Repair",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450971,
+    "name": "Villarreal Paint & Body",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 450981,
+    "name": "Downtown Auto Collision",
+    "from": "medical_clinic",
+    "to": "body_shop"
+  },
+  {
+    "id": 450985,
+    "name": "A-Able Towing",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 450993,
+    "name": "Banana’s Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 450999,
+    "name": "Complete Chiropractic Wellness Center",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451003,
     "name": "Downey Health and Wellness Center: Cathrine Zarrabi DC",
     "from": "chiropractor",
     "to": "medical_clinic"
   },
   {
-    "id": 451666,
-    "name": "Restoration Health Center Accident Injury Doctors Stockton",
+    "id": 451006,
+    "name": "Exotic Motorsports Collision Center",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451012,
+    "name": "IRON CHIROPRACTIC",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451015,
+    "name": "Lifestyle Chiropractic & Wellness",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451017,
+    "name": "ProColor Collision San Marcos",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451021,
+    "name": "ProCare Medical Group",
     "from": "chiropractor",
     "to": "medical_clinic"
+  },
+  {
+    "id": 451027,
+    "name": "Royal Collision Center",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451028,
+    "name": "Sanchez Chiropractic and Wellness",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451037,
+    "name": "A & A Automotive",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451039,
+    "name": "Aguilera Health & Wellness Center",
+    "from": "body_shop",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 451041,
+    "name": "Auto Collision Group 2nd Location",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451042,
+    "name": "Chiropractic Wellness Center- Milpitas",
+    "from": "other",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451043,
+    "name": "Cochran Auto Body & Royal Auto Body & Paint",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451044,
+    "name": "Community Chiropractic Group",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451045,
+    "name": "Delano Acupuncture & Chiropractic Center",
+    "from": "other",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451050,
+    "name": "Focus Chiropractic Center",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451051,
+    "name": "Hadaya Chiropractic Inc.",
+    "from": "medical_clinic",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451057,
+    "name": "Reliance Auto Collision & Rental",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451058,
+    "name": "Richard's Universal Towing & Hauling",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451062,
+    "name": "Xtreme Auto Collision & Glass- Fresno",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451064,
+    "name": "Zaker Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451071,
+    "name": "Diamond Club Towing",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451074,
+    "name": "Envista Medical Center",
+    "from": "other",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 451076,
+    "name": "Gold Star Collision",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451079,
+    "name": "JJ's Autobody And Paint",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451080,
+    "name": "JM Insurance Services",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451084,
+    "name": "ProColor Collision Bakersfield",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451087,
+    "name": "San Joaquin Collision",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451093,
+    "name": "Trends Collision Center",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451097,
+    "name": "R & P Towing",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451099,
+    "name": "Camino Real Body Shop",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451100,
+    "name": "El Guatemala Body Shop",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451105,
+    "name": "Unavision Insurance Center",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451109,
+    "name": "Freeway Insurance",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451114,
+    "name": "Baja insurance services",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451116,
+    "name": "Kustom collision center",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451117,
+    "name": "Page Auto Body & Repair",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451119,
+    "name": "Sunnyvale imaging center",
+    "from": "chiropractor",
+    "to": "imaging_center"
+  },
+  {
+    "id": 451122,
+    "name": "EMMANUEL TOWING",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451123,
+    "name": "Perfection Auto Body",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451143,
+    "name": "Union Body Shop",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451145,
+    "name": "Filos Collision",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451147,
+    "name": "One Stop Auto Collision",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451159,
+    "name": "Jerry's Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451165,
+    "name": "ProActive Chiro",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451167,
+    "name": "Romo's Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451186,
+    "name": "A1 CHIROPRACTIC",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451192,
+    "name": "Davis Urgent Care",
+    "from": "body_shop",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 451199,
+    "name": "lifeline chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451216,
+    "name": "urgent care Stockton",
+    "from": "body_shop",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 451218,
+    "name": "007 Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451237,
+    "name": "Blackstone Chiropractic Clinic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451238,
+    "name": "Caruthers Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451245,
+    "name": "Westside Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451271,
+    "name": "Horine Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451273,
+    "name": "A&J Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451274,
+    "name": "Action Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451318,
+    "name": "CCthechiro",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451320,
+    "name": "Core Chiropractic + Wellness",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451321,
+    "name": "Delano Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451327,
+    "name": "PayLess Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451329,
+    "name": "Trinity Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451343,
+    "name": "Haney Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451382,
+    "name": "Natomas Urgent Care",
+    "from": "body_shop",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 451400,
+    "name": "Fairfield Auto Body Shop",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451421,
+    "name": "Sol Insurance Services",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451486,
+    "name": "NorCal auto body",
+    "from": "medical_clinic",
+    "to": "body_shop"
+  },
+  {
+    "id": 451656,
+    "name": "Allen’s auto body",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451657,
+    "name": "Mad Dog Towing",
+    "from": "body_shop",
+    "to": "other"
+  },
+  {
+    "id": 451662,
+    "name": "signature collision",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451663,
+    "name": "Chilton Auto Body",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451665,
+    "name": "Ace In The Hole Towing",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451666,
+    "name": "Rooker’s Collision Center",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451677,
+    "name": "Bunn’s Collision",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451683,
+    "name": "Major auto body shop",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451696,
+    "name": "Caesar Dents And Autobody",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451700,
+    "name": "C&J Auto Body & Paint",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451703,
+    "name": "A- Max Insurance",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451709,
+    "name": "Academy West Insurance",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451723,
+    "name": "Delcas Auto Collision,Inc",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451753,
+    "name": "Vortec's Auto Body",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451754,
+    "name": "Diamond Valley Towing",
+    "from": "chiropractor",
+    "to": "other"
+  },
+  {
+    "id": 451780,
+    "name": "Sonoma County Collision Repair",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 451805,
+    "name": "Haynes Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 451810,
+    "name": "ABC AutoBody",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 451812,
+    "name": "Agape Health & Wellness Center",
+    "from": "body_shop",
+    "to": "medical_clinic"
+  },
+  {
+    "id": 540019,
+    "name": "Collision King of Tracy",
+    "from": "other",
+    "to": "body_shop"
+  },
+  {
+    "id": 630002,
+    "name": "Almaden Family Chiropractic",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 630003,
+    "name": "Artisan Collision",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 630004,
+    "name": "Avenue Body Shop – Ventura",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 630006,
+    "name": "Inland Chiropractic & Medical Weightloss",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 630007,
+    "name": "McDowell Family Chiropractic Inc.",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 630008,
+    "name": "Precision Collision center",
+    "from": "chiropractor",
+    "to": "body_shop"
+  },
+  {
+    "id": 630009,
+    "name": "Re-LAX Chiropractic + Wellness",
+    "from": "body_shop",
+    "to": "chiropractor"
+  },
+  {
+    "id": 630010,
+    "name": "Socal Spine Rehab and Wellness",
+    "from": "body_shop",
+    "to": "chiropractor"
   }
 ]
