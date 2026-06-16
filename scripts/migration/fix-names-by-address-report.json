@@ -1,0 +1,305 @@
+{
+  "candidates": [
+    {
+      "id": 450987,
+      "agent": "Miguel",
+      "crmName": "Diamond Bar Chiropractic",
+      "newName": "Agape Chiropractic BP Inc.",
+      "address": "406 S Prospectors Rd, Diamond Bar, CA 91765",
+      "city": null,
+      "cityConfirmed": true
+    },
+    {
+      "id": 451016,
+      "agent": "Miguel",
+      "crmName": "Fix Auto Upland",
+      "newName": "Mauro's Body Shop",
+      "address": "114 N 8th Ave, Upland, CA 91786",
+      "city": "Upland",
+      "cityConfirmed": true
+    },
+    {
+      "id": 451023,
+      "agent": "Miguel",
+      "crmName": "Tadeos Auto Body",
+      "newName": "Ralfi's Collision Center",
+      "address": "20385 Hansen Avenue Nuevo 92567",
+      "city": "Nuevo",
+      "cityConfirmed": true
+    },
+    {
+      "id": 451036,
+      "agent": "Miguel",
+      "crmName": "Ricardo Garcia Chiropractic Clinic",
+      "newName": "Yuba Sutter Chiropractic",
+      "address": "1260 S Atlantic Blvd, Los Angeles, CA 90022",
+      "city": "Los Angeles",
+      "cityConfirmed": true
+    },
+    {
+      "id": 451298,
+      "agent": "Miguel",
+      "crmName": "Tip Top Auto Body Shop",
+      "newName": "Dynamic Auto Workz",
+      "address": "1894 W 9th St Upland 91786",
+      "city": "Upland",
+      "cityConfirmed": true
+    },
+    {
+      "id": 451302,
+      "agent": "Miguel",
+      "crmName": "Exotic Motorsports Collision Center",
+      "newName": "Almaden Family Chiropractic",
+      "address": "4610 E Los Angeles Ave, Simi Valley, CA 93063",
+      "city": "Simi Valley",
+      "cityConfirmed": true
+    },
+    {
+      "id": 451808,
+      "agent": "Zulema",
+      "crmName": "Trends Auto Body- Luis Ramos",
+      "newName": "Sanchez Auto Body Shop",
+      "address": "3111 Edison Highway, Bakersfield, CA 93307",
+      "city": "Bakersfield",
+      "cityConfirmed": true
+    },
+    {
+      "id": 451816,
+      "agent": "Jezel",
+      "crmName": "Martinez Auto Care - Eric",
+      "newName": "Natomas chiropractic",
+      "address": "2505 Arden Way, Sacramento, CA 95825",
+      "city": "Sacramento",
+      "cityConfirmed": true
+    },
+    {
+      "id": 451862,
+      "agent": "Miguel",
+      "crmName": "Ralfi's Collision Center",
+      "newName": "D Collision",
+      "address": "515 S Lake St Los Angeles CA 90057",
+      "city": "Los Angeles",
+      "cityConfirmed": true
+    },
+    {
+      "id": 451863,
+      "agent": "Arden",
+      "crmName": "Regino Auto Body Shop",
+      "newName": "Regino Rojas Auto Body Shop #1",
+      "address": "4200 S Vermont Avenue Los Angeles, CA 90037",
+      "city": "Los Angeles",
+      "cityConfirmed": true
+    },
+    {
+      "id": 630004,
+      "agent": "Miguel",
+      "crmName": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+      "newName": "Avenue Body Shop – Ventura",
+      "address": "2149 E Garvey Ave N suite a-5, West Covina, CA 91791",
+      "city": null,
+      "cityConfirmed": true
+    },
+    {
+      "id": 630006,
+      "agent": "Miguel",
+      "crmName": "Empire Collision Center",
+      "newName": "Inland Chiropractic & Medical Weightloss",
+      "address": "1116 W 9th St, Upland, CA 91786",
+      "city": "Upland",
+      "cityConfirmed": true
+    },
+    {
+      "id": 450993,
+      "agent": "Miguel",
+      "crmName": "Caliber Collision",
+      "newName": "Banana’s Towing",
+      "address": "1411 W Palm St, San Diego, CA 92101",
+      "city": "San Diego",
+      "cityConfirmed": false
+    }
+  ],
+  "ambiguous": [
+    {
+      "id": 450671,
+      "agent": "Genysys",
+      "crmName": "Certified Collision Repair",
+      "address": "424 1/2 N Main St, Lake Elsinore, CA 92530",
+      "city": "Lake Elsinore",
+      "excelNames": [
+        "Certified Collision Repair",
+        "V&G AUTO REPAIR"
+      ]
+    },
+    {
+      "id": 450767,
+      "agent": "Jezel",
+      "crmName": "Bobby's Auto Body And Paint",
+      "address": "6685 Stockton Blvd Ste 7, Sacramento, CA 95823",
+      "city": null,
+      "excelNames": [
+        "Bobby's Auto Body And Paint",
+        "EMMANUEL TOWING"
+      ]
+    },
+    {
+      "id": 450771,
+      "agent": "Jezel",
+      "crmName": "castro insurance agency",
+      "address": "1001 8th Street, Modesto, California 95354",
+      "city": "Modesto",
+      "excelNames": [
+        "castro insurance agency",
+        "Tony Bao's insurance services",
+        "S&L Towing"
+      ]
+    },
+    {
+      "id": 450793,
+      "agent": "Jezel",
+      "crmName": "Manuel Lopez body and frame",
+      "address": "1216 6th St Modesto, CA 95354",
+      "city": "Modesto",
+      "excelNames": [
+        "Mad Dog Towing",
+        "Manuel Lopez body and frame"
+      ]
+    },
+    {
+      "id": 450824,
+      "agent": "Jezel",
+      "crmName": "Tony Bao's insurance services",
+      "address": "1001 8th St #2c, Modesto, CA 95354",
+      "city": "Modesto",
+      "excelNames": [
+        "castro insurance agency",
+        "Tony Bao's insurance services",
+        "S&L Towing"
+      ]
+    },
+    {
+      "id": 450847,
+      "agent": "Lupe",
+      "crmName": "Anderson's Tow Stockton",
+      "address": "1920 E Mineral King Ave, Visalia, CA 93292, United States",
+      "city": "Visalia",
+      "excelNames": [
+        "Anderson's Tow Stockton",
+        "Lopez Towing",
+        "Chiropractic Wellness Center- Milpitas"
+      ]
+    },
+    {
+      "id": 451042,
+      "agent": "Queenie",
+      "crmName": "Chiropractic Wellness Center- Milpitas",
+      "address": "1920 E Mineral King Ave, Visalia, CA 93292",
+      "city": "Visalia",
+      "excelNames": [
+        "Anderson's Tow Stockton",
+        "Lopez Towing",
+        "Chiropractic Wellness Center- Milpitas"
+      ]
+    },
+    {
+      "id": 451065,
+      "agent": "Zulema",
+      "crmName": "Auto Collision Group Of Bakersfield",
+      "address": "3115 Edison Hwy, Bakersfield, CA 93307",
+      "city": "Bakersfield",
+      "excelNames": [
+        "Auto Collision Group Of Bakersfield",
+        "ProColor Collision Bakersfield"
+      ]
+    },
+    {
+      "id": 451084,
+      "agent": "Zulema",
+      "crmName": "ProColor Collision Bakersfield",
+      "address": "3115 Edison Hwy, Bakersfield, CA 93307",
+      "city": "Bakersfield",
+      "excelNames": [
+        "Auto Collision Group Of Bakersfield",
+        "ProColor Collision Bakersfield"
+      ]
+    },
+    {
+      "id": 451656,
+      "agent": "Jezel",
+      "crmName": "Allen’s auto body",
+      "address": "801 Riverside Ave Ste #102 ​Roseville, CA 95678",
+      "city": "Roseville",
+      "excelNames": [
+        "Allen’s auto body",
+        "signature collision"
+      ]
+    },
+    {
+      "id": 451657,
+      "agent": "Jezel",
+      "crmName": "Mad Dog Towing",
+      "address": "1216 6th St Modesto CA 95354",
+      "city": "Modesto",
+      "excelNames": [
+        "Mad Dog Towing",
+        "Manuel Lopez body and frame"
+      ]
+    },
+    {
+      "id": 451662,
+      "agent": "Jezel",
+      "crmName": "signature collision",
+      "address": "801 Riverside Ave. Suite 106 Roseville CA 95678",
+      "city": "Roseville",
+      "excelNames": [
+        "Allen’s auto body",
+        "signature collision"
+      ]
+    },
+    {
+      "id": 451708,
+      "agent": "Lupe",
+      "crmName": "S&L Towing",
+      "address": "1001 8th St Suite B, Modesto, CA 95354",
+      "city": "Modesto",
+      "excelNames": [
+        "castro insurance agency",
+        "Tony Bao's insurance services",
+        "S&L Towing"
+      ]
+    },
+    {
+      "id": 451714,
+      "agent": "Lupe",
+      "crmName": "Lopez Towing",
+      "address": "1920 E Mineral King Ave A, Visalia, CA 93292",
+      "city": "Visalia",
+      "excelNames": [
+        "Anderson's Tow Stockton",
+        "Lopez Towing",
+        "Chiropractic Wellness Center- Milpitas"
+      ]
+    },
+    {
+      "id": 540019,
+      "agent": "Jezel",
+      "crmName": "Collision King of Tracy",
+      "address": "504 E 10th St, Oakland, CA 94606",
+      "city": null,
+      "excelNames": [
+        "Collision King of Tracy",
+        "United Garage Body Shop"
+      ]
+    },
+    {
+      "id": 630011,
+      "agent": "Miguel",
+      "crmName": "V&G AUTO REPAIR",
+      "address": "424 1/2 N Main St Lake Elsinore CA 92530",
+      "city": "Lake Elsinore",
+      "excelNames": [
+        "Certified Collision Repair",
+        "V&G AUTO REPAIR"
+      ]
+    }
+  ]
+}
