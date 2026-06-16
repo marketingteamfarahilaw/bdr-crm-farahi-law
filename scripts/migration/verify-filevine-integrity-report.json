@@ -1,0 +1,332 @@
+{
+  "sample": [
+    {
+      "fvName": "1st Choice Urgent Care",
+      "addr": "4420 Coffee Rd Suite A, Bakersfield, CA 93308",
+      "phone": "6617351185",
+      "googleByName": "1st Choice Urgent Care",
+      "googleByPhone": "1st Choice Urgent Care",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Advanced Health Center",
+      "addr": "6110 Hellyer Ave Suite 100, San Jose, CA 95138",
+      "phone": "4088566659",
+      "googleByName": "Advanced Health Center",
+      "googleByPhone": "Advanced Health Center",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Antelope Valley Marine Corps League",
+      "addr": "2714 East Ave R, Palmdale, CA 93550",
+      "phone": "6614780751",
+      "googleByName": "AV Marine Corps League Det 930",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Banana’s Towing",
+      "addr": "619 E Lee Drive, Santa Maria, CA 93454",
+      "phone": "8053145128",
+      "googleByName": "BANANA'S TOWING",
+      "googleByPhone": "BANANA'S TOWING",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "C G & E Auto Body",
+      "addr": "545 Standish St,, Redwood City, CA 94063",
+      "phone": "6503697991",
+      "googleByName": "VARGAS COLLISION LLC DBA C G & E Auto Body",
+      "googleByPhone": "VARGAS COLLISION LLC DBA C G & E Auto Body",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Cesar Chavez Body Shop",
+      "addr": "1376 E Cesar E Chavez Ave, , CA 90033, Los Angeles, CA 90033",
+      "phone": "3232722776",
+      "googleByName": "Cesar Chavez Body Shop",
+      "googleByPhone": "Cesar Chavez Body Shop",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Class N Color Auto Body",
+      "addr": "8115 Canoga Ave, Canoga Park,, CA 91304",
+      "phone": "8188845383",
+      "googleByName": "Class N Color Auto Body",
+      "googleByPhone": "Class N Color Auto Body",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Collision Center",
+      "addr": "440B N Green St, Tehachapi, CA 93561",
+      "phone": "6618223464",
+      "googleByName": "Mountain Paint & Auto Body",
+      "googleByPhone": "Mountain Paint & Auto Body",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Collision Center",
+      "addr": "5636 W Adams Blvd, Los Angeles, CA 90016",
+      "phone": "3239363636",
+      "googleByName": "ProColor Collision Adams",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Collision Center",
+      "addr": "406 S Pacific Ave, San Pedro, CA 90731",
+      "phone": "5622497110",
+      "googleByName": "Pacific Body Shop",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Collision Center",
+      "addr": "9310 Jersey Blvd, Ste B, Rancho Cucamonga, CA 91730",
+      "phone": "9099451234",
+      "googleByName": "Caliber Collision",
+      "googleByPhone": "Gerber Collision & Glass",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Daryl Berman, DC - Michael",
+      "addr": "1303 A St, Hayward, CA 94541",
+      "phone": "5105384414",
+      "googleByName": "Daryl Berman, DC",
+      "googleByPhone": "Daryl Berman, DC",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Drew McClure. D.C.",
+      "addr": "1399 S Winchester Blvd, suite 140, San Jose, CA 95128",
+      "phone": "4082610772",
+      "googleByName": "Whole Body Chiropractic & Massage",
+      "googleByPhone": "Whole Body Chiropractic & Massage",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "EZ Care Wellness Los Angeles",
+      "addr": "580 Wilshire Blvd #1620, Los Angeles, CA 90010",
+      "phone": "3109259572",
+      "googleByPhone": "Complete Healthcare Center",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Freedom Towing",
+      "addr": "1920 E Mineral King Ave A, Visalia, CA 93292",
+      "phone": "5597333868",
+      "googleByName": "Freedom Towing",
+      "googleByPhone": "Freedom Towing",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "GT Collision Center",
+      "addr": "15572 Computer Ln, Huntington Beach, CA 92649",
+      "phone": "7144776940",
+      "googleByName": "GT Collision Center",
+      "googleByPhone": "GT Collision Center",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "InMotion Chiropractic",
+      "addr": "6540 Stockton Blvd # 2 (Asian Plaza), Sacramento, CA 95823",
+      "phone": "9164215915",
+      "googleByName": "In Motion Chiropractic",
+      "googleByPhone": "In Motion Chiropractic",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "J & P Spine Center",
+      "addr": "6079 North Fresno Street Suite 101, Fresno, CA 93710",
+      "phone": "5595383145",
+      "googleByName": "J&P Spine and Joint Center, Inc",
+      "googleByPhone": "J&P Spine and Joint Center, Inc",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "KINGSPOINT Foot and Ankle Specialists",
+      "addr": "2514 S Central Ave,, Los Angeles, CA 90011",
+      "phone": "3103105260",
+      "googleByName": "KINGSPOINT Foot and Ankle Specialists",
+      "addrOk": true,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Maggie's A-1 Insurance",
+      "addr": "834 East Avenue K4, Lancaster, CA 93535",
+      "phone": "6619416496",
+      "googleByName": "Maggie's A-1 Insurance Services LLC,",
+      "googleByPhone": "Maggie's A-1 Insurance Services LLC,",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Mission Chiropractic",
+      "addr": "1280 Benton St,, Santa Clara,, CA 95050",
+      "phone": "4082430696",
+      "googleByName": "Mission Chiropractic",
+      "googleByPhone": "Mission Chiropractic",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Nova Auto Craft",
+      "addr": "9165 Independence Ave, Chatsworth, CA 91311",
+      "phone": "3109276416",
+      "googleByName": "Nova Auto Craft",
+      "addrOk": true,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Pediatric",
+      "addr": "9802 Stockdale hwy, 103, Bakersfield, CA 93311",
+      "phone": "6616634444",
+      "googleByName": "Coastal Kids - Southwest",
+      "googleByPhone": "Dr. Hitesh Z. Shah, MD",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Progressive A&B General Repair",
+      "addr": "4249 E Olympic Blvd, Los Angeles, CA 90023",
+      "phone": "3239681130",
+      "googleByName": "Progressive A&B General Repair",
+      "googleByPhone": "Progressive A&B General Repair",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Ringer Chiropractic",
+      "addr": "1525 N Tracy Blvd,, Tracy, CA 95376",
+      "phone": "2098352225",
+      "googleByName": "Ringer Chiropractic",
+      "googleByPhone": "Ringer Chiropractic",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "Santa Rosa Auto Body",
+      "addr": "3546 Santa Rosa Ave,, Santa Rosa, CA 95407",
+      "phone": "7078748992",
+      "googleByName": "Santa Rosa Auto Body",
+      "googleByPhone": "Santa Rosa Auto Body",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "State Farm Insurance",
+      "addr": "1536 20th St, San Francisco, CA 94107",
+      "phone": "4155807987",
+      "googleByName": "Tucker Williams - State Farm Insurance Agent",
+      "googleByPhone": "Tucker Williams - State Farm Insurance Agent",
+      "addrOk": true,
+      "phoneOk": true
+    },
+    {
+      "fvName": "thrive insurance agency",
+      "addr": "200 Brown Rd. STE 203, Fremont, CA 94539",
+      "phone": "5102708141",
+      "googleByName": "Daven Loomba Farmers insurance agency",
+      "googleByPhone": "Golden Era Insurance Agency",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "Universal Medical & Acupuncture Clinic",
+      "addr": "6700 N First St Suite 124, Fresno, CA 93710",
+      "phone": "5594510131",
+      "googleByName": "Universal Medical and Acupuncture Clinic",
+      "googleByPhone": "Universal Medical and Acupuncture Clinic",
+      "addrOk": false,
+      "phoneOk": false
+    },
+    {
+      "fvName": "urgent care Stockton",
+      "addr": "Address 1148 W Hammer Ln, Stockton, CA 95209",
+      "phone": "2099529696",
+      "googleByName": "Delta CMT Stockton Urgent Care Medical Clinic",
+      "googleByPhone": "Delta CMT Stockton Urgent Care Medical Clinic",
+      "addrOk": false,
+      "phoneOk": false
+    }
+  ],
+  "alignment": {
+    "addrOk": 18,
+    "phoneOk": 16,
+    "eitherOk": 18,
+    "n": 30
+  },
+  "conflicts": [
+    {
+      "id": 450869,
+      "crmName": "D & B Towing",
+      "fvName": "All State Towing",
+      "googleForCRM": "D & B Towing LLC — 310 Quartermaster St, West Columbia, SC 29170",
+      "googleForFV": "All State Towing — 3689 S State Ave, Kerman, CA 93630"
+    },
+    {
+      "id": 450896,
+      "crmName": "Fortner’s Towing- Home",
+      "fvName": "Double D Towing Service",
+      "googleForCRM": "Fortner's F.a.s.t. Towing — 1501 Whitson St, Selma, CA 93662",
+      "googleForFV": "Double D Towing Service — 720 E Race Ave, Visalia, CA 93292"
+    },
+    {
+      "id": 450958,
+      "crmName": "Tip's complete automotive and towing",
+      "fvName": "Vejar Auto Collision",
+      "googleForCRM": "Tip's complete automotive and towing — 2914 Phillip Ave, Clovis, CA 93612",
+      "googleForFV": "Vejar Auto Collision — 800 N Burke St, Visalia, CA 93292"
+    },
+    {
+      "id": 451065,
+      "crmName": "Auto Collision Group Of Bakersfield",
+      "fvName": "A & A Automotive",
+      "googleForCRM": "Auto Collision Group - Bakersfield — 6916 Mc Cutchen Rd Ste 100, Bakersfield, CA 93313",
+      "googleForFV": "A&A Automotive and Tire — 9541 E 9th St, Rancho Cucamonga, CA 91730"
+    },
+    {
+      "id": 451108,
+      "crmName": "Katlyn",
+      "fvName": "Feel Good Chiropractic",
+      "googleForCRM": "undefined — undefined",
+      "googleForFV": "Feel Good Chiropractic — 5132 N Fresno St, Fresno, CA 93710"
+    },
+    {
+      "id": 451772,
+      "crmName": "Arteaga Porfirio Z DC",
+      "fvName": "Arteaga Chiropractic Center",
+      "googleForCRM": "Arteaga Porfirio Z DC — 106 S Pine St, Santa Maria, CA 93458",
+      "googleForFV": "Arteaga Chiropractic Center — 106 S Pine St, Santa Maria, CA 93458"
+    },
+    {
+      "id": 451822,
+      "crmName": "Ace Auto repair & Muffler",
+      "fvName": "A's Auto repair & Muffler",
+      "googleForCRM": "Ace Muffler — 7157 W Irving Park Rd, Chicago, IL 60634",
+      "googleForFV": "A's Auto Repair & Muffler — 901 A St, Antioch, CA 94509"
+    },
+    {
+      "id": 451842,
+      "crmName": "Dominguez Collusional Renewal",
+      "fvName": "Collision Center",
+      "googleForCRM": "Dominguez Collusion Renewal — 1915 Sepulveda Blvd, Torrance, CA 90501",
+      "googleForFV": "Texas Collision Centers — 1100 S Main St, Mansfield, TX 76063"
+    }
+  ]
+}
