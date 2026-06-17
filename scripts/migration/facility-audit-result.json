@@ -1,0 +1,2804 @@
+{
+  "wrongName": [
+    {
+      "id": 450721,
+      "crmName": "Finish Line Collision",
+      "googleNearest": "bayonas auto body shop | Tron Auto Body | Golden Coast Collision",
+      "bestGuess": "bayonas auto body shop",
+      "address": "1190 N 13th St, San Jose CA 95112",
+      "agent": "Grace"
+    },
+    {
+      "id": 450718,
+      "crmName": "Element Chiropractic Wellness",
+      "googleNearest": "Body In Motion Chiropractic | City of San Mateo Parks and Recreation | Dr. Vikas Duvvuri",
+      "bestGuess": "Body In Motion Chiropractic",
+      "address": "1941 O’Farrell St Ste 108 San Mateo, CA 94403",
+      "agent": "Grace"
+    },
+    {
+      "id": 450693,
+      "crmName": "Soma Collision Repair",
+      "googleNearest": "New Hope Chiropractic San Jose Chiropractor | Dr. Daniel S. Chun | Initiatech (Strong USA)",
+      "bestGuess": "New Hope Chiropractic San Jose Chiropractor",
+      "address": "360 Kiely Blvd Ste 215, San Jose, CA 95129",
+      "agent": "Grace"
+    },
+    {
+      "id": 450732,
+      "crmName": "KINGSPOINT Foot and Ankle Specialists",
+      "googleNearest": "Falcon Square | ecDOnails & lash | Reflections Barbershop Wildomar",
+      "bestGuess": "Falcon Square",
+      "address": "21535 Palomar St, Wildomar CA 92595",
+      "agent": "Grace"
+    },
+    {
+      "id": 450730,
+      "crmName": "JP Auto Body Shop -Redwood City",
+      "googleNearest": "Bittel Americas | The Best Refinishing Company of San Jose | Diana's Rhythmics (San Jose)",
+      "bestGuess": "Bittel Americas",
+      "address": "694 Quinn Ave b2, San Jose, CA 95112",
+      "agent": "Grace"
+    },
+    {
+      "id": 450741,
+      "crmName": "Premier Body Shop, LLC",
+      "googleNearest": "RESTORFX SANTA CLARA | Han Kook Tires | Just Rent A Car",
+      "bestGuess": "RESTORFX SANTA CLARA",
+      "address": "2517 El Camino Real, Santa Clara CA 95051",
+      "agent": "Grace"
+    },
+    {
+      "id": 450750,
+      "crmName": "Slick collision center",
+      "googleNearest": "Dhindsa truck and trailer repair | Romo's Towing Service | Top Gun Drywall Supply",
+      "bestGuess": "Dhindsa truck and trailer repair",
+      "address": "4625 N Golden State Blvd Fresno CA 93722",
+      "agent": "Grace"
+    },
+    {
+      "id": 450744,
+      "crmName": "Riverside Collision Center",
+      "googleNearest": "Dr. Aryan Dibagohar D.C. | Blue Diamond Water Heater Repair | YogaSix Redondo Beach",
+      "bestGuess": "Dr. Aryan Dibagohar D.C.",
+      "address": "403 N Pacific Coast Hwy Ste 201 Redondo Beach CA 90277",
+      "agent": "Grace"
+    },
+    {
+      "id": 450771,
+      "crmName": "castro insurance agency",
+      "googleNearest": "A Touch Of Class Taxi | Yellow Cab Co. | United Garage Body Shop",
+      "bestGuess": "A Touch Of Class Taxi",
+      "address": "1001 8th Street, Modesto, California 95354",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450765,
+      "crmName": "AutoBody Solutions LLC",
+      "googleNearest": "Castro Insurance Services | FASKICKS | AH Brands-Wholesale-Phone Accessory -Liquor POS System-Merchant Processing",
+      "bestGuess": "Castro Insurance Services",
+      "address": "5681 Franklin Blvd # N1, Sacramento, CA 95824",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450767,
+      "crmName": "Bobby's Auto Body And Paint",
+      "googleNearest": "ABOUT TAX | Annie's Hair & Nails | Lee X. Yang, DC",
+      "bestGuess": "ABOUT TAX",
+      "address": "6685 Stockton Blvd Ste 7, Sacramento, CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450787,
+      "crmName": "Jeeo Health Center Dr. Gurwinder Bath Chiropractic Inc:",
+      "googleNearest": "Dr. Hien Pham | Hoang Tri-Dung G MD Inc | Lucky Travel",
+      "bestGuess": "Dr. Hien Pham",
+      "address": "6540 Stockton Blvd # 2, Sacramento CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450793,
+      "crmName": "Manuel Lopez body and frame",
+      "googleNearest": "ProColor Collision Modesto | Pacific Blue Pool inc | Tekniton",
+      "bestGuess": "ProColor Collision Modesto",
+      "address": "1216 6th St Modesto, CA 95354",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450794,
+      "crmName": "Martinez Auto care",
+      "googleNearest": "West Automotive | Ultracare of Stockton | @UTOLABADO",
+      "bestGuess": "West Automotive",
+      "address": "2303 West Ln, Stockton, CA 95205, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450803,
+      "crmName": "Pain Injury Rehab Clinic",
+      "googleNearest": "Pacific Urgent Care | Jason Ochoa, PA | Dr. Taymour E. Malak, MD",
+      "bestGuess": "Pacific Urgent Care",
+      "address": "1782 W Hammer Ln, Stockton, CA 95209, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450795,
+      "crmName": "miracle auto pairing and collision",
+      "googleNearest": "DELUXE TOWING | Manuel Lopez Body & Frame | Concrete Resurfacing Systems",
+      "bestGuess": "DELUXE TOWING",
+      "address": "1333 Silica Ave, Sacramento CA 95815",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450814,
+      "crmName": "Roseville registration services",
+      "googleNearest": "Family Tires | JR Studio 17 | LMH SCAFFOLDING",
+      "bestGuess": "Family Tires",
+      "address": "999 W Cutting Blvd SUITE 12, Richmond, CA 94804, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450824,
+      "crmName": "Tony Bao's insurance services",
+      "googleNearest": "United Garage Body Shop | Metro Towing | Yellow Cab Co.",
+      "bestGuess": "United Garage Body Shop",
+      "address": "1001 8th St #2c, Modesto, CA 95354",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450809,
+      "crmName": "Pronto insurance services",
+      "googleNearest": "The thomas F. wilson nutrition education center | AutoPrintz | patriots truck repair & lube",
+      "bestGuess": "The thomas F. wilson nutrition education center",
+      "address": "108 W Hazelton Ave, Stockton, CA 95203",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450811,
+      "crmName": "Reyes Body & Frame Richmond",
+      "googleNearest": "Pronto Insurance Agency | Paris Spa | Jackson Hewitt Tax Service",
+      "bestGuess": "Pronto Insurance Agency",
+      "address": "2400 Florin Rd Ste E, Sacramento, CA 95822, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450833,
+      "crmName": "Yang Advanced Chiropractic Group",
+      "googleNearest": "Shailesh Singh M. D. | Delta CMT Stockton Urgent Care Medical Clinic | Dr. Nicholas R. Birlew, DO",
+      "bestGuess": "Shailesh Singh M. D.",
+      "address": "1148 W Hammer Ln Stockton, CA 95209",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450826,
+      "crmName": "Ultimate Collision Center",
+      "googleNearest": "Titan Auto Body & Auto Repair | Bumper City Dot Com | SAC Automotive Paint & Supply",
+      "bestGuess": "Titan Auto Body & Auto Repair",
+      "address": "3320 Kiessig Ave STE 2, Sacramento, CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450834,
+      "crmName": "9TH STREET COLLISION AND TOWING",
+      "googleNearest": "Caliber Collision | Fastrip | Community Day School",
+      "bestGuess": "Caliber Collision",
+      "address": "1204 9th street Sanger, CA 93657",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450868,
+      "crmName": "Cortez & Sons Towing",
+      "googleNearest": "Anderson's Towing Stockton | U-Haul Neighborhood Dealer | Forajidos Motorsports",
+      "bestGuess": "Anderson's Towing Stockton",
+      "address": "2383 N Wilson Way, Stockton, CA 95205",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450847,
+      "crmName": "Anderson's Tow Stockton",
+      "googleNearest": "Freedom Towing | Able Towing | R&R Automotive and Towing",
+      "bestGuess": "Freedom Towing",
+      "address": "1920 E Mineral King Ave, Visalia, CA 93292, United States",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450858,
+      "crmName": "Central Valley Collision Center - Fresno",
+      "googleNearest": "ABC Auto Body | Fresno Community Gardens | SE Belmont - Barton",
+      "bestGuess": "ABC Auto Body",
+      "address": "4533 E Belmont Ave, Fresno, CA 93702",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450863,
+      "crmName": "Chuy's Autobody And Collision Inc",
+      "googleNearest": "Brothers Collision & Mechanical Repair | Templo Maranatha Ministerios Vivos | Eastside Christian Church",
+      "bestGuess": "Brothers Collision & Mechanical Repair",
+      "address": "3951 E Cesar Chavez Blvd Fresno, CA 93702",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450867,
+      "crmName": "Complete Collision Works",
+      "googleNearest": "Steve's Boat & Prop Repair | CMBRS | FarmX",
+      "bestGuess": "Steve's Boat & Prop Repair",
+      "address": "2481 N Sunnyside Ave, Fresno, CA 93727",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450851,
+      "crmName": "ASAP Towing",
+      "googleNearest": "Fantasy Gems | Stay Up Recovery Sober Living | Divine Doves of SugarLand Farm Office",
+      "bestGuess": "Fantasy Gems",
+      "address": "3850 N. Stanford Ave Fresno CA 93727",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450881,
+      "crmName": "Feel Good Chiropractor",
+      "googleNearest": "Big Mikes Tires and Polishing | Pep's Auto Body & Painting | Dynamic Auto LLC",
+      "bestGuess": "Big Mikes Tires and Polishing",
+      "address": "24294 Ave 18, Madera, CA 93638",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450880,
+      "crmName": "Extreme Car Care Center",
+      "googleNearest": "Clovis Collision Center | Clovis Body & Paint | WoodRat",
+      "bestGuess": "Clovis Collision Center",
+      "address": "735 Barstow Ave, Clovis, CA 93612, United States",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450883,
+      "crmName": "Fiesta Auto Insurance & Tax Service- Fresno",
+      "googleNearest": "Lark Chiropractic | Xpress Drug Testing | Lee A. Heu, DC",
+      "bestGuess": "Lark Chiropractic",
+      "address": "125 E Barstow Ave STE 150 Fresno Ca 93710",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450875,
+      "crmName": "Downtown Motors Tow Service",
+      "googleNearest": "Storage Plus | Keystone Packing INC. | Darkside Customz",
+      "bestGuess": "Storage Plus",
+      "address": "1810 13th St Suite 10, Reedley, CA 93654",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450878,
+      "crmName": "E Towing",
+      "googleNearest": "Selma Mini Mart | Kingdom Builders Church | Escamilla Custom Concrete",
+      "bestGuess": "Selma Mini Mart",
+      "address": "9749 S Shaft Ave, Selma, CA 93662",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450882,
+      "crmName": "Fiesta Auto Insurance & Tax Service - Cedar & Shields",
+      "googleNearest": "Juan Juan, car repair | Lago de mendota | Mendota Wildlife Area Headquarters",
+      "bestGuess": "Juan Juan, car repair",
+      "address": "450 Oiler St. #A,Mendota, CA 93640",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450891,
+      "crmName": "Fiesta Auto Insurance & Tax Service- Visalia2",
+      "googleNearest": "Taqueria y Rosticeria Los Navarrete | Cricket Wireless Authorized Retailer | Merced County Private Industry",
+      "bestGuess": "Taqueria y Rosticeria Los Navarrete",
+      "address": "1102 W 16th St. Merced 95340",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450890,
+      "crmName": "Fiesta Auto Insurance & Tax Service- Tulare",
+      "googleNearest": "Perfect Edge Sharpening Services | 6523 E. Crimson Dr, Fresno, CA 93727, USA | Know God Know Light",
+      "bestGuess": "Perfect Edge Sharpening Services",
+      "address": "4842 Cesar Chavez Blvd Ste. #103, Fresno, CA 93727",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450905,
+      "crmName": "Gonzales towing & transportation",
+      "googleNearest": "Backyard Party Rentals | Afy electric llc | Cristobal Concrete Construction LLC",
+      "bestGuess": "Backyard Party Rentals",
+      "address": "1004 W MICHIGAN AVE, FRESNO, CA, 93705-3912",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450906,
+      "crmName": "Greenway Auto Body",
+      "googleNearest": "All Pro Truck & Autobody | Economy, Paint Body | Torres Auto Repair inc",
+      "bestGuess": "All Pro Truck & Autobody",
+      "address": "208 S Dunworth St, Visalia CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450927,
+      "crmName": "Metro Towing",
+      "googleNearest": "Gonzalez Towing & Transport Inc | Restaurante De Maria’s | Valero",
+      "bestGuess": "Gonzalez Towing & Transport Inc",
+      "address": "1297 Oller St, Mendota, CA 93640",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450949,
+      "crmName": "Salmeri Insurance Agency, Inc.",
+      "googleNearest": "Fadedbyrardo | Mineral King & Divisadero | Christina Joy Photography",
+      "bestGuess": "Fadedbyrardo",
+      "address": "1661 W Noble Ave., Visalia CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450919,
+      "crmName": "Llanos Towing Fresno",
+      "googleNearest": "Moran Handyman | Belmont Lawn Mower Repair | Stairway Fabricators",
+      "bestGuess": "Moran Handyman",
+      "address": "4619 E. White Ave, Fresno, CA 93702- Main Location 1040 Holland Ave, Clovis, CA 93612",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450947,
+      "crmName": "Saenz Chiropractic- Maureen",
+      "googleNearest": "J And B Auto Body | Copas Cantina | Legendary Concrete Fresno",
+      "bestGuess": "J And B Auto Body",
+      "address": "1902 E McKinley Ave, Fresno, CA 93703, United States",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450950,
+      "crmName": "Sanger Auto Body and Paint",
+      "googleNearest": "Don Valenzuela's Autobody | CAPA-Clovis Agility and Performance Academy | High Performance Academy Indoor Soccer - Clovis",
+      "bestGuess": "Don Valenzuela's Autobody",
+      "address": "297 N Minnewawa Ave, Clovis, CA 93612",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450978,
+      "crmName": "Zylstra Automotive & Diesel",
+      "googleNearest": "Big Mikes Tires and Polishing | Pep's Auto Body & Painting | Dynamic Auto LLC",
+      "bestGuess": "Big Mikes Tires and Polishing",
+      "address": "24294 Avenue 18, Madera, CA 93638",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450955,
+      "crmName": "Steve's towing Service",
+      "googleNearest": "Fresno Transmission & Engine | Red Cave Inc | Extreme Garden Supply",
+      "bestGuess": "Fresno Transmission & Engine",
+      "address": "631 N Maple Ave Fresno, CA 93702",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450966,
+      "crmName": "Triple H Auto Body LLC",
+      "googleNearest": "Sal's Auto Body Shop | Fine Arts Cabinets | Sunset Patios Fresno",
+      "bestGuess": "Sal's Auto Body Shop",
+      "address": "1445 N Thesta St, Fresno, CA 93703,",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450965,
+      "crmName": "Triple G Collision repair",
+      "googleNearest": "Enviro Clean Sanitation Supply | Fresno County Sheriff's District | Rumba Fit",
+      "bestGuess": "Enviro Clean Sanitation Supply",
+      "address": "1560 N Blackstone Ave, Fresno CA 93703",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450979,
+      "crmName": "Abel's Auto Body",
+      "googleNearest": "Mac Auto Body | Newman Frey & Associates | Malibu City Auto Body",
+      "bestGuess": "Mac Auto Body",
+      "address": "4921 W Jefferson Blvd, Los Angeles, CA 90016",
+      "agent": "Malvin"
+    },
+    {
+      "id": 450959,
+      "crmName": "Tires to Go & Towing",
+      "googleNearest": "H Auto Parts & Recycling 559 | Tarlton & Son Inc. | Elm Avenue Feed",
+      "bestGuess": "H Auto Parts & Recycling 559",
+      "address": "3646 S Elm Ave, Fresno, CA 93706",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450982,
+      "crmName": "Leo's Paint & Body",
+      "googleNearest": "Figueroa Body Shop | North Hollywood Auto Upholstery | La Cabanita De Don Chepe",
+      "bestGuess": "Figueroa Body Shop",
+      "address": "11568 Vanowen St, North Hollywood, CA 91606",
+      "agent": "Malvin"
+    },
+    {
+      "id": 450986,
+      "crmName": "ABS Collision Center",
+      "googleNearest": "V&G Auto Body Shop | David Anderson Automotive | Ultimate Dealer Services",
+      "bestGuess": "V&G Auto Body Shop",
+      "address": "1038 W 9th St Upland 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 450992,
+      "crmName": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+      "googleNearest": "Eldessouky Law Employment Lawyers West Covina | Micasa Pro Roofers | Prof Home Health Services, Inc",
+      "bestGuess": "Eldessouky Law Employment Lawyers West Covina",
+      "address": "24594 Sunnymead Boulevard ste h, Moreno Valley, CA 92553",
+      "agent": "Miguel"
+    },
+    {
+      "id": 450998,
+      "crmName": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+      "googleNearest": "Saving for life | Apex Precision Barbershop | Vicious Soccer Development",
+      "bestGuess": "Saving for life",
+      "address": "24594 Sunnymead Boulevard ste h, Moreno Valley, CA 92553",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451001,
+      "crmName": "Diamond Bar Chiropractic",
+      "googleNearest": "Lalagin Sarkissian, RD - Dietitian Nutritionist | KM Beauty Corner | Pacific Health",
+      "bestGuess": "Lalagin Sarkissian, RD - Dietitian Nutritionist",
+      "address": "1101 N Pacific Ave, Glendale, CA 91202",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451005,
+      "crmName": "D Collision",
+      "googleNearest": "Fine Finish and Refinish | SCV Autohaus Collision Center | Ordaz's Auto Repair",
+      "bestGuess": "Fine Finish and Refinish",
+      "address": "515 S Lake St Los Angeles CA 90057",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451003,
+      "crmName": "Downey Health and Wellness Center: Cathrine Zarrabi DC",
+      "googleNearest": "Shear Creations Hair Salon | Gilroy Family Chiropractic | Infinity Staffing Service",
+      "bestGuess": "Shear Creations Hair Salon",
+      "address": "8010 Wayland Ln # 1B, Gilroy, CA 95020",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451009,
+      "crmName": "Fix Auto Upland",
+      "googleNearest": "Nova Auto Craft | E&S Quality Fabricators | Precision Sheet Metal & Machining | Aderans Hair Goods",
+      "bestGuess": "Nova Auto Craft",
+      "address": "5294 Valley Blvd #2, Los Angeles, CA 90032",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451017,
+      "crmName": "ProColor Collision San Marcos",
+      "googleNearest": "BBS Manufacturing | Whitman Associates | Quilt In A Day",
+      "bestGuess": "BBS Manufacturing",
+      "address": "2091 W. Florida Ave, Suite 120 Hemet CA 92545",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451013,
+      "crmName": "Life Balance Chiropractic",
+      "googleNearest": "LL Acupuncture and Herbs | Pedego Electric Bikes Lake Forest | AURCORE",
+      "bestGuess": "LL Acupuncture and Herbs",
+      "address": "731 E 4th St Suite #8, Long Beach, CA 90802",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451021,
+      "crmName": "ProCare Medical Group",
+      "googleNearest": "Living Allergy Free | Dr. Gary Mcdowell | Jordi Capdet",
+      "bestGuess": "Living Allergy Free",
+      "address": "8300 University Ave, La Mesa, CA 91942",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451027,
+      "crmName": "Royal Collision Center",
+      "googleNearest": "Body sculpting By Butterfly | Pauline's room | Inland Chiropractic & Medical Weightloss",
+      "bestGuess": "Body sculpting By Butterfly",
+      "address": "1030 N D St, San Bernardino, CA 92410",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451018,
+      "crmName": "Nova Auto Craft",
+      "googleNearest": "Complete Chiropractic Wellness Center | Ebony Miller, PA-C | Le Anh-Dao V MD",
+      "bestGuess": "Complete Chiropractic Wellness Center",
+      "address": "585 N Mountain Ave Suite C-1, Upland, CA 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451042,
+      "crmName": "Chiropractic Wellness Center- Milpitas",
+      "googleNearest": "Freedom Towing | Able Towing | R&R Automotive and Towing",
+      "bestGuess": "Freedom Towing",
+      "address": "1920 E Mineral King Ave, Visalia, CA 93292",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451041,
+      "crmName": "Auto Collision Group 2nd Location",
+      "googleNearest": "Artemio Hernandez | Central CA Commercial | Angela Torres",
+      "bestGuess": "Artemio Hernandez",
+      "address": "878 W Morton Ave C, Porterville, CA 93257",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451035,
+      "crmName": "Wellness and Injury Centers",
+      "googleNearest": "Family Healthcare Center LAX | Triformis Corporation | Fulfillment Church",
+      "bestGuess": "Family Healthcare Center LAX",
+      "address": "8929 S Sepulveda Blvd #100, Los Angeles, CA 90045",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451051,
+      "crmName": "Hadaya Chiropractic Inc.",
+      "googleNearest": "Skyn & Tonic | Laser Nail Therapy | Paola Md Tempesti",
+      "bestGuess": "Skyn & Tonic",
+      "address": "435 Arden Avenue, Suite 530 Glendale, CA 91203",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451048,
+      "crmName": "Dr. Tyler Sports Medicine & Chiropractic",
+      "googleNearest": "WellActive Health | Elite Pain Care | Community Chiropractic Group",
+      "bestGuess": "WellActive Health",
+      "address": "1628 S Court St, Visalia, CA 93277",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451057,
+      "crmName": "Reliance Auto Collision & Rental",
+      "googleNearest": "VIP Ironworks | Kentwood Players | Westchester Playhouse",
+      "bestGuess": "VIP Ironworks",
+      "address": "8315 Hindry Ave, Los Angeles, CA 90045",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451063,
+      "crmName": "Xtreme Auto Collision- Madera",
+      "googleNearest": "Schrader's auto parts | Westcoast Hospitality Seating | Pierson's Mobile Auto Repair",
+      "bestGuess": "Schrader's auto parts",
+      "address": "950 W Foothill Blvd, Azusa, CA 91702",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451079,
+      "crmName": "JJ's Autobody And Paint",
+      "googleNearest": "Envista Medical | Neck And Back Integrative Medicine | Amanda Mann",
+      "bestGuess": "Envista Medical",
+      "address": "3900 Coffee Rd. #3 Bakersfield, CA 93308",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451082,
+      "crmName": "Pain Clinics of Central California",
+      "googleNearest": "Shafter Depot Museum | Santa Fe Passenger and Freight Depot | MasterCraft Roofing LA",
+      "bestGuess": "Shafter Depot Museum",
+      "address": "101 Walker St. Shafter, CA 93263",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451075,
+      "crmName": "Express Body Works",
+      "googleNearest": "Savage Auto Body | Eastside Kustom | All That Lettering",
+      "bestGuess": "Savage Auto Body",
+      "address": "1223 Washington St. #B Bakersfield, CA 93305",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451084,
+      "crmName": "ProColor Collision Bakersfield",
+      "googleNearest": "Hernandez Auto Sales | A & A Auto Center | JM INSURANCE SERVICES",
+      "bestGuess": "Hernandez Auto Sales",
+      "address": "3115 Edison Hwy, Bakersfield, CA 93307",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451096,
+      "crmName": "Chiropractor",
+      "googleNearest": "Age With Power | Dr. Steven E. Levine, MD | Dr. Mark R. Glasberg, MD",
+      "bestGuess": "Age With Power",
+      "address": "1650 W Avenue J Lancaster, CA 93534",
+      "agent": "Arden"
+    },
+    {
+      "id": 451099,
+      "crmName": "Camino Real Body Shop",
+      "googleNearest": "Frank J. Aguilera, DC | Prenatal Massage | Aguilera Health & Wellness Center",
+      "bestGuess": "Frank J. Aguilera, DC",
+      "address": "2031 17th St #1 Bakersfield 93301",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451092,
+      "crmName": "Ten Eight Towing",
+      "googleNearest": "Quality Recovery | Mobile Ag Service & Repair | D & M Metallizing",
+      "bestGuess": "Quality Recovery",
+      "address": "1000 Mt. Vernon Bakersfield, CA 93307",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451087,
+      "crmName": "San Joaquin Collision",
+      "googleNearest": "Payless Towing | I Heart Non-Emergency Medical Transportation Inc. | A Quick Recovery",
+      "bestGuess": "Payless Towing",
+      "address": "1400 Washington St. Bakersfield, CA 93305",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451109,
+      "crmName": "Freeway Insurance",
+      "googleNearest": "Alvarez Tax And Immigration services | Hear for Life Hearing Aid Center | Right at Home",
+      "bestGuess": "Alvarez Tax And Immigration services",
+      "address": "1813 W Caldwell Ave Ste B Visalia, CA 93277",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451114,
+      "crmName": "Baja insurance services",
+      "googleNearest": "Cordova grocery | ProCare Dental | BARK PLACE",
+      "bestGuess": "Cordova grocery",
+      "address": "2280 Vehicle Dr Suite 110, Rancho Cordova, CA 95670",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451113,
+      "crmName": "accident center- Dr. Origel",
+      "googleNearest": "Accident & Injury Relief Center | Dawn Fealk, DC | Village Marketplace",
+      "bestGuess": "Accident & Injury Relief Center",
+      "address": "11226 Gold Express Drive, Suite 201, Gold River, California 95670, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451122,
+      "crmName": "EMMANUEL TOWING",
+      "googleNearest": "Advance Chiropractic Care | Tracy Law Firm | BT LiveScan",
+      "bestGuess": "Advance Chiropractic Care",
+      "address": "6685 stockton Blvd Ste 1 Sacramento CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451159,
+      "crmName": "Jerry's Towing",
+      "googleNearest": "Gt supreme auto body | MUSCLE SPORTS AUTO CUSTOMS | Jm Auto Repair",
+      "bestGuess": "Gt supreme auto body",
+      "address": "7140 Remmet Ave #7, Canoga Park, CA 91303",
+      "agent": "Grace"
+    },
+    {
+      "id": 451123,
+      "crmName": "Perfection Auto Body",
+      "googleNearest": "OnSite Safe Sacramento | Pain-Injury Clinic | Phở Saigon Bay",
+      "bestGuess": "OnSite Safe Sacramento",
+      "address": "6452 Stockton Blvd, Sacramento, CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451147,
+      "crmName": "One Stop Auto Collision",
+      "googleNearest": "Richard Westbrook, DC | Bakker Construction, Inc | New Beginnings Chiropractic",
+      "bestGuess": "Richard Westbrook, DC",
+      "address": "24551 Silver Cloud Ct Suite 201 Monterey CA 93940",
+      "agent": "Grace"
+    },
+    {
+      "id": 451197,
+      "crmName": "Golden Gate Collision",
+      "googleNearest": "Geweke's Lodi RV Collision Center | Lodi Employment Center | Community Partnership For Family",
+      "bestGuess": "Geweke's Lodi RV Collision Center",
+      "address": "102 Hansen Dr, Lodi CA 95240",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451208,
+      "crmName": "Prime Collision",
+      "googleNearest": "Perfection Auto Body Inc | Excelente Auto Body & Frame Inc. | Comal y Canela",
+      "bestGuess": "Perfection Auto Body Inc",
+      "address": "1538 Nellis St B, Stockton CA 95205",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451216,
+      "crmName": "urgent care Stockton",
+      "googleNearest": "VibrantCare Rehabilitation | Poodle Nook Pet Grooming | Evolution",
+      "bestGuess": "VibrantCare Rehabilitation",
+      "address": "5912 Auburn Blvd #4, Citrus Heights, CA 95621, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451233,
+      "crmName": "Isais Paint and Body",
+      "googleNearest": "Torres Body & Paint | AMDG DETAILING & CAR WASH | Lalo Auto Repair",
+      "bestGuess": "Torres Body & Paint",
+      "address": "811 S Gateway Dr, Madera, CA 93637",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451229,
+      "crmName": "Torres Auto Body, Inc.",
+      "googleNearest": "Pit Stop Prints 559 | James Mobile Auto Repair & Sales | Concepts In Controls, Inc.",
+      "bestGuess": "Pit Stop Prints 559",
+      "address": "1119 E Douglas Ave, Visalia CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451232,
+      "crmName": "Vejar Auto Collision",
+      "googleNearest": "CROSS DOCK | Royal Auto Collision | dhillon trucks hospital",
+      "bestGuess": "CROSS DOCK",
+      "address": "2345 W Belmont Ave Fresno CA 93728",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451271,
+      "crmName": "Horine Chiropractic",
+      "googleNearest": "Tires-4-Less | Smog Check | Adrian's Auto Body Shop",
+      "bestGuess": "Tires-4-Less",
+      "address": "401 N E St STE P, Madera, CA 93638",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451257,
+      "crmName": "P & S Auto Body Shop",
+      "googleNearest": "Thrasher Masonry Inc | Foreign Auto Works | Mariscal Service Body Shop",
+      "bestGuess": "Thrasher Masonry Inc",
+      "address": "210 S Cain St suit n, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451250,
+      "crmName": "Economy Paint and Body",
+      "googleNearest": "Chuy's Autobody And Collision Inc | S.A. Cassaday Service Inc. | Memorial Wraps",
+      "bestGuess": "Chuy's Autobody And Collision Inc",
+      "address": "1738 E Finni Ct, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451263,
+      "crmName": "Santa Fe Body Shop",
+      "googleNearest": "Performance Body works | Cline's Business Equipment | Visalia Lab",
+      "bestGuess": "Performance Body works",
+      "address": "702 N Ben Maddox Way, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451320,
+      "crmName": "Core Chiropractic + Wellness",
+      "googleNearest": "Auto Collision Group - Bakersfield | Pac West Systems | Tesla Auto Repair Shop",
+      "bestGuess": "Auto Collision Group - Bakersfield",
+      "address": "6916 Mc Cutchen Rd Suite 100, Bakersfield, CA 93313",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451296,
+      "crmName": "Tip Top Auto Body Shop",
+      "googleNearest": "Nitrous Werks Performance | Plenty of Steam vsteam/spa | ANGELS HAIR LLC",
+      "bestGuess": "Nitrous Werks Performance",
+      "address": "1710 W Foothill Blvd Unit B, Upland, CA 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451319,
+      "crmName": "Celebrity Body Works",
+      "googleNearest": "Auto Collision Group - Bakersfield 2 | Schwebel Petroleum Co | U-Haul Neighborhood Dealer",
+      "bestGuess": "Auto Collision Group - Bakersfield 2",
+      "address": "901 Sacramento St. Bakersfield, CA 93305",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451313,
+      "crmName": "Paul’s Auto Body Shop",
+      "googleNearest": "Xtreme Auto Collision & Glass, Inc. | Elite Team Fresno Brazilian Jiu Jitsu | JOHN DAVID KAMPSCHMIDT",
+      "bestGuess": "Xtreme Auto Collision & Glass, Inc.",
+      "address": "4203 West Shaw, Fresno CA 93722",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451300,
+      "crmName": "Dynamic Auto Workz",
+      "googleNearest": "Dynamic Auto Body | Los Angeles County Public Works | Midvalley Yellow Cab",
+      "bestGuess": "Dynamic Auto Body",
+      "address": "1894 W 9th St Upland 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451382,
+      "crmName": "Natomas Urgent Care",
+      "googleNearest": "Dad's Collision Repair | Romero's Tires and Auto Repair | AutoGear Performance Full Auto Repair Tires and Wheels",
+      "bestGuess": "Dad's Collision Repair",
+      "address": "871 Garden Hwy, Yuba City, CA 95991, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451327,
+      "crmName": "PayLess Towing",
+      "googleNearest": "DNB Construction | JJ's Auto Body And Paint | Alder & Company",
+      "bestGuess": "DNB Construction",
+      "address": "205 E 5th St Bakersfiield CA 93307",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451324,
+      "crmName": "Jaime Auto Repair",
+      "googleNearest": "Panchos Body Shop | EL GUATEMALA BODY SHOP | Maggie's Wellness Center",
+      "bestGuess": "Panchos Body Shop",
+      "address": "1430 E California ave, Bakersfield CA 93307",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451343,
+      "crmName": "Haney Chiropractic",
+      "googleNearest": "Athena Bitcoin ATM | Valero Gas Station S&K Mini Mart 05 | Valero",
+      "bestGuess": "Athena Bitcoin ATM",
+      "address": "1237 Barstow Ave, Clovis, CA 93612",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451657,
+      "crmName": "Mad Dog Towing",
+      "googleNearest": "ProColor Collision Modesto | Pacific Blue Pool inc | Tekniton",
+      "bestGuess": "ProColor Collision Modesto",
+      "address": "1216 6th St Modesto CA 95354",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451652,
+      "crmName": "Total Healing & Wellness",
+      "googleNearest": "Zarni Dental | Neuranimus | HEALTHYCENTER INC.",
+      "bestGuess": "Zarni Dental",
+      "address": "135 N JACKSON AVE, SUITE 201 SAN JOSE CA 95116",
+      "agent": "Grace"
+    },
+    {
+      "id": 451493,
+      "crmName": "Lark Chiropractic",
+      "googleNearest": "Burchfield Law | Mystique Medical Spa and Wellness Center | Tenaya Medical Equipment Leasing",
+      "bestGuess": "Burchfield Law",
+      "address": "7161 N Howard St #100, Fresno CA 93720",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451656,
+      "crmName": "Allen’s auto body",
+      "googleNearest": "Lighthouse Systems, Inc. | Maaco Auto Body Shop & Painting | Ace In The Hole Towing",
+      "bestGuess": "Lighthouse Systems, Inc.",
+      "address": "801 Riverside Ave Ste #102 ​Roseville, CA 95678",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451689,
+      "crmName": "Nick's Towing",
+      "googleNearest": "Golden State Towing | Martinez Septic Tank Services | Desi flavors",
+      "bestGuess": "Golden State Towing",
+      "address": "7065 N Weber Ave, Fresno, CA 93722, United States",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451666,
+      "crmName": "Rooker’s Collision Center",
+      "googleNearest": "Restoration Health Center Accident Injury Doctors Stockton | J Cox & Associates | Zenith Career Services",
+      "bestGuess": "Restoration Health Center Accident Injury Doctors Stockton",
+      "address": "2027 West March Lane Suite 1 Stockton CA 95207",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451668,
+      "crmName": "Super Towing",
+      "googleNearest": "Treasure Valley Engraving | The Cove Community Center | Church of God",
+      "bestGuess": "Treasure Valley Engraving",
+      "address": "3408 Hunter Ln, Carmichael CA 95608",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451677,
+      "crmName": "Bunn’s Collision",
+      "googleNearest": "Coinme Cash - Buy Bitcoin at the Register | LibertyX Bitcoin ATM | Passport photos by PhotoAiD",
+      "bestGuess": "Coinme Cash - Buy Bitcoin at the Register",
+      "address": "1589 W. El Camino AveSTE 109 Sacramento CA 95833",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451662,
+      "crmName": "signature collision",
+      "googleNearest": "Roseville Registration Services | Lighthouse Systems, Inc. | PEI Builder",
+      "bestGuess": "Roseville Registration Services",
+      "address": "801 Riverside Ave. Suite 106 Roseville CA 95678",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451663,
+      "crmName": "Chilton Auto Body",
+      "googleNearest": "CLI - California Liberty Insurance | Queens Nails | Luxury Rugs",
+      "bestGuess": "CLI - California Liberty Insurance",
+      "address": "8119 Scottsdale Dr Ste E, Sacramento CA 95828",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451696,
+      "crmName": "Caesar Dents And Autobody",
+      "googleNearest": "Anna's Furniture | Rumba Fit | Enviro Clean Sanitation Supply",
+      "bestGuess": "Anna's Furniture",
+      "address": "1574 N. Blackstone Avenue Suite #108 Fresno, CA 93703",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451700,
+      "crmName": "C&J Auto Body & Paint",
+      "googleNearest": "Steve's Towing Service | Madrigal concrete llc | Family Dollar",
+      "bestGuess": "Steve's Towing Service",
+      "address": "2005 W Hedges Ave, Fresno, CA 93728",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451697,
+      "crmName": "Myers Towing",
+      "googleNearest": "Llanos Towing Fresno | Midway Auto Sales | Right Choice Auto Sales",
+      "bestGuess": "Llanos Towing Fresno",
+      "address": "4533 E Floradora Ave, Fresno, CA 93703",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451693,
+      "crmName": "Central Valley Chiropractic",
+      "googleNearest": "Nexus Energy Systems | HARYANA TRUCK TRAILER REPAIR SHOP | QUICK PERMITS",
+      "bestGuess": "Nexus Energy Systems",
+      "address": "4025 S Golden State Blvd Fresno CA 93725",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451714,
+      "crmName": "Lopez Towing",
+      "googleNearest": "Freedom Towing | Able Towing | R&R Automotive and Towing",
+      "bestGuess": "Freedom Towing",
+      "address": "1920 E Mineral King Ave A, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451708,
+      "crmName": "S&L Towing",
+      "googleNearest": "United Garage Body Shop | Metro Towing | Yellow Cab Co.",
+      "bestGuess": "United Garage Body Shop",
+      "address": "1001 8th St Suite B, Modesto, CA 95354",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451723,
+      "crmName": "Delcas Auto Collision,Inc",
+      "googleNearest": "Sam's Carpet & Furniture | Good Earth Int'l Bakehouse | Haircut Beauty Center",
+      "bestGuess": "Sam's Carpet & Furniture",
+      "address": "200 Serra Way #16, Milpitas, CA 95035, United States",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451711,
+      "crmName": "James Mobile Auto Repair LLC",
+      "googleNearest": "Dura-Glo Paint & Body Inc. | Tulare County Aikido | Gary's Welding",
+      "bestGuess": "Dura-Glo Paint & Body Inc.",
+      "address": "1843 E Main St, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451803,
+      "crmName": "Auto Collision Group 2nd Location- Adam",
+      "googleNearest": "Auto Collision Group - Bakersfield 2 | Schwebel Petroleum Co | U-Haul Neighborhood Dealer",
+      "bestGuess": "Auto Collision Group - Bakersfield 2",
+      "address": "901 Sacramento St Bakersfield CA 93305",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451805,
+      "crmName": "Haynes Chiropractic",
+      "googleNearest": "thousandgaragedoorrepair | Distinctive Coach Auto Body & Paint | Sweet Edna's Southern Catering",
+      "bestGuess": "thousandgaragedoorrepair",
+      "address": "1000 18th St, Bakersfield, CA 93301",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451751,
+      "crmName": "Randy's Towing",
+      "googleNearest": "Keepers Transformation House | Keepers of the Cross | Way Of Faith Church",
+      "bestGuess": "Keepers Transformation House",
+      "address": "125 N Chester Ave, Bakersfield, CA 93308",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451753,
+      "crmName": "Vortec's Auto Body",
+      "googleNearest": "Daysi's Gusto | Metro by T-Mobile | V.E. INCOME TAX & INSURANCE SERVICE",
+      "bestGuess": "Daysi's Gusto",
+      "address": "625 S Riverside Ave Suite J, Rialto, CA 92376",
+      "agent": "Miguel"
+    },
+    {
+      "id": 540033,
+      "crmName": "Leo's Paint & Body",
+      "googleNearest": "Figueroa Body Shop | North Hollywood Auto Upholstery | La Cabanita De Don Chepe",
+      "bestGuess": "Figueroa Body Shop",
+      "address": "11568 Vanowen St, North Hollywood, CA 91606",
+      "agent": "Malvin"
+    },
+    {
+      "id": 540039,
+      "crmName": "Leary Sport & Spine Chiropractic",
+      "googleNearest": "LL Acupuncture and Herbs | Pedego Electric Bikes Lake Forest | AURCORE",
+      "bestGuess": "LL Acupuncture and Herbs",
+      "address": "25691 Atlantic Ocean Dr b11, Lake Forest, CA 92630",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451812,
+      "crmName": "Agape Health & Wellness Center",
+      "googleNearest": "Xtreme Auto Collision, Inc. | TNT Fireworks | Central Valley Church of the Assemblies of God",
+      "bestGuess": "Xtreme Auto Collision, Inc.",
+      "address": "1211 E Yosemite Ave Madera, CA 93638",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451842,
+      "crmName": "Dominguez Collusional Renewal",
+      "googleNearest": "Dominguez Collusion Renewal | Torrance Auto Care moved to One Stop Lube N Brakes | 323 Kuztoms",
+      "bestGuess": "Dominguez Collusion Renewal",
+      "address": "1915 Sepulveda Blvd Torrance, CA 90501 United States",
+      "agent": "Moni"
+    },
+    {
+      "id": 630004,
+      "crmName": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+      "googleNearest": "Eldessouky Law Employment Lawyers West Covina | Micasa Pro Roofers | Prof Home Health Services, Inc",
+      "bestGuess": "Eldessouky Law Employment Lawyers West Covina",
+      "address": "2149 E Garvey Ave N suite a-5, West Covina, CA 91791",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630009,
+      "crmName": "Re-LAX Chiropractic + Wellness",
+      "googleNearest": "Impact Fix Collision Center | RCO Auto Repair | Arrow Auto Repair",
+      "bestGuess": "Impact Fix Collision Center",
+      "address": "15750 Arrow Blvd Space L, Fontana, CA 92335",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630011,
+      "crmName": "V&G AUTO REPAIR",
+      "googleNearest": "Certified Collision Repair | Sheriff department | SC Process Servers",
+      "bestGuess": "Certified Collision Repair",
+      "address": "424 1/2 N Main St Lake Elsinore CA 92530",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630005,
+      "crmName": "Gilroy Family Chiropractic",
+      "googleNearest": "SoCal Personal Injury Attorney | BB Auto Group LLC | Dynamic Management Services",
+      "bestGuess": "SoCal Personal Injury Attorney",
+      "address": "22982 La Cadena Dr Ste 12, Laguna Hills, CA 92653",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630008,
+      "crmName": "Precision Collision center",
+      "googleNearest": "Hess Rehabilitation & Chiropractic Centers, Inc. | Footheals Podiatry Fontana | Rene Rosa Insurance",
+      "bestGuess": "Hess Rehabilitation & Chiropractic Centers, Inc.",
+      "address": "9161 Sierra Ave. #206, Fontana, CA 92335, United States",
+      "agent": "Miguel"
+    },
+    {
+      "id": 660332,
+      "crmName": "Consulate",
+      "googleNearest": "Social Wellness | Lily's Catering | Adaljiza Tavera",
+      "bestGuess": "Social Wellness",
+      "address": "3550 Wilshire Blvd, Los Angeles, CA 90010",
+      "agent": null
+    },
+    {
+      "id": 660362,
+      "crmName": "Dealership",
+      "googleNearest": "Stark Auto Sales Inc | Maze Blvd & Jefferson St | 209 locust st, Modesto, Ca",
+      "bestGuess": "Stark Auto Sales Inc",
+      "address": "204 Maze Blvd unit b,, Modesto, CA 95351",
+      "agent": "Queenie"
+    },
+    {
+      "id": 660283,
+      "crmName": "CherishedLA",
+      "googleNearest": "Finncom | National Utility Locators | Ruff Patches",
+      "bestGuess": "Finncom",
+      "address": "2010 W AVE K #448, LANCASTER, CA 93536",
+      "agent": null
+    },
+    {
+      "id": 660951,
+      "crmName": "Orthopedics",
+      "googleNearest": "Halikis Nicholas M MD | Helen Pham, PA-C | Jai S Bhakta, PA-C",
+      "bestGuess": "Halikis Nicholas M MD",
+      "address": "5215 Torrance Blvd #210, Torrance, CA 90503",
+      "agent": null
+    },
+    {
+      "id": 661151,
+      "crmName": "Sarges",
+      "googleNearest": "5 MASTERS AUTO BODY | Delta Collision Center | Panorama Pet Hospital",
+      "bestGuess": "5 MASTERS AUTO BODY",
+      "address": "14515 Arminta St, Panorama City, CA 91402",
+      "agent": null
+    },
+    {
+      "id": 660950,
+      "crmName": "Orthopedic",
+      "googleNearest": "UCLA | Dr. Laurence Seigler | Dr. Matthew Herrmann",
+      "bestGuess": "UCLA",
+      "address": "8641 Wilshire Blvd, Beverly Hills, CA 90211",
+      "agent": null
+    },
+    {
+      "id": 660913,
+      "crmName": "Neurologist",
+      "googleNearest": "Denny and Peter Chen D.D.S., Inc. | Dr. Mona P. Ramaney, MD | Heros Amerkhanian, DO",
+      "bestGuess": "Denny and Peter Chen D.D.S., Inc.",
+      "address": "4201 Torrance Boulevard, Suite 560, Torrance,, CA 90503",
+      "agent": null
+    },
+    {
+      "id": 660949,
+      "crmName": "Ortho",
+      "googleNearest": "John L. Etcheverry, DPM | SCOI Bakersfield-Truxtun | Orthopedic Clinic | Dami O. Oluyede, MD",
+      "bestGuess": "John L. Etcheverry, DPM",
+      "address": "5201 Truxtun Ave, Bakersfield, CA 93309",
+      "agent": null
+    },
+    {
+      "id": 661066,
+      "crmName": "Rebecca",
+      "googleNearest": "Wellness Shores Center | My Saint My Hero Boutique - San Pedro | Marshall Arthur DDS",
+      "bestGuess": "Wellness Shores Center",
+      "address": "1609 W 25th St, San Pedro, CA 90732",
+      "agent": null
+    },
+    {
+      "id": 661231,
+      "crmName": "Surgeon",
+      "googleNearest": "Troy I. Mounts MD | Queenly Body by Kimbrae D. | California Recruits",
+      "bestGuess": "Troy I. Mounts MD",
+      "address": "1919 Truxtun Ave, Bakersfield, CA 93301",
+      "agent": null
+    }
+  ],
+  "nameVsFv": [
+    {
+      "id": 450693,
+      "crmName": "Soma Collision Repair",
+      "filevineName": "New Hope Chiropractic",
+      "address": "360 Kiely Blvd Ste 215, San Jose, CA 95129",
+      "agent": "Grace"
+    },
+    {
+      "id": 450718,
+      "crmName": "Element Chiropractic Wellness",
+      "filevineName": "A1 CHIROPRACTIC",
+      "address": "1941 O’Farrell St Ste 108 San Mateo, CA 94403",
+      "agent": "Grace"
+    },
+    {
+      "id": 450721,
+      "crmName": "Finish Line Collision",
+      "filevineName": "Filos Collision",
+      "address": "1190 N 13th St, San Jose CA 95112",
+      "agent": "Grace"
+    },
+    {
+      "id": 450730,
+      "crmName": "JP Auto Body Shop -Redwood City",
+      "filevineName": "Ryland Auto Body & Repair Inc.",
+      "address": "694 Quinn Ave b2, San Jose, CA 95112",
+      "agent": "Grace"
+    },
+    {
+      "id": 450732,
+      "crmName": "KINGSPOINT Foot and Ankle Specialists",
+      "filevineName": "Revive Spine and Wellness Chiropractic",
+      "address": "21535 Palomar St, Wildomar CA 92595",
+      "agent": "Grace"
+    },
+    {
+      "id": 450741,
+      "crmName": "Premier Body Shop, LLC",
+      "filevineName": "Precise Collision",
+      "address": "2517 El Camino Real, Santa Clara CA 95051",
+      "agent": "Grace"
+    },
+    {
+      "id": 450744,
+      "crmName": "Riverside Collision Center",
+      "filevineName": "ProActive Chiropractic & Sports Medicine",
+      "address": "403 N Pacific Coast Hwy Ste 201 Redondo Beach CA 90277",
+      "agent": "Grace"
+    },
+    {
+      "id": 450750,
+      "crmName": "Slick collision center",
+      "filevineName": "Romo's Towing",
+      "address": "4625 N Golden State Blvd Fresno CA 93722",
+      "agent": "Grace"
+    },
+    {
+      "id": 450765,
+      "crmName": "AutoBody Solutions LLC",
+      "filevineName": "castro insurance agency",
+      "address": "5681 Franklin Blvd # N1, Sacramento, CA 95824",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450767,
+      "crmName": "Bobby's Auto Body And Paint",
+      "filevineName": "Yang Advanced Chiropractic Group",
+      "address": "6685 Stockton Blvd Ste 7, Sacramento, CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450771,
+      "crmName": "castro insurance agency",
+      "filevineName": "Metro Towing",
+      "address": "1001 8th Street, Modesto, California 95354",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450787,
+      "crmName": "Jeeo Health Center Dr. Gurwinder Bath Chiropractic Inc:",
+      "filevineName": "In Motion Chiropractic",
+      "address": "6540 Stockton Blvd # 2, Sacramento CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450793,
+      "crmName": "Manuel Lopez body and frame",
+      "filevineName": "Luxury Collision Center/Procolor Collision (Lupe)",
+      "address": "1216 6th St Modesto, CA 95354",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450794,
+      "crmName": "Martinez Auto care",
+      "filevineName": "Mad Dog Towing (Adalid)",
+      "address": "2303 West Ln, Stockton, CA 95205, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450795,
+      "crmName": "miracle auto pairing and collision",
+      "filevineName": "Manuel Lopez Body & Frame",
+      "address": "1333 Silica Ave, Sacramento CA 95815",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450809,
+      "crmName": "Pronto insurance services",
+      "filevineName": "Prime collision",
+      "address": "108 W Hazelton Ave, Stockton, CA 95203",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450811,
+      "crmName": "Reyes Body & Frame Richmond",
+      "filevineName": "Pronto insurance services",
+      "address": "2400 Florin Rd Ste E, Sacramento, CA 95822, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450814,
+      "crmName": "Roseville registration services",
+      "filevineName": "Reyes Body & Frame",
+      "address": "999 W Cutting Blvd SUITE 12, Richmond, CA 94804, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450824,
+      "crmName": "Tony Bao's insurance services",
+      "filevineName": "Metro Towing",
+      "address": "1001 8th St #2c, Modesto, CA 95354",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450826,
+      "crmName": "Ultimate Collision Center",
+      "filevineName": "Lewis Auto Body",
+      "address": "3320 Kiessig Ave STE 2, Sacramento, CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450833,
+      "crmName": "Yang Advanced Chiropractic Group",
+      "filevineName": "urgent care Stockton",
+      "address": "1148 W Hammer Ln Stockton, CA 95209",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450834,
+      "crmName": "9TH STREET COLLISION AND TOWING",
+      "filevineName": "Sanger Auto Body and Paint",
+      "address": "1204 9th street Sanger, CA 93657",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450847,
+      "crmName": "Anderson's Tow Stockton",
+      "filevineName": "A-Able Towing -Able Gabriella",
+      "address": "1920 E Mineral King Ave, Visalia, CA 93292, United States",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450851,
+      "crmName": "ASAP Towing",
+      "filevineName": "A&J Towing",
+      "address": "3850 N. Stanford Ave Fresno CA 93727",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450858,
+      "crmName": "Central Valley Collision Center - Fresno",
+      "filevineName": "ABC AutoBody",
+      "address": "4533 E Belmont Ave, Fresno, CA 93702",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450863,
+      "crmName": "Chuy's Autobody And Collision Inc",
+      "filevineName": "Brothers Collision & Auto Repair",
+      "address": "3951 E Cesar Chavez Blvd Fresno, CA 93702",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450867,
+      "crmName": "Complete Collision Works",
+      "filevineName": "California Mercedes & BMW Repair Service",
+      "address": "2481 N Sunnyside Ave, Fresno, CA 93727",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450868,
+      "crmName": "Cortez & Sons Towing",
+      "filevineName": "Anderson's Tow Stockton",
+      "address": "2383 N Wilson Way, Stockton, CA 95205",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450875,
+      "crmName": "Downtown Motors Tow Service",
+      "filevineName": "Active Towing",
+      "address": "1810 13th St Suite 10, Reedley, CA 93654",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450878,
+      "crmName": "E Towing",
+      "filevineName": "Cortez & Sons Towing",
+      "address": "9749 S Shaft Ave, Selma, CA 93662",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450880,
+      "crmName": "Extreme Car Care Center",
+      "filevineName": "Clovis Body & Paint",
+      "address": "735 Barstow Ave, Clovis, CA 93612, United States",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450881,
+      "crmName": "Feel Good Chiropractor",
+      "filevineName": "Hernandez Auto repair",
+      "address": "24294 Ave 18, Madera, CA 93638",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450882,
+      "crmName": "Fiesta Auto Insurance & Tax Service - Cedar & Shields",
+      "filevineName": "Westside Chiropractic",
+      "address": "450 Oiler St. #A,Mendota, CA 93640",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450883,
+      "crmName": "Fiesta Auto Insurance & Tax Service- Fresno",
+      "filevineName": "Chiropractor",
+      "address": "125 E Barstow Ave STE 150 Fresno Ca 93710",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450887,
+      "crmName": "Fiesta Auto Insurance & Tax Service- Merced",
+      "filevineName": "Fiesta Auto Insurance & Tax Service- Hanford",
+      "address": "568 N 11th Avenue, Hanford, CA 93230",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450889,
+      "crmName": "Fiesta Auto Insurance & Tax Service- Selma",
+      "filevineName": "Fiesta Auto Insurance & Tax Service – Madera 2",
+      "address": "1410 Country Club Drive; Suite #120, Madera, CA, 93638",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450890,
+      "crmName": "Fiesta Auto Insurance & Tax Service- Tulare",
+      "filevineName": "Kings Canyon Chiropractic",
+      "address": "4842 Cesar Chavez Blvd Ste. #103, Fresno, CA 93727",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450891,
+      "crmName": "Fiesta Auto Insurance & Tax Service- Visalia2",
+      "filevineName": "Fiesta Auto Insurance & Tax Services- Merced",
+      "address": "1102 W 16th St. Merced 95340",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450905,
+      "crmName": "Gonzales towing & transportation",
+      "filevineName": "CHRIS&SONS TRANSPORT LLC",
+      "address": "1004 W MICHIGAN AVE, FRESNO, CA, 93705-3912",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450906,
+      "crmName": "Greenway Auto Body",
+      "filevineName": "Economy Paint and Body",
+      "address": "208 S Dunworth St, Visalia CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450919,
+      "crmName": "Llanos Towing Fresno",
+      "filevineName": "B&DTowing",
+      "address": "4619 E. White Ave, Fresno, CA 93702- Main Location 1040 Holland Ave, Clovis, CA 93612",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450927,
+      "crmName": "Metro Towing",
+      "filevineName": "Gonzales towing & transportation",
+      "address": "1297 Oller St, Mendota, CA 93640",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450947,
+      "crmName": "Saenz Chiropractic- Maureen",
+      "filevineName": "Collision Center",
+      "address": "1902 E McKinley Ave, Fresno, CA 93703, United States",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450949,
+      "crmName": "Salmeri Insurance Agency, Inc.",
+      "filevineName": "Fiesta Auto Insurance & Tax Service- Visalia 2",
+      "address": "1661 W Noble Ave., Visalia CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450950,
+      "crmName": "Sanger Auto Body and Paint",
+      "filevineName": "Collision Center",
+      "address": "297 N Minnewawa Ave, Clovis, CA 93612",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450955,
+      "crmName": "Steve's towing Service",
+      "filevineName": "Nelly's Auto Repair",
+      "address": "631 N Maple Ave Fresno, CA 93702",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450959,
+      "crmName": "Tires to Go & Towing",
+      "filevineName": "H Towing 559",
+      "address": "3646 S Elm Ave, Fresno, CA 93706",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450965,
+      "crmName": "Triple G Collision repair",
+      "filevineName": "Art's Auto Body & Paint",
+      "address": "1560 N Blackstone Ave, Fresno CA 93703",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450966,
+      "crmName": "Triple H Auto Body LLC",
+      "filevineName": "Reyna Chiropractic Clinic- Dr. Jaime DO NOT USE",
+      "address": "1445 N Thesta St, Fresno, CA 93703,",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450978,
+      "crmName": "Zylstra Automotive & Diesel",
+      "filevineName": "Hernandez Auto repair",
+      "address": "24294 Avenue 18, Madera, CA 93638",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450979,
+      "crmName": "Abel's Auto Body",
+      "filevineName": "Mac Body shop",
+      "address": "4921 W Jefferson Blvd, Los Angeles, CA 90016",
+      "agent": "Malvin"
+    },
+    {
+      "id": 450982,
+      "crmName": "Leo's Paint & Body",
+      "filevineName": "Sanchez Auto Body",
+      "address": "11568 Vanowen St, North Hollywood, CA 91606",
+      "agent": "Malvin"
+    },
+    {
+      "id": 450984,
+      "crmName": "ABS Collision Center",
+      "filevineName": "V&G Auto Repair",
+      "address": "1038 W 9th St Upland 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 450986,
+      "crmName": "ABS Collision Center",
+      "filevineName": "V&G Auto Repair",
+      "address": "1038 W 9th St Upland 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 450989,
+      "crmName": "Cedar Pointe Chiropractic Group",
+      "filevineName": "Leary Sport & Spine Chiropractic",
+      "address": "16049 Tuscola Rd # B, Apple Valley, CA 92307",
+      "agent": "Miguel"
+    },
+    {
+      "id": 450992,
+      "crmName": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+      "filevineName": "Asante Chiropractic - Testing - Beauty",
+      "address": "24594 Sunnymead Boulevard ste h, Moreno Valley, CA 92553",
+      "agent": "Miguel"
+    },
+    {
+      "id": 450998,
+      "crmName": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+      "filevineName": "Asante Chiropractic - Testing - Beauty",
+      "address": "24594 Sunnymead Boulevard ste h, Moreno Valley, CA 92553",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451001,
+      "crmName": "Diamond Bar Chiropractic",
+      "filevineName": "Pain Free Life - Glendale",
+      "address": "1101 N Pacific Ave, Glendale, CA 91202",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451003,
+      "crmName": "Downey Health and Wellness Center: Cathrine Zarrabi DC",
+      "filevineName": "Santiago Chiropractic Corporation",
+      "address": "8010 Wayland Ln # 1B, Gilroy, CA 95020",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451005,
+      "crmName": "D Collision",
+      "filevineName": "Ralfi's Collision Center",
+      "address": "515 S Lake St Los Angeles CA 90057",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451009,
+      "crmName": "Fix Auto Upland",
+      "filevineName": "24 Hour Auto Service",
+      "address": "5294 Valley Blvd #2, Los Angeles, CA 90032",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451010,
+      "crmName": "Empire Collision Center",
+      "filevineName": "D Collision",
+      "address": "26516 Ruether Ave Unit 301, Santa Clarita, CA 91350",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451012,
+      "crmName": "IRON CHIROPRACTIC",
+      "filevineName": "Dynamic Auto Workz",
+      "address": "38122 6th St # Palmdale CA 93550",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451013,
+      "crmName": "Life Balance Chiropractic",
+      "filevineName": "Sanchez Chiropractic and Wellness",
+      "address": "731 E 4th St Suite #8, Long Beach, CA 90802",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451017,
+      "crmName": "ProColor Collision San Marcos",
+      "filevineName": "Lifestyle Chiropractic & Wellness",
+      "address": "2091 W. Florida Ave, Suite 120 Hemet CA 92545",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451021,
+      "crmName": "ProCare Medical Group",
+      "filevineName": "McDowell Family Chiropractic Inc.",
+      "address": "8300 University Ave, La Mesa, CA 91942",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451024,
+      "crmName": "Impact Fix Collision Center",
+      "filevineName": "Nova Auto Craft",
+      "address": "9165 Independence Ave, Chatsworth, CA 91311",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451027,
+      "crmName": "Royal Collision Center",
+      "filevineName": "Inland chiropractic",
+      "address": "1030 N D St, San Bernardino, CA 92410",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451029,
+      "crmName": "Mauro's Body Shop",
+      "filevineName": "Fix Auto Upland",
+      "address": "114 N 8th Ave, Upland, CA 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451035,
+      "crmName": "Wellness and Injury Centers",
+      "filevineName": "Re-LAX Chiropractic + Wellness",
+      "address": "8929 S Sepulveda Blvd #100, Los Angeles, CA 90045",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451041,
+      "crmName": "Auto Collision Group 2nd Location",
+      "filevineName": "Agape Health & Wellness Center",
+      "address": "878 W Morton Ave C, Porterville, CA 93257",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451042,
+      "crmName": "Chiropractic Wellness Center- Milpitas",
+      "filevineName": "A-Able Towing -Able Gabriella",
+      "address": "1920 E Mineral King Ave, Visalia, CA 93292",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451048,
+      "crmName": "Dr. Tyler Sports Medicine & Chiropractic",
+      "filevineName": "Community Chiropractic Group",
+      "address": "1628 S Court St, Visalia, CA 93277",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451051,
+      "crmName": "Hadaya Chiropractic Inc.",
+      "filevineName": "Dr. Christy Anthony, MD",
+      "address": "435 Arden Avenue, Suite 530 Glendale, CA 91203",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451057,
+      "crmName": "Reliance Auto Collision & Rental",
+      "filevineName": "Titanium Towing",
+      "address": "8315 Hindry Ave, Los Angeles, CA 90045",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451063,
+      "crmName": "Xtreme Auto Collision- Madera",
+      "filevineName": "Schraders Auto Craft",
+      "address": "950 W Foothill Blvd, Azusa, CA 91702",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451075,
+      "crmName": "Express Body Works",
+      "filevineName": "Collision Center",
+      "address": "1223 Washington St. #B Bakersfield, CA 93305",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451079,
+      "crmName": "JJ's Autobody And Paint",
+      "filevineName": "Envista Medical",
+      "address": "3900 Coffee Rd. #3 Bakersfield, CA 93308",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451082,
+      "crmName": "Pain Clinics of Central California",
+      "filevineName": "Jaime Auto Repair",
+      "address": "101 Walker St. Shafter, CA 93263",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451084,
+      "crmName": "ProColor Collision Bakersfield",
+      "filevineName": "A & A Automotive",
+      "address": "3115 Edison Hwy, Bakersfield, CA 93307",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451087,
+      "crmName": "San Joaquin Collision",
+      "filevineName": "Insurance Agent",
+      "address": "1400 Washington St. Bakersfield, CA 93305",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451092,
+      "crmName": "Ten Eight Towing",
+      "filevineName": "Distinctive Coach Auto Body & Paint",
+      "address": "1000 Mt. Vernon Bakersfield, CA 93307",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451093,
+      "crmName": "Trends Collision Center",
+      "filevineName": "Ryan's Chiropractic",
+      "address": "2701 Calloway Dr Bakersfield CA 93312",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451096,
+      "crmName": "Chiropractor",
+      "filevineName": "AV Chiropractic Health Center (Lancaster) Dr. Hodges and Dr. Ball",
+      "address": "1650 W Avenue J Lancaster, CA 93534",
+      "agent": "Arden"
+    },
+    {
+      "id": 451099,
+      "crmName": "Camino Real Body Shop",
+      "filevineName": "Aguilera Health & Wellness Center",
+      "address": "2031 17th St #1 Bakersfield 93301",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451109,
+      "crmName": "Freeway Insurance",
+      "filevineName": "Horine Chiropractic",
+      "address": "1813 W Caldwell Ave Ste B Visalia, CA 93277",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451113,
+      "crmName": "accident center- Dr. Origel",
+      "filevineName": "Accident and Injury Relief Center",
+      "address": "11226 Gold Express Drive, Suite 201, Gold River, California 95670, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451114,
+      "crmName": "Baja insurance services",
+      "filevineName": "American River Chiropractic- Dr. Stirton",
+      "address": "2280 Vehicle Dr Suite 110, Rancho Cordova, CA 95670",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451122,
+      "crmName": "EMMANUEL TOWING",
+      "filevineName": "Yang Advanced Chiropractic Group",
+      "address": "6685 stockton Blvd Ste 1 Sacramento CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451123,
+      "crmName": "Perfection Auto Body",
+      "filevineName": "Pain Injury Rehab Clinic(Dr. Bao)",
+      "address": "6452 Stockton Blvd, Sacramento, CA 95823",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451147,
+      "crmName": "One Stop Auto Collision",
+      "filevineName": "Chiropractor",
+      "address": "24551 Silver Cloud Ct Suite 201 Monterey CA 93940",
+      "agent": "Grace"
+    },
+    {
+      "id": 451159,
+      "crmName": "Jerry's Towing",
+      "filevineName": "J&P Auto Body & Paint",
+      "address": "7140 Remmet Ave #7, Canoga Park, CA 91303",
+      "agent": "Grace"
+    },
+    {
+      "id": 451197,
+      "crmName": "Golden Gate Collision",
+      "filevineName": "Geweke auto & rv collision center",
+      "address": "102 Hansen Dr, Lodi CA 95240",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451208,
+      "crmName": "Prime Collision",
+      "filevineName": "Excelente Auto Body & Frame",
+      "address": "1538 Nellis St B, Stockton CA 95205",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451216,
+      "crmName": "urgent care Stockton",
+      "filevineName": "Ultimate Collision Center",
+      "address": "5912 Auburn Blvd #4, Citrus Heights, CA 95621, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451229,
+      "crmName": "Torres Auto Body, Inc.",
+      "filevineName": "James Mobile Auto Repair LLC",
+      "address": "1119 E Douglas Ave, Visalia CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451232,
+      "crmName": "Vejar Auto Collision",
+      "filevineName": "Torres Auto Body, Inc.",
+      "address": "2345 W Belmont Ave Fresno CA 93728",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451233,
+      "crmName": "Isais Paint and Body",
+      "filevineName": "Torres Body Shop- Madera",
+      "address": "811 S Gateway Dr, Madera, CA 93637",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451250,
+      "crmName": "Economy Paint and Body",
+      "filevineName": "Chuy's Auto Body & Collision",
+      "address": "1738 E Finni Ct, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451257,
+      "crmName": "P & S Auto Body Shop",
+      "filevineName": "Foreign Auto Works",
+      "address": "210 S Cain St suit n, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451263,
+      "crmName": "Santa Fe Body Shop",
+      "filevineName": "Collision Center",
+      "address": "702 N Ben Maddox Way, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451271,
+      "crmName": "Horine Chiropractic",
+      "filevineName": "Triple G Collision repair",
+      "address": "401 N E St STE P, Madera, CA 93638",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451296,
+      "crmName": "Tip Top Auto Body Shop",
+      "filevineName": "Precision Collision center",
+      "address": "1710 W Foothill Blvd Unit B, Upland, CA 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451300,
+      "crmName": "Dynamic Auto Workz",
+      "filevineName": "Tip Top Auto Body Shop | Upland",
+      "address": "1894 W 9th St Upland 91786",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451313,
+      "crmName": "Paul’s Auto Body Shop",
+      "filevineName": "Xtreme Auto Collision & Glass- Fresno",
+      "address": "4203 West Shaw, Fresno CA 93722",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451319,
+      "crmName": "Celebrity Body Works",
+      "filevineName": "Auto Collision Group - Adam",
+      "address": "901 Sacramento St. Bakersfield, CA 93305",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451320,
+      "crmName": "Core Chiropractic + Wellness",
+      "filevineName": "Auto Collision Group - Kate",
+      "address": "6916 Mc Cutchen Rd Suite 100, Bakersfield, CA 93313",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451324,
+      "crmName": "Jaime Auto Repair",
+      "filevineName": "El Guatemala Auto Body",
+      "address": "1430 E California ave, Bakersfield CA 93307",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451327,
+      "crmName": "PayLess Towing",
+      "filevineName": "Collision Center Bakersfield",
+      "address": "205 E 5th St Bakersfiield CA 93307",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451343,
+      "crmName": "Haney Chiropractic",
+      "filevineName": "Clovis Autopro",
+      "address": "1237 Barstow Ave, Clovis, CA 93612",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451382,
+      "crmName": "Natomas Urgent Care",
+      "filevineName": "Body Shop",
+      "address": "871 Garden Hwy, Yuba City, CA 95991, United States",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451493,
+      "crmName": "Lark Chiropractic",
+      "filevineName": "First Health Medical Center",
+      "address": "7161 N Howard St #100, Fresno CA 93720",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451652,
+      "crmName": "Total Healing & Wellness",
+      "filevineName": "Dr. Thomas Gallardo Chiropractor",
+      "address": "135 N JACKSON AVE, SUITE 201 SAN JOSE CA 95116",
+      "agent": "Grace"
+    },
+    {
+      "id": 451656,
+      "crmName": "Allen’s auto body",
+      "filevineName": "Ace In The Hole Towing",
+      "address": "801 Riverside Ave Ste #102 ​Roseville, CA 95678",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451657,
+      "crmName": "Mad Dog Towing",
+      "filevineName": "Luxury Collision Center/Procolor Collision (Lupe)",
+      "address": "1216 6th St Modesto CA 95354",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451662,
+      "crmName": "signature collision",
+      "filevineName": "Ace In The Hole Towing",
+      "address": "801 Riverside Ave. Suite 106 Roseville CA 95678",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451663,
+      "crmName": "Chilton Auto Body",
+      "filevineName": "California Liberty Insurance",
+      "address": "8119 Scottsdale Dr Ste E, Sacramento CA 95828",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451666,
+      "crmName": "Rooker’s Collision Center",
+      "filevineName": "restoration health and wellness center",
+      "address": "2027 West March Lane Suite 1 Stockton CA 95207",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451668,
+      "crmName": "Super Towing",
+      "filevineName": "Sun City Towing",
+      "address": "3408 Hunter Ln, Carmichael CA 95608",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451677,
+      "crmName": "Bunn’s Collision",
+      "filevineName": "Baja Insurance",
+      "address": "1589 W. El Camino AveSTE 109 Sacramento CA 95833",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451689,
+      "crmName": "Nick's Towing",
+      "filevineName": "Dr. Matthew Scott, DC, Alliance Chiropractic",
+      "address": "7065 N Weber Ave, Fresno, CA 93722, United States",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451693,
+      "crmName": "Central Valley Chiropractic",
+      "filevineName": "Tip's Complete Automotive & Towing",
+      "address": "4025 S Golden State Blvd Fresno CA 93725",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451696,
+      "crmName": "Caesar Dents And Autobody",
+      "filevineName": "Fiesta Auto Insurance & Tax Service - Fresno2",
+      "address": "1574 N. Blackstone Avenue Suite #108 Fresno, CA 93703",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451697,
+      "crmName": "Myers Towing",
+      "filevineName": "ABC AutoBody",
+      "address": "4533 E Floradora Ave, Fresno, CA 93703",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451700,
+      "crmName": "C&J Auto Body & Paint",
+      "filevineName": "Steve's Towing Service",
+      "address": "2005 W Hedges Ave, Fresno, CA 93728",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451708,
+      "crmName": "S&L Towing",
+      "filevineName": "Metro Towing",
+      "address": "1001 8th St Suite B, Modesto, CA 95354",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451711,
+      "crmName": "James Mobile Auto Repair LLC",
+      "filevineName": "Collision Center",
+      "address": "1843 E Main St, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451714,
+      "crmName": "Lopez Towing",
+      "filevineName": "A-Able Towing -Able Gabriella",
+      "address": "1920 E Mineral King Ave A, Visalia, CA 93292",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451720,
+      "crmName": "National Auto Body",
+      "filevineName": "Fairfield Auto Body Shop",
+      "address": "2501 Martin Rd, Fairfield, CA 94534",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451723,
+      "crmName": "Delcas Auto Collision,Inc",
+      "filevineName": "Chiropractic Wellness Center- Milpitas",
+      "address": "200 Serra Way #16, Milpitas, CA 95035, United States",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451751,
+      "crmName": "Randy's Towing",
+      "filevineName": "Collision Center",
+      "address": "125 N Chester Ave, Bakersfield, CA 93308",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451753,
+      "crmName": "Vortec's Auto Body",
+      "filevineName": "Wellness and Injury Centers",
+      "address": "625 S Riverside Ave Suite J, Rialto, CA 92376",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451772,
+      "crmName": "Arteaga Porfirio Z DC",
+      "filevineName": "Arteaga Chiropractic Center",
+      "address": "106 S Pine St, Santa Maria, CA 93458, United States",
+      "agent": "Ally"
+    },
+    {
+      "id": 451803,
+      "crmName": "Auto Collision Group 2nd Location- Adam",
+      "filevineName": "Auto Collision Group - Adam",
+      "address": "901 Sacramento St Bakersfield CA 93305",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451805,
+      "crmName": "Haynes Chiropractic",
+      "filevineName": "Distinctive Coach Auto Body & Paint",
+      "address": "1000 18th St, Bakersfield, CA 93301",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451812,
+      "crmName": "Agape Health & Wellness Center",
+      "filevineName": "Xtreme Auto Collision & Glass- Madera",
+      "address": "1211 E Yosemite Ave Madera, CA 93638",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451841,
+      "crmName": "Body Shop & Paint",
+      "filevineName": "Downtown Auto Collision",
+      "address": "1017 E Washington Blvd, Los Angeles, CA 90021",
+      "agent": "Moni"
+    },
+    {
+      "id": 451842,
+      "crmName": "Dominguez Collusional Renewal",
+      "filevineName": "Collision Center",
+      "address": "1915 Sepulveda Blvd Torrance, CA 90501 United States",
+      "agent": "Moni"
+    },
+    {
+      "id": 540033,
+      "crmName": "Leo's Paint & Body",
+      "filevineName": "Sanchez Auto Body",
+      "address": "11568 Vanowen St, North Hollywood, CA 91606",
+      "agent": "Malvin"
+    },
+    {
+      "id": 540039,
+      "crmName": "Leary Sport & Spine Chiropractic",
+      "filevineName": "Life Balance Chiropractic",
+      "address": "25691 Atlantic Ocean Dr b11, Lake Forest, CA 92630",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630005,
+      "crmName": "Gilroy Family Chiropractic",
+      "filevineName": "Laguna Hills Chiropractor - Lakeview Chiropractic",
+      "address": "22982 La Cadena Dr Ste 12, Laguna Hills, CA 92653",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630008,
+      "crmName": "Precision Collision center",
+      "filevineName": "Hess Rehabilitation & Chiropractic Centers - Fontana",
+      "address": "9161 Sierra Ave. #206, Fontana, CA 92335, United States",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630009,
+      "crmName": "Re-LAX Chiropractic + Wellness",
+      "filevineName": "Certified Collision Pro",
+      "address": "15750 Arrow Blvd Space L, Fontana, CA 92335",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630011,
+      "crmName": "V&G AUTO REPAIR",
+      "filevineName": "Certified Collision Repair",
+      "address": "424 1/2 N Main St Lake Elsinore CA 92530",
+      "agent": "Miguel"
+    }
+  ],
+  "catMismatch": [
+    {
+      "id": 450688,
+      "name": "Santa Clarita Auto Center",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Genysys"
+    },
+    {
+      "id": 450701,
+      "name": "AW Collision Of San Jose",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 450709,
+      "name": "Arcadia Chiropractic Center",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Grace"
+    },
+    {
+      "id": 450724,
+      "name": "FixAll Auto Collision",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 450728,
+      "name": "Holmes Chiropractic",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Grace"
+    },
+    {
+      "id": 450734,
+      "name": "Luciano’s Collision Center",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 450735,
+      "name": "Santa Clara Auto Care",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 450743,
+      "name": "Will's Auto Body Shop",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 450751,
+      "name": "Slick Collision Center",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 450754,
+      "name": "Union Body Shop",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 450755,
+      "name": "United Spine Care",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Grace"
+    },
+    {
+      "id": 450764,
+      "name": "Allen's Auto Body",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450770,
+      "name": "Cal Truck Body & Paint",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450777,
+      "name": "Davis Urgent Care",
+      "stored": "body_shop",
+      "suggested": "medical_clinic",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450784,
+      "name": "golden gate collision",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450790,
+      "name": "Lifeline Chiropractic",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450796,
+      "name": "Martinez Auto Care",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450798,
+      "name": "Natomas Chiropractic",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450801,
+      "name": "Nor Cal AutoBody",
+      "stored": "medical_clinic",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450803,
+      "name": "Pain Injury Rehab Clinic",
+      "stored": "medical_clinic",
+      "suggested": "physical_therapist",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450806,
+      "name": "Pereira Auto Body",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450808,
+      "name": "Premier Chiropractic",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450811,
+      "name": "Reyes Body & Frame Richmond",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450815,
+      "name": "Rooker’s Collision Center",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 450836,
+      "name": "Visalia Green Smog - Trina",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450844,
+      "name": "Isais Paint and Body",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450845,
+      "name": "Keith L. Olsen, DC",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450893,
+      "name": "Central Valley Chiropractic",
+      "stored": "medical_clinic",
+      "suggested": "chiropractor",
+      "agent": "Lupe"
+    },
+    {
+      "id": 450985,
+      "name": "Yuba Sutter Chiropractic",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Miguel"
+    },
+    {
+      "id": 450993,
+      "name": "Caliber Collision",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Miguel"
+    },
+    {
+      "id": 450999,
+      "name": "Valenz Autobody",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451003,
+      "name": "Downey Health and Wellness Center: Cathrine Zarrabi DC",
+      "stored": "medical_clinic",
+      "suggested": "chiropractor",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451015,
+      "name": "Autobahn Collision Center",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451018,
+      "name": "Nova Auto Craft",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451022,
+      "name": "Lifestyle Chiropractic & Wellness",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451028,
+      "name": "Vortec's Auto Body",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Miguel"
+    },
+    {
+      "id": 451039,
+      "name": "Reliance Auto Collision & Rental",
+      "stored": "medical_clinic",
+      "suggested": "body_shop",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451043,
+      "name": "Agape Chiropractic BP, Inc. (Edi)",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451044,
+      "name": "Avenue Body Shop (Ventura)",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451050,
+      "name": "Delcas Auto Collision,Inc",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451064,
+      "name": "Sonoma County Collision Repair",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451080,
+      "name": "Gold Star Collision Center",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451097,
+      "name": "Hadaya Chiropractic Inc.",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451100,
+      "name": "Core Chiropractic & Wellness",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451105,
+      "name": "Synergy Chiropractic & Natural Health",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451116,
+      "name": "Jeeo Health Center Dr. Gurwinder Bath Chiropractic Inc:",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451165,
+      "name": "Premier Body Shop, LLC",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 451186,
+      "name": "J & T Advanced Collision Center",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 451192,
+      "name": "Cruz Collision Center",
+      "stored": "medical_clinic",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451199,
+      "name": "Kustom Collision Center",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451218,
+      "name": "VIP Collision Center - Auto Body Shop",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451237,
+      "name": "William Auto Body Collision Repair",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451238,
+      "name": "Caesar Dents And Autobody",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451245,
+      "name": "9TH STREET COLLISION AND TOWING",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451273,
+      "name": "Quality Auto Services",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451274,
+      "name": "Valencia Auto Repair",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451321,
+      "name": "Camino Real Body Shop",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451329,
+      "name": "San Joaquin Collision",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Zulema"
+    },
+    {
+      "id": 451400,
+      "name": "Delano Acupuncture & Chiropractic Center",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Queenie"
+    },
+    {
+      "id": 451421,
+      "name": "Sacramento Spinal Specialists",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451486,
+      "name": "Natomas Urgent Care",
+      "stored": "body_shop",
+      "suggested": "medical_clinic",
+      "agent": "Jezel"
+    },
+    {
+      "id": 451703,
+      "name": "Haney Chiropractic",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451706,
+      "name": "Express Auto Body & Paint",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451709,
+      "name": "Saenz Chiropractic- Maureen",
+      "stored": "other",
+      "suggested": "chiropractor",
+      "agent": "Lupe"
+    },
+    {
+      "id": 451780,
+      "name": "Pura Vida Chiropractic- Jessica",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Queenie"
+    },
+    {
+      "id": 630003,
+      "name": "Cedar Pointe Chiropractic Group",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630004,
+      "name": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+      "stored": "body_shop",
+      "suggested": "chiropractor",
+      "agent": "Miguel"
+    },
+    {
+      "id": 630010,
+      "name": "Mauro's Body Shop",
+      "stored": "chiropractor",
+      "suggested": "body_shop",
+      "agent": "Miguel"
+    },
+    {
+      "id": 660009,
+      "name": "4 STAR BODY AND FRAME",
+      "stored": "other",
+      "suggested": "body_shop",
+      "agent": "Grace"
+    },
+    {
+      "id": 660602,
+      "name": "health and wellness urgent care",
+      "stored": "chiropractor",
+      "suggested": "medical_clinic",
+      "agent": "Grace"
+    }
+  ],
+  "junk": [
+    {
+      "id": 451096,
+      "name": "Chiropractor",
+      "why": "generic stub",
+      "address": "1650 W Avenue J Lancaster, CA 93534",
+      "agent": "Arden"
+    },
+    {
+      "id": 660051,
+      "name": "Acupuncture",
+      "why": "looks like a person's first name only",
+      "address": "3400 W 6th St #305, Los Angeles, CA 90020",
+      "agent": "Grace"
+    },
+    {
+      "id": 660262,
+      "name": "CarSta",
+      "why": "looks like a person's first name only",
+      "address": null,
+      "agent": "Grace"
+    },
+    {
+      "id": 660283,
+      "name": "CherishedLA",
+      "why": "looks like a person's first name only",
+      "address": "2010 W AVE K #448, LANCASTER, CA 93536",
+      "agent": null
+    },
+    {
+      "id": 660332,
+      "name": "Consulate",
+      "why": "looks like a person's first name only",
+      "address": "3550 Wilshire Blvd, Los Angeles, CA 90010",
+      "agent": null
+    },
+    {
+      "id": 660362,
+      "name": "Dealership",
+      "why": "looks like a person's first name only",
+      "address": "204 Maze Blvd unit b,, Modesto, CA 95351",
+      "agent": "Queenie"
+    },
+    {
+      "id": 660489,
+      "name": "felix",
+      "why": "looks like a person's first name only",
+      "address": null,
+      "agent": null
+    },
+    {
+      "id": 660576,
+      "name": "Greenlawn",
+      "why": "looks like a person's first name only",
+      "address": "3700 River Blvd, Bakersfield, CA 93305",
+      "agent": "Ally"
+    },
+    {
+      "id": 660607,
+      "name": "Hermandad",
+      "why": "looks like a person's first name only",
+      "address": "9496 Magnolia Ave Suite 105, Riverside, CA 92503",
+      "agent": "Miguel"
+    },
+    {
+      "id": 660913,
+      "name": "Neurologist",
+      "why": "looks like a person's first name only",
+      "address": "4201 Torrance Boulevard, Suite 560, Torrance,, CA 90503",
+      "agent": null
+    },
+    {
+      "id": 660921,
+      "name": "Nicole",
+      "why": "looks like a person's first name only",
+      "address": null,
+      "agent": null
+    },
+    {
+      "id": 660949,
+      "name": "Ortho",
+      "why": "looks like a person's first name only",
+      "address": "5201 Truxtun Ave, Bakersfield, CA 93309",
+      "agent": null
+    },
+    {
+      "id": 660950,
+      "name": "Orthopedic",
+      "why": "looks like a person's first name only",
+      "address": "8641 Wilshire Blvd, Beverly Hills, CA 90211",
+      "agent": null
+    },
+    {
+      "id": 660951,
+      "name": "Orthopedics",
+      "why": "looks like a person's first name only",
+      "address": "5215 Torrance Blvd #210, Torrance, CA 90503",
+      "agent": null
+    },
+    {
+      "id": 661066,
+      "name": "Rebecca",
+      "why": "looks like a person's first name only",
+      "address": "1609 W 25th St, San Pedro, CA 90732",
+      "agent": null
+    },
+    {
+      "id": 661151,
+      "name": "Sarges",
+      "why": "looks like a person's first name only",
+      "address": "14515 Arminta St, Panorama City, CA 91402",
+      "agent": null
+    },
+    {
+      "id": 661231,
+      "name": "Surgeon",
+      "why": "looks like a person's first name only",
+      "address": "1919 Truxtun Ave, Bakersfield, CA 93301",
+      "agent": null
+    },
+    {
+      "id": 661258,
+      "name": "Therapydia",
+      "why": "looks like a person's first name only",
+      "address": "1821 Saratoga Ave #100, Saratoga, CA 95070",
+      "agent": null
+    },
+    {
+      "id": 661348,
+      "name": "Volkswagen",
+      "why": "looks like a person's first name only",
+      "address": null,
+      "agent": "Grace"
+    }
+  ],
+  "missingCount": 978,
+  "dupNames": 97,
+  "dupAddrs": 58
+}
