@@ -307,6 +307,69 @@ export async function getLeadershipSummary(month?: string) {
   return { month: quota.month, pods: withHealth, totals };
 }
 
+// ─── BDR Desk — the office rep's daily cockpit ────────────────────────────────
+/**
+ * A prioritized call queue for a BDR: who to call next and WHY. Built from the
+ * loop stage, the last contact date, scheduled visits, and partner requests.
+ * One facility lands in its single highest-priority bucket.
+ */
+export async function getBdrQueue(opts: { agentNames?: string[]; all?: boolean } = {}) {
+  const db = await getDb();
+  if (!db) return [];
+  const conds = [];
+  if (!opts.all && opts.agentNames?.length) conds.push(inArray(facilities.assignedRepName, opts.agentNames));
+  const q = db.select({
+    id: facilities.id, name: facilities.name, phone: facilities.phone, city: facilities.city,
+    assignedRepName: facilities.assignedRepName, loopStage: facilities.loopStage,
+    visitRequested: facilities.visitRequested, lastContactDate: facilities.lastContactDate, partnerStatus: facilities.partnerStatus,
+  }).from(facilities);
+  if (conds.length) q.where(and(...conds));
+  const facs = await q.limit(4000);
+
+  // Soonest upcoming scheduled visit per facility
+  const appts = await db.select({ facilityId: podAppointments.facilityId, scheduledFor: podAppointments.scheduledFor })
+    .from(podAppointments).where(and(eq(podAppointments.status, "scheduled"), gte(podAppointments.scheduledFor, new Date(Date.now() - 86400000))));
+  const apptMap = new Map<number, Date>();
+  for (const a of appts) if (a.facilityId && (!apptMap.has(a.facilityId) || new Date(a.scheduledFor) < apptMap.get(a.facilityId)!)) apptMap.set(a.facilityId, a.scheduledFor as Date);
+
+  const now = Date.now();
+  const daysSince = (d: any) => (d ? Math.floor((now - new Date(d).getTime()) / 86400000) : null);
+  const queue: any[] = [];
+  for (const f of facs) {
+    const ds = daysSince(f.lastContactDate);
+    const appt = apptMap.get(f.id) ?? null;
+    let category: string | null = null, reason = "", priority = 99;
+    if (f.loopStage === "post_visit") { category = "post_visit"; reason = "FR visited — follow up to reinforce the relationship"; priority = 1; }
+    else if (appt) { category = "confirm_visit"; reason = "Upcoming visit — confirm with the partner"; priority = 2; }
+    else if (f.visitRequested) { category = "visit_requested"; reason = "Partner asked for an in-person visit — book the FR"; priority = 2; }
+    else if (f.partnerStatus === "active_partner" && (ds === null || ds >= 14)) { category = "gone_quiet"; reason = ds === null ? "Active partner — no contact logged yet" : `No contact in ${ds} days`; priority = 3; }
+    else if ((f.loopStage === "research" || f.loopStage === "first_contact") && (ds === null || ds >= 7)) { category = "first_contact"; reason = "Introduce the firm — plant the seed"; priority = 4; }
+    if (category) queue.push({ ...f, category, reason, priority, daysSince: ds, nextAppt: appt });
+  }
+  queue.sort((a, b) => a.priority - b.priority || (b.daysSince ?? -1) - (a.daysSince ?? -1));
+  return queue.slice(0, 200);
+}
+
+/** The BDR's own activity scorecard. */
+export async function getBdrScorecard(agentNames: string[], month?: string) {
+  const db = await getDb();
+  if (!db || !agentNames.length) return null;
+  const { start, end } = monthRange(month);
+  const startToday = new Date(); startToday.setUTCHours(0, 0, 0, 0);
+  const weekAgo = new Date(Date.now() - 7 * 86400000);
+
+  const calls = await db.select({ d: contactLogs.contactDate, res: contactLogs.callResult }).from(contactLogs)
+    .where(and(inArray(contactLogs.repName, agentNames), eq(contactLogs.contactType, "call"), gte(contactLogs.contactDate, weekAgo)));
+  let callsToday = 0, callsWeek = 0, connectedWeek = 0;
+  for (const c of calls) { callsWeek++; if (c.res === "connected") connectedWeek++; if (new Date(c.d) >= startToday) callsToday++; }
+
+  const appts = await db.select({ id: podAppointments.id }).from(podAppointments)
+    .where(and(inArray(podAppointments.bdrName, agentNames), gte(podAppointments.createdAt, start), lte(podAppointments.createdAt, end)));
+  const { qualified } = await podLeadStats(agentNames, start, end);
+
+  return { callsToday, callsWeek, connectedWeek, connectRate: callsWeek ? Math.round((connectedWeek / callsWeek) * 100) : 0, apptsSet: appts.length, qualifiedLeads: qualified };
+}
+
 // ─── Pod coordination feed (§8 — spot misaligned messaging / gaps) ────────────
 export async function getPodFeed(podId: number, limit = 60) {
   const db = await getDb();

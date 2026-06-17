@@ -18,7 +18,9 @@ import {
   listQaReviews, createQaReview, recentCallsForReview,
   getLoopBoard, setLoopStage, setVisitRequested, listVisitRequests,
   getQuotaSummary, getPodHealth, getLeadershipSummary, getPodFeed,
+  getBdrQueue, getBdrScorecard,
 } from "./partnershipDb";
+import { createContactLog } from "./crmDb";
 
 const partnershipProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (isIntakeOnly(ctx.user.role)) {
@@ -168,4 +170,37 @@ export const partnershipRouter = router({
   feed: partnershipProcedure
     .input(z.object({ podId: z.number(), limit: z.number().optional() }))
     .query(({ input }) => getPodFeed(input.podId, input.limit ?? 60)),
+
+  // ── BDR Desk — the office rep's daily cockpit ──
+  bdr: router({
+    queue: partnershipProcedure
+      .input(z.object({ agent: z.string().optional() }).optional())
+      .query(({ ctx, input }) => {
+        if (canManage(ctx.user.role)) return getBdrQueue(input?.agent ? { agentNames: [input.agent] } : { all: true });
+        return getBdrQueue({ agentNames: myAgentNames(ctx) });
+      }),
+    scorecard: partnershipProcedure
+      .input(z.object({ agent: z.string().optional(), month: z.string().optional() }).optional())
+      .query(({ ctx, input }) => {
+        const names = canManage(ctx.user.role) && input?.agent ? [input.agent] : myAgentNames(ctx);
+        return getBdrScorecard(names, input?.month);
+      }),
+    logTouch: partnershipProcedure
+      .input(z.object({
+        facilityId: z.number(),
+        callResult: z.enum(["connected", "voicemail", "no_answer", "busy", "other"]),
+        callType: z.enum(["partner_checkin", "bdr_checkin", "fr_checkin", "internal", "potential_lead", "other"]).optional(),
+        summary: z.string().optional(),
+        advanceTo: z.enum(["research", "first_contact", "appointment_set", "visited", "post_visit", "nurture"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await createContactLog({
+          facilityId: input.facilityId, contactType: "call", contactDate: new Date(),
+          callResult: input.callResult, callType: input.callType ?? "bdr_checkin", summary: input.summary,
+          repId: ctx.user.id, repName: ctx.user.agentName ?? ctx.user.name ?? ctx.user.email ?? "BDR",
+        } as any);
+        if (input.advanceTo) await setLoopStage(input.facilityId, input.advanceTo);
+        return { success: true };
+      }),
+  }),
 });

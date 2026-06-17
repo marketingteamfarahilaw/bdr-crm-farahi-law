@@ -26,6 +26,7 @@ import PartnershipLoopPage from "./pages/partnership/LoopBoard";
 import PartnershipVisitsPage from "./pages/partnership/Visits";
 import PartnershipQAPage from "./pages/partnership/QACoach";
 import PartnershipLeadershipPage from "./pages/partnership/Leadership";
+import BdrDeskPage from "./pages/partnership/BdrDesk";
 import AgentDashboardPage from "./pages/AgentDashboard";
 import FieldVisitsPage from "./pages/FieldVisits";
 import FrExpensesPage from "./pages/FrExpenses";
@@ -124,6 +125,7 @@ function Router() {
         <Route path="/crm/reports" component={BdrReportsPage} />
 
         {/* FR/BDR Dual Partnership Model */}
+        <Route path="/partnership/bdr-desk" component={BdrDeskPage} />
         <Route path="/partnership/loop" component={PartnershipLoopPage} />
         <Route path="/partnership/quota" component={PartnershipQuotaPage} />
         <Route path="/partnership/visits" component={PartnershipVisitsPage} />

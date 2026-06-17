@@ -59,6 +59,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
   ] },
   { title: "FR/BDR Partnership", items: [
+    { icon: PhoneCall, label: "BDR Desk", path: "/partnership/bdr-desk", level: "bdr" },
     { icon: Network, label: "Coordinated Loop", path: "/partnership/loop", level: "all" },
     { icon: Target, label: "Shared Quota", path: "/partnership/quota", level: "all" },
     { icon: CalendarClock, label: "Visits & Briefings", path: "/partnership/visits", level: "all" },

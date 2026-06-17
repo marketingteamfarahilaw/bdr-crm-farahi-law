@@ -1,0 +1,12 @@
+import "dotenv/config";
+import { getBdrQueue, getBdrScorecard } from "../server/partnershipDb";
+const q = await getBdrQueue({ agentNames: ["Grace"] });
+console.log("getBdrQueue(Grace) →", q.length, "items");
+const byCat: Record<string, number> = {};
+for (const r of q) byCat[r.category] = (byCat[r.category] || 0) + 1;
+console.log("  by category:", JSON.stringify(byCat));
+console.log("  sample:", JSON.stringify(q.slice(0, 2).map((r: any) => ({ name: r.name, category: r.category, reason: r.reason, daysSince: r.daysSince }))));
+const sc = await getBdrScorecard(["Grace"]);
+console.log("getBdrScorecard(Grace) →", JSON.stringify(sc));
+console.log("✓ BDR desk data layer OK");
+process.exit(0);
