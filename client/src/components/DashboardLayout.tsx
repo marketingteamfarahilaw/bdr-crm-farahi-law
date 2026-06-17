@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import Login from "@/pages/Login";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation, Handshake, Target, CalendarClock, GraduationCap, Trophy } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -57,6 +57,14 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Phone, label: "RingCentral", path: "/crm/ringcentral", level: "bdr" },
     { icon: UtensilsCrossed, label: "Uber Eats", path: "/crm/uber-eats", level: "all" },
     { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
+  ] },
+  { title: "FR/BDR Partnership", items: [
+    { icon: Network, label: "Coordinated Loop", path: "/partnership/loop", level: "all" },
+    { icon: Target, label: "Shared Quota", path: "/partnership/quota", level: "all" },
+    { icon: CalendarClock, label: "Visits & Briefings", path: "/partnership/visits", level: "all" },
+    { icon: Handshake, label: "Team Pods", path: "/partnership/pods", level: "manage" },
+    { icon: GraduationCap, label: "QA Coach", path: "/partnership/qa", level: "manage" },
+    { icon: Trophy, label: "Leadership", path: "/partnership/leadership", level: "manage" },
   ] },
   { title: "Agent Tools", items: [
     { icon: BarChart3, label: "Reports", path: "/reports", level: "all" },

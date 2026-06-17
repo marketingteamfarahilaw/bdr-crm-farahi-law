@@ -266,6 +266,9 @@ export const facilities = mysqlTable("facilities", {
   // Management
   managementFlag: int("managementFlag").default(0).notNull(),
   managementNote: text("managementNote"),
+  // FR/BDR Partnership Model — the coordinated loop stage (§3) + partner-requested visit (§4)
+  loopStage: mysqlEnum("loopStage", ["research", "first_contact", "appointment_set", "visited", "post_visit", "nurture"]),
+  visitRequested: int("visitRequested").default(0).notNull(),    // partner asked for an in-person FR visit
   // Internal notes
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -897,3 +900,73 @@ export const intakeLeadEvents = mysqlTable("intake_lead_events", {
 });
 export type IntakeLeadEvent = typeof intakeLeadEvents.$inferSelect;
 export type InsertIntakeLeadEvent = typeof intakeLeadEvents.$inferInsert;
+
+// ─── FR/BDR Dual Partnership Model ──────────────────────────────────────────
+// A "pod" binds a Field Rep + a BDR (+ a QA Coach) into ONE unit with ONE shared
+// quota. The FR and BDR are not two jobs — they are one job from two positions.
+// See FR_BDR_Partnership_Model.
+
+export const pods = mysqlTable("pods", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),              // e.g. "Pod A — Central Valley"
+  region: varchar("region", { length: 255 }),
+  frName: varchar("frName", { length: 255 }),                    // Field Rep (matches users.agentName / facilities.assignedRepName)
+  frUserId: int("frUserId"),
+  bdrName: varchar("bdrName", { length: 255 }),                  // Business Development Rep
+  bdrUserId: int("bdrUserId"),
+  qaCoachName: varchar("qaCoachName", { length: 255 }),          // QA Coach / supervisor of the pod
+  qaCoachUserId: int("qaCoachUserId"),
+  monthlyTarget: int("monthlyTarget").default(12).notNull(),     // combined qualified-leads target (§5)
+  bonusPerLead: decimal("bonusPerLead", { precision: 10, scale: 2 }).default("0.00"), // $ per qualified lead → bonus pool (§6)
+  frSplitPct: int("frSplitPct").default(95).notNull(),          // FR share of the shared bonus pool (BDR gets the rest)
+  active: int("active").default(1).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Pod = typeof pods.$inferSelect;
+export type InsertPod = typeof pods.$inferInsert;
+
+// A visit/lunch the BDR schedules FOR the FR, carrying a briefing so the FR
+// shows up with context (who to ask for, what they care about, prior convo). §3
+export const podAppointments = mysqlTable("pod_appointments", {
+  id: int("id").autoincrement().primaryKey(),
+  podId: int("podId"),
+  facilityId: int("facilityId"),
+  facilityName: varchar("facilityName", { length: 255 }),
+  scheduledFor: timestamp("scheduledFor").notNull(),
+  type: mysqlEnum("type", ["visit", "lunch", "drop_in", "meeting", "other"]).default("visit").notNull(),
+  bdrName: varchar("bdrName", { length: 255 }),                  // who set it up
+  frName: varchar("frName", { length: 255 }),                    // who attends
+  briefing: text("briefing"),                                   // who to ask for, what they care about, prior conversation
+  status: mysqlEnum("status", ["scheduled", "attended", "no_show", "cancelled", "rescheduled"]).default("scheduled").notNull(),
+  outcome: text("outcome"),                                     // FR's notes after the visit
+  createdById: int("createdById"),
+  createdByName: varchar("createdByName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PodAppointment = typeof podAppointments.$inferSelect;
+export type InsertPodAppointment = typeof podAppointments.$inferInsert;
+
+// A QA Coach review of a BDR call, an FR visit, or a coaching note. §9
+export const qaReviews = mysqlTable("qa_reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  podId: int("podId"),
+  subjectType: mysqlEnum("subjectType", ["call", "visit", "coaching"]).default("call").notNull(),
+  refId: int("refId"),                                          // contactLogs.id (call) or fieldVisits.id (visit)
+  facilityId: int("facilityId"),
+  facilityName: varchar("facilityName", { length: 255 }),
+  subjectName: varchar("subjectName", { length: 255 }),         // who is being reviewed (FR or BDR)
+  reviewerId: int("reviewerId"),
+  reviewerName: varchar("reviewerName", { length: 255 }),
+  score: int("score"),                                          // overall 1-5
+  toneScore: int("toneScore"),                                  // 1-5
+  messagingScore: int("messagingScore"),                        // 1-5: is the firm represented correctly / consistently
+  objectionScore: int("objectionScore"),                        // 1-5: objection handling
+  flag: mysqlEnum("flag", ["none", "coaching_needed", "breakdown", "kudos"]).default("none").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type QaReview = typeof qaReviews.$inferSelect;
+export type InsertQaReview = typeof qaReviews.$inferInsert;

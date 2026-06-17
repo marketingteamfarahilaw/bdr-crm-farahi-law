@@ -10,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { searchGooglePlaces } from "./googleMaps";
 import { calculateScore } from "./scoring";
 import { crmRouter } from "./crmRouter";
+import { partnershipRouter } from "./partnershipRouter";
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { getRingcentralToken } from "./crmDb";
@@ -738,6 +739,10 @@ export const appRouter = router({
   }),
 
   crm: crmRouter,
+
+  // FR/BDR Dual Partnership Model — pods, shared quota, coordinated loop, visit
+  // briefings, QA coach, health, bonus pool, leadership reporting.
+  partnership: partnershipRouter,
 
   // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
   intake: intakeRouter,

@@ -20,6 +20,12 @@ import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
 import TeamRolesPage from "./pages/crm/TeamRoles";
 import RingCentralSettingsPage from "./pages/crm/RingCentralSettings";
 import BdrReportsPage from "./pages/crm/BdrReports";
+import PartnershipPodsPage from "./pages/partnership/Pods";
+import PartnershipQuotaPage from "./pages/partnership/Quota";
+import PartnershipLoopPage from "./pages/partnership/LoopBoard";
+import PartnershipVisitsPage from "./pages/partnership/Visits";
+import PartnershipQAPage from "./pages/partnership/QACoach";
+import PartnershipLeadershipPage from "./pages/partnership/Leadership";
 import AgentDashboardPage from "./pages/AgentDashboard";
 import FieldVisitsPage from "./pages/FieldVisits";
 import FrExpensesPage from "./pages/FrExpenses";
@@ -116,6 +122,14 @@ function Router() {
         <Route path="/crm/uber-eats" component={UberEatsPage} />
         <Route path="/crm/leads" component={LeadCapturePage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
+
+        {/* FR/BDR Dual Partnership Model */}
+        <Route path="/partnership/loop" component={PartnershipLoopPage} />
+        <Route path="/partnership/quota" component={PartnershipQuotaPage} />
+        <Route path="/partnership/visits" component={PartnershipVisitsPage} />
+        <Route path="/partnership/pods" component={PartnershipPodsPage} />
+        <Route path="/partnership/qa" component={PartnershipQAPage} />
+        <Route path="/partnership/leadership" component={PartnershipLeadershipPage} />
 
         {/* BDR Reports */}
         <Route path="/bdr/admin" component={BdrAdminDashboardPage} />
