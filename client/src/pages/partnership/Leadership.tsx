@@ -5,8 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Target, TrendingUp, CheckCircle2, DollarSign, Download } from "lucide-react";
-import { PageHeader, StatCard, HEALTH_BANDS, money, monthOptions, monthLabel } from "./shared";
+import { Target, TrendingUp, CheckCircle2, Users, Download } from "lucide-react";
+import { PageHeader, StatCard, HEALTH_BANDS, monthOptions, monthLabel } from "./shared";
 
 export default function PartnershipLeadership() {
   const [month, setMonth] = useState(monthOptions(1)[0]);
@@ -14,8 +14,8 @@ export default function PartnershipLeadership() {
 
   const exportCsv = () => {
     if (!data?.pods.length) return;
-    const head = ["Pod", "Region", "FR", "BDR", "QA Coach", "Target", "Qualified", "Signed", "% to target", "Health", "Score", "Bonus pool", "FR bonus", "BDR bonus"];
-    const rows = data.pods.map((p: any) => [p.podName, p.region ?? "", p.frName ?? "", p.bdrName ?? "", p.qaCoachName ?? "", p.target, p.qualified, p.signed, `${p.pctToTarget}%`, p.health?.band ?? "", p.health?.score ?? "", p.bonusPool, Math.round(p.frBonus), Math.round(p.bdrBonus)]);
+    const head = ["Pod", "Region", "FR", "BDR", "QA Coach", "Target", "Qualified", "Signed", "% to target", "Health", "Score"];
+    const rows = data.pods.map((p: any) => [p.podName, p.region ?? "", p.frName ?? "", p.bdrName ?? "", p.qaCoachName ?? "", p.target, p.qualified, p.signed, `${p.pctToTarget}%`, p.health?.band ?? "", p.health?.score ?? ""]);
     const csv = [head, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a"); a.href = url; a.download = `Partnership Leadership ${month}.csv`; a.click(); URL.revokeObjectURL(url);
@@ -35,7 +35,7 @@ export default function PartnershipLeadership() {
         <StatCard icon={Target} label="Combined target" value={data?.totals.target ?? 0} />
         <StatCard icon={TrendingUp} label="Qualified leads" value={data?.totals.qualified ?? 0} color="text-primary" sub={data?.totals.target ? `${Math.round(((data.totals.qualified) / data.totals.target) * 100)}% to target` : undefined} />
         <StatCard icon={CheckCircle2} label="Signed cases" value={data?.totals.signed ?? 0} color="text-emerald-500" />
-        <StatCard icon={DollarSign} label="Total bonus pool" value={money(data?.totals.bonusPool)} />
+        <StatCard icon={Users} label="Active pods" value={data?.pods.length ?? 0} />
       </div>
 
       {isLoading ? <Skeleton className="h-64 rounded-xl" /> : !data?.pods.length ? (
@@ -47,7 +47,7 @@ export default function PartnershipLeadership() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Pod</TableHead><TableHead>Team</TableHead><TableHead className="text-right">Qualified / Target</TableHead>
-                  <TableHead className="text-right">Signed</TableHead><TableHead>Health</TableHead><TableHead className="text-right">Bonus pool</TableHead>
+                  <TableHead className="text-right">Signed</TableHead><TableHead>Health</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -60,7 +60,6 @@ export default function PartnershipLeadership() {
                       <TableCell className="text-right"><span className="font-semibold text-foreground">{p.qualified}</span> / {p.target}<div className="text-xs text-muted-foreground">{p.pctToTarget}%</div></TableCell>
                       <TableCell className="text-right font-medium text-emerald-500">{p.signed}</TableCell>
                       <TableCell>{p.health ? <span className={`px-2 py-0.5 rounded-full border text-xs font-medium ${b.cls}`}>{b.label} · {p.health.score}</span> : "—"}</TableCell>
-                      <TableCell className="text-right"><div className="font-semibold text-foreground">{money(p.bonusPool)}</div><div className="text-xs text-muted-foreground">FR {money(p.frBonus)} · BDR {money(p.bdrBonus)}</div></TableCell>
                     </TableRow>
                   );
                 })}

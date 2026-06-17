@@ -46,23 +46,19 @@ export const partnershipRouter = router({
         name: z.string().min(1), region: z.string().optional(),
         frName: z.string().optional(), bdrName: z.string().optional(), qaCoachName: z.string().optional(),
         monthlyTarget: z.number().int().min(0).default(12),
-        bonusPerLead: z.number().min(0).default(0),
-        frSplitPct: z.number().int().min(0).max(100).default(95),
         notes: z.string().optional(),
       }))
-      .mutation(({ input }) => createPod({ ...input, bonusPerLead: String(input.bonusPerLead) } as any)),
+      .mutation(({ input }) => createPod(input as any)),
     update: managerProcedure
       .input(z.object({
         id: z.number(), name: z.string().optional(), region: z.string().optional(),
         frName: z.string().optional(), bdrName: z.string().optional(), qaCoachName: z.string().optional(),
         monthlyTarget: z.number().int().min(0).optional(),
-        bonusPerLead: z.number().min(0).optional(),
-        frSplitPct: z.number().int().min(0).max(100).optional(),
         active: z.number().int().optional(), notes: z.string().optional(),
       }))
       .mutation(({ input }) => {
-        const { id, bonusPerLead, ...rest } = input;
-        return updatePod(id, { ...rest, ...(bonusPerLead != null ? { bonusPerLead: String(bonusPerLead) } : {}) } as any);
+        const { id, ...rest } = input;
+        return updatePod(id, rest as any);
       }),
     delete: managerProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => deletePod(input.id)),
   }),

@@ -3,16 +3,16 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target, TrendingUp, DollarSign, CheckCircle2 } from "lucide-react";
-import { PageHeader, StatCard, ProgressBar, PACE_META, money, monthOptions, monthLabel } from "./shared";
+import { Target, TrendingUp, CheckCircle2, Users } from "lucide-react";
+import { PageHeader, StatCard, ProgressBar, PACE_META, monthOptions, monthLabel } from "./shared";
 
 export default function PartnershipQuota() {
   const [month, setMonth] = useState(monthOptions(1)[0]);
   const { data, isLoading } = trpc.partnership.quota.useQuery({ month });
 
   const totals = (data?.pods ?? []).reduce(
-    (a, p) => ({ target: a.target + p.target, qualified: a.qualified + p.qualified, signed: a.signed + p.signed, pool: a.pool + p.bonusPool }),
-    { target: 0, qualified: 0, signed: 0, pool: 0 }
+    (a, p) => ({ target: a.target + p.target, qualified: a.qualified + p.qualified, signed: a.signed + p.signed }),
+    { target: 0, qualified: 0, signed: 0 }
   );
 
   return (
@@ -28,7 +28,7 @@ export default function PartnershipQuota() {
         <StatCard icon={Target} label="Combined target" value={totals.target} sub={`${data?.pods.length ?? 0} active pods`} />
         <StatCard icon={TrendingUp} label="Qualified leads" value={totals.qualified} color="text-primary" sub={totals.target ? `${Math.round((totals.qualified / totals.target) * 100)}% to target` : undefined} />
         <StatCard icon={CheckCircle2} label="Signed cases" value={totals.signed} color="text-emerald-500" />
-        <StatCard icon={DollarSign} label="Bonus pool" value={money(totals.pool)} />
+        <StatCard icon={Users} label="Active pods" value={data?.pods.length ?? 0} />
       </div>
 
       {isLoading ? <Skeleton className="h-64 rounded-xl" /> : !data?.pods.length ? (
@@ -52,11 +52,10 @@ export default function PartnershipQuota() {
                     <span className="text-xs text-muted-foreground">expected by now: {p.expected}</span>
                   </div>
                   <ProgressBar value={p.qualified} max={p.target} />
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-border text-sm">
+                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border text-sm">
+                    <Mini label="Qualified" value={p.qualified} />
                     <Mini label="Signed" value={p.signed} />
-                    <Mini label="Bonus pool" value={money(p.bonusPool)} />
-                    <Mini label={`FR (${p.frSplitPct}%)`} value={money(p.frBonus)} />
-                    <Mini label={`BDR (${100 - p.frSplitPct}%)`} value={money(p.bdrBonus)} />
+                    <Mini label="% to target" value={`${p.pctToTarget}%`} />
                   </div>
                 </CardContent>
               </Card>

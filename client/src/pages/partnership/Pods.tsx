@@ -4,15 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Plus, Pencil, Trash2, Target, DollarSign, ShieldCheck } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Target } from "lucide-react";
 import { toast } from "sonner";
-import { PageHeader, HEALTH_BANDS, money } from "./shared";
+import { PageHeader, HEALTH_BANDS } from "./shared";
 
 type PodForm = {
   id?: number; name: string; region: string; frName: string; bdrName: string; qaCoachName: string;
-  monthlyTarget: number; bonusPerLead: number; frSplitPct: number; notes: string;
+  monthlyTarget: number; notes: string;
 };
-const EMPTY: PodForm = { name: "", region: "", frName: "", bdrName: "", qaCoachName: "", monthlyTarget: 12, bonusPerLead: 0, frSplitPct: 95, notes: "" };
+const EMPTY: PodForm = { name: "", region: "", frName: "", bdrName: "", qaCoachName: "", monthlyTarget: 12, notes: "" };
 
 function HealthBadge({ podId }: { podId: number }) {
   const { data } = trpc.partnership.health.useQuery({ podId });
@@ -68,8 +68,6 @@ export default function PartnershipPods() {
               <Field label="BDR"><AgentInput value={form.bdrName} names={agentNames} onChange={(v) => setForm({ ...form, bdrName: v })} /></Field>
               <Field label="QA Coach"><AgentInput value={form.qaCoachName} names={agentNames} onChange={(v) => setForm({ ...form, qaCoachName: v })} /></Field>
               <Field label="Monthly target (qualified leads)"><Input type="number" value={form.monthlyTarget} onChange={(e) => setForm({ ...form, monthlyTarget: Number(e.target.value) })} /></Field>
-              <Field label="Bonus per qualified lead ($)"><Input type="number" value={form.bonusPerLead} onChange={(e) => setForm({ ...form, bonusPerLead: Number(e.target.value) })} /></Field>
-              <Field label="FR bonus split (%)"><Input type="number" value={form.frSplitPct} onChange={(e) => setForm({ ...form, frSplitPct: Number(e.target.value) })} /></Field>
             </div>
             <Field label="Notes"><Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
             <div className="flex gap-2">
@@ -103,12 +101,10 @@ export default function PartnershipPods() {
                   <Member role="QA Coach" name={p.qaCoachName} />
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-1 border-t border-border">
-                  <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5" /> {p.monthlyTarget} leads/mo</span>
-                  <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" /> {money(Number(p.bonusPerLead))}/lead</span>
-                  <span className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> FR {p.frSplitPct}% / BDR {100 - p.frSplitPct}%</span>
+                  <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5" /> {p.monthlyTarget} qualified leads / month</span>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setForm({ id: p.id, name: p.name ?? "", region: p.region ?? "", frName: p.frName ?? "", bdrName: p.bdrName ?? "", qaCoachName: p.qaCoachName ?? "", monthlyTarget: p.monthlyTarget ?? 12, bonusPerLead: Number(p.bonusPerLead ?? 0), frSplitPct: p.frSplitPct ?? 95, notes: p.notes ?? "" })}>
+                  <Button size="sm" variant="outline" onClick={() => setForm({ id: p.id, name: p.name ?? "", region: p.region ?? "", frName: p.frName ?? "", bdrName: p.bdrName ?? "", qaCoachName: p.qaCoachName ?? "", monthlyTarget: p.monthlyTarget ?? 12, notes: p.notes ?? "" })}>
                     <Pencil className="w-3.5 h-3.5" /> Edit
                   </Button>
                   <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => { if (confirm(`Delete pod "${p.name}"?`)) del.mutate({ id: p.id }); }}>

@@ -224,15 +224,11 @@ export async function getQuotaSummary(month?: string) {
     const target = p.monthlyTarget || 12;
     const expected = Math.round(target * monthFrac);
     const pace = qualified >= expected ? "on_track" : qualified >= expected * 0.7 ? "slightly_behind" : "behind";
-    const perLead = Number(p.bonusPerLead || 0);
-    const pool = qualified * perLead;
-    const frPct = p.frSplitPct ?? 95;
     out.push({
       podId: p.id, podName: p.name, region: p.region,
       frName: p.frName, bdrName: p.bdrName, qaCoachName: p.qaCoachName,
       target, qualified, signed, expected, pace,
       pctToTarget: target ? Math.round((qualified / target) * 100) : 0,
-      bonusPool: pool, frBonus: pool * (frPct / 100), bdrBonus: pool * ((100 - frPct) / 100), frSplitPct: frPct,
     });
   }
   return { month: label, monthFrac, pods: out };
@@ -305,11 +301,8 @@ export async function getLeadershipSummary(month?: string) {
     withHealth.push({ ...pod, health: health ? { score: health.score, band: health.band, warnings: health.warnings } : null });
   }
   const totals = withHealth.reduce(
-    (a, p) => ({
-      target: a.target + p.target, qualified: a.qualified + p.qualified, signed: a.signed + p.signed,
-      bonusPool: a.bonusPool + p.bonusPool,
-    }),
-    { target: 0, qualified: 0, signed: 0, bonusPool: 0 }
+    (a, p) => ({ target: a.target + p.target, qualified: a.qualified + p.qualified, signed: a.signed + p.signed }),
+    { target: 0, qualified: 0, signed: 0 }
   );
   return { month: quota.month, pods: withHealth, totals };
 }
