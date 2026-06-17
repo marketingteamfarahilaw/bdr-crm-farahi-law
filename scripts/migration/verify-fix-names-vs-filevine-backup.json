@@ -1,0 +1,947 @@
+[
+  {
+    "id": 450675,
+    "oldName": "Excellence Body Shop",
+    "newName": "Excellence Auto Body Shop"
+  },
+  {
+    "id": 450694,
+    "oldName": "24/7 AUTOBODY",
+    "newName": "JP Auto Body Shop -Redwood City"
+  },
+  {
+    "id": 450695,
+    "oldName": "5 Stars Auto Body Repair",
+    "newName": "24/7 AUTOBODY"
+  },
+  {
+    "id": 450698,
+    "oldName": "Alioto’s Garage",
+    "newName": "C G & E Auto Body"
+  },
+  {
+    "id": 450701,
+    "oldName": "Arcadia Chiropractic Center",
+    "newName": "AW Collision Of San Jose"
+  },
+  {
+    "id": 450705,
+    "oldName": "AW Collision of San Jose",
+    "newName": "San Jose Auto Injury Clinic"
+  },
+  {
+    "id": 450709,
+    "oldName": "C G & E Auto Body",
+    "newName": "Arcadia Chiropractic Center"
+  },
+  {
+    "id": 450716,
+    "oldName": "Dr. Thomas Gallardo Chiropractor",
+    "newName": "Spine and Sport Chiropractic"
+  },
+  {
+    "id": 450724,
+    "oldName": "Good Life Chiropractic",
+    "newName": "FixAll Auto Collision"
+  },
+  {
+    "id": 450727,
+    "oldName": "J & T Advanced Collision Center",
+    "newName": "Soma Collision Repair"
+  },
+  {
+    "id": 450728,
+    "oldName": "J&P Auto Body & Paint",
+    "newName": "Holmes Chiropractic"
+  },
+  {
+    "id": 450731,
+    "oldName": "KIMS AUTO BODY",
+    "newName": "Jerry's Towing"
+  },
+  {
+    "id": 450733,
+    "oldName": "Luciano’s Collision Center",
+    "newName": "KIMS AUTO BODY"
+  },
+  {
+    "id": 450734,
+    "oldName": "New beginnings Chiro Richard Westbrook",
+    "newName": "Luciano’s Collision Center"
+  },
+  {
+    "id": 450735,
+    "oldName": "New Hope Chiropractic San Jose Chiropractor",
+    "newName": "Santa Clara Auto Care"
+  },
+  {
+    "id": 450738,
+    "oldName": "PACHECO'S BODY SHOP",
+    "newName": "KINGSPOINT Foot and Ankle Specialists"
+  },
+  {
+    "id": 450739,
+    "oldName": "Panther Collision Center",
+    "newName": "One Stop Auto Collision"
+  },
+  {
+    "id": 450743,
+    "oldName": "Revive Spine and Wellness Chiropractic",
+    "newName": "Will's Auto Body Shop"
+  },
+  {
+    "id": 450745,
+    "oldName": "Roberts Collision Center Inc.",
+    "newName": "Riverside Collision Center"
+  },
+  {
+    "id": 450748,
+    "oldName": "San Jose Auto Injury Clinic- Dr. Ahmad R. Rafii, D.C.",
+    "newName": "Pacheco's Body Shop, Inc."
+  },
+  {
+    "id": 450751,
+    "oldName": "Spine and Sport Chiropractic",
+    "newName": "Slick Collision Center"
+  },
+  {
+    "id": 450754,
+    "oldName": "United spine care",
+    "newName": "Union Body Shop"
+  },
+  {
+    "id": 450755,
+    "oldName": "Vertex Collision Center",
+    "newName": "United Spine Care"
+  },
+  {
+    "id": 450757,
+    "oldName": "Will's Auto Body Shop",
+    "newName": "West Market Auto Body"
+  },
+  {
+    "id": 450764,
+    "oldName": "American River Chiropractic- Dr. Stirton",
+    "newName": "Allen's Auto Body"
+  },
+  {
+    "id": 450770,
+    "oldName": "California liberty insurance",
+    "newName": "Cal Truck Body & Paint"
+  },
+  {
+    "id": 450774,
+    "oldName": "Collision Repair Inc",
+    "newName": "Chilton Auto Body"
+  },
+  {
+    "id": 450775,
+    "oldName": "Cruz Collision Center",
+    "newName": "Collision Repair Inc"
+  },
+  {
+    "id": 450777,
+    "oldName": "Diablos auto Collision",
+    "newName": "Davis Urgent Care"
+  },
+  {
+    "id": 450780,
+    "oldName": "FAM Auto body & Paint Collision center",
+    "newName": "Dynamic Collision"
+  },
+  {
+    "id": 450778,
+    "oldName": "Dynamic Collision Manteca",
+    "newName": "Diablos Auto Collision and Restoration"
+  },
+  {
+    "id": 450782,
+    "oldName": "Geweke auto & rv collision center",
+    "newName": "Fruitvale Collision Center"
+  },
+  {
+    "id": 450784,
+    "oldName": "Greenhaven Chiropractic",
+    "newName": "golden gate collision"
+  },
+  {
+    "id": 450786,
+    "oldName": "In Motion Chiropractic",
+    "newName": "Hayes Chiropractic"
+  },
+  {
+    "id": 450790,
+    "oldName": "Los Romeros Insurance",
+    "newName": "Lifeline Chiropractic"
+  },
+  {
+    "id": 450791,
+    "oldName": "Luxury Collision Center",
+    "newName": "Los Romeros Insurance"
+  },
+  {
+    "id": 450796,
+    "oldName": "Natomas chiropractic",
+    "newName": "Martinez Auto Care"
+  },
+  {
+    "id": 450798,
+    "oldName": "New Saigon Auto Collision",
+    "newName": "Natomas Chiropractic"
+  },
+  {
+    "id": 450800,
+    "oldName": "Optimal Health Wellness Clinic",
+    "newName": "New Saigon Auto Collision"
+  },
+  {
+    "id": 450801,
+    "oldName": "pacific urgent care",
+    "newName": "Nor Cal AutoBody"
+  },
+  {
+    "id": 450806,
+    "oldName": "Premier Chiropractic",
+    "newName": "Pereira Auto Body"
+  },
+  {
+    "id": 450808,
+    "oldName": "primos auto insurance",
+    "newName": "Premier Chiropractic"
+  },
+  {
+    "id": 450810,
+    "oldName": "restoration health and wellness center",
+    "newName": "Primos Auto Insurance"
+  },
+  {
+    "id": 450815,
+    "oldName": "Sacramento Spinal Specialists",
+    "newName": "Rooker’s Collision Center"
+  },
+  {
+    "id": 450829,
+    "oldName": "UNIVERSAL AUTO REPAIR",
+    "newName": "Trinos Auto Body"
+  },
+  {
+    "id": 450831,
+    "oldName": "VIP Collision Center - Auto Body Shop",
+    "newName": "Universal Auto Repair"
+  },
+  {
+    "id": 450832,
+    "oldName": "WEST COAST AUTO BODY & PAINT",
+    "newName": "EMMANUEL TOWING"
+  },
+  {
+    "id": 450836,
+    "oldName": "A-Able Towing Able",
+    "newName": "Visalia Green Smog - Trina"
+  },
+  {
+    "id": 450837,
+    "oldName": "A&G TOWING AND RECOVERY",
+    "newName": "Simonian Towing"
+  },
+  {
+    "id": 450839,
+    "oldName": "A1 Repair & Collision",
+    "newName": "S&L Towing"
+  },
+  {
+    "id": 450843,
+    "oldName": "Active Towing",
+    "newName": "Unavision Insurance Center"
+  },
+  {
+    "id": 450844,
+    "oldName": "Advanced Chiropractic",
+    "newName": "Isais Paint and Body"
+  },
+  {
+    "id": 450845,
+    "oldName": "Affordable Keyesorian Auto Insurance Fresno CA",
+    "newName": "Keith L. Olsen, DC"
+  },
+  {
+    "id": 450846,
+    "oldName": "All State Towing",
+    "newName": "GIA Insurance (Firebaugh)"
+  },
+  {
+    "id": 450850,
+    "oldName": "Art's Auto Body & Paint",
+    "newName": "Ruben's Automotive"
+  },
+  {
+    "id": 450853,
+    "oldName": "Brothers Collision & Auto Repair",
+    "newName": "Silver Bridge Towing Service"
+  },
+  {
+    "id": 450860,
+    "oldName": "Choice Auto Body",
+    "newName": "Freeway Insurance - Merced"
+  },
+  {
+    "id": 450862,
+    "oldName": "CHRIS&SONS TRANSPORT LLC",
+    "newName": "Salmeri Insurance Agency, Inc."
+  },
+  {
+    "id": 450869,
+    "oldName": "D & B Towing",
+    "newName": "All State Towing"
+  },
+  {
+    "id": 450870,
+    "oldName": "Dean Martin Towing + Recovery",
+    "newName": "ASAP Towing"
+  },
+  {
+    "id": 450872,
+    "oldName": "Don Valenzuela's Autobody",
+    "newName": "Tires to Go & Towing"
+  },
+  {
+    "id": 450874,
+    "oldName": "Double D Towing Service",
+    "newName": "City Wide Towing"
+  },
+  {
+    "id": 450884,
+    "oldName": "Fiesta Auto Insurance & Tax Service- Hanford",
+    "newName": "A- Max Insurance"
+  },
+  {
+    "id": 450885,
+    "oldName": "Fiesta Auto Insurance & Tax Service- Madera 1",
+    "newName": "Academy West Insurance- Mendota"
+  },
+  {
+    "id": 450892,
+    "oldName": "First Choice Auto Body Shop",
+    "newName": "DKN America's Body Shop"
+  },
+  {
+    "id": 450893,
+    "oldName": "First Health Medical Center",
+    "newName": "Central Valley Chiropractic"
+  },
+  {
+    "id": 450895,
+    "oldName": "Fortner’s Fast Towing",
+    "newName": "Dean Martin Towing + Recovery-Fresno"
+  },
+  {
+    "id": 450897,
+    "oldName": "Freedom Towing",
+    "newName": "ARK Towing"
+  },
+  {
+    "id": 450901,
+    "oldName": "GIA Insurance (Firebaugh)",
+    "newName": "Fiesta Auto Insurance & Tax Service- Sanger"
+  },
+  {
+    "id": 450904,
+    "oldName": "Gong Chiropractic, a Certified DOT Examiner, Brent Gong DC",
+    "newName": "Chiropractic Health Center- Modesto"
+  },
+  {
+    "id": 450909,
+    "oldName": "Hernandez Auto Repair",
+    "newName": "Santa Fe Body Shop - Erwin"
+  },
+  {
+    "id": 450916,
+    "oldName": "Kings Canyon Chiropractic",
+    "newName": "Dooley Family Chiropractic"
+  },
+  {
+    "id": 450917,
+    "oldName": "Kingsburg Towing",
+    "newName": "Fortner's Fast Towing"
+  },
+  {
+    "id": 450923,
+    "oldName": "Mariscal Service Body Shop",
+    "newName": "Fix Auto- Modesto"
+  },
+  {
+    "id": 450924,
+    "oldName": "Martin Auto Color",
+    "newName": "Fiesta Auto Insurance & Tax Service- Tulare"
+  },
+  {
+    "id": 450928,
+    "oldName": "MICHAEL'S TOWING",
+    "newName": "Rons Towing"
+  },
+  {
+    "id": 450929,
+    "oldName": "Moreno's Auto Body",
+    "newName": "Gagnos Automotive"
+  },
+  {
+    "id": 450931,
+    "oldName": "Nelly's Auto Repair",
+    "newName": "Lopez Towing"
+  },
+  {
+    "id": 450932,
+    "oldName": "Neto",
+    "newName": "Tom's Body and Paint, Inc. formerly Tom's Towing"
+  },
+  {
+    "id": 450940,
+    "oldName": "Performance Body Works",
+    "newName": "P & S Auto Body Shop"
+  },
+  {
+    "id": 450942,
+    "oldName": "Quality Auto Services",
+    "newName": "Choice Auto Body"
+  },
+  {
+    "id": 450952,
+    "oldName": "Sierra Towing",
+    "newName": "Nick's Towing"
+  },
+  {
+    "id": 450953,
+    "oldName": "Silver Bridge Towing Service",
+    "newName": "Myers Towing"
+  },
+  {
+    "id": 450957,
+    "oldName": "TERANS TOWING & MINOR REPAIR",
+    "newName": "On The Go Towing"
+  },
+  {
+    "id": 450960,
+    "oldName": "Tom's Body and Paint, Inc. formerly Tom's Towing",
+    "newName": "Premier Paint & Body"
+  },
+  {
+    "id": 450962,
+    "oldName": "Torres Body Shop- Madera",
+    "newName": "Merced Auto Body"
+  },
+  {
+    "id": 450963,
+    "oldName": "Tow Pro",
+    "newName": "Richard’s towing services"
+  },
+  {
+    "id": 450968,
+    "oldName": "USA Towing & Auto Center",
+    "newName": "Sierra Towing"
+  },
+  {
+    "id": 450971,
+    "oldName": "Villarreal Paint & Body",
+    "newName": "Affordable Keyesorian Auto Insurance Fresno CA"
+  },
+  {
+    "id": 450972,
+    "oldName": "Visalia green smog",
+    "newName": "Willow Creek Healthcare Center"
+  },
+  {
+    "id": 450973,
+    "oldName": "West Coast Tow 2",
+    "newName": "TERANS TOWING & MINOR REPAIR"
+  },
+  {
+    "id": 450976,
+    "oldName": "William Auto Body Collision Repair",
+    "newName": "Triple H Auto Body LLC"
+  },
+  {
+    "id": 450981,
+    "oldName": "Downtown Auto Collision",
+    "newName": "Palmdale Urgent + Care"
+  },
+  {
+    "id": 450983,
+    "oldName": "Sanchez Auto Body Shop",
+    "newName": "Trends Auto Body- Luis Ramos"
+  },
+  {
+    "id": 450985,
+    "oldName": "A-Able Towing",
+    "newName": "Yuba Sutter Chiropractic"
+  },
+  {
+    "id": 450990,
+    "oldName": "Asante Chiropractic - Testing - Beauty",
+    "newName": "Downey Health and Wellness Center: Cathrine Zarrabi DC"
+  },
+  {
+    "id": 450991,
+    "oldName": "Autobahn Collision Center",
+    "newName": "Royal Collision Center"
+  },
+  {
+    "id": 450994,
+    "oldName": "Be Better Chiropractic",
+    "newName": "Bostock Chiropractic Offices"
+  },
+  {
+    "id": 450996,
+    "oldName": "Caliber Collision",
+    "newName": "Artisan Collision"
+  },
+  {
+    "id": 450995,
+    "oldName": "Bostock Chiropractic Offices",
+    "newName": "Almaden Family Chiropractic"
+  },
+  {
+    "id": 450997,
+    "oldName": "Cedar Pointe Chiropractic Group",
+    "newName": "Leary Sport & Spine Chiropractic"
+  },
+  {
+    "id": 450999,
+    "oldName": "Complete Chiropractic Wellness Center",
+    "newName": "Valenz Autobody"
+  },
+  {
+    "id": 451014,
+    "oldName": "Life Balance Chiropractic",
+    "newName": "Sanchez Chiropractic and Wellness"
+  },
+  {
+    "id": 451015,
+    "oldName": "Lifestyle Chiropractic & Wellness",
+    "newName": "Autobahn Collision Center"
+  },
+  {
+    "id": 451019,
+    "oldName": "Pain Free Life - Glendale",
+    "newName": "Be Better Chiropractic"
+  },
+  {
+    "id": 451022,
+    "oldName": "ProColor Collision San Marcos",
+    "newName": "Lifestyle Chiropractic & Wellness"
+  },
+  {
+    "id": 451028,
+    "oldName": "Sanchez Chiropractic and Wellness",
+    "newName": "Vortec's Auto Body"
+  },
+  {
+    "id": 451033,
+    "oldName": "Valenz Autobody",
+    "newName": "Reyes Body Shop"
+  },
+  {
+    "id": 451039,
+    "oldName": "Aguilera Health & Wellness Center",
+    "newName": "Reliance Auto Collision & Rental"
+  },
+  {
+    "id": 451043,
+    "oldName": "Cochran Auto Body & Royal Auto Body & Paint",
+    "newName": "Agape Chiropractic BP, Inc. (Edi)"
+  },
+  {
+    "id": 451044,
+    "oldName": "Community Chiropractic Group",
+    "newName": "Avenue Body Shop (Ventura)"
+  },
+  {
+    "id": 451050,
+    "oldName": "Focus Chiropractic Center",
+    "newName": "Delcas Auto Collision,Inc"
+  },
+  {
+    "id": 451055,
+    "oldName": "Pura Vida Chiropractic- Jessica",
+    "newName": "Focus Chiropractic Center"
+  },
+  {
+    "id": 451058,
+    "oldName": "Richard's Universal Towing & Hauling",
+    "newName": "Lau’s Auto"
+  },
+  {
+    "id": 451059,
+    "oldName": "Schraders Auto Craft",
+    "newName": "National Auto Body"
+  },
+  {
+    "id": 451061,
+    "oldName": "Titanium Towing",
+    "newName": "R & P Towing"
+  },
+  {
+    "id": 451064,
+    "oldName": "Zaker Chiropractic",
+    "newName": "Sonoma County Collision Repair"
+  },
+  {
+    "id": 451074,
+    "oldName": "Envista Medical Center",
+    "newName": "Delano Towing"
+  },
+  {
+    "id": 451080,
+    "oldName": "JM Insurance Services",
+    "newName": "Gold Star Collision Center"
+  },
+  {
+    "id": 451076,
+    "oldName": "Gold Star Collision",
+    "newName": "Diamond Club Towing"
+  },
+  {
+    "id": 451081,
+    "oldName": "Keepers Transformation House",
+    "newName": "Haynes Chiropractic"
+  },
+  {
+    "id": 451097,
+    "oldName": "R & P Towing",
+    "newName": "Hadaya Chiropractic Inc."
+  },
+  {
+    "id": 451100,
+    "oldName": "El Guatemala Body Shop",
+    "newName": "Core Chiropractic & Wellness"
+  },
+  {
+    "id": 451105,
+    "oldName": "Unavision Insurance Center",
+    "newName": "Synergy Chiropractic & Natural Health"
+  },
+  {
+    "id": 451107,
+    "oldName": "Dooley Family Chiropractic",
+    "newName": "Blackstone Chiropractic Clinic"
+  },
+  {
+    "id": 451111,
+    "oldName": "Synergy Chiropractic & Natural Health",
+    "newName": "Gong Chiropractic, a Certified DOT Examiner, Brent Gong DC"
+  },
+  {
+    "id": 451115,
+    "oldName": "Hayes Chiropractic",
+    "newName": "Greenhaven Chiropractic"
+  },
+  {
+    "id": 451116,
+    "oldName": "Kustom collision center",
+    "newName": "Jeeo Health Center Dr. Gurwinder Bath Chiropractic Inc:"
+  },
+  {
+    "id": 451117,
+    "oldName": "Page Auto Body & Repair",
+    "newName": "Optimal Health & Wellness Clinic"
+  },
+  {
+    "id": 451141,
+    "oldName": "Holmes Chiropractic",
+    "newName": "Good life chiropractic"
+  },
+  {
+    "id": 451143,
+    "oldName": "Union Body Shop",
+    "newName": "Total Healing & Wellness"
+  },
+  {
+    "id": 451163,
+    "oldName": "Precise Collision",
+    "newName": "Panther Collision Center"
+  },
+  {
+    "id": 451165,
+    "oldName": "ProActive Chiro",
+    "newName": "Premier Body Shop, LLC"
+  },
+  {
+    "id": 451170,
+    "oldName": "West Market Auto Body",
+    "newName": "Vertex Collision Center"
+  },
+  {
+    "id": 451178,
+    "oldName": "Independent Repair Service",
+    "newName": "Bay One Collision Auto Body Shop"
+  },
+  {
+    "id": 451186,
+    "oldName": "A1 CHIROPRACTIC",
+    "newName": "J & T Advanced Collision Center"
+  },
+  {
+    "id": 451192,
+    "oldName": "Davis Urgent Care",
+    "newName": "Cruz Collision Center"
+  },
+  {
+    "id": 451195,
+    "oldName": "Fruitvale Collision Center",
+    "newName": "FAM Auto Body & Paint Collision Center"
+  },
+  {
+    "id": 451199,
+    "oldName": "lifeline chiropractic",
+    "newName": "Kustom Collision Center"
+  },
+  {
+    "id": 451213,
+    "oldName": "Trinos Auto Body",
+    "newName": "The Body shop of Yuba city"
+  },
+  {
+    "id": 451218,
+    "oldName": "007 Towing",
+    "newName": "VIP Collision Center - Auto Body Shop"
+  },
+  {
+    "id": 451219,
+    "oldName": "United Garage Body Shop",
+    "newName": "Oakland Collision Center"
+  },
+  {
+    "id": 451222,
+    "oldName": "DKN America's Body Shop",
+    "newName": "Bobby's Auto Body & Paint"
+  },
+  {
+    "id": 451223,
+    "oldName": "Dura-Glo Paint & Body Inc.",
+    "newName": "Central Valley Collision Center - Fresno"
+  },
+  {
+    "id": 451227,
+    "oldName": "Merced Auto Body",
+    "newName": "Extreme Car Care Center"
+  },
+  {
+    "id": 451237,
+    "oldName": "Blackstone Chiropractic Clinic",
+    "newName": "William Auto Body Collision Repair"
+  },
+  {
+    "id": 451238,
+    "oldName": "Caruthers Towing",
+    "newName": "Caesar Dents And Autobody"
+  },
+  {
+    "id": 451240,
+    "oldName": "Clovis Autopro",
+    "newName": "GIA Auto Paint & Collision"
+  },
+  {
+    "id": 451241,
+    "oldName": "J And B Auto Body",
+    "newName": "New Image Collision Center"
+  },
+  {
+    "id": 451245,
+    "oldName": "Westside Chiropractic",
+    "newName": "9TH STREET COLLISION AND TOWING"
+  },
+  {
+    "id": 451246,
+    "oldName": "Chowchilla Auto Body",
+    "newName": "A1 Repair & Collision"
+  },
+  {
+    "id": 451251,
+    "oldName": "Fix Auto- Modesto",
+    "newName": "Complete Collision Works"
+  },
+  {
+    "id": 451252,
+    "oldName": "Gagnos Automotive",
+    "newName": "Duran Detail Auto Body"
+  },
+  {
+    "id": 451258,
+    "oldName": "Payless Autobody",
+    "newName": "Moreno's Auto Body"
+  },
+  {
+    "id": 451259,
+    "oldName": "Peña’s Autobody",
+    "newName": "Next Level Conceptz"
+  },
+  {
+    "id": 451273,
+    "oldName": "A&J Towing",
+    "newName": "Quality Auto Services"
+  },
+  {
+    "id": 451274,
+    "oldName": "Action Towing",
+    "newName": "Valencia Auto Repair"
+  },
+  {
+    "id": 451275,
+    "oldName": "Mac Body shop",
+    "newName": "Ace Auto Care and Service"
+  },
+  {
+    "id": 451281,
+    "oldName": "Tadeos Auto Body",
+    "newName": "Body Shop & Paint"
+  },
+  {
+    "id": 451307,
+    "oldName": "Dr. Christy Anthony, MD",
+    "newName": "Cochran Auto Body"
+  },
+  {
+    "id": 451316,
+    "oldName": "Alpha performance",
+    "newName": "Paul’s Auto Body Shop"
+  },
+  {
+    "id": 451318,
+    "oldName": "CCthechiro",
+    "newName": "Alpha Performance"
+  },
+  {
+    "id": 451321,
+    "oldName": "Delano Towing",
+    "newName": "Camino Real Body Shop"
+  },
+  {
+    "id": 451328,
+    "oldName": "Savage Auto Body",
+    "newName": "ProColor Collision Bakersfield"
+  },
+  {
+    "id": 451329,
+    "oldName": "Trinity Towing",
+    "newName": "San Joaquin Collision"
+  },
+  {
+    "id": 451400,
+    "oldName": "Fairfield Auto Body Shop",
+    "newName": "Delano Acupuncture & Chiropractic Center"
+  },
+  {
+    "id": 451421,
+    "oldName": "Sol Insurance Services",
+    "newName": "Sacramento Spinal Specialists"
+  },
+  {
+    "id": 451486,
+    "oldName": "NorCal auto body",
+    "newName": "Natomas Urgent Care"
+  },
+  {
+    "id": 451665,
+    "oldName": "Ace In The Hole Towing",
+    "newName": "Accident Center(Dr. Origel-Stockton & Modesto)"
+  },
+  {
+    "id": 451660,
+    "oldName": "Sun City Towing",
+    "newName": "Sol Insurance Services"
+  },
+  {
+    "id": 451671,
+    "oldName": "Pereira auto body",
+    "newName": "Page Auto Body"
+  },
+  {
+    "id": 451681,
+    "oldName": "Rons Towing",
+    "newName": "Caruthers Towing"
+  },
+  {
+    "id": 451683,
+    "oldName": "Major auto body shop",
+    "newName": "A&G TOWING AND RECOVERY"
+  },
+  {
+    "id": 451703,
+    "oldName": "A- Max Insurance",
+    "newName": "Haney Chiropractic"
+  },
+  {
+    "id": 451706,
+    "oldName": "H Towing 559",
+    "newName": "Express Auto Body & Paint"
+  },
+  {
+    "id": 451707,
+    "oldName": "Simonian Towing",
+    "newName": "Downtown Motors Tow Service"
+  },
+  {
+    "id": 451709,
+    "oldName": "Academy West Insurance",
+    "newName": "Saenz Chiropractic- Maureen"
+  },
+  {
+    "id": 451712,
+    "oldName": "Angel's Towing",
+    "newName": "Martin Auto Color"
+  },
+  {
+    "id": 451780,
+    "oldName": "Sonoma County Collision Repair",
+    "newName": "Pura Vida Chiropractic- Jessica"
+  },
+  {
+    "id": 451806,
+    "oldName": "Empire Auto Collision",
+    "newName": "Last Touch Collision Inc."
+  },
+  {
+    "id": 451822,
+    "oldName": "Ace Auto repair & Muffler",
+    "newName": "A's Auto repair & Muffler"
+  },
+  {
+    "id": 540019,
+    "oldName": "Collision King of Tracy",
+    "newName": "Oakland Collision Center"
+  },
+  {
+    "id": 540027,
+    "oldName": "Keith L. Olsen, DC",
+    "newName": "Zylstra Automotive & Diesel"
+  },
+  {
+    "id": 540031,
+    "oldName": "Premier Paint & Body",
+    "newName": "Payless Autobody"
+  },
+  {
+    "id": 540037,
+    "oldName": "Impact Fix Collision Center",
+    "newName": "Nova Auto Craft"
+  },
+  {
+    "id": 630001,
+    "oldName": "24 Hour Auto Service",
+    "newName": "ABS Collision Center"
+  },
+  {
+    "id": 630003,
+    "oldName": "Artisan Collision",
+    "newName": "Cedar Pointe Chiropractic Group"
+  },
+  {
+    "id": 630010,
+    "oldName": "Socal Spine Rehab and Wellness",
+    "newName": "Mauro's Body Shop"
+  },
+  {
+    "id": 630012,
+    "oldName": "Yuba Sutter Chiropractic",
+    "newName": "Ricardo Garcia Chiropractic Clinic"
+  }
+]
