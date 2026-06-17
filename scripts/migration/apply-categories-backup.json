@@ -1,0 +1,587 @@
+[
+  {
+    "id": 450705,
+    "oldCategory": "body_shop",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 450722,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 450731,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450732,
+    "oldCategory": "chiropractor",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 450738,
+    "oldCategory": "body_shop",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 450791,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450803,
+    "oldCategory": "medical_clinic",
+    "newCategory": "physical_therapist"
+  },
+  {
+    "id": 450810,
+    "oldCategory": "medical_clinic",
+    "newCategory": "other"
+  },
+  {
+    "id": 450811,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 450814,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450832,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450839,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450853,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450860,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450931,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450937,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 450971,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 450977,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 450981,
+    "oldCategory": "body_shop",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 451003,
+    "oldCategory": "medical_clinic",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451018,
+    "oldCategory": "chiropractor",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451074,
+    "oldCategory": "medical_clinic",
+    "newCategory": "other"
+  },
+  {
+    "id": 451076,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 451082,
+    "oldCategory": "body_shop",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 451117,
+    "oldCategory": "body_shop",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 451683,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 451712,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 630004,
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 660011,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660025,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660053,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660060,
+    "oldCategory": "other",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 660064,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660067,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660107,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660124,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660159,
+    "oldCategory": "other",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 660165,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660170,
+    "oldCategory": "other",
+    "newCategory": "physical_therapist"
+  },
+  {
+    "id": 660189,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660190,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660204,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660208,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660221,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660226,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660231,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660269,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660297,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660307,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660311,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660321,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660323,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660345,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660348,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660388,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660400,
+    "oldCategory": "other",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 660485,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660501,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660505,
+    "oldCategory": "other",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 660507,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660508,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660518,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660530,
+    "oldCategory": "other",
+    "newCategory": "physical_therapist"
+  },
+  {
+    "id": 660578,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660595,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660617,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660636,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660663,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660699,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660711,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660713,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660743,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660777,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660791,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660821,
+    "oldCategory": "physical_therapist",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 660822,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660843,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660846,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660849,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660850,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660855,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660880,
+    "oldCategory": "body_shop",
+    "newCategory": "other"
+  },
+  {
+    "id": 660888,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660892,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660914,
+    "oldCategory": "medical_clinic",
+    "newCategory": "physical_therapist"
+  },
+  {
+    "id": 660944,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660949,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660952,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660956,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660960,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660965,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660966,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 660978,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 660984,
+    "oldCategory": "other",
+    "newCategory": "physical_therapist"
+  },
+  {
+    "id": 660999,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661026,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 661032,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 661068,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 661088,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 661146,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 661150,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 661168,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661188,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661200,
+    "oldCategory": "chiropractor",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661231,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661256,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661258,
+    "oldCategory": "other",
+    "newCategory": "physical_therapist"
+  },
+  {
+    "id": 661259,
+    "oldCategory": "other",
+    "newCategory": "physical_therapist"
+  },
+  {
+    "id": 661289,
+    "oldCategory": "other",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 661315,
+    "oldCategory": "chiropractor",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661333,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661334,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661335,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  },
+  {
+    "id": 661367,
+    "oldCategory": "other",
+    "newCategory": "physical_therapist"
+  },
+  {
+    "id": 661369,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 661370,
+    "oldCategory": "other",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 661371,
+    "oldCategory": "other",
+    "newCategory": "medical_clinic"
+  }
+]

@@ -1,0 +1,162 @@
+{
+  "dupGroups": [
+    {
+      "primaryId": 450686,
+      "primaryName": "Regino Rojas Auto Body Shop #1",
+      "keep": {
+        "clogs": 0,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 451863,
+          "name": "Regino Rojas Auto Body Shop #1",
+          "clogs": 0,
+          "leads": 0
+        }
+      ]
+    },
+    {
+      "primaryId": 450982,
+      "primaryName": "Leo's Paint & Body",
+      "keep": {
+        "clogs": 1,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 540033,
+          "name": "Leo's Paint & Body",
+          "clogs": 1,
+          "leads": 0
+        }
+      ]
+    },
+    {
+      "primaryId": 450983,
+      "primaryName": "Trends Auto Body- Luis Ramos",
+      "keep": {
+        "clogs": 0,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 451808,
+          "name": "Trends Auto Body- Luis Ramos",
+          "clogs": 0,
+          "leads": 0
+        }
+      ]
+    },
+    {
+      "primaryId": 450984,
+      "primaryName": "ABS Collision Center",
+      "keep": {
+        "clogs": 8,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 450986,
+          "name": "ABS Collision Center",
+          "clogs": 1,
+          "leads": 0
+        },
+        {
+          "id": 630001,
+          "name": "ABS Collision Center",
+          "clogs": 0,
+          "leads": 0
+        }
+      ]
+    },
+    {
+      "primaryId": 450989,
+      "primaryName": "Cedar Pointe Chiropractic Group",
+      "keep": {
+        "clogs": 1,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 630003,
+          "name": "Cedar Pointe Chiropractic Group",
+          "clogs": 0,
+          "leads": 0
+        }
+      ]
+    },
+    {
+      "primaryId": 450992,
+      "primaryName": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+      "keep": {
+        "clogs": 2,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 450998,
+          "name": "Chiro Wellness West Covina, Dr. Shahid Lateef D.C.",
+          "clogs": 0,
+          "leads": 0
+        }
+      ]
+    },
+    {
+      "primaryId": 451008,
+      "primaryName": "Laguna Hills Chiropractor - Lakeview Chiropractic",
+      "keep": {
+        "clogs": 5,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 540038,
+          "name": "Laguna Hills Chiropractor - Lakeview Chiropractic",
+          "clogs": 0,
+          "leads": 0
+        }
+      ]
+    },
+    {
+      "primaryId": 451036,
+      "primaryName": "Ricardo Garcia Chiropractic Clinic",
+      "keep": {
+        "clogs": 1,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 630012,
+          "name": "Ricardo Garcia Chiropractic Clinic",
+          "clogs": 0,
+          "leads": 0
+        }
+      ]
+    },
+    {
+      "primaryId": 451219,
+      "primaryName": "Oakland Collision Center",
+      "keep": {
+        "clogs": 0,
+        "leads": 0
+      },
+      "dupes": [
+        {
+          "id": 540019,
+          "name": "Oakland Collision Center",
+          "clogs": 0,
+          "leads": 0
+        }
+      ]
+    }
+  ],
+  "assignFix": [
+    {
+      "id": 660348,
+      "name": "Creative Auto Works",
+      "assignTo": "Queenie Miranda",
+      "calls": 1
+    }
+  ]
+}
