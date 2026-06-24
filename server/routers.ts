@@ -11,6 +11,7 @@ import { searchGooglePlaces } from "./googleMaps";
 import { calculateScore } from "./scoring";
 import { crmRouter } from "./crmRouter";
 import { partnershipRouter } from "./partnershipRouter";
+import { dailyLogRouter } from "./dailyLogRouter";
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { getRingcentralToken } from "./crmDb";
@@ -743,6 +744,9 @@ export const appRouter = router({
   // FR/BDR Dual Partnership Model — pods, shared quota, coordinated loop, visit
   // briefings, QA coach, health, bonus pool, leadership reporting.
   partnership: partnershipRouter,
+
+  // Daily Activity Log — archived by-person + by-facility breakdown of each day.
+  dailyLog: dailyLogRouter,
 
   // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
   intake: intakeRouter,

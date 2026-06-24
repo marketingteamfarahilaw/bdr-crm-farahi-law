@@ -27,6 +27,7 @@ import PartnershipVisitsPage from "./pages/partnership/Visits";
 import PartnershipQAPage from "./pages/partnership/QACoach";
 import PartnershipLeadershipPage from "./pages/partnership/Leadership";
 import BdrDeskPage from "./pages/partnership/BdrDesk";
+import DailyLogPage from "./pages/DailyLog";
 import AgentDashboardPage from "./pages/AgentDashboard";
 import FieldVisitsPage from "./pages/FieldVisits";
 import FrExpensesPage from "./pages/FrExpenses";
@@ -123,6 +124,9 @@ function Router() {
         <Route path="/crm/uber-eats" component={UberEatsPage} />
         <Route path="/crm/leads" component={LeadCapturePage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
+
+        {/* Daily Activity Log */}
+        <Route path="/daily-log" component={DailyLogPage} />
 
         {/* FR/BDR Dual Partnership Model */}
         <Route path="/partnership/bdr-desk" component={BdrDeskPage} />
