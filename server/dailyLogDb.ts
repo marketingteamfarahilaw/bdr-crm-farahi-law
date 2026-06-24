@@ -11,7 +11,7 @@ import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { getDb } from "./db";
 import {
   contactLogs, fieldVisits, facilityLeads, facilityTasks, facilityUpdates,
-  facilityGratitude, facilityReferrals, podAppointments, facilities,
+  facilityGratitude, facilityReferrals, podAppointments, facilities, rcMeetings,
 } from "../drizzle/schema";
 
 const LA = "America/Los_Angeles";
@@ -21,7 +21,7 @@ const dayWindow = (dateStr: string) => ({
   end: fromZonedTime(`${dateStr} 23:59:59.999`, LA),
 });
 
-type Ev = { kind: string; when: Date; who: string; facilityId: number | null; facilityName: string | null; detail: string };
+type Ev = { kind: string; when: Date; who: string; facilityId: number | null; facilityName: string | null; detail: string; meetingId?: string };
 
 const CONTACT_KIND: Record<string, string> = { call: "call", visit: "visit", meeting: "meeting", email: "email", text: "text", other: "contact" };
 
@@ -77,6 +77,18 @@ export async function getDailyLog(dateStr: string, scope: { agentNames?: string[
     events.push({ kind, when: r.scheduledFor as Date, who, facilityId: r.facilityId, facilityName: r.facilityName ?? nm(r.facilityId), detail: `${completed ? "Completed" : r.status} ${r.type}${r.outcome ? ` · ${r.outcome}` : r.briefing ? ` · ${String(r.briefing).slice(0, 80)}` : ""}` });
   }
 
+  // RingCentral Video meetings — one event per team participant (so each attendee gets credit)
+  for (const m of await db.select().from(rcMeetings).where(W(rcMeetings.startTime))) {
+    const parts = Array.isArray(m.participants) ? (m.participants as string[]) : [];
+    const everyone = Array.from(new Set([...(m.hostName ? [m.hostName] : []), ...parts]));
+    const mins = Math.round((m.durationSeconds ?? 0) / 60);
+    for (const who of everyone) {
+      if (names && names.length && !names.includes(who)) continue;
+      const others = everyone.filter((x) => x !== who);
+      events.push({ kind: "meeting", when: m.startTime as Date, who, facilityId: null, facilityName: null, meetingId: m.rcMeetingId, detail: `RingCentral Video — ${m.topic ?? "meeting"} (${mins}min${m.hostName === who ? ", hosted" : ""})${others.length ? ` · with ${others.join(", ")}` : ""}${m.hasRecording ? " · recorded" : ""}` });
+    }
+  }
+
   events.sort((a, b) => new Date(a.when).getTime() - new Date(b.when).getTime());
 
   // Open tasks (pending) as of end-of-day, for carry-over
@@ -122,7 +134,7 @@ export async function getDailyLog(dateStr: string, scope: { agentNames?: string[
     facilitiesTouched: byFacility.length,
     calls: events.filter((e) => e.kind === "call").length,
     visits: events.filter((e) => e.kind === "visit").length,
-    meetings: events.filter((e) => e.kind === "meeting").length,
+    meetings: (() => { const ids = new Set<string>(); let n = 0; for (const e of events) if (e.kind === "meeting") { if (e.meetingId) ids.add(e.meetingId); else n++; } return ids.size + n; })(),
     notes: events.filter((e) => e.kind === "note").length,
     referralsSent: events.filter((e) => e.kind === "referral_sent").length,
     leadsReceived: events.filter((e) => e.kind === "lead_received").length,

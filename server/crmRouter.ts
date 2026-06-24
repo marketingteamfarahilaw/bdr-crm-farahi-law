@@ -11,6 +11,7 @@ import { seesAllData, canManage, isIntakeOnly } from "@shared/permissions";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
 import { syncRecentCalls } from "./rcSync";
+import { syncRcMeetings } from "./rcMeetingSync";
 import { syncIntakeCalls } from "./intakeSync";
 import { sendCallRecapToWebhook } from "./filevineHook";
 import { uberConfigured, importOrderReceipt, matchFacilityByAddress } from "./uber";
@@ -1346,6 +1347,15 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
           message: "Connect your RingCentral account first — open the RingCentral page and click “Connect my RingCentral”.",
         });
       }),
+
+    // Pull the caller's RingCentral Video meeting history into the Daily Log.
+    syncMeetings: crmProcedure.mutation(async ({ ctx }) => {
+      const own = await getValidRCTokenForUser(ctx.user.id);
+      const token = own ?? (seesAllData(ctx.user.role) ? await getValidRCToken() : null);
+      if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Connect your RingCentral account first." });
+      const res = await syncRcMeetings(token, { pages: 3 });
+      return { success: true as const, ...res };
+    }),
 
     // ─── Click-to-call via RingOut ────────────────────────────────────────────
     // Reliable in-CRM calling WITHOUT the browser widget. RingCentral rings the

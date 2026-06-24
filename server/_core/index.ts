@@ -16,6 +16,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getValidRCToken, getValidRCTokenForUser } from "../crmRouter";
 import { syncRecentCalls } from "../rcSync";
+import { syncRcMeetings } from "../rcMeetingSync";
 import { syncIntakeCalls } from "../intakeSync";
 import { listConnectedRcUsers, setUserRcLastSync } from "../crmDb";
 import { getSetting } from "../db";
@@ -144,6 +145,11 @@ function startRingCentralAutoSync() {
             if (res.logged > 0 || res.transcribed > 0) {
               console.log(`[rcSync] agent #${u.userId} (${u.userName ?? u.ownerName ?? "?"}): ${res.logged} new, ${res.transcribed} transcribed.`);
             }
+            // RingCentral Video meetings for this agent (lightweight — recent page)
+            try {
+              const mres = await syncRcMeetings(token, { pages: 1 });
+              if (mres.logged > 0) console.log(`[rcMeetings] agent #${u.userId} (${display}): ${mres.logged} new meetings.`);
+            } catch (e: any) { console.warn(`[rcMeetings] sync failed for user ${u.userId}:`, e?.response?.status ?? e?.message ?? e); }
           }
         } catch (e: any) {
           console.warn(`[rcSync] per-agent sync failed for user ${u.userId}:`, e?.response?.status ?? e?.message ?? e);

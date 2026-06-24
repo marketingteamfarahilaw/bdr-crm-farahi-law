@@ -970,3 +970,26 @@ export const qaReviews = mysqlTable("qa_reviews", {
 });
 export type QaReview = typeof qaReviews.$inferSelect;
 export type InsertQaReview = typeof qaReviews.$inferInsert;
+
+// RingCentral Video meetings — pulled from the RC Video meeting-history API per
+// connected agent. Deduped across agents by the RC meeting id. Surfaced in the
+// Daily Activity Log as "meeting" events for the host + each team participant.
+export const rcMeetings = mysqlTable("rc_meetings", {
+  id: int("id").autoincrement().primaryKey(),
+  rcMeetingId: varchar("rcMeetingId", { length: 191 }).notNull().unique(),
+  shortId: varchar("shortId", { length: 40 }),
+  topic: varchar("topic", { length: 500 }),
+  startTime: timestamp("startTime"),
+  endTime: timestamp("endTime"),
+  durationSeconds: int("durationSeconds").default(0),
+  hostExtId: varchar("hostExtId", { length: 40 }),
+  hostName: varchar("hostName", { length: 255 }),
+  participantCount: int("participantCount").default(0),
+  participants: json("participants"),                  // string[] of participant display names
+  hasRecording: int("hasRecording").default(0),
+  status: varchar("status", { length: 40 }),
+  raw: json("raw"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RcMeeting = typeof rcMeetings.$inferSelect;
+export type InsertRcMeeting = typeof rcMeetings.$inferInsert;
