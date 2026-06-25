@@ -12,6 +12,7 @@ import { calculateScore } from "./scoring";
 import { crmRouter } from "./crmRouter";
 import { partnershipRouter } from "./partnershipRouter";
 import { dailyLogRouter } from "./dailyLogRouter";
+import { pdRouter } from "./pdRouter";
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { getRingcentralToken } from "./crmDb";
@@ -747,6 +748,9 @@ export const appRouter = router({
 
   // Daily Activity Log — archived by-person + by-facility breakdown of each day.
   dailyLog: dailyLogRouter,
+
+  // PD Car Referral Tracker — body-shop pipeline + leadership dashboard.
+  pd: pdRouter,
 
   // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
   intake: intakeRouter,

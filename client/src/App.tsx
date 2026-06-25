@@ -28,6 +28,7 @@ import PartnershipQAPage from "./pages/partnership/QACoach";
 import PartnershipLeadershipPage from "./pages/partnership/Leadership";
 import BdrDeskPage from "./pages/partnership/BdrDesk";
 import DailyLogPage from "./pages/DailyLog";
+import PdTrackerPage from "./pages/PdTracker";
 import AgentDashboardPage from "./pages/AgentDashboard";
 import FieldVisitsPage from "./pages/FieldVisits";
 import FrExpensesPage from "./pages/FrExpenses";
@@ -127,6 +128,9 @@ function Router() {
 
         {/* Daily Activity Log */}
         <Route path="/daily-log" component={DailyLogPage} />
+
+        {/* PD Car Referral Tracker */}
+        <Route path="/pd-tracker" component={PdTrackerPage} />
 
         {/* FR/BDR Dual Partnership Model */}
         <Route path="/partnership/bdr-desk" component={BdrDeskPage} />

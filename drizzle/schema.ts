@@ -993,3 +993,30 @@ export const rcMeetings = mysqlTable("rc_meetings", {
 });
 export type RcMeeting = typeof rcMeetings.$inferSelect;
 export type InsertRcMeeting = typeof rcMeetings.$inferInsert;
+
+// PD (property-damage) car referral pipeline — the body-shop tracker. One row per
+// driver's vehicle in an auto case; Miguel works each car's status after checking
+// Filevine. Imported from the Filevine project export (CSV) then worked manually.
+export const pdReferrals = mysqlTable("pd_referrals", {
+  id: int("id").autoincrement().primaryKey(),
+  clientName: varchar("clientName", { length: 255 }),
+  caseNumber: varchar("caseNumber", { length: 120 }),
+  filevineProjectId: varchar("filevineProjectId", { length: 120 }),
+  caseType: varchar("caseType", { length: 80 }),                  // "Auto Accident" etc
+  isDriver: int("isDriver").default(1).notNull(),                // driver's car (eligible) vs passenger
+  vehicleInfo: varchar("vehicleInfo", { length: 255 }),
+  facilityId: int("facilityId"),                                 // body shop the car was referred to
+  facilityName: varchar("facilityName", { length: 255 }),
+  dateReferred: timestamp("dateReferred"),
+  status: mysqlEnum("status", [
+    "new_case", "waiting_liability", "waiting_dec_page", "waiting_pl", "team_working",
+    "bdr_shop", "pl_shop", "refer_by_fbs", "total_loss", "cant_refer", "check", "drop_case",
+  ]).default("new_case").notNull(),
+  assignedRepName: varchar("assignedRepName", { length: 255 }),
+  notes: text("notes"),
+  importBatch: varchar("importBatch", { length: 40 }),           // tag for the import that created/updated it
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PdReferral = typeof pdReferrals.$inferSelect;
+export type InsertPdReferral = typeof pdReferrals.$inferInsert;
