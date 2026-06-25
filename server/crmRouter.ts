@@ -54,6 +54,8 @@ import {
   listFacilityUpdates,
   listLeadsSent,
   listOverdueTasks,
+  listAllTasks,
+  setTaskStatus,
   listReferrals,
   listTasksByFacility,
   listTasksByUser,
@@ -637,6 +639,13 @@ export const crmRouter = router({
       .query(async ({ ctx, input }) => listTasksByUser(ctx.user.id, input.status)),
 
     listOverdue: crmProcedure.query(async () => listOverdueTasks()),
+
+    // Global task board — managers see all, agents see their own.
+    listAll: crmProcedure.query(({ ctx }) => listAllTasks(seesAllData(ctx.user.role) ? { all: true } : { userId: ctx.user.id })),
+
+    setStatus: crmProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["open", "in_progress", "completed"]) }))
+      .mutation(async ({ ctx, input }) => { await assertRowFacilityAccess(ctx.user, facilityTasks, input.id); await setTaskStatus(input.id, input.status); return { success: true }; }),
 
     create: crmProcedure
       .input(

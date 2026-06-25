@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import Login from "@/pages/Login";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation, Handshake, Target, CalendarClock, GraduationCap, Trophy, CalendarDays, Car } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation, Handshake, Target, CalendarClock, GraduationCap, Trophy, CalendarDays, Car, ListChecks, FileText } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -70,6 +70,8 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   ] },
   { title: "Agent Tools", items: [
     { icon: CalendarDays, label: "Daily Activity Log", path: "/daily-log", level: "all" },
+    { icon: ListChecks, label: "Task Board", path: "/tasks", level: "all" },
+    { icon: FileText, label: "FileVine Note", path: "/filevine-note", level: "all" },
     { icon: BarChart3, label: "Reports", path: "/reports", level: "all" },
     { icon: FileBarChart2, label: "Team Reports", path: "/team-reports", level: "manage" },
     { icon: Phone, label: "Call Analytics", path: "/call-analytics", level: "all" },

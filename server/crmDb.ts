@@ -444,6 +444,29 @@ export async function listOverdueTasks() {
     .orderBy(asc(facilityTasks.dueDate));
 }
 
+/** All tasks across all facilities (global board). Managers: all; agents: own. */
+export async function listAllTasks(opts: { all?: boolean; userId?: number } = {}) {
+  const db = await getDb();
+  if (!db) return [];
+  const q = db
+    .select({
+      id: facilityTasks.id, facilityId: facilityTasks.facilityId, facilityName: facilities.name,
+      title: facilityTasks.title, description: facilityTasks.description, dueDate: facilityTasks.dueDate,
+      status: facilityTasks.status, priority: facilityTasks.priority, followUpReason: facilityTasks.followUpReason,
+      assignedToId: facilityTasks.assignedToId, assignedToName: facilityTasks.assignedToName,
+    })
+    .from(facilityTasks)
+    .leftJoin(facilities, eq(facilityTasks.facilityId, facilities.id));
+  if (!opts.all) q.where(eq(facilityTasks.assignedToId, opts.userId ?? -1));
+  return q.orderBy(asc(facilityTasks.dueDate), desc(facilityTasks.createdAt)).limit(3000);
+}
+
+export async function setTaskStatus(id: number, status: "open" | "in_progress" | "completed") {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(facilityTasks).set({ status, completedAt: status === "completed" ? new Date() : null }).where(eq(facilityTasks.id, id));
+}
+
 export async function createTask(data: InsertFacilityTask) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");

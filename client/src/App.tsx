@@ -29,6 +29,8 @@ import PartnershipLeadershipPage from "./pages/partnership/Leadership";
 import BdrDeskPage from "./pages/partnership/BdrDesk";
 import DailyLogPage from "./pages/DailyLog";
 import PdTrackerPage from "./pages/PdTracker";
+import TaskBoardPage from "./pages/TaskBoard";
+import FileVineNotePage from "./pages/FileVineNote";
 import AgentDashboardPage from "./pages/AgentDashboard";
 import FieldVisitsPage from "./pages/FieldVisits";
 import FrExpensesPage from "./pages/FrExpenses";
@@ -131,6 +133,12 @@ function Router() {
 
         {/* PD Car Referral Tracker */}
         <Route path="/pd-tracker" component={PdTrackerPage} />
+
+        {/* Global Task Board */}
+        <Route path="/tasks" component={TaskBoardPage} />
+
+        {/* FileVine Note Generator */}
+        <Route path="/filevine-note" component={FileVineNotePage} />
 
         {/* FR/BDR Dual Partnership Model */}
         <Route path="/partnership/bdr-desk" component={BdrDeskPage} />

@@ -317,7 +317,7 @@ export const facilityTasks = mysqlTable("facility_tasks", {
   dueDate: timestamp("dueDate"),
   assignedToId: int("assignedToId"),
   assignedToName: varchar("assignedToName", { length: 255 }),
-  status: mysqlEnum("status", ["open", "completed"]).default("open").notNull(),
+  status: mysqlEnum("status", ["open", "in_progress", "completed"]).default("open").notNull(),
   priority: mysqlEnum("priority", ["high", "medium", "low"]).default("medium").notNull(),
   // V3: follow-up reason
   followUpReason: mysqlEnum("followUpReason", [
