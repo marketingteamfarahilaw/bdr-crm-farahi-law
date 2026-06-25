@@ -12,8 +12,11 @@ import {
   facilityLeads,
   facilityGratitude,
   facilityUpdates,
+  frExpenses,
+  bdrExpenses,
   ringcentralTokens,
   userRingcentralTokens,
+  rcUnmatchedCalls,
   users,
   type InsertContactLog,
   type InsertFacility,
@@ -459,6 +462,72 @@ export async function listAllTasks(opts: { all?: boolean; userId?: number } = {}
     .leftJoin(facilities, eq(facilityTasks.facilityId, facilities.id));
   if (!opts.all) q.where(eq(facilityTasks.assignedToId, opts.userId ?? -1));
   return q.orderBy(asc(facilityTasks.dueDate), desc(facilityTasks.createdAt)).limit(3000);
+}
+
+// Referral counts (sent / received) per facility — ONE grouped query for the hub list.
+export async function getReferralCountsMap(): Promise<Map<number, { sent: number; received: number }>> {
+  const db = await getDb();
+  const map = new Map<number, { sent: number; received: number }>();
+  if (!db) return map;
+  const rows = await db.select({ facilityId: facilityLeads.facilityId, direction: facilityLeads.direction, n: sql<number>`COUNT(*)` })
+    .from(facilityLeads).groupBy(facilityLeads.facilityId, facilityLeads.direction);
+  for (const r of rows) {
+    const e = map.get(r.facilityId) ?? { sent: 0, received: 0 };
+    if (r.direction === "sent_to_facility") e.sent = Number(r.n); else e.received = Number(r.n);
+    map.set(r.facilityId, e);
+  }
+  return map;
+}
+
+// ── Per-facility expenses (FR + BDR combined) for the partner profile Expenses tab ──
+export async function listExpensesByFacility(facilityId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const fr = await db.select().from(frExpenses).where(eq(frExpenses.facilityId, facilityId));
+  const bdr = await db.select().from(bdrExpenses).where(eq(bdrExpenses.facilityId, facilityId));
+  const rows = [
+    ...fr.map((e) => ({ id: e.id, kind: "FR" as const, date: e.expenseDate, agentName: e.agentName, store: e.store, reason: e.reason, amount: e.amount, reimbursementStatus: e.reimbursementStatus, receiptUrl: e.receiptUrl, notes: e.notes })),
+    ...bdr.map((e) => ({ id: e.id, kind: "BDR" as const, date: e.expenseDate, agentName: e.agentName, store: e.store, reason: e.reason, amount: e.amount, reimbursementStatus: e.reimbursementStatus, receiptUrl: null, notes: e.notes })),
+  ];
+  return rows.sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime());
+}
+
+export async function createFacilityExpense(data: { facilityId: number; facilityName?: string | null; agentName: string; expenseDate: Date; store?: string | null; reason?: string | null; amount: string; cardType?: "Personal" | "Company"; receiptUrl?: string | null; notes?: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(frExpenses).values({
+    facilityId: data.facilityId, facilityName: data.facilityName ?? null, agentName: data.agentName,
+    expenseDate: data.expenseDate, store: data.store ?? null, reason: data.reason ?? null,
+    amount: data.amount, cardType: data.cardType ?? "Company", receiptUrl: data.receiptUrl ?? null, notes: data.notes ?? null,
+  } as any);
+}
+
+export async function setExpenseReimbursement(kind: "FR" | "BDR", id: number, status: "pending" | "submitted" | "approved") {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  if (kind === "FR") await db.update(frExpenses).set({ reimbursementStatus: status }).where(eq(frExpenses.id, id));
+  else await db.update(bdrExpenses).set({ reimbursementStatus: status }).where(eq(bdrExpenses.id, id));
+}
+
+// Record a RingCentral call that didn't match a facility (deduped by call id).
+export async function recordUnmatchedCall(data: {
+  rcCallId: string; rcSessionId?: string | null; direction?: string | null;
+  fromNumber?: string | null; toNumber?: string | null; fromName?: string | null; toName?: string | null;
+  startTime?: Date | null; durationSeconds?: number; callResult?: string | null; recordingUrl?: string | null; agentName?: string | null;
+}) {
+  const db = await getDb();
+  if (!db || !data.rcCallId) return;
+  await db.insert(rcUnmatchedCalls).values(data as any).onDuplicateKeyUpdate({ set: { rcSessionId: data.rcSessionId ?? null } });
+}
+export async function listUnmatchedCalls(limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(rcUnmatchedCalls).where(eq(rcUnmatchedCalls.status, "unassigned")).orderBy(desc(rcUnmatchedCalls.startTime)).limit(limit);
+}
+export async function setUnmatchedCallStatus(id: number, status: "unassigned" | "assigned" | "dismissed") {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(rcUnmatchedCalls).set({ status }).where(eq(rcUnmatchedCalls.id, id));
 }
 
 export async function setTaskStatus(id: number, status: "open" | "in_progress" | "completed") {

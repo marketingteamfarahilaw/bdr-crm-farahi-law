@@ -121,7 +121,9 @@ export async function sendCallRecapToWebhook(payload: CallRecapPayload): Promise
       headers: { "Content-Type": "application/json" },
     });
     console.log(`[filevineHook] pushed recap → Filevine webhook for "${payload.facilityName ?? payload.facilityId}" (${payload.durationStr ?? "?"}).`);
+    try { const { setSetting } = await import("./db"); await setSetting("filevine_last_push_at", new Date().toISOString()); await setSetting("filevine_last_push_status", "success"); } catch { /* ignore */ }
   } catch (e: any) {
     console.warn("[filevineHook] webhook post failed:", e?.response?.status ?? e?.message ?? e);
+    try { const { setSetting } = await import("./db"); await setSetting("filevine_last_push_at", new Date().toISOString()); await setSetting("filevine_last_push_status", "failed"); await setSetting("filevine_last_error", String(e?.response?.status ?? e?.message ?? e).slice(0, 300)); } catch { /* ignore */ }
   }
 }

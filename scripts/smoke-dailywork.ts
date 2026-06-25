@@ -1,0 +1,12 @@
+import "dotenv/config";
+import { getDailyWork, getIntegrationHealth } from "../server/dailyWorkDb";
+import { listAgentsWithRcStatus } from "../server/crmDb";
+const dw = await getDailyWork({ all: true });
+console.log("Daily Work counts:", JSON.stringify(dw?.counts));
+console.log("  pending expense total: $" + (dw?.pendingExpenseTotal ?? 0));
+console.log("  sample overdue:", (dw?.overduePartners ?? []).slice(0,2).map((p:any)=>p.name).join(", ") || "(none)");
+console.log("  sample unmatched:", (dw?.unmatchedCalls ?? []).length, "calls");
+const agents = await listAgentsWithRcStatus();
+const health = await getIntegrationHealth(agents as any);
+console.log("Integration health:", JSON.stringify(health));
+process.exit(0);

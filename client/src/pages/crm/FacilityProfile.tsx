@@ -797,6 +797,74 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
   );
 }
 
+// ── Expenses tab: per-partner FR/BDR expenses + reimbursement status ──
+function ExpensesTab({ facilityId, facilityName }: { facilityId: number; facilityName?: string | null }) {
+  const utils = trpc.useUtils();
+  const { data: rows = [], isLoading } = trpc.crm.expenses.byFacility.useQuery({ facilityId });
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ expenseDate: new Date().toISOString().slice(0, 10), store: "", reason: "", amount: "", cardType: "Company" as "Company" | "Personal", notes: "" });
+  const create = trpc.crm.expenses.create.useMutation({ onSuccess: () => { utils.crm.expenses.byFacility.invalidate({ facilityId }); toast.success("Expense added"); setOpen(false); setForm({ expenseDate: new Date().toISOString().slice(0, 10), store: "", reason: "", amount: "", cardType: "Company", notes: "" }); }, onError: (e) => toast.error(e.message) });
+  const setStatus = trpc.crm.expenses.setReimbursement.useMutation({ onSuccess: () => utils.crm.expenses.byFacility.invalidate({ facilityId }), onError: (e) => toast.error(e.message) });
+  const total = rows.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const STT: Record<string, string> = { pending: "bg-amber-500/15 text-amber-600 dark:text-amber-400", submitted: "bg-blue-500/15 text-blue-600 dark:text-blue-400", approved: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" };
+  const exportCsv = () => {
+    const out = [["Date", "Kind", "Store", "Reason", "Amount", "Reimbursement", "Agent"], ...rows.map((e: any) => [e.date ? new Date(e.date).toISOString().slice(0, 10) : "", e.kind, e.store, e.reason, e.amount, e.reimbursementStatus, e.agentName])];
+    const csv = out.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); const a = document.createElement("a"); a.href = url; a.download = `Expenses - ${facilityName ?? facilityId}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+  return (
+    <div className="space-y-3 mt-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="text-sm text-muted-foreground">Total: <span className="font-semibold text-foreground">${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> · {rows.length} expenses</div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={exportCsv} disabled={!rows.length}><Download className="w-4 h-4" /> Export</Button>
+          <Button size="sm" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> Add Expense</Button>
+        </div>
+      </div>
+      {open && (
+        <Card className="border-primary/40"><CardContent className="p-4 grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-muted-foreground mb-1 block">Date</label><Input type="date" value={form.expenseDate} onChange={(e) => setForm({ ...form, expenseDate: e.target.value })} /></div>
+          <div><label className="text-xs text-muted-foreground mb-1 block">Amount ($)</label><Input value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="25.00" /></div>
+          <div><label className="text-xs text-muted-foreground mb-1 block">Store / vendor</label><Input value={form.store} onChange={(e) => setForm({ ...form, store: e.target.value })} placeholder="Uber Eats" /></div>
+          <div><label className="text-xs text-muted-foreground mb-1 block">Category / reason</label><Input value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Partner lunch" /></div>
+          <div className="col-span-2 flex gap-2"><Button size="sm" disabled={create.isPending} onClick={() => create.mutate({ facilityId, facilityName: facilityName ?? undefined, ...form })}>Save</Button><Button size="sm" variant="outline" onClick={() => setOpen(false)}>Cancel</Button></div>
+        </CardContent></Card>
+      )}
+      {isLoading ? <Skeleton className="h-32 rounded-xl" /> : !rows.length ? <p className="text-sm text-muted-foreground text-center py-6">No expenses logged for this partner.</p> : (
+        <div className="space-y-1.5">
+          {rows.map((e: any) => (
+            <div key={`${e.kind}-${e.id}`} className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm">
+              <div className="min-w-0"><p className="font-medium text-foreground">${Number(e.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="font-normal text-muted-foreground">· {e.store || e.reason || "expense"}</span></p><p className="text-[11px] text-muted-foreground">{e.kind} · {e.date ? new Date(e.date).toLocaleDateString() : ""}{e.agentName ? ` · ${e.agentName}` : ""}</p></div>
+              <Select value={e.reimbursementStatus} onValueChange={(v) => setStatus.mutate({ kind: e.kind, id: e.id, status: v as any })}>
+                <SelectTrigger className={`h-7 w-32 text-xs ${STT[e.reimbursementStatus] ?? ""}`}><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="pending">Pending</SelectItem><SelectItem value="submitted">Submitted</SelectItem><SelectItem value="approved">Approved</SelectItem></SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Referrals Sent / Received tab (facility_leads filtered by direction) ──
+function ReferralsDirectionTab({ facilityId, direction }: { facilityId: number; direction: "sent_to_facility" | "received_from_facility" }) {
+  const { data: leads = [], isLoading } = trpc.crm.facilityLeads.list.useQuery({ facilityId });
+  const rows = (leads as any[]).filter((l) => l.direction === direction);
+  if (isLoading) return <Skeleton className="h-32 rounded-xl mt-4" />;
+  if (!rows.length) return <p className="text-sm text-muted-foreground text-center py-6 mt-4">{direction === "sent_to_facility" ? "No referrals sent to this partner yet." : "No referrals received from this partner yet."} Use the Leads tab to add one.</p>;
+  return (
+    <div className="space-y-1.5 mt-4">
+      {rows.map((l) => (
+        <div key={l.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm">
+          <div className="min-w-0"><p className="font-medium text-foreground truncate">{l.clientArea || l.contactPerson || "Lead"}{l.signedCase ? " · SIGNED" : ""}</p><p className="text-[11px] text-muted-foreground">{l.leadDate ? new Date(l.leadDate).toLocaleDateString() : ""}{l.method ? ` · ${l.method}` : ""}{l.repName ? ` · ${l.repName}` : ""}</p></div>
+          <Badge variant="secondary" className="text-xs shrink-0">{l.outcome ?? "pending"}</Badge>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function FacilityProfile() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -809,6 +877,7 @@ export default function FacilityProfile() {
   const { data: referrals } = trpc.crm.referrals.list.useQuery({ facilityId });
   const { data: rcStatus } = trpc.crm.ringcentral.status.useQuery();
   const [playLog, setPlayLog] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get("tab") || "overview");
 
   const completeTask = trpc.crm.tasks.complete.useMutation({
     onSuccess: () => { utils.crm.tasks.listByFacility.invalidate({ facilityId }); toast.success("Task completed"); },
@@ -971,22 +1040,26 @@ export default function FacilityProfile() {
       )}
 
       {/* Main Tabs */}
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted/60 border border-border rounded-xl p-1 flex-wrap h-auto gap-0.5">
           <TabsTrigger value="overview" className="rounded-lg">Overview</TabsTrigger>
           <TabsTrigger value="contacts" className="rounded-lg">
-            Contact Log {contactLogs && contactLogs.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-foreground/10 px-1.5 py-0.5 rounded-full">{contactLogs.length}</span>}
+            Call &amp; Visit Log {contactLogs && contactLogs.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-foreground/10 px-1.5 py-0.5 rounded-full">{contactLogs.length}</span>}
           </TabsTrigger>
-          <TabsTrigger value="leads" className="rounded-lg">Leads</TabsTrigger>
-          <TabsTrigger value="gratitude" className="rounded-lg">Gratitude</TabsTrigger>
-          <TabsTrigger value="updates" className="rounded-lg">Call Recaps</TabsTrigger>
+          <TabsTrigger value="expenses" className="rounded-lg">Expenses</TabsTrigger>
           <TabsTrigger value="tasks" className="rounded-lg">
             Tasks {openTasks.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full">{openTasks.length}</span>}
           </TabsTrigger>
-          <TabsTrigger value="referrals" className="rounded-lg">
-            Referrals {referrals && referrals.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full">{referrals.length}</span>}
-          </TabsTrigger>
+          <TabsTrigger value="sent" className="rounded-lg">Referrals Sent</TabsTrigger>
+          <TabsTrigger value="received" className="rounded-lg">Referrals Received</TabsTrigger>
+          <TabsTrigger value="leads" className="rounded-lg">Log Lead</TabsTrigger>
+          <TabsTrigger value="gratitude" className="rounded-lg">Gratitude</TabsTrigger>
+          <TabsTrigger value="updates" className="rounded-lg">Call Recaps</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="expenses"><ExpensesTab facilityId={facilityId} facilityName={facility.name} /></TabsContent>
+        <TabsContent value="sent"><ReferralsDirectionTab facilityId={facilityId} direction="sent_to_facility" /></TabsContent>
+        <TabsContent value="received"><ReferralsDirectionTab facilityId={facilityId} direction="received_from_facility" /></TabsContent>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4 mt-4">

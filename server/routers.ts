@@ -12,6 +12,7 @@ import { calculateScore } from "./scoring";
 import { crmRouter } from "./crmRouter";
 import { partnershipRouter } from "./partnershipRouter";
 import { dailyLogRouter } from "./dailyLogRouter";
+import { dailyWorkRouter } from "./dailyWorkRouter";
 import { pdRouter } from "./pdRouter";
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -748,6 +749,9 @@ export const appRouter = router({
 
   // Daily Activity Log — archived by-person + by-facility breakdown of each day.
   dailyLog: dailyLogRouter,
+
+  // Daily Work View — "what to work on now" + integration health.
+  dailyWork: dailyWorkRouter,
 
   // PD Car Referral Tracker — body-shop pipeline + leadership dashboard.
   pd: pdRouter,

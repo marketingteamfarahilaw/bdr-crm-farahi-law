@@ -524,6 +524,7 @@ export const frExpenses = mysqlTable("fr_expenses", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   cardType: mysqlEnum("cardType", ["Personal", "Company"]).default("Company").notNull(),
   receiptUrl: varchar("receiptUrl", { length: 500 }),
+  reimbursementStatus: mysqlEnum("reimbursementStatus", ["pending", "submitted", "approved"]).default("pending").notNull(),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -547,6 +548,7 @@ export const bdrExpenses = mysqlTable("bdr_expenses", {
   store: varchar("store", { length: 255 }),
   reason: varchar("reason", { length: 500 }),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  reimbursementStatus: mysqlEnum("reimbursementStatus", ["pending", "submitted", "approved"]).default("pending").notNull(),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -993,6 +995,28 @@ export const rcMeetings = mysqlTable("rc_meetings", {
 });
 export type RcMeeting = typeof rcMeetings.$inferSelect;
 export type InsertRcMeeting = typeof rcMeetings.$inferInsert;
+
+// RingCentral calls that didn't match any facility by phone — surfaced in the
+// Daily Work view so the rep can assign them to a partner (or dismiss).
+export const rcUnmatchedCalls = mysqlTable("rc_unmatched_calls", {
+  id: int("id").autoincrement().primaryKey(),
+  rcCallId: varchar("rcCallId", { length: 64 }).notNull().unique(),
+  rcSessionId: varchar("rcSessionId", { length: 64 }),
+  direction: varchar("direction", { length: 20 }),
+  fromNumber: varchar("fromNumber", { length: 60 }),
+  toNumber: varchar("toNumber", { length: 60 }),
+  fromName: varchar("fromName", { length: 255 }),
+  toName: varchar("toName", { length: 255 }),
+  startTime: timestamp("startTime"),
+  durationSeconds: int("durationSeconds").default(0),
+  callResult: varchar("callResult", { length: 40 }),
+  recordingUrl: varchar("recordingUrl", { length: 600 }),
+  agentName: varchar("agentName", { length: 255 }),               // who synced it (attribution)
+  status: mysqlEnum("status", ["unassigned", "assigned", "dismissed"]).default("unassigned").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RcUnmatchedCall = typeof rcUnmatchedCalls.$inferSelect;
+export type InsertRcUnmatchedCall = typeof rcUnmatchedCalls.$inferInsert;
 
 // PD (property-damage) car referral pipeline — the body-shop tracker. One row per
 // driver's vehicle in an auto case; Miguel works each car's status after checking

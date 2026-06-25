@@ -13,8 +13,10 @@ import {
 import {
   Building2, Phone, MapPin, User, Plus, Search,
   AlertTriangle, Clock, ChevronUp, ChevronDown, Upload, List, Map,
+  Receipt, ListChecks, FileText, ArrowRight,
 } from "lucide-react";
 import { formatDistanceToNow } from "@/lib/datetime";
+import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { BulkImportDialog } from "./BulkImportDialog";
 import FacilitiesMap from "@/components/FacilitiesMap";
 
@@ -310,18 +312,14 @@ export default function Facilities() {
                     >
                       BD Rep <SortIcon col="assignedRepName" />
                     </TableHead>
-                    <TableHead
-                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground text-right"
-                      onClick={() => handleSort("totalLeadsSent")}
-                    >
-                      Leads <SortIcon col="totalLeadsSent" />
-                    </TableHead>
+                    <TableHead className="text-muted-foreground text-xs text-right" title="Referrals sent to / received from this partner">Sent / Recv</TableHead>
                     <TableHead
                       className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("lastContact")}
                     >
                       Last Contact <SortIcon col="lastContact" />
                     </TableHead>
+                    <TableHead className="text-muted-foreground text-xs text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -385,18 +383,32 @@ export default function Facilities() {
                         <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {facility.assignedRepName ?? <span className="opacity-40">—</span>}
                         </TableCell>
-                        <TableCell className="py-1.5 text-xs text-right font-medium text-foreground">
-                          {facility.totalLeadsSent ?? 0}
+                        <TableCell className="py-1.5 text-xs text-right">
+                          <span className="font-medium text-foreground">{(facility as any).referralsSent ?? 0}</span>
+                          <span className="text-muted-foreground"> / {(facility as any).referralsReceived ?? 0}</span>
                         </TableCell>
                         <TableCell className="py-1.5 text-xs text-muted-foreground">
-                          {lastContactDate ? (
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 flex-shrink-0" />
-                              <span>{formatDistanceToNow(lastContactDate, { addSuffix: true })}</span>
-                            </div>
-                          ) : (
-                            <span className="opacity-40">Never</span>
+                          {lastContactDate ? (() => {
+                            const days = Math.floor((Date.now() - lastContactDate.getTime()) / 86400000);
+                            const dot = days <= 7 ? "bg-emerald-500" : days <= 14 ? "bg-amber-500" : "bg-red-500";
+                            return (
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} title={`${days} days ago`} />
+                                <span>{formatDistanceToNow(lastContactDate, { addSuffix: true })}</span>
+                              </div>
+                            );
+                          })() : (
+                            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /><span className="opacity-60">Never</span></div>
                           )}
+                        </TableCell>
+                        <TableCell className="py-1.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-0.5">
+                            {facility.phone && <ClickToCallButton phoneNumber={facility.phone} facilityId={facility.id} />}
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title="Tasks" onClick={() => navigate(`/crm/facilities/${facility.id}?tab=tasks`)}><ListChecks className="w-3.5 h-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title="Expenses" onClick={() => navigate(`/crm/facilities/${facility.id}?tab=expenses`)}><Receipt className="w-3.5 h-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title="FileVine note" onClick={() => navigate(`/filevine-note`)}><FileText className="w-3.5 h-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title="Open profile" onClick={() => navigate(`/crm/facilities/${facility.id}`)}><ArrowRight className="w-3.5 h-3.5" /></Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

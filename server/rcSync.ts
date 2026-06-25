@@ -13,7 +13,7 @@
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
-import { createContactLog, createFacilityUpdate, createTask, getExistingRcCallIds, getExistingRcSessionIds } from "./crmDb";
+import { createContactLog, createFacilityUpdate, createTask, getExistingRcCallIds, getExistingRcSessionIds, recordUnmatchedCall } from "./crmDb";
 import { sendCallRecapToWebhook } from "./filevineHook";
 import { getDb } from "./db";
 import { facilities } from "../drizzle/schema";
@@ -242,7 +242,22 @@ export async function syncRecentCalls(
     const fromDigits = onlyDigits(r.from?.phoneNumber);
     const toDigits = onlyDigits(r.to?.phoneNumber);
     const facility = matchFacility(index, fromDigits, toDigits);
-    if (!facility) continue; // unmatched call — not a tracked partner
+    if (!facility) {
+      // Not a tracked partner — capture it so the rep can assign it from the Daily Work view.
+      if (!dryRun) {
+        try {
+          await recordUnmatchedCall({
+            rcCallId: id, rcSessionId: sessionId || null, direction: r.direction ?? null,
+            fromNumber: r.from?.phoneNumber ?? null, toNumber: r.to?.phoneNumber ?? null,
+            fromName: r.from?.name ?? null, toName: r.to?.name ?? null,
+            startTime: r.startTime ? new Date(r.startTime) : null, durationSeconds: r.duration ?? 0,
+            callResult: r.result ?? null, recordingUrl: r.recording?.contentUri ?? null,
+            agentName: attribution?.repName ?? r.from?.name ?? null,
+          });
+        } catch { /* non-fatal */ }
+      }
+      continue;
+    }
     result.matched++;
     if (dryRun) { result.logged++; continue; } // count what WOULD be synced, write nothing
 

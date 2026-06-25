@@ -56,6 +56,10 @@ import {
   listOverdueTasks,
   listAllTasks,
   setTaskStatus,
+  getReferralCountsMap,
+  listExpensesByFacility,
+  createFacilityExpense,
+  setExpenseReimbursement,
   listReferrals,
   listTasksByFacility,
   listTasksByUser,
@@ -381,12 +385,14 @@ export const crmRouter = router({
           ? (input ?? {})
           : { ...(input ?? {}), assignedRepId: ctx.user.id, assignedRepNames: ownerNameCandidates(ctx.user) };
         const rows = await listFacilities(scoped);
-        // Enrich with last contact and total leads sent
+        // Enrich with last contact, total leads sent, and referral counts (sent/received).
+        const refMap = await getReferralCountsMap();
         const enriched = await Promise.all(
           rows.map(async (f: typeof rows[number]) => {
             const lastContact = await getLastContactLog(f.id);
             const totalLeadsSent = await getTotalLeadsSent(f.id);
-            return { ...f, lastContact, totalLeadsSent };
+            const ref = refMap.get(f.id) ?? { sent: 0, received: 0 };
+            return { ...f, lastContact, totalLeadsSent, referralsSent: ref.sent, referralsReceived: ref.received };
           })
         );
         return enriched;
@@ -694,6 +700,29 @@ export const crmRouter = router({
         await deleteTask(input.id);
         return { success: true };
       }),
+  }),
+
+  // ─── Per-facility Expenses (partner profile Expenses tab) ──────────────────────
+  expenses: router({
+    byFacility: crmProcedure
+      .input(z.object({ facilityId: z.number() }))
+      .query(async ({ ctx, input }) => { await assertFacilityAccess(ctx.user, input.facilityId, true); return listExpensesByFacility(input.facilityId); }),
+
+    create: crmProcedure
+      .input(z.object({
+        facilityId: z.number(), facilityName: z.string().optional(), expenseDate: z.string(),
+        store: z.string().optional(), reason: z.string().optional(), amount: z.string().default("0.00"),
+        cardType: z.enum(["Personal", "Company"]).default("Company"), receiptUrl: z.string().optional(), notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await assertFacilityAccess(ctx.user, input.facilityId);
+        await createFacilityExpense({ ...input, expenseDate: new Date(input.expenseDate), agentName: ctx.user.agentName ?? ctx.user.name ?? ctx.user.email ?? "Unknown" });
+        return { success: true };
+      }),
+
+    setReimbursement: crmProcedure
+      .input(z.object({ kind: z.enum(["FR", "BDR"]), id: z.number(), status: z.enum(["pending", "submitted", "approved"]) }))
+      .mutation(async ({ input }) => { await setExpenseReimbursement(input.kind, input.id, input.status); return { success: true }; }),
   }),
 
   // ─── Leads Sent ──────────────────────────────────────────────────────────────

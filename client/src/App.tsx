@@ -28,6 +28,7 @@ import PartnershipQAPage from "./pages/partnership/QACoach";
 import PartnershipLeadershipPage from "./pages/partnership/Leadership";
 import BdrDeskPage from "./pages/partnership/BdrDesk";
 import DailyLogPage from "./pages/DailyLog";
+import DailyWorkPage from "./pages/DailyWork";
 import PdTrackerPage from "./pages/PdTracker";
 import TaskBoardPage from "./pages/TaskBoard";
 import FileVineNotePage from "./pages/FileVineNote";
@@ -127,6 +128,9 @@ function Router() {
         <Route path="/crm/uber-eats" component={UberEatsPage} />
         <Route path="/crm/leads" component={LeadCapturePage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
+
+        {/* Daily Work View */}
+        <Route path="/daily-work" component={DailyWorkPage} />
 
         {/* Daily Activity Log */}
         <Route path="/daily-log" component={DailyLogPage} />

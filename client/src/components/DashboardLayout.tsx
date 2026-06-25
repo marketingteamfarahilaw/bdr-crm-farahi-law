@@ -69,6 +69,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Trophy, label: "Leadership", path: "/partnership/leadership", level: "manage" },
   ] },
   { title: "Agent Tools", items: [
+    { icon: LayoutDashboard, label: "Daily Work", path: "/daily-work", level: "all" },
     { icon: CalendarDays, label: "Daily Activity Log", path: "/daily-log", level: "all" },
     { icon: ListChecks, label: "Task Board", path: "/tasks", level: "all" },
     { icon: FileText, label: "FileVine Note", path: "/filevine-note", level: "all" },
