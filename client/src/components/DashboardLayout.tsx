@@ -59,15 +59,17 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Car, label: "PD Car Tracker", path: "/pd-tracker", level: "bdr" },
     { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
   ] },
-  { title: "FR/BDR Partnership", items: [
-    { icon: PhoneCall, label: "BDR Desk", path: "/partnership/bdr-desk", level: "bdr" },
-    { icon: Network, label: "Coordinated Loop", path: "/partnership/loop", level: "all" },
-    { icon: Target, label: "Shared Quota", path: "/partnership/quota", level: "all" },
-    { icon: CalendarClock, label: "Visits & Briefings", path: "/partnership/visits", level: "all" },
-    { icon: Handshake, label: "Team Pods", path: "/partnership/pods", level: "manage" },
-    { icon: GraduationCap, label: "QA Coach", path: "/partnership/qa", level: "manage" },
-    { icon: Trophy, label: "Leadership", path: "/partnership/leadership", level: "manage" },
-  ] },
+  // Hidden for now (per request). Pages/routes still exist — just removed from the
+  // sidebar. To restore, uncomment this section.
+  // { title: "FR/BDR Partnership", items: [
+  //   { icon: PhoneCall, label: "BDR Desk", path: "/partnership/bdr-desk", level: "bdr" },
+  //   { icon: Network, label: "Coordinated Loop", path: "/partnership/loop", level: "all" },
+  //   { icon: Target, label: "Shared Quota", path: "/partnership/quota", level: "all" },
+  //   { icon: CalendarClock, label: "Visits & Briefings", path: "/partnership/visits", level: "all" },
+  //   { icon: Handshake, label: "Team Pods", path: "/partnership/pods", level: "manage" },
+  //   { icon: GraduationCap, label: "QA Coach", path: "/partnership/qa", level: "manage" },
+  //   { icon: Trophy, label: "Leadership", path: "/partnership/leadership", level: "manage" },
+  // ] },
   { title: "Agent Tools", items: [
     { icon: LayoutDashboard, label: "Daily Work", path: "/daily-work", level: "all" },
     { icon: CalendarDays, label: "Daily Activity Log", path: "/daily-log", level: "all" },
