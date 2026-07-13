@@ -159,18 +159,33 @@ export async function syncIntakeCalls(
     lookbackMinutes?: number;
     settleMinutes?: number;
     perPage?: number;
+    /** Explicit date window for backfills (overrides lookbackMinutes). ISO strings. */
+    dateFromISO?: string;
+    dateToISO?: string;
+    /** How many call-log pages to walk (for a big backfill). Default 1. */
+    maxPages?: number;
+    /** Read a SPECIFIC extension's log (admin backfill). Defaults to the token owner's ("~"). */
+    extensionId?: string;
   },
 ): Promise<IntakeSyncResult> {
   const lookbackMinutes = opts.lookbackMinutes ?? 90;
   const settleMs = (opts.settleMinutes ?? 2) * 60 * 1000;
   const perPage = opts.perPage ?? 250;
 
-  const dateFrom = new Date(Date.now() - lookbackMinutes * 60 * 1000).toISOString();
-  const resp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    params: { dateFrom, perPage, view: "Detailed" },
-  });
-  const records: any[] = resp.data?.records ?? [];
+  const dateFrom = opts.dateFromISO ?? new Date(Date.now() - lookbackMinutes * 60 * 1000).toISOString();
+  const dateTo = opts.dateToISO;
+  const maxPages = opts.maxPages ?? 1;
+  const records: any[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const resp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/extension/${opts.extensionId ?? "~"}/call-log`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: { dateFrom, ...(dateTo ? { dateTo } : {}), perPage, page, view: "Detailed" },
+    });
+    const recs: any[] = resp.data?.records ?? [];
+    records.push(...recs);
+    const totalPages = resp.data?.paging?.totalPages;
+    if (recs.length < perPage || (totalPages && page >= totalPages)) break;
+  }
   const result: IntakeSyncResult = { scanned: records.length, logged: 0, transcribed: 0, leadsCreated: 0, leadsUpdated: 0, skippedRecent: 0 };
   if (records.length === 0) return result;
 
