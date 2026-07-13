@@ -127,7 +127,7 @@ export async function routeAnalyzedTranscript(opts: {
 }
 
 /** Whisper-transcribe one recorded RingCentral call, then route it. */
-async function processRecordedCall(opts: {
+export async function processRecordedCall(opts: {
   callId: number;
   recordingUrl: string;
   accessToken: string;
@@ -139,7 +139,11 @@ async function processRecordedCall(opts: {
 }): Promise<{ transcribed: boolean; leadCreated: boolean; leadUpdated: boolean }> {
   const authedUrl = `${opts.recordingUrl}?access_token=${opts.accessToken}`;
   const tr = await transcribeAudio({ audioUrl: authedUrl });
-  if ("error" in tr || !tr.text) return { transcribed: false, leadCreated: false, leadUpdated: false };
+  if ("error" in tr || !tr.text) {
+    // Visibility: rate-limited/expired-token downloads used to fail silently here.
+    console.warn(`[intakeSync] transcription failed for intake call #${opts.callId}:`, ("error" in tr ? String((tr as any).error).slice(0, 160) : "empty transcript"));
+    return { transcribed: false, leadCreated: false, leadUpdated: false };
+  }
   return routeAnalyzedTranscript({
     callId: opts.callId,
     transcript: tr.text,
