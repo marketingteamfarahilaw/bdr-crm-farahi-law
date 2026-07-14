@@ -3,6 +3,7 @@
  */
 
 import { and, desc, eq, like, or, sql, asc, inArray, gte, lte, isNotNull } from "drizzle-orm";
+import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import {
   contactLogs,
   facilities,
@@ -507,6 +508,73 @@ export async function setExpenseReimbursement(kind: "FR" | "BDR", id: number, st
   if (!db) throw new Error("DB unavailable");
   if (kind === "FR") await db.update(frExpenses).set({ reimbursementStatus: status }).where(eq(frExpenses.id, id));
   else await db.update(bdrExpenses).set({ reimbursementStatus: status }).where(eq(bdrExpenses.id, id));
+}
+
+// ── BDR Check-In matrix (replicates the MTD CHECK-IN sheet) ───────────────────
+// One row per facility called in the month (or per phone number when the call
+// never matched a facility). Each distinct DAY is a check-in column with the
+// number of calls placed that day; TOTAL sums the month.
+export async function getCheckinMatrix(month: string, agentNames?: string[] | null) {
+  const db = await getDb();
+  if (!db) return [];
+  const LA = "America/Los_Angeles";
+  const [y, m] = month.split("-").map(Number);
+  const start = fromZonedTime(`${month}-01 00:00:00`, LA);
+  const next = `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, "0")}-01`;
+  const end = fromZonedTime(`${next} 00:00:00`, LA);
+  const dayOf = (d: Date) => formatInTimeZone(d, LA, "yyyy-MM-dd");
+  const last10 = (s?: string | null) => { const d = String(s ?? "").replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : d; };
+
+  // Matched calls → facility rows
+  const calls = await db.select({
+    facilityId: contactLogs.facilityId, contactDate: contactLogs.contactDate, repName: contactLogs.repName,
+    facilityName: facilities.name,
+  }).from(contactLogs).leftJoin(facilities, eq(contactLogs.facilityId, facilities.id))
+    .where(and(eq(contactLogs.contactType, "call"), gte(contactLogs.contactDate, start), lte(contactLogs.contactDate, end)));
+
+  // Unmatched calls → phone-number rows (only still-unassigned; assigned ones already live in contact_logs)
+  const unmatched = await db.select().from(rcUnmatchedCalls)
+    .where(and(eq(rcUnmatchedCalls.status, "unassigned"), gte(rcUnmatchedCalls.startTime, start), lte(rcUnmatchedCalls.startTime, end)));
+
+  type Row = { key: string; label: string; facilityId: number | null; days: Map<string, number> };
+  const reps = new Map<string, Map<string, Row>>();
+  const bucket = (rep: string, key: string, label: string, facilityId: number | null, day: string) => {
+    if (!reps.has(rep)) reps.set(rep, new Map());
+    const rows = reps.get(rep)!;
+    if (!rows.has(key)) rows.set(key, { key, label, facilityId, days: new Map() });
+    const r = rows.get(key)!;
+    r.days.set(day, (r.days.get(day) ?? 0) + 1);
+  };
+  for (const c of calls) {
+    if (!c.contactDate) continue;
+    const rep = (c.repName ?? "(unknown)").trim() || "(unknown)";
+    bucket(rep, `f:${c.facilityId}`, c.facilityName ?? `Facility #${c.facilityId}`, c.facilityId, dayOf(c.contactDate as Date));
+  }
+  for (const u of unmatched) {
+    if (!u.startTime) continue;
+    const rep = (u.agentName ?? "(unknown)").trim() || "(unknown)";
+    const external = u.direction === "Inbound" ? u.fromNumber : u.toNumber;
+    const p = last10(external);
+    if (!p) continue;
+    bucket(rep, `p:${p}`, external ?? p, null, dayOf(u.startTime as Date));
+  }
+
+  // Agent scoping: match rep blocks by full name or first name (case-insensitive)
+  const norm = (s: string) => s.toLowerCase().trim();
+  const first = (s: string) => norm(s).split(/\s+/)[0] ?? "";
+  const wanted = agentNames?.map(norm).filter(Boolean) ?? null;
+  const repMatches = (rep: string) => !wanted || wanted.some((w) => norm(rep) === w || first(rep) === first(w));
+
+  const out = [];
+  for (const [rep, rows] of Array.from(reps.entries())) {
+    if (!repMatches(rep)) continue;
+    const list = Array.from(rows.values()).map((r) => {
+      const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
+      return { label: r.label, facilityId: r.facilityId, isPhoneOnly: r.facilityId == null, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
+    }).sort((a, b) => (a.checkIns[0]?.date ?? "").localeCompare(b.checkIns[0]?.date ?? "") || b.total - a.total);
+    out.push({ rep, rows: list, totals: { facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) } });
+  }
+  return out.sort((a, b) => b.totals.calls - a.totals.calls);
 }
 
 // Record a RingCentral call that didn't match a facility (deduped by call id).

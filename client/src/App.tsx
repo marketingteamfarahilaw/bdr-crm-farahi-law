@@ -31,6 +31,7 @@ import DailyLogPage from "./pages/DailyLog";
 import DailyWorkPage from "./pages/DailyWork";
 import PdTrackerPage from "./pages/PdTracker";
 import TaskBoardPage from "./pages/TaskBoard";
+import CheckinReportPage from "./pages/CheckinReport";
 import FileVineNotePage from "./pages/FileVineNote";
 import AgentDashboardPage from "./pages/AgentDashboard";
 import FieldVisitsPage from "./pages/FieldVisits";
@@ -140,6 +141,9 @@ function Router() {
 
         {/* Global Task Board */}
         <Route path="/tasks" component={TaskBoardPage} />
+
+        {/* BDR Check-In Report (MTD matrix) */}
+        <Route path="/checkin-report" component={CheckinReportPage} />
 
         {/* FileVine Note Generator */}
         <Route path="/filevine-note" component={FileVineNotePage} />

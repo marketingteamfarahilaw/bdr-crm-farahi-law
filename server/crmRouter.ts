@@ -57,6 +57,7 @@ import {
   listAllTasks,
   setTaskStatus,
   getReferralCountsMap,
+  getCheckinMatrix,
   listExpensesByFacility,
   createFacilityExpense,
   setExpenseReimbursement,
@@ -1626,6 +1627,15 @@ export const crmRouter = router({
     topFacilities: crmProcedure
       .input(z.object({ limit: z.number().min(1).max(100).default(20) }))
       .query(async ({ input }) => getBdrTopFacilities(input.limit)),
+
+    // MTD Check-In matrix — per rep, one row per facility (or phone when the
+    // call never matched), each distinct day = a check-in with its call count.
+    checkinMatrix: crmProcedure
+      .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/), agent: z.string().optional() }))
+      .query(async ({ ctx, input }) => {
+        if (seesAllData(ctx.user.role)) return getCheckinMatrix(input.month, input.agent ? [input.agent] : null);
+        return getCheckinMatrix(input.month, ownerNameCandidates(ctx.user));
+      }),
   }),
 
   // ─── Cross-facility activity feed ───────────────────────────────────────────
