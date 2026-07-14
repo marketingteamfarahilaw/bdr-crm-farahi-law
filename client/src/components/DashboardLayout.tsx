@@ -81,11 +81,13 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: ClipboardList, label: "Call Logs", path: "/call-logs", level: "all" },
     { icon: Sparkles, label: "Agent Performance", path: "/agent-performance", level: "all" },
     { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
-    { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
-    { icon: Navigation, label: "Field Mode (Mobile)", path: "/field", level: "fr" },
+    // FR-only items hidden for now (per request) — BDR focus. Pages/routes still
+    // exist; uncomment to restore.
+    // { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
+    // { icon: Navigation, label: "Field Mode (Mobile)", path: "/field", level: "fr" },
     { icon: Receipt, label: "Expenses", path: "/bdr/expenses", level: "all" },
     { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards", level: "bdr" },
-    { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },
+    // { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },
     { icon: Network, label: "Referral-Friendly List", path: "/bdr/referral-tracker", level: "bdr" },
   ] },
   { title: "Partner Referrals", items: [
