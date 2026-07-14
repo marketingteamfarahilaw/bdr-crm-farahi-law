@@ -11,20 +11,32 @@
  * module never imports the token logic — keeps it free of circular deps.
  */
 import axios from "axios";
+import { and, eq, gte, lte } from "drizzle-orm";
+import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
 import { createContactLog, createFacilityUpdate, createTask, getExistingRcCallIds, getExistingRcSessionIds, recordUnmatchedCall } from "./crmDb";
 import { sendCallRecapToWebhook } from "./filevineHook";
 import { getDb } from "./db";
-import { facilities } from "../drizzle/schema";
+import { facilities, facilityTasks } from "../drizzle/schema";
 
 const RC_BASE = "https://platform.ringcentral.com";
+
+export type PlannedVisit = {
+  dateISO: string | null;          // resolved concrete date (YYYY-MM-DD, America/Los_Angeles)
+  timeText: string | null;         // e.g. "12:30 pm" if mentioned
+  visitor: string | null;          // who will go, if named on the call
+  visitType: "visit" | "lunch" | "drop_in" | "meeting";
+  purpose: string | null;          // what to bring / discuss
+  confidence: "high" | "medium" | "low";
+};
 
 export type CallAnalysis = {
   summary: string;
   actionItems: string[];
   followUpTasks: Array<{ title: string; priority: "high" | "medium" | "low"; dueInDays?: number }>;
   extractedData: Record<string, unknown>;
+  visitPlanned: PlannedVisit | null;
 };
 
 /**
@@ -32,15 +44,18 @@ export type CallAnalysis = {
  * tasks, and structured signals. Returns empties on any LLM/parse failure.
  * Shared by logFacilityCall (live widget calls) and the account-wide sync.
  */
-export async function analyzeCallTranscript(transcriptText: string): Promise<CallAnalysis> {
-  const empty: CallAnalysis = { summary: "", actionItems: [], followUpTasks: [], extractedData: {} };
+export async function analyzeCallTranscript(transcriptText: string, callDate?: Date): Promise<CallAnalysis> {
+  const empty: CallAnalysis = { summary: "", actionItems: [], followUpTasks: [], extractedData: {}, visitPlanned: null };
   if (!transcriptText) return empty;
+  const callDayLA = (callDate ?? new Date()).toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", weekday: "long", year: "numeric", month: "long", day: "numeric" });
   try {
     const llmResp = await invokeLLM({
       messages: [
         {
           role: "system",
           content: `You are a business development assistant for a personal injury law firm. Analyze this phone call transcript between a BD rep and a facility partner (chiropractor, body shop, physical therapist, etc.).
+
+The call took place on ${callDayLA} (America/Los_Angeles). Use this to resolve any relative dates ("tomorrow", "next Tuesday") to concrete calendar dates.
 
 Return a JSON object with EXACTLY these fields:
 {
@@ -55,11 +70,21 @@ Return a JSON object with EXACTLY these fields:
   "sentiment": "positive|neutral|negative",
   "interestLevel": "interested|not_interested|neutral",
   "leadsDiscussed": true or false,
-  "commitmentMade": "brief description of any commitment made, else null"
+  "commitmentMade": "brief description of any commitment made, else null",
+  "visitPlanned": null OR {
+    "dateISO": "YYYY-MM-DD or null",
+    "timeText": "e.g. 12:30 pm, else null",
+    "visitor": "name of OUR team member who will go, if said, else null",
+    "visitType": "visit|lunch|drop_in|meeting",
+    "purpose": "what to bring/discuss at the visit, else null",
+    "confidence": "high|medium|low"
+  }
 }
 
 For sentiment: the overall emotional tone of the partner toward our firm on this call.
 For interestLevel: is the partner interested in partnering / sending or receiving referrals? "interested" = engaged, positive, made a commitment, or wants to continue; "not_interested" = declined, brushed off, hostile, or asked us to stop; "neutral" = noncommittal or purely informational.
+
+For visitPlanned: fill this ONLY when the call explicitly arranges an IN-PERSON visit/lunch/drop-in at the facility (a real agreement, not a vague "sometime" or a mere suggestion). "confidence" is high only when both sides clearly agreed AND a specific day was named — resolve it to dateISO using the call date above. If the visit is agreed but the day is fuzzy ("later this week"), use your best-guess dateISO and confidence "medium". If no in-person visit was arranged, return null.
 
 For actionItems: list concrete things the BD rep needs to do (e.g. "Send referral package to Dr. Smith", "Follow up on 3 pending cases").
 For followUpTasks: list tasks that should be scheduled (e.g. check-in calls, sending materials, visiting the facility). Set dueInDays based on urgency (1-3 for urgent, 7 for this week, 14 for next 2 weeks, 30 for next month).
@@ -97,8 +122,21 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
               interestLevel: { type: "string", enum: ["interested", "not_interested", "neutral"] },
               leadsDiscussed: { type: "boolean" },
               commitmentMade: { type: ["string", "null"] },
+              visitPlanned: {
+                type: ["object", "null"],
+                properties: {
+                  dateISO: { type: ["string", "null"] },
+                  timeText: { type: ["string", "null"] },
+                  visitor: { type: ["string", "null"] },
+                  visitType: { type: "string", enum: ["visit", "lunch", "drop_in", "meeting"] },
+                  purpose: { type: ["string", "null"] },
+                  confidence: { type: "string", enum: ["high", "medium", "low"] },
+                },
+                required: ["dateISO", "timeText", "visitor", "visitType", "purpose", "confidence"],
+                additionalProperties: false,
+              },
             },
-            required: ["summary", "keyPoints", "actionItems", "followUpTasks", "contactPerson", "relationshipTone", "sentiment", "interestLevel", "leadsDiscussed", "commitmentMade"],
+            required: ["summary", "keyPoints", "actionItems", "followUpTasks", "contactPerson", "relationshipTone", "sentiment", "interestLevel", "leadsDiscussed", "commitmentMade", "visitPlanned"],
             additionalProperties: false,
           },
         },
@@ -110,6 +148,7 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
       summary: parsed.summary ?? "",
       actionItems: parsed.actionItems ?? [],
       followUpTasks: parsed.followUpTasks ?? [],
+      visitPlanned: parsed.visitPlanned ?? null,
       extractedData: {
         keyPoints: parsed.keyPoints ?? [],
         contactPerson: parsed.contactPerson,
@@ -120,12 +159,83 @@ Be specific and actionable. If nothing was discussed, return empty arrays.`,
         commitmentMade: parsed.commitmentMade,
         actionItems: parsed.actionItems ?? [],
         followUpTasks: parsed.followUpTasks ?? [],
+        visitPlanned: parsed.visitPlanned ?? null,
       },
     };
   } catch (e) {
     console.warn("[rcSync] analyzeCallTranscript failed:", (e as any)?.message ?? e);
     return empty;
   }
+}
+
+/**
+ * Auto-create a scheduled VISIT (as a BDR facility task) from a call
+ * transcript's extracted plan — the visit the team used to log by hand in the
+ * MTD check-in/visit sheet. Shows on the facility profile (Tasks tab), the
+ * global Task Board, and the Daily Work report.
+ * Accuracy guards: needs a concrete future date; low-confidence extractions are
+ * skipped; deduped against any open visit task for the same facility within
+ * ±3 days. Returns true when a visit was created.
+ */
+export async function maybeCreateVisitFromCall(
+  facility: { id: number; name: string; assignedRepId?: number | null; assignedRepName?: string | null },
+  analysis: CallAnalysis,
+  callDate: Date,
+  bdrName?: string | null
+): Promise<boolean> {
+  const v = analysis.visitPlanned;
+  if (!v || v.confidence === "low" || !v.dateISO || !/^\d{4}-\d{2}-\d{2}$/.test(v.dateISO)) return false;
+
+  // Resolve date+time in LA; default mid-morning when no time was mentioned.
+  let hh = 10, mm = 0;
+  const t = (v.timeText ?? "").toLowerCase();
+  const m = t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  if (/noon/.test(t)) { hh = 12; mm = 0; }
+  else if (m && m[1]) { hh = parseInt(m[1], 10) % 12; if ((m[3] ?? "pm") === "pm") hh += 12; mm = m[2] ? parseInt(m[2], 10) : 0; }
+  const scheduledFor = fromZonedTime(`${v.dateISO} ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00`, "America/Los_Angeles");
+
+  // Must be in the future relative to the call (allow same-day), max 90 days out.
+  if (scheduledFor.getTime() < callDate.getTime() - 12 * 3600_000) return false;
+  if (scheduledFor.getTime() > callDate.getTime() + 90 * 86400_000) return false;
+
+  const db = await getDb();
+  if (!db) return false;
+  // Dedupe: an open visit task already on the books for this facility around that date.
+  const windowStart = new Date(scheduledFor.getTime() - 3 * 86400_000);
+  const windowEnd = new Date(scheduledFor.getTime() + 3 * 86400_000);
+  const existing = await db.select({ id: facilityTasks.id }).from(facilityTasks)
+    .where(and(
+      eq(facilityTasks.facilityId, facility.id),
+      eq(facilityTasks.followUpReason, "visit"),
+      eq(facilityTasks.status, "open"),
+      gte(facilityTasks.dueDate, windowStart),
+      lte(facilityTasks.dueDate, windowEnd),
+    )).limit(1);
+  if (existing.length) return false;
+
+  const whenLA = formatInTimeZone(scheduledFor, "America/Los_Angeles", "EEE, MMM d 'at' h:mm a");
+  const contactPerson = (analysis.extractedData as any)?.contactPerson ?? null;
+  const typeLabel = v.visitType === "drop_in" ? "drop-in" : v.visitType ?? "visit";
+  const description = [
+    contactPerson ? `Ask for ${contactPerson}.` : null,
+    v.purpose ? `Purpose: ${v.purpose}` : null,
+    analysis.summary ? `From the call: ${analysis.summary}` : null,
+    `Auto-created from the call transcript of ${formatInTimeZone(callDate, "America/Los_Angeles", "MMM d, yyyy")}.`,
+  ].filter(Boolean).join("\n");
+
+  await createTask({
+    facilityId: facility.id,
+    title: `Visit scheduled — ${typeLabel} on ${whenLA}${v.visitor ? ` (${v.visitor})` : ""}`,
+    description,
+    dueDate: scheduledFor,
+    priority: "high",
+    followUpReason: "visit",
+    assignedToId: facility.assignedRepId ?? undefined,
+    assignedToName: v.visitor ?? bdrName ?? facility.assignedRepName ?? undefined,
+    status: "open",
+  });
+  console.log(`[rcSync] auto-created visit task for "${facility.name}" on ${v.dateISO} (confidence ${v.confidence})`);
+  return true;
 }
 
 const onlyDigits = (s?: string | null) => (s || "").replace(/\D/g, "");
@@ -297,7 +407,13 @@ export async function syncRecentCalls(
         const tr = await transcribeAudio({ audioUrl: authedUrl });
         if (!("error" in tr) && tr.text) {
           const transcriptText = tr.text;
-          const analysis = await analyzeCallTranscript(transcriptText);
+          const analysis = await analyzeCallTranscript(transcriptText, callDate);
+          // Visit arranged on the call → put it on the books automatically.
+          try {
+            await maybeCreateVisitFromCall(facility, analysis, callDate, attribution?.repName ?? r.from?.name ?? facility.assignedRepName ?? null);
+          } catch (e: any) {
+            console.warn(`[rcSync] auto-visit creation failed for call ${id}:`, e?.message ?? e);
+          }
           await createFacilityUpdate({
             facilityId: facility.id,
             updateDate: callDate,

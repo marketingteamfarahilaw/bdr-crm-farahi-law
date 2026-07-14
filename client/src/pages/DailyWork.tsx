@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Clock, Receipt, PhoneMissed, Stethoscope, Car, Phone, Building2, Check, X, ChevronRight, Activity, CheckCircle2, Link2, RefreshCw } from "lucide-react";
+import { AlertTriangle, Clock, Receipt, PhoneMissed, Stethoscope, Car, Phone, Building2, Check, X, ChevronRight, Activity, CheckCircle2, Link2, RefreshCw, CalendarCheck } from "lucide-react";
 import { toast } from "sonner";
 import { format, formatDistanceToNow } from "@/lib/datetime";
 
@@ -27,6 +27,7 @@ export default function DailyWork() {
 
       {isLoading || !data ? <Skeleton className="h-96 rounded-xl" /> : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <UpcomingVisits rows={(data as any).upcomingVisits ?? []} n={(c as any)?.upcomingVisits ?? 0} />
           <OverduePartners rows={data.overduePartners} n={c?.overduePartners ?? 0} />
           <DueTasks rows={data.dueTasks} n={c?.dueTasks ?? 0} />
           <PendingExpenses rows={data.pendingExpenses} total={data.pendingExpenseTotal} n={c?.pendingExpenses ?? 0} />
@@ -50,6 +51,30 @@ function Section({ icon: Icon, title, n, accent, children, footer }: { icon: any
 const Row = ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
   <div className={`flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm ${onClick ? "cursor-pointer hover:bg-muted/70" : ""}`} onClick={onClick}>{children}</div>
 );
+
+function UpcomingVisits({ rows, n }: { rows: any[]; n: number }) {
+  const [, nav] = useLocation();
+  return (
+    <Section icon={CalendarCheck} title="Upcoming visits (next 14 days)" n={n} accent="text-emerald-500">
+      {rows.map((v) => {
+        const isAI = (v.description ?? "").includes("Auto-created from the call transcript");
+        return (
+          <div key={v.id} className="rounded-lg bg-muted/40 px-3 py-2 text-sm space-y-1 cursor-pointer hover:bg-muted/70" onClick={() => v.facilityId && nav(`/crm/facilities/${v.facilityId}?tab=tasks`)}>
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-medium text-foreground truncate">{v.facilityName || "Facility"}</p>
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 shrink-0">{v.dueDate ? format(new Date(v.dueDate), "EEE MMM d, h:mm a") : ""}</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {v.assignedToName || "Unassigned"}
+              {isAI && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">AI from call</span>}
+            </p>
+            {v.description && <p className="text-[11px] text-muted-foreground line-clamp-2">{v.description}</p>}
+          </div>
+        );
+      })}
+    </Section>
+  );
+}
 
 function OverduePartners({ rows, n }: { rows: any[]; n: number }) {
   const [, nav] = useLocation();

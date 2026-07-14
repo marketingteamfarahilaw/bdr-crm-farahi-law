@@ -322,7 +322,7 @@ export const facilityTasks = mysqlTable("facility_tasks", {
   // V3: follow-up reason
   followUpReason: mysqlEnum("followUpReason", [
     "thank_you", "send_lead", "ask_for_referral", "request_update",
-    "check_relationship", "reconnect", "other",
+    "check_relationship", "reconnect", "visit", "other",
   ]),
   completedAt: timestamp("completedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

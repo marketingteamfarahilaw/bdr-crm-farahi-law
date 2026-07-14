@@ -15,7 +15,7 @@ const COLUMNS = [
   { key: "completed", label: "Done", cls: "bg-emerald-500/10 border-emerald-500/30" },
 ] as const;
 const PRIORITY: Record<string, string> = { high: "bg-red-500/15 text-red-600 dark:text-red-400", medium: "bg-amber-500/15 text-amber-600 dark:text-amber-400", low: "bg-slate-500/15 text-slate-500" };
-const TYPE_LABEL: Record<string, string> = { thank_you: "Thank you", send_lead: "Send lead", ask_for_referral: "Ask referral", request_update: "Request update", check_relationship: "Check-in", reconnect: "Reconnect", other: "Other" };
+const TYPE_LABEL: Record<string, string> = { thank_you: "Thank you", send_lead: "Send lead", ask_for_referral: "Ask referral", request_update: "Request update", check_relationship: "Check-in", reconnect: "Reconnect", visit: "Visit", other: "Other" };
 
 export default function TaskBoard() {
   const utils = trpc.useUtils();

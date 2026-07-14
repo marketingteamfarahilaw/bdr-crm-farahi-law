@@ -3,7 +3,7 @@
  * queues + integration health from existing data. Scoped: agents see their own
  * book; managers see everything.
  */
-import { and, asc, desc, eq, lte, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, inArray, isNull, or, sql } from "drizzle-orm";
 import { getDb, getSetting } from "./db";
 import {
   facilities, facilityTasks, frExpenses, bdrExpenses, rcUnmatchedCalls,
@@ -67,11 +67,28 @@ export async function getDailyWork(scope: Scope) {
   const pdAwaiting = await db.select({ id: pdReferrals.id, clientName: pdReferrals.clientName, caseNumber: pdReferrals.caseNumber, vehicleInfo: pdReferrals.vehicleInfo, status: pdReferrals.status })
     .from(pdReferrals).where(and(...pdConds)).orderBy(desc(pdReferrals.updatedAt)).limit(40);
 
+  // 7) Upcoming scheduled visits (next 14 days) — BDR visit tasks, incl. AI-created from call transcripts
+  const in14 = new Date(now.getTime() + 14 * 86400000);
+  const upcomingVisits = await db.select({
+    id: facilityTasks.id, facilityId: facilityTasks.facilityId, facilityName: facilities.name,
+    title: facilityTasks.title, description: facilityTasks.description, dueDate: facilityTasks.dueDate,
+    assignedToName: facilityTasks.assignedToName,
+  }).from(facilityTasks).leftJoin(facilities, eq(facilityTasks.facilityId, facilities.id))
+    .where(and(
+      eq(facilityTasks.followUpReason, "visit"),
+      inArray(facilityTasks.status, ["open", "in_progress"]),
+      gte(facilityTasks.dueDate, new Date(now.getTime() - 12 * 3600000)),
+      lte(facilityTasks.dueDate, in14),
+      ...(names && names.length ? [inArray(facilityTasks.assignedToName, names)] : []),
+    ))
+    .orderBy(asc(facilityTasks.dueDate)).limit(40);
+
   return {
-    overduePartners, dueTasks, pendingExpenses, pendingExpenseTotal, unmatchedCalls, chiroAwaiting, pdAwaiting,
+    overduePartners, dueTasks, pendingExpenses, pendingExpenseTotal, unmatchedCalls, chiroAwaiting, pdAwaiting, upcomingVisits,
     counts: {
       overduePartners: overduePartners.length, dueTasks: dueTasks.length, pendingExpenses: pendingExpenses.length,
       unmatchedCalls: unmatchedCalls.length, chiroAwaiting: chiroAwaiting.length, pdAwaiting: pdAwaiting.length,
+      upcomingVisits: upcomingVisits.length,
     },
   };
 }
