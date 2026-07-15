@@ -21,8 +21,7 @@ const monthOptions = (count = 8): string[] => {
 const monthLabel = (m: string) => { const [y, mo] = m.split("-").map(Number); return new Date(Date.UTC(y, mo - 1, 1)).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" }); };
 const dayLabel = (iso: string) => { const [y, m, d] = iso.split("-").map(Number); return `${m}/${d}/${y}`; };
 
-// Embeddable Check-In matrix — rendered as a tab inside BDR Reports (/crm/reports).
-export default function CheckinMatrix() {
+export default function CheckinReport() {
   const { user } = useAuth();
   const isMgr = canManage(user?.role);
   const [month, setMonth] = useState(monthOptions(1)[0]);
@@ -51,9 +50,12 @@ export default function CheckinMatrix() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="p-6 space-y-5 max-w-7xl">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <p className="text-sm text-muted-foreground max-w-xl">Every facility called in the month — each date is a check-in, with the number of calls that day. Calls that didn't match a partner show by phone number.</p>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>Check-In Report</h1>
+          <p className="text-sm text-muted-foreground mt-1">Every facility called in the month — each date is a check-in, with the number of calls that day. Calls that didn't match a partner show by phone number.</p>
+        </div>
         <div className="flex gap-2 items-center flex-wrap">
           {isMgr && (
             <Select value={agent || "all"} onValueChange={(v) => setAgent(v === "all" ? "" : v)}>

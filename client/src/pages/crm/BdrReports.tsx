@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
-import CheckinMatrix from "@/pages/CheckinReport";
 import { toast } from "sonner";
 
 const AGENTS = ["All", "Ally", "Gracel", "Queenie", "Miguel", "Rupert"];
@@ -309,16 +308,10 @@ export default function BdrReports() {
       <Tabs defaultValue="activity">
         <TabsList className="bg-card border border-border">
           <TabsTrigger value="activity">Call Activity</TabsTrigger>
-          <TabsTrigger value="checkin-matrix">Check-In Report</TabsTrigger>
           <TabsTrigger value="checkins">Partner Check-Ins</TabsTrigger>
           <TabsTrigger value="active-partners">Active Partners</TabsTrigger>
           <TabsTrigger value="top">Top Facilities</TabsTrigger>
         </TabsList>
-
-        {/* MTD Check-In matrix (Excel replica) — self-contained month/agent filters */}
-        <TabsContent value="checkin-matrix" className="mt-4">
-          <CheckinMatrix />
-        </TabsContent>
 
         {/* ── Call Activity Tab ── */}
         <TabsContent value="activity" className="mt-4 space-y-4">
