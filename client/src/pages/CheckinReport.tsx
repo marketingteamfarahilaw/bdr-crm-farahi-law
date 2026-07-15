@@ -30,9 +30,26 @@ export default function CheckinReport() {
   const { data: blocks, isLoading } = trpc.crm.bdrReports.checkinMatrix.useQuery({ month, ...(isMgr && agent ? { agent } : {}) });
   const agentNames: string[] = Array.from(new Set((team ?? []).map((u: any) => u.agentName).filter(Boolean))).sort();
 
+  // Summary distribution (the sheet's top table): per rep, how many facilities
+  // got exactly 1 / 2 / 3 / 4+ check-ins (a check-in = a distinct day called).
+  const summary = (blocks ?? []).map((b: any) => {
+    const dist = [0, 0, 0, 0];
+    for (const r of b.rows) dist[Math.min(r.checkIns.length, 4) - 1]++;
+    return { rep: b.rep, facilities: b.rows.length, dist, calls: b.totals.calls };
+  });
+  const summaryTotal = summary.reduce(
+    (a, s) => ({ facilities: a.facilities + s.facilities, dist: a.dist.map((d, i) => d + s.dist[i]), calls: a.calls + s.calls }),
+    { facilities: 0, dist: [0, 0, 0, 0], calls: 0 }
+  );
+
   const exportCsv = () => {
     if (!blocks?.length) return;
     const rows: any[][] = [];
+    rows.push(["MTD CHECK-IN REPORT", monthLabel(month)]);
+    rows.push(["NAME", "NO. OF BDR FACILITIES", "1 Check-In", "2 Check-Ins", "3 Check-Ins", "4 Check-Ins"]);
+    for (const s of summary) rows.push([s.rep.toUpperCase(), s.facilities, ...s.dist]);
+    rows.push(["TOTAL", summaryTotal.facilities, ...summaryTotal.dist]);
+    rows.push([]);
     for (const b of blocks) {
       rows.push([b.rep.toUpperCase()]);
       rows.push(["#", "FACILITY NAME / PHONE", ...Array.from({ length: MAX_COLS }, (_, i) => [`${ORDINAL[i]} CHECK-IN`, "#"]).flat(), "TOTAL CHECK-IN"]);
@@ -74,7 +91,47 @@ export default function CheckinReport() {
       {isLoading ? <Skeleton className="h-96 rounded-xl" /> : !blocks?.length ? (
         <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground"><PhoneCall className="w-8 h-8 mx-auto mb-2" />No calls logged for {monthLabel(month)}.</div>
       ) : (
-        blocks.map((b: any) => <RepBlock key={b.rep} block={b} />)
+        <>
+          {/* MTD summary — the sheet's top table: facilities per rep + check-in distribution */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="mb-3">
+                <h2 className="font-bold text-foreground uppercase tracking-wide">Business Development Representatives</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">MTD CHECK-IN REPORT · {monthLabel(month)}</p>
+              </div>
+              <div className="rounded-xl border border-border overflow-x-auto max-w-3xl">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-card hover:bg-card border-border">
+                      <TableHead className="text-muted-foreground text-xs min-w-[140px]">NAME</TableHead>
+                      <TableHead className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 text-right whitespace-nowrap">NO. OF BDR FACILITIES</TableHead>
+                      <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">1 Check-In</TableHead>
+                      <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">2 Check-Ins</TableHead>
+                      <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">3 Check-Ins</TableHead>
+                      <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">4 Check-Ins</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {summary.map((s) => (
+                      <TableRow key={s.rep} className="border-border">
+                        <TableCell className="py-1.5 text-sm font-medium text-foreground uppercase">{s.rep}</TableCell>
+                        <TableCell className="py-1.5 text-sm font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 text-right">{s.facilities}</TableCell>
+                        {s.dist.map((d, i) => <TableCell key={i} className="py-1.5 text-sm text-foreground text-right">{d || ""}</TableCell>)}
+                      </TableRow>
+                    ))}
+                    <TableRow className="border-border bg-muted/40 font-semibold">
+                      <TableCell className="py-1.5 text-sm text-foreground">TOTAL</TableCell>
+                      <TableCell className="py-1.5 text-sm font-bold text-foreground bg-amber-500/15 text-right">{summaryTotal.facilities}</TableCell>
+                      {summaryTotal.dist.map((d, i) => <TableCell key={i} className="py-1.5 text-sm text-foreground text-right">{d}</TableCell>)}
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {blocks.map((b: any) => <RepBlock key={b.rep} block={b} />)}
+        </>
       )}
     </div>
   );
