@@ -57,7 +57,6 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Phone, label: "RingCentral", path: "/crm/ringcentral", level: "bdr" },
     { icon: UtensilsCrossed, label: "Uber Eats", path: "/crm/uber-eats", level: "all" },
     { icon: Car, label: "PD Car Tracker", path: "/pd-tracker", level: "bdr" },
-    { icon: PhoneCall, label: "Check-In Report", path: "/checkin-report", level: "bdr" },
     { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
   ] },
   // Hidden for now (per request). Pages/routes still exist — just removed from the
