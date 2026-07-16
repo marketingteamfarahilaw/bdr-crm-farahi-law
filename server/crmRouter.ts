@@ -10,7 +10,9 @@ import { protectedProcedure, router } from "./_core/trpc";
 import { seesAllData, canManage, isIntakeOnly } from "@shared/permissions";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
+import { fromZonedTime } from "date-fns-tz";
 import { syncRecentCalls, analyzeCallTranscript, maybeCreateVisitFromCall } from "./rcSync";
+import { getNewFacilitiesReport } from "./teamReports";
 import { syncRcMeetings } from "./rcMeetingSync";
 import { syncIntakeCalls } from "./intakeSync";
 import { sendCallRecapToWebhook } from "./filevineHook";
@@ -1645,6 +1647,20 @@ export const crmRouter = router({
       .query(async ({ ctx, input }) => {
         if (seesAllData(ctx.user.role)) return getVisitMatrix(input.month, input.agent ? [input.agent] : null);
         return getVisitMatrix(input.month, ownerNameCandidates(ctx.user));
+      }),
+
+    // MTD New Facilities — per rep: book at month start, added this month
+    // (real acquisitions; Filevine data-backfill rows excluded), dropped
+    // (status→do_not_use/dormant this month), total active.
+    newFacilities: crmProcedure
+      .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/), agent: z.string().optional() }))
+      .query(async ({ ctx, input }) => {
+        const [yy, mm] = input.month.split("-").map(Number);
+        const from = fromZonedTime(`${input.month}-01 00:00:00`, "America/Los_Angeles");
+        const nextMonth = `${mm === 12 ? yy + 1 : yy}-${String(mm === 12 ? 1 : mm + 1).padStart(2, "0")}-01`;
+        const to = new Date(fromZonedTime(`${nextMonth} 00:00:00`, "America/Los_Angeles").getTime() - 1);
+        const agents = seesAllData(ctx.user.role) ? (input.agent ? [input.agent] : null) : ownerNameCandidates(ctx.user);
+        return getNewFacilitiesReport({ from, to }, { excludeImports: true, agentNames: agents });
       }),
   }),
 

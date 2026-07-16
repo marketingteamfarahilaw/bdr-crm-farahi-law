@@ -240,29 +240,53 @@ export async function getSignupReport({ from, to }: Range) {
 
 // ─── 3. New Facilities ────────────────────────────────────────────────────────
 
-export async function getNewFacilitiesReport({ from, to }: Range) {
+export async function getNewFacilitiesReport(
+  { from, to }: Range,
+  opts: {
+    /** Skip bulk-migrated rows (Filevine backfill) — they're data imports, not real month acquisitions. */
+    excludeImports?: boolean;
+    /** Restrict to these agents (full or first-name match). */
+    agentNames?: string[] | null;
+  } = {}
+) {
   const db = await getDb();
   if (!db) return null;
   const all = await db
     .select({
       id: facilities.id, name: facilities.name, rep: facilities.assignedRepName,
       createdAt: facilities.createdAt, updatedAt: facilities.updatedAt, status: facilities.partnerStatus,
+      notes: facilities.notes,
     })
     .from(facilities);
 
-  const byRep = new Map<string, { rep: string; startCount: number; added: Array<{ name: string; date: string }>; droppedApprox: number; active: number }>();
+  const normS = (s: string) => s.toLowerCase().trim();
+  const firstS = (s: string) => normS(s).split(/\s+/)[0] ?? "";
+  const wanted = opts.agentNames?.map(normS).filter(Boolean) ?? null;
+  const repMatches = (rep: string) => !wanted || wanted.some((w) => normS(rep) === w || firstS(rep) === firstS(w));
+
+  // Bulk-load detection: ≥20 facilities created within the same minute is a data
+  // import (initial seeding, migrations), not real acquisitions. Auto-excluded
+  // from "added" alongside the tagged Filevine backfill.
+  const minuteKey = (d: Date) => Math.floor(d.getTime() / 60000);
+  const minuteCounts = new Map<number, number>();
+  for (const f of all) { const k = minuteKey(new Date(f.createdAt)); minuteCounts.set(k, (minuteCounts.get(k) ?? 0) + 1); }
+  const isBulkCreated = (d: Date) => (minuteCounts.get(minuteKey(d)) ?? 0) >= 20;
+
+  const byRep = new Map<string, { rep: string; startCount: number; added: Array<{ id: number; name: string; date: string }>; droppedApprox: number; active: number }>();
   for (const f of all) {
     const rep = (f.rep ?? "Unassigned").trim() || "Unassigned";
     const e = byRep.get(rep.toLowerCase()) ?? { rep, startCount: 0, added: [], droppedApprox: 0, active: 0 };
     const created = new Date(f.createdAt);
     const isDropped = f.status === "do_not_use" || f.status === "dormant";
+    const isImport = !!(f.notes && String(f.notes).startsWith("Imported from Filevine")) || isBulkCreated(created);
     if (!isDropped && f.status !== null) e.active++;
     if (created < from && !isDropped) e.startCount++;
-    if (created >= from && created <= to) e.added.push({ name: f.name, date: dayKey(created) });
-    if (isDropped && new Date(f.updatedAt) >= from && new Date(f.updatedAt) <= to) e.droppedApprox++;
+    if (created >= from && created <= to && !(opts.excludeImports && isImport)) e.added.push({ id: f.id, name: f.name, date: dayKey(created) });
+    if (isDropped && new Date(f.updatedAt) >= from && new Date(f.updatedAt) <= to && !(opts.excludeImports && isImport)) e.droppedApprox++;
     byRep.set(rep.toLowerCase(), e);
   }
   const reps = Array.from(byRep.values())
+    .filter((r) => repMatches(r.rep))
     .map((r) => ({ ...r, added: r.added.sort((a, b) => a.date.localeCompare(b.date)), addedCount: r.added.length }))
     .filter((r) => r.active > 0 || r.addedCount > 0 || r.startCount > 0)
     .sort((a, b) => b.active - a.active);

@@ -29,6 +29,7 @@ export default function CheckinReport() {
   const { data: team } = trpc.team.list.useQuery(undefined, { enabled: isMgr });
   const { data: blocks, isLoading } = trpc.crm.bdrReports.checkinMatrix.useQuery({ month, ...(isMgr && agent ? { agent } : {}) });
   const { data: visitBlocks } = trpc.crm.bdrReports.visitMatrix.useQuery({ month, ...(isMgr && agent ? { agent } : {}) });
+  const { data: newFac } = trpc.crm.bdrReports.newFacilities.useQuery({ month, ...(isMgr && agent ? { agent } : {}) });
   const agentNames: string[] = Array.from(new Set((team ?? []).map((u: any) => u.agentName).filter(Boolean))).sort();
 
   // Summary distribution (the sheet's top tables): per rep, how many facilities
@@ -76,6 +77,18 @@ export default function CheckinReport() {
       rows.push(["TOTAL", visitSummaryTotal.facilities, ...visitSummaryTotal.dist]);
       rows.push([]);
     }
+    if (newFac?.reps?.length) {
+      rows.push([`${monthLabel(month).toUpperCase()} NEW FACILITIES REPORT`]);
+      rows.push(["NAME", "NO. OF BDR FACILITIES", "NEW FACILITY ADDED", "MTD FACILITY DROPPED", "TOTAL FACILITIES ACTIVE"]);
+      for (const r of newFac.reps) rows.push([r.rep.toUpperCase(), r.startCount, r.addedCount, r.droppedApprox, r.active]);
+      rows.push(["TOTAL", newFac.total.startCount, newFac.total.addedCount, newFac.total.droppedApprox, newFac.total.active]);
+      rows.push([]);
+      for (const r of newFac.reps.filter((x: any) => x.added.length)) {
+        rows.push([r.rep.toUpperCase() + " — NEW FACILITY ADDED", "DATE ADDED"]);
+        for (const a of r.added) rows.push([a.name, dayLabel(a.date)]);
+        rows.push([]);
+      }
+    }
     pushBlocks(blocks ?? [], "CHECK-IN");
     pushBlocks((visitBlocks ?? []) as any[], "VISIT");
     const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -122,6 +135,8 @@ export default function CheckinReport() {
               rows={visitSummary} total={visitSummaryTotal}
             />
           )}
+
+          {newFac?.reps && newFac.reps.length > 0 && <NewFacilitiesCard data={newFac} month={month} />}
 
           {blocks.map((b: any) => <RepBlock key={`c-${b.rep}`} block={b} word="CHECK-IN" />)}
 
@@ -178,6 +193,69 @@ function SummaryCard({ title, subtitle, facLabel, unit, plural, rows, total }: {
             </TableBody>
           </Table>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NewFacilitiesCard({ data, month }: { data: any; month: string }) {
+  const [, nav] = useLocation();
+  const withAdds = data.reps.filter((r: any) => r.added.length > 0);
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="mb-3">
+          <h2 className="font-bold text-foreground uppercase tracking-wide">{monthLabel(month)} New Facilities Report</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Real CRM data — new partners added this month (bulk data imports excluded), drops, and the active book per rep.</p>
+        </div>
+        <div className="rounded-xl border border-border overflow-x-auto max-w-4xl">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-card hover:bg-card border-border">
+                <TableHead className="text-muted-foreground text-xs min-w-[140px]">NAME</TableHead>
+                <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">NO. OF BDR FACILITIES</TableHead>
+                <TableHead className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 text-right whitespace-nowrap">NEW FACILITY ADDED</TableHead>
+                <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">MTD FACILITY DROPPED</TableHead>
+                <TableHead className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 text-right whitespace-nowrap">TOTAL FACILITIES ACTIVE</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.reps.map((r: any) => (
+                <TableRow key={r.rep} className="border-border">
+                  <TableCell className="py-1.5 text-sm font-medium text-foreground uppercase">{r.rep}</TableCell>
+                  <TableCell className="py-1.5 text-sm text-foreground text-right">{r.startCount}</TableCell>
+                  <TableCell className="py-1.5 text-sm font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 text-right">{r.addedCount}</TableCell>
+                  <TableCell className="py-1.5 text-sm text-foreground text-right">{r.droppedApprox || ""}</TableCell>
+                  <TableCell className="py-1.5 text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 text-right">{r.active}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="border-border bg-muted/40 font-semibold">
+                <TableCell className="py-1.5 text-sm text-foreground">TOTAL</TableCell>
+                <TableCell className="py-1.5 text-sm text-foreground text-right">{data.total.startCount}</TableCell>
+                <TableCell className="py-1.5 text-sm font-bold text-foreground bg-amber-500/15 text-right">{data.total.addedCount}</TableCell>
+                <TableCell className="py-1.5 text-sm text-foreground text-right">{data.total.droppedApprox}</TableCell>
+                <TableCell className="py-1.5 text-sm font-bold text-foreground bg-emerald-500/15 text-right">{data.total.active}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+        {withAdds.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {withAdds.map((r: any) => (
+              <div key={r.rep} className="rounded-xl border border-border p-3">
+                <p className="text-xs font-bold text-foreground uppercase mb-2">{r.rep} — New Facility Added</p>
+                <div className="space-y-1">
+                  {r.added.map((a: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between gap-2 text-sm rounded bg-muted/40 px-2.5 py-1.5 cursor-pointer hover:bg-muted/70" onClick={() => a.id && nav(`/crm/facilities/${a.id}`)}>
+                      <span className="font-medium text-foreground truncate">{a.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{dayLabel(a.date)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
