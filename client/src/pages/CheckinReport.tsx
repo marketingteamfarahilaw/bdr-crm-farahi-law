@@ -28,42 +28,59 @@ export default function CheckinReport() {
   const [agent, setAgent] = useState("");
   const { data: team } = trpc.team.list.useQuery(undefined, { enabled: isMgr });
   const { data: blocks, isLoading } = trpc.crm.bdrReports.checkinMatrix.useQuery({ month, ...(isMgr && agent ? { agent } : {}) });
+  const { data: visitBlocks } = trpc.crm.bdrReports.visitMatrix.useQuery({ month, ...(isMgr && agent ? { agent } : {}) });
   const agentNames: string[] = Array.from(new Set((team ?? []).map((u: any) => u.agentName).filter(Boolean))).sort();
 
-  // Summary distribution (the sheet's top table): per rep, how many facilities
-  // got exactly 1 / 2 / 3 / 4+ check-ins (a check-in = a distinct day called).
-  const summary = (blocks ?? []).map((b: any) => {
-    const dist = [0, 0, 0, 0];
-    for (const r of b.rows) dist[Math.min(r.checkIns.length, 4) - 1]++;
-    return { rep: b.rep, facilities: b.rows.length, dist, calls: b.totals.calls };
-  });
-  const summaryTotal = summary.reduce(
-    (a, s) => ({ facilities: a.facilities + s.facilities, dist: a.dist.map((d, i) => d + s.dist[i]), calls: a.calls + s.calls }),
-    { facilities: 0, dist: [0, 0, 0, 0], calls: 0 }
-  );
+  // Summary distribution (the sheet's top tables): per rep, how many facilities
+  // got exactly 1 / 2 / 3 / 4+ check-ins or visits (= distinct days).
+  const distOf = (bs: any[] | undefined) => {
+    const rows = (bs ?? []).map((b: any) => {
+      const dist = [0, 0, 0, 0];
+      for (const r of b.rows) dist[Math.min(r.checkIns.length, 4) - 1]++;
+      return { rep: b.rep, facilities: b.rows.length, dist, calls: b.totals.calls };
+    });
+    const total = rows.reduce(
+      (a, s) => ({ facilities: a.facilities + s.facilities, dist: a.dist.map((d, i) => d + s.dist[i]), calls: a.calls + s.calls }),
+      { facilities: 0, dist: [0, 0, 0, 0], calls: 0 }
+    );
+    return { rows, total };
+  };
+  const { rows: summary, total: summaryTotal } = distOf(blocks as any[]);
+  const { rows: visitSummary, total: visitSummaryTotal } = distOf(visitBlocks as any[]);
 
   const exportCsv = () => {
-    if (!blocks?.length) return;
+    if (!blocks?.length && !visitBlocks?.length) return;
     const rows: any[][] = [];
-    rows.push(["MTD CHECK-IN REPORT", monthLabel(month)]);
+    const pushBlocks = (bs: any[], word: string) => {
+      for (const b of bs) {
+        rows.push([b.rep.toUpperCase()]);
+        rows.push(["#", "FACILITY NAME / PHONE", ...Array.from({ length: MAX_COLS }, (_, i) => [`${ORDINAL[i]} ${word}`, "#"]).flat(), `TOTAL ${word}`]);
+        b.rows.forEach((r: any, i: number) => {
+          const cells: any[] = [i + 1, r.label];
+          for (let k = 0; k < MAX_COLS; k++) { const c = r.checkIns[k]; cells.push(c ? dayLabel(c.date) : "", c ? c.count : ""); }
+          cells.push(r.total);
+          rows.push(cells);
+        });
+        rows.push([]);
+      }
+    };
+    rows.push(["BUSINESS DEVELOPMENT REPRESENTATIVES — MTD CHECK-IN REPORT", monthLabel(month)]);
     rows.push(["NAME", "NO. OF BDR FACILITIES", "1 Check-In", "2 Check-Ins", "3 Check-Ins", "4 Check-Ins"]);
     for (const s of summary) rows.push([s.rep.toUpperCase(), s.facilities, ...s.dist]);
     rows.push(["TOTAL", summaryTotal.facilities, ...summaryTotal.dist]);
     rows.push([]);
-    for (const b of blocks) {
-      rows.push([b.rep.toUpperCase()]);
-      rows.push(["#", "FACILITY NAME / PHONE", ...Array.from({ length: MAX_COLS }, (_, i) => [`${ORDINAL[i]} CHECK-IN`, "#"]).flat(), "TOTAL CHECK-IN"]);
-      b.rows.forEach((r: any, i: number) => {
-        const cells: any[] = [i + 1, r.label];
-        for (let k = 0; k < MAX_COLS; k++) { const c = r.checkIns[k]; cells.push(c ? dayLabel(c.date) : "", c ? c.count : ""); }
-        cells.push(r.total);
-        rows.push(cells);
-      });
+    if (visitSummary.length) {
+      rows.push(["FIELD REPRESENTATIVES — MTD FR VISIT REPORT", monthLabel(month)]);
+      rows.push(["NAME", "NO. OF FR FACILITIES", "1 Facility Visit", "2 Facility Visits", "3 Facility Visits", "4 Facility Visits"]);
+      for (const s of visitSummary) rows.push([s.rep.toUpperCase(), s.facilities, ...s.dist]);
+      rows.push(["TOTAL", visitSummaryTotal.facilities, ...visitSummaryTotal.dist]);
       rows.push([]);
     }
+    pushBlocks(blocks ?? [], "CHECK-IN");
+    pushBlocks((visitBlocks ?? []) as any[], "VISIT");
     const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const a = document.createElement("a"); a.href = url; a.download = `Check-In Report ${month}.csv`; a.click(); URL.revokeObjectURL(url);
+    const a = document.createElement("a"); a.href = url; a.download = `Check-In & Visit Report ${month}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
   return (
@@ -92,52 +109,81 @@ export default function CheckinReport() {
         <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground"><PhoneCall className="w-8 h-8 mx-auto mb-2" />No calls logged for {monthLabel(month)}.</div>
       ) : (
         <>
-          {/* MTD summary — the sheet's top table: facilities per rep + check-in distribution */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="mb-3">
-                <h2 className="font-bold text-foreground uppercase tracking-wide">Business Development Representatives</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">MTD CHECK-IN REPORT · {monthLabel(month)}</p>
-              </div>
-              <div className="rounded-xl border border-border overflow-x-auto max-w-3xl">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-card hover:bg-card border-border">
-                      <TableHead className="text-muted-foreground text-xs min-w-[140px]">NAME</TableHead>
-                      <TableHead className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 text-right whitespace-nowrap">NO. OF BDR FACILITIES</TableHead>
-                      <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">1 Check-In</TableHead>
-                      <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">2 Check-Ins</TableHead>
-                      <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">3 Check-Ins</TableHead>
-                      <TableHead className="text-muted-foreground text-xs text-right whitespace-nowrap">4 Check-Ins</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {summary.map((s) => (
-                      <TableRow key={s.rep} className="border-border">
-                        <TableCell className="py-1.5 text-sm font-medium text-foreground uppercase">{s.rep}</TableCell>
-                        <TableCell className="py-1.5 text-sm font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 text-right">{s.facilities}</TableCell>
-                        {s.dist.map((d, i) => <TableCell key={i} className="py-1.5 text-sm text-foreground text-right">{d || ""}</TableCell>)}
-                      </TableRow>
-                    ))}
-                    <TableRow className="border-border bg-muted/40 font-semibold">
-                      <TableCell className="py-1.5 text-sm text-foreground">TOTAL</TableCell>
-                      <TableCell className="py-1.5 text-sm font-bold text-foreground bg-amber-500/15 text-right">{summaryTotal.facilities}</TableCell>
-                      {summaryTotal.dist.map((d, i) => <TableCell key={i} className="py-1.5 text-sm text-foreground text-right">{d}</TableCell>)}
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          {/* MTD summaries — the sheet's top tables */}
+          <SummaryCard
+            title="Business Development Representatives" subtitle={`MTD CHECK-IN REPORT · ${monthLabel(month)}`}
+            facLabel="NO. OF BDR FACILITIES" unit="Check-In" plural="Check-Ins"
+            rows={summary} total={summaryTotal}
+          />
+          {visitSummary.length > 0 && (
+            <SummaryCard
+              title="Field Representatives" subtitle={`MTD FR VISIT REPORT · ${monthLabel(month)}`}
+              facLabel="NO. OF FR FACILITIES" unit="Facility Visit" plural="Facility Visits"
+              rows={visitSummary} total={visitSummaryTotal}
+            />
+          )}
 
-          {blocks.map((b: any) => <RepBlock key={b.rep} block={b} />)}
+          {blocks.map((b: any) => <RepBlock key={`c-${b.rep}`} block={b} word="CHECK-IN" />)}
+
+          {(visitBlocks ?? []).length > 0 && (
+            <div className="pt-2">
+              <h2 className="font-bold text-foreground uppercase tracking-wide mb-3">Field Representatives — Visits</h2>
+              <div className="space-y-5">
+                {(visitBlocks as any[]).map((b: any) => <RepBlock key={`v-${b.rep}`} block={b} word="VISIT" />)}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
   );
 }
 
-function RepBlock({ block }: { block: any }) {
+function SummaryCard({ title, subtitle, facLabel, unit, plural, rows, total }: {
+  title: string; subtitle: string; facLabel: string; unit: string; plural: string;
+  rows: Array<{ rep: string; facilities: number; dist: number[] }>;
+  total: { facilities: number; dist: number[] };
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="mb-3">
+          <h2 className="font-bold text-foreground uppercase tracking-wide">{title}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        </div>
+        <div className="rounded-xl border border-border overflow-x-auto max-w-3xl">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-card hover:bg-card border-border">
+                <TableHead className="text-muted-foreground text-xs min-w-[140px]">NAME</TableHead>
+                <TableHead className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 text-right whitespace-nowrap">{facLabel}</TableHead>
+                {[1, 2, 3, 4].map((n) => (
+                  <TableHead key={n} className="text-muted-foreground text-xs text-right whitespace-nowrap">{n} {n === 1 ? unit : plural}</TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((s) => (
+                <TableRow key={s.rep} className="border-border">
+                  <TableCell className="py-1.5 text-sm font-medium text-foreground uppercase">{s.rep}</TableCell>
+                  <TableCell className="py-1.5 text-sm font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 text-right">{s.facilities}</TableCell>
+                  {s.dist.map((d, i) => <TableCell key={i} className="py-1.5 text-sm text-foreground text-right">{d || ""}</TableCell>)}
+                </TableRow>
+              ))}
+              <TableRow className="border-border bg-muted/40 font-semibold">
+                <TableCell className="py-1.5 text-sm text-foreground">TOTAL</TableCell>
+                <TableCell className="py-1.5 text-sm font-bold text-foreground bg-amber-500/15 text-right">{total.facilities}</TableCell>
+                {total.dist.map((d, i) => <TableCell key={i} className="py-1.5 text-sm text-foreground text-right">{d}</TableCell>)}
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RepBlock({ block, word = "CHECK-IN" }: { block: any; word?: string }) {
   const [, nav] = useLocation();
   const cols = Math.min(MAX_COLS, Math.max(1, ...block.rows.map((r: any) => r.checkIns.length)));
   return (
@@ -145,7 +191,7 @@ function RepBlock({ block }: { block: any }) {
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
           <h2 className="font-bold text-foreground uppercase tracking-wide flex items-center gap-2"><Users2 className="w-4 h-4 text-primary" /> {block.rep}</h2>
-          <span className="text-xs text-muted-foreground">{block.totals.facilities} facilities · {block.totals.calls} calls</span>
+          <span className="text-xs text-muted-foreground">{block.totals.facilities} facilities · {block.totals.calls} {word === "VISIT" ? "visits" : "calls"}</span>
         </div>
         <div className="rounded-xl border border-border overflow-x-auto">
           <Table>
@@ -154,17 +200,17 @@ function RepBlock({ block }: { block: any }) {
                 <TableHead className="text-muted-foreground text-xs w-8">#</TableHead>
                 <TableHead className="text-muted-foreground text-xs min-w-[220px]">FACILITY NAME</TableHead>
                 {Array.from({ length: cols }, (_, i) => (
-                  <TableHead key={i} className="text-muted-foreground text-xs whitespace-nowrap" colSpan={2}>{ORDINAL[i]} CHECK-IN · #</TableHead>
+                  <TableHead key={i} className="text-muted-foreground text-xs whitespace-nowrap" colSpan={2}>{ORDINAL[i]} {word} · #</TableHead>
                 ))}
-                <TableHead className="text-xs font-semibold text-primary bg-primary/10 text-right whitespace-nowrap">TOTAL CHECK-IN</TableHead>
+                <TableHead className="text-xs font-semibold text-primary bg-primary/10 text-right whitespace-nowrap">TOTAL {word}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {block.rows.map((r: any, i: number) => (
                 <TableRow key={r.label + i} className={`border-border ${r.facilityId ? "cursor-pointer hover:bg-card/60" : ""}`} onClick={() => r.facilityId && nav(`/crm/facilities/${r.facilityId}`)}>
                   <TableCell className="py-1.5 text-xs text-muted-foreground">{i + 1}</TableCell>
-                  <TableCell className="py-1.5 text-sm font-medium text-foreground">
-                    {r.isPhoneOnly ? <span className="flex items-center gap-1.5 text-muted-foreground"><Phone className="w-3 h-3" /> {r.label}</span> : r.label}
+                  <TableCell className="py-1.5 text-sm font-medium text-foreground max-w-[320px]">
+                    {r.isPhoneOnly ? <span className="flex items-center gap-1.5 text-muted-foreground"><Phone className="w-3 h-3" /> {r.label}</span> : <span className="block truncate" title={r.label}>{r.label}</span>}
                   </TableCell>
                   {Array.from({ length: cols }, (_, k) => {
                     const c = r.checkIns[k];

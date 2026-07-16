@@ -58,6 +58,7 @@ import {
   setTaskStatus,
   getReferralCountsMap,
   getCheckinMatrix,
+  getVisitMatrix,
   listExpensesByFacility,
   createFacilityExpense,
   setExpenseReimbursement,
@@ -1635,6 +1636,15 @@ export const crmRouter = router({
       .query(async ({ ctx, input }) => {
         if (seesAllData(ctx.user.role)) return getCheckinMatrix(input.month, input.agent ? [input.agent] : null);
         return getCheckinMatrix(input.month, ownerNameCandidates(ctx.user));
+      }),
+
+    // MTD FR Visit matrix — same shape, per FR: facilities visited, each
+    // distinct day = a visit (field-visit log + visit-type contact logs).
+    visitMatrix: crmProcedure
+      .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/), agent: z.string().optional() }))
+      .query(async ({ ctx, input }) => {
+        if (seesAllData(ctx.user.role)) return getVisitMatrix(input.month, input.agent ? [input.agent] : null);
+        return getVisitMatrix(input.month, ownerNameCandidates(ctx.user));
       }),
   }),
 

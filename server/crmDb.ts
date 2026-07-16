@@ -13,6 +13,7 @@ import {
   facilityLeads,
   facilityGratitude,
   facilityUpdates,
+  fieldVisits,
   frExpenses,
   bdrExpenses,
   ringcentralTokens,
@@ -571,6 +572,74 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
     const list = Array.from(rows.values()).map((r) => {
       const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
       return { label: r.label, facilityId: r.facilityId, isPhoneOnly: r.facilityId == null, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
+    }).sort((a, b) => (a.checkIns[0]?.date ?? "").localeCompare(b.checkIns[0]?.date ?? "") || b.total - a.total);
+    out.push({ rep, rows: list, totals: { facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) } });
+  }
+  return out.sort((a, b) => b.totals.calls - a.totals.calls);
+}
+
+// ── FR Visit matrix (the sheet's FIELD REPRESENTATIVES side) ─────────────────
+// One row per facility visited in the month per FR. Each distinct DAY is a
+// visit column; sources are visit-type contact logs + the FR field-visit log
+// (facilitiesVisited JSON). Merged by max per day so a visit logged in both
+// places isn't double-counted.
+export async function getVisitMatrix(month: string, agentNames?: string[] | null) {
+  const db = await getDb();
+  if (!db) return [];
+  const LA = "America/Los_Angeles";
+  const [y, m] = month.split("-").map(Number);
+  const start = fromZonedTime(`${month}-01 00:00:00`, LA);
+  const next = `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, "0")}-01`;
+  const end = fromZonedTime(`${next} 00:00:00`, LA);
+  const dayOf = (d: Date) => formatInTimeZone(d, LA, "yyyy-MM-dd");
+  const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  type Row = { key: string; label: string; facilityId: number | null; days: Map<string, number> };
+  const reps = new Map<string, Map<string, Row>>();
+  const bucket = (rep: string, key: string, label: string, facilityId: number | null, day: string, mode: "add" | "max") => {
+    if (!reps.has(rep)) reps.set(rep, new Map());
+    const rows = reps.get(rep)!;
+    if (!rows.has(key)) rows.set(key, { key, label, facilityId, days: new Map() });
+    const r = rows.get(key)!;
+    r.days.set(day, mode === "add" ? (r.days.get(day) ?? 0) + 1 : Math.max(r.days.get(day) ?? 0, 1));
+  };
+
+  // 1) Visit-type contact logs (additive — each is one logged visit)
+  const visitLogs = await db.select({ facilityId: contactLogs.facilityId, contactDate: contactLogs.contactDate, repName: contactLogs.repName, facilityName: facilities.name })
+    .from(contactLogs).leftJoin(facilities, eq(contactLogs.facilityId, facilities.id))
+    .where(and(eq(contactLogs.contactType, "visit"), gte(contactLogs.contactDate, start), lte(contactLogs.contactDate, end)));
+  for (const v of visitLogs) {
+    if (!v.contactDate) continue;
+    const rep = (v.repName ?? "(unknown)").trim() || "(unknown)";
+    bucket(rep, `f:${v.facilityId}`, v.facilityName ?? `Facility #${v.facilityId}`, v.facilityId, dayOf(v.contactDate as Date), "add");
+  }
+  // 2) FR field-visit log (presence per day — avoids double counting with #1)
+  const fvRows = await db.select().from(fieldVisits).where(and(gte(fieldVisits.visitDate, start), lte(fieldVisits.visitDate, end)));
+  for (const fv of fvRows) {
+    if (!fv.visitDate) continue;
+    const rep = (fv.agentName ?? "(unknown)").trim() || "(unknown)";
+    const day = dayOf(fv.visitDate as Date);
+    const items: any[] = Array.isArray(fv.facilitiesVisited) ? (fv.facilitiesVisited as any[]) : [];
+    for (const it of items) {
+      const fid = it?.id ?? it?.facilityId ?? null;
+      const name = String(it?.name ?? it?.facilityName ?? "").trim();
+      if (!fid && !name) continue;
+      if (/^no visits?\b/i.test(name)) continue; // historical "No visits" placeholder rows
+      bucket(rep, fid ? `f:${fid}` : `n:${normName(name)}`, name || `Facility #${fid}`, fid ?? null, day, "max");
+    }
+  }
+
+  const norm = (s: string) => s.toLowerCase().trim();
+  const first = (s: string) => norm(s).split(/\s+/)[0] ?? "";
+  const wanted = agentNames?.map(norm).filter(Boolean) ?? null;
+  const repMatches = (rep: string) => !wanted || wanted.some((w) => norm(rep) === w || first(rep) === first(w));
+
+  const out = [];
+  for (const [rep, rows] of Array.from(reps.entries())) {
+    if (!repMatches(rep)) continue;
+    const list = Array.from(rows.values()).map((r) => {
+      const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
+      return { label: r.label, facilityId: r.facilityId, isPhoneOnly: false, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
     }).sort((a, b) => (a.checkIns[0]?.date ?? "").localeCompare(b.checkIns[0]?.date ?? "") || b.total - a.total);
     out.push({ rep, rows: list, totals: { facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) } });
   }
