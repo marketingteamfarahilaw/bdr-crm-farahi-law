@@ -131,11 +131,11 @@ function RecordFrVisitDialog({ facilityId, onSuccess }: { facilityId: number; on
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="gap-1.5 border-border">
-          <MapPin className="w-3.5 h-3.5" /> Record FR Visit
+          <MapPin className="w-3.5 h-3.5" /> Log FR Visit
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-card border-border max-w-md">
-        <DialogHeader><DialogTitle>Record FR Visit</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Log FR Visit</DialogTitle></DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -175,7 +175,7 @@ function RecordFrVisitDialog({ facilityId, onSuccess }: { facilityId: number; on
               repName: visitor,
             })}
           >
-            {createLog.isPending ? "Saving…" : "Record Visit"}
+            {createLog.isPending ? "Saving…" : "Log Visit"}
           </Button>
         </div>
       </DialogContent>
