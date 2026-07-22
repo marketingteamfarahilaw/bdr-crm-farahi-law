@@ -1075,6 +1075,7 @@ export default function FacilityProfile() {
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
+              <RecordFrVisitDialog facilityId={facilityId} onSuccess={() => {}} />
               <Button variant="outline" size="sm" className="gap-1.5 border-border" onClick={() => toggleFlag.mutate({ id: facilityId, managementFlag: facility.managementFlag !== 1 })}>
                 <Flag className="w-3.5 h-3.5" /> {facility.managementFlag === 1 ? "Clear Flag" : "Flag"}
               </Button>
