@@ -105,6 +105,84 @@ function facilityTemperature(facility: any, contactLogs: any[] | undefined, open
   return { key: "cold", label: "Cold", reason, Icon: Snowflake, cls: "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30" };
 }
 
+// Record an FR's in-person visit — logged by the BDR on the partner's behalf.
+// Stored as a visit-type contact log credited to the FR, so it feeds the
+// Check-In Report's FIELD REPRESENTATIVES visit matrix and the Daily Log.
+const FR_ROSTER = ["Lupe", "Jezel", "Zulema", "Genysys"];
+function RecordFrVisitDialog({ facilityId, onSuccess }: { facilityId: number; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [frName, setFrName] = useState(FR_ROSTER[0]);
+  const [custom, setCustom] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [summary, setSummary] = useState("");
+  const utils = trpc.useUtils();
+  const createLog = trpc.crm.contactLogs.create.useMutation({
+    onSuccess: () => {
+      toast.success("FR visit recorded — it will show in the Check-In Report");
+      utils.crm.facilities.get.invalidate({ id: facilityId });
+      utils.crm.contactLogs.list.invalidate({ facilityId });
+      setOpen(false); setSummary("");
+      onSuccess();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const visitor = frName === "__other__" ? custom.trim() : frName;
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5 border-border">
+          <MapPin className="w-3.5 h-3.5" /> Record FR Visit
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="bg-card border-border max-w-md">
+        <DialogHeader><DialogTitle>Record FR Visit</DialogTitle></DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Who visited (FR)</label>
+              <Select value={frName} onValueChange={setFrName}>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FR_ROSTER.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                  <SelectItem value="__other__">Other…</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Visit date</label>
+              <Input type="date" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className="bg-background border-border" />
+            </div>
+          </div>
+          {frName === "__other__" && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Name</label>
+              <Input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Who visited?" className="bg-background border-border" />
+            </div>
+          )}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">What happened at the visit? (optional)</label>
+            <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Dropped off lunch, met with the manager…" rows={3} className="bg-background border-border resize-none" />
+          </div>
+          <Button
+            className="w-full"
+            style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
+            disabled={createLog.isPending || !visitor}
+            onClick={() => createLog.mutate({
+              facilityId,
+              contactType: "visit",
+              contactDate: new Date(`${date}T12:00:00`).toISOString(),
+              summary: summary || `FR visit by ${visitor}`,
+              repName: visitor,
+            })}
+          >
+            {createLog.isPending ? "Saving…" : "Record Visit"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function AddContactLogDialog({ facilityId, onSuccess }: { facilityId: number; onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState("call");
@@ -1115,6 +1193,7 @@ export default function FacilityProfile() {
                   Sync RingCentral
                 </Button>
               )}
+              <RecordFrVisitDialog facilityId={facilityId} onSuccess={() => {}} />
               <AddContactLogDialog facilityId={facilityId} onSuccess={() => {}} />
             </div>
           </div>
