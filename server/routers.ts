@@ -14,6 +14,7 @@ import { partnershipRouter } from "./partnershipRouter";
 import { dailyLogRouter } from "./dailyLogRouter";
 import { dailyWorkRouter } from "./dailyWorkRouter";
 import { pdRouter } from "./pdRouter";
+import { triviaRouter } from "./triviaRouter";
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { getRingcentralToken } from "./crmDb";
@@ -755,6 +756,9 @@ export const appRouter = router({
 
   // PD Car Referral Tracker — body-shop pipeline + leadership dashboard.
   pd: pdRouter,
+
+  // Team Trivia — live multiplayer quiz for team hangouts (/trivia).
+  trivia: triviaRouter,
 
   // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
   intake: intakeRouter,

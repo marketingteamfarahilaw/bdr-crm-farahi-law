@@ -91,6 +91,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards", level: "bdr" },
     // { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },
     { icon: Network, label: "Referral-Friendly List", path: "/bdr/referral-tracker", level: "bdr" },
+    { icon: Trophy, label: "Team Trivia", path: "/trivia", level: "all" },
   ] },
   { title: "Partner Referrals", items: [
     { icon: ArrowLeftRight, label: "Partner Referrals", path: "/referral/tracker", level: "manage" },

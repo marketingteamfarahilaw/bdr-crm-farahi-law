@@ -63,6 +63,7 @@ import IntakeCallsPage from "./pages/intake/IntakeCalls";
 import IntakeAuditorPage from "./pages/intake/IntakeAuditor";
 import IntakeAgentsPage from "./pages/intake/IntakeAgents";
 import FieldApp from "./pages/field/FieldApp";
+import TriviaPage from "./pages/Trivia";
 import IntakeSettingsPage from "./pages/intake/IntakeSettings";
 import { isIntakeOnly, normalizeRole } from "@shared/permissions";
 import { RingCentralProvider } from "./components/RingCentralWidget";
@@ -82,6 +83,10 @@ function Router() {
   // FIELD MODE — the FR team's phone/tablet experience. Full-screen with its
   // own bottom-tab navigation; deliberately rendered OUTSIDE the sidebar shell.
   if (location.startsWith("/field")) return <FieldApp />;
+
+  // TEAM TRIVIA — full-screen hangout game, outside the sidebar shell so
+  // players on phones get a clean game view.
+  if (location.startsWith("/trivia")) return <TriviaPage />;
 
   // FRs opening the installed app on a phone/tablet land straight in Field
   // Mode — the "Full CRM" button inside sets a session flag to escape here.

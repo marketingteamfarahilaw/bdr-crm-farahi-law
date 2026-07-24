@@ -11,6 +11,7 @@ import {
   boolean,
   decimal,
 } from "drizzle-orm/mysql-core";
+import { sql } from "drizzle-orm";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -1044,3 +1045,52 @@ export const pdReferrals = mysqlTable("pd_referrals", {
 });
 export type PdReferral = typeof pdReferrals.$inferSelect;
 export type InsertPdReferral = typeof pdReferrals.$inferInsert;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Team Trivia — live multiplayer quiz for team hangouts. One row per game;
+// players join with their CRM login; every answer is logged with a server
+// timestamp so 1st/2nd/3rd correct responses can be ranked fairly.
+// ────────────────────────────────────────────────────────────────────────────
+export const triviaGames = mysqlTable("trivia_games", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 8 }).notNull(),               // short join/share code shown on the host screen
+  hostUserId: int("hostUserId").notNull(),
+  hostName: varchar("hostName", { length: 120 }),
+  status: mysqlEnum("status", [
+    "lobby",              // players joining / between questions (board view)
+    "question_open",      // a question is live — players may submit
+    "question_closed",    // pencils down — host reviews answers
+    "question_revealed",  // answer shown to everyone, points awarded
+    "finished",           // podium
+  ]).default("lobby").notNull(),
+  currentCat: int("currentCat"),                                 // category index of the live question
+  currentQ: int("currentQ"),                                     // question index within the category
+  doneJson: text("doneJson"),                                    // JSON array of "cat:q" keys already revealed
+  questionOpenedAt: timestamp("questionOpenedAt", { fsp: 3 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TriviaGame = typeof triviaGames.$inferSelect;
+
+export const triviaPlayers = mysqlTable("trivia_players", {
+  id: int("id").autoincrement().primaryKey(),
+  gameId: int("gameId").notNull(),
+  userId: int("userId").notNull(),
+  displayName: varchar("displayName", { length: 120 }).notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+});
+export type TriviaPlayer = typeof triviaPlayers.$inferSelect;
+
+export const triviaAnswers = mysqlTable("trivia_answers", {
+  id: int("id").autoincrement().primaryKey(),                    // insertion order = authoritative submission order
+  gameId: int("gameId").notNull(),
+  catIdx: int("catIdx").notNull(),
+  qIdx: int("qIdx").notNull(),
+  userId: int("userId").notNull(),
+  displayName: varchar("displayName", { length: 120 }).notNull(),
+  answerText: text("answerText").notNull(),
+  isCorrect: int("isCorrect").default(0).notNull(),              // host-judged: 1 = counts for points
+  pointsAwarded: int("pointsAwarded").default(0).notNull(),      // set at reveal, by rank among correct answers
+  submittedAt: timestamp("submittedAt", { fsp: 3 }).default(sql`CURRENT_TIMESTAMP(3)`).notNull(), // (now()) is invalid for timestamp(3) on TiDB
+});
+export type TriviaAnswer = typeof triviaAnswers.$inferSelect;
