@@ -1,14 +1,19 @@
 /**
- * Team Trivia — live multiplayer quiz for team hangouts, at /trivia.
+ * Team Trivia — live multiplayer quiz for team hangouts, at /trivia (alias /thegame).
  *
  * Everyone signs into the CRM on their own device. One person hosts (they see
  * everyone's answers, so they don't play); everyone else joins and submits
  * answers. The server logs each submission's arrival order, the host marks
  * which are correct, and points are awarded automatically to the 1st/2nd/3rd
  * correct answers. Rendered full-screen outside the dashboard shell.
+ *
+ * Party layer: synthesized game-show sound cues (mutable), floating emoji
+ * reactions synced to every screen, hot-streak flames, submission speed
+ * deltas, and a confetti podium.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 import { trpc } from "@/lib/trpc";
@@ -18,20 +23,73 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
-  Scale, Trophy, Users, Timer, Lock, Check, X, ArrowLeft, Crown,
-  ChevronRight, Sparkles, Eye, RotateCcw, Loader2, PartyPopper,
+  Scale, Trophy, Users, Timer, Lock, Check, ArrowLeft, Crown, Flame,
+  ChevronRight, Sparkles, Eye, RotateCcw, Loader2, PartyPopper, Volume2, VolumeX,
 } from "lucide-react";
 
 const QUESTION_SECONDS = 60; // soft on-screen countdown; the host closes manually
+const REACTION_EMOJIS = ["👏", "🔥", "😂", "😱", "⚖️", "🎉"];
 
 type GameState = inferRouterOutputs<AppRouter>["trivia"]["state"];
+
+function gamePath() {
+  return window.location.pathname.startsWith("/thegame") ? "/thegame" : "/trivia";
+}
+
+// ─── sound engine (synthesized — no assets, mute persisted) ──────────────────
+
+let audioCtx: AudioContext | null = null;
+let soundMuted = localStorage.getItem("trivia-muted") === "1";
+
+function setSoundMuted(m: boolean) {
+  soundMuted = m;
+  localStorage.setItem("trivia-muted", m ? "1" : "0");
+}
+
+function note(freq: number, at: number, dur: number, type: OscillatorType = "triangle", gain = 0.06) {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime + at;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(gain, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  osc.connect(g).connect(audioCtx.destination);
+  osc.start(t);
+  osc.stop(t + dur + 0.05);
+}
+
+function playCue(kind: "open" | "lock" | "close" | "reveal" | "fanfare" | "pop") {
+  if (soundMuted) return;
+  try {
+    audioCtx = audioCtx || new AudioContext();
+    if (audioCtx.state === "suspended") void audioCtx.resume();
+    switch (kind) {
+      case "open":      // rising two-note "here's the question"
+        note(523, 0, 0.18); note(784, 0.14, 0.3); break;
+      case "lock":      // quick confirmation blip
+        note(880, 0, 0.1, "sine", 0.07); note(1175, 0.08, 0.14, "sine", 0.06); break;
+      case "close":     // pencils-down thud
+        note(196, 0, 0.25, "sawtooth", 0.05); note(131, 0.1, 0.35, "sawtooth", 0.05); break;
+      case "reveal":    // answer sting
+        note(523, 0, 0.15); note(659, 0.12, 0.15); note(784, 0.24, 0.4); break;
+      case "fanfare":   // podium!
+        note(523, 0, 0.2); note(659, 0.15, 0.2); note(784, 0.3, 0.2); note(1047, 0.45, 0.7, "triangle", 0.08); note(784, 0.45, 0.7, "sine", 0.04); break;
+      case "pop":       // reaction pop (very quiet)
+        note(1319, 0, 0.07, "sine", 0.025); break;
+    }
+  } catch { /* audio unavailable — stay silent */ }
+}
 
 // ─── tiny building blocks ────────────────────────────────────────────────────
 
 function Shell({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
+  const [muted, setMuted] = useState(soundMuted);
   return (
     <div className="min-h-screen bg-background text-foreground dashboard-mesh">
-      <div className={cn("mx-auto px-4 pb-16 pt-6", wide ? "max-w-5xl" : "max-w-2xl")}>
+      <div className={cn("mx-auto px-4 pb-24 pt-6", wide ? "max-w-5xl" : "max-w-2xl")}>
         <header className="mb-6 flex items-center justify-between gap-3 border-b border-border/60 pb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10">
@@ -46,9 +104,18 @@ function Shell({ children, wide }: { children: React.ReactNode; wide?: boolean }
               </div>
             </div>
           </div>
-          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">
-            <span className="inline-flex items-center gap-1"><ArrowLeft className="h-3.5 w-3.5" /> CRM</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setSoundMuted(!muted); setMuted(!muted); if (muted) playCue("lock"); }}
+              className="text-muted-foreground hover:text-foreground"
+              title={muted ? "Unmute sounds" : "Mute sounds"}
+            >
+              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+            <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">
+              <span className="inline-flex items-center gap-1"><ArrowLeft className="h-3.5 w-3.5" /> CRM</span>
+            </Link>
+          </div>
         </header>
         {children}
       </div>
@@ -98,11 +165,35 @@ function Countdown({ openedAt }: { openedAt: Date | string | null }) {
   const elapsed = (Date.now() - new Date(openedAt).getTime()) / 1000;
   const left = Math.max(0, Math.ceil(QUESTION_SECONDS - elapsed));
   return (
-    <div className={cn("flex items-center gap-1.5 font-mono text-lg tabular-nums", left <= 10 && left > 0 && "text-red-500", left === 0 && "text-muted-foreground")}>
+    <div
+      className={cn(
+        "flex items-center gap-1.5 font-mono text-lg tabular-nums",
+        left <= 10 && left > 0 && "animate-pulse text-red-500",
+        left === 0 && "text-muted-foreground"
+      )}
+    >
       <Timer className="h-4 w-4" />
       {left > 0 ? `${left}s` : "time!"}
     </div>
   );
+}
+
+/** Animated number that counts up to its target — used on the podium. */
+function CountUp({ value, className }: { value: number; className?: string }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    const t0 = performance.now();
+    const dur = 1200;
+    let raf: number;
+    const step = (t: number) => {
+      const p = Math.min(1, (t - t0) / dur);
+      setN(Math.round(value * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <span className={className}>{n}</span>;
 }
 
 function Leaderboard({ players, meUserId }: { players: GameState["players"]; meUserId?: number }) {
@@ -111,7 +202,8 @@ function Leaderboard({ players, meUserId }: { players: GameState["players"]; meU
   return (
     <div className="space-y-1.5">
       {players.map((p, i) => (
-        <div
+        <motion.div
+          layout
           key={p.userId}
           className={cn(
             "flex items-center gap-3 rounded-lg border border-transparent bg-muted/40 px-3 py-2 text-sm",
@@ -123,13 +215,126 @@ function Leaderboard({ players, meUserId }: { players: GameState["players"]; meU
             {p.name}
             {p.userId === meUserId && <span className="ml-1.5 text-xs text-muted-foreground">(you)</span>}
           </span>
+          {p.streak >= 2 && (
+            <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-orange-500" title={`${p.streak} in a row!`}>
+              <Flame className="h-3.5 w-3.5" />{p.streak}
+            </span>
+          )}
           {p.score === top && top > 0 && <Crown className="h-3.5 w-3.5 text-amber-500" />}
           <span className="font-serif text-base font-semibold tabular-nums text-amber-500">{p.score}</span>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
 }
+
+// ─── reactions: bar + floating overlay ───────────────────────────────────────
+
+function ReactionBar({ gameId }: { gameId: number }) {
+  const react = trpc.trivia.react.useMutation();
+  const lastSent = useRef(0);
+  return (
+    <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2">
+      <div className="flex items-center gap-1 rounded-full border border-border/70 bg-card/95 px-2 py-1.5 shadow-xl backdrop-blur">
+        {REACTION_EMOJIS.map((e) => (
+          <button
+            key={e}
+            className="rounded-full px-2 py-1 text-lg transition-transform hover:scale-125 active:scale-95"
+            onClick={() => {
+              const now = Date.now();
+              if (now - lastSent.current < 400) return; // gentle throttle
+              lastSent.current = now;
+              playCue("pop");
+              react.mutate({ gameId, emoji: e });
+            }}
+          >
+            {e}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type Floater = { id: number; emoji: string; name: string; x: number };
+
+function FloatingReactions({ reactions }: { reactions: GameState["reactions"] }) {
+  const seen = useRef(new Set<number>());
+  const [floaters, setFloaters] = useState<Floater[]>([]);
+
+  useEffect(() => {
+    const fresh = (reactions || []).filter((r) => !seen.current.has(r.id));
+    if (!fresh.length) return;
+    fresh.forEach((r) => seen.current.add(r.id));
+    setFloaters((f) => [
+      ...f,
+      ...fresh.map((r) => ({ id: r.id, emoji: r.emoji, name: r.name, x: 12 + Math.random() * 76 })),
+    ]);
+  }, [reactions]);
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-30 overflow-hidden">
+      <AnimatePresence>
+        {floaters.map((f) => (
+          <motion.div
+            key={f.id}
+            initial={{ opacity: 0, y: 0, scale: 0.6 }}
+            animate={{ opacity: [0, 1, 1, 0], y: -260, scale: 1.1 }}
+            transition={{ duration: 2.6, ease: "easeOut" }}
+            onAnimationComplete={() => setFloaters((cur) => cur.filter((c) => c.id !== f.id))}
+            className="absolute bottom-24 flex flex-col items-center"
+            style={{ left: `${f.x}%` }}
+          >
+            <span className="text-3xl drop-shadow">{f.emoji}</span>
+            <span className="mt-0.5 rounded-full bg-black/40 px-1.5 text-[10px] text-white/80">{f.name.split(" ")[0]}</span>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── confetti (podium) ───────────────────────────────────────────────────────
+
+function ConfettiBurst() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const canvas = ref.current!;
+    const ctx = canvas.getContext("2d")!;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const colors = ["#f59e0b", "#fbbf24", "#fde68a", "#f87171", "#34d399", "#93c5fd"];
+    const pieces = Array.from({ length: 150 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * canvas.height * 0.5,
+      w: 5 + Math.random() * 6,
+      h: 8 + Math.random() * 8,
+      vy: 2 + Math.random() * 3,
+      vx: -1 + Math.random() * 2,
+      rot: Math.random() * Math.PI,
+      vr: -0.1 + Math.random() * 0.2,
+      c: colors[Math.floor(Math.random() * colors.length)],
+    }));
+    const t0 = performance.now();
+    let raf: number;
+    const tick = (t: number) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const p of pieces) {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+      }
+      if (t - t0 < 6000) raf = requestAnimationFrame(tick);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return <canvas ref={ref} className="pointer-events-none fixed inset-0 z-20" />;
+}
+
+// ─── shared pieces ───────────────────────────────────────────────────────────
 
 /** Host's judging list: answers in arrival order, tap to toggle correct. */
 function AnswerJudgeList({ state, locked, onToggle }: { state: GameState; locked: boolean; onToggle?: (id: number) => void }) {
@@ -137,12 +342,17 @@ function AnswerJudgeList({ state, locked, onToggle }: { state: GameState; locked
   const pts = state.question?.pts ?? [0, 0, 0];
   const correctIds = answers.filter((a) => a.isCorrect).map((a) => a.id);
   if (!answers.length) return <p className="text-sm italic text-muted-foreground">No answers were submitted.</p>;
+  const t0 = answers.length ? new Date(answers[0].submittedAt).getTime() : 0;
   return (
     <div className="space-y-2">
       {answers.map((a, i) => {
         const rank = correctIds.indexOf(a.id);
+        const delta = (new Date(a.submittedAt).getTime() - t0) / 1000;
         return (
-          <button
+          <motion.button
+            layout
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
             key={a.id}
             disabled={locked}
             onClick={() => onToggle?.(a.id)}
@@ -165,8 +375,9 @@ function AnswerJudgeList({ state, locked, onToggle }: { state: GameState; locked
               <span className="mr-2 font-medium">{a.name}</span>
               <span className="break-words text-muted-foreground">{a.text}</span>
             </span>
+            {i > 0 && <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">+{delta.toFixed(1)}s</span>}
             {rank >= 0 && rank < 3 && (pts[rank] ?? 0) > 0 && <RankBadge rank={rank} points={pts[rank]} />}
-          </button>
+          </motion.button>
         );
       })}
     </div>
@@ -175,21 +386,28 @@ function AnswerJudgeList({ state, locked, onToggle }: { state: GameState; locked
 
 function RevealCard({ reveal }: { reveal: NonNullable<GameState["reveal"]> }) {
   return (
-    <div className="rounded-xl bg-amber-50 p-5 text-amber-950 shadow-lg dark:bg-[#efe6d0] dark:text-[#2a2318]">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      className="rounded-xl bg-amber-50 p-5 text-amber-950 shadow-lg dark:bg-[#efe6d0] dark:text-[#2a2318]"
+    >
       <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-800/70">The record reflects</div>
       <div className="font-serif text-xl font-semibold leading-snug">{reveal.answer}</div>
       <p className="mt-2 text-[13px] leading-relaxed text-amber-900/80">
         <i>Counsel's note</i> — {reveal.note}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
 function Podium({ players }: { players: GameState["players"] }) {
   const [first, second, third] = players;
-  const Step = ({ p, place, h }: { p?: GameState["players"][number]; place: string; h: string }) =>
+  const Step = ({ p, place, h, delay }: { p?: GameState["players"][number]; place: string; h: string; delay: number }) =>
     p ? (
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay, type: "spring", stiffness: 200, damping: 20 }}
         className={cn(
           "flex w-28 flex-col items-center justify-start rounded-t-xl border border-b-0 border-border/60 bg-muted/40 px-2 pt-3 sm:w-36",
           place === "1st" && "border-amber-500/50 bg-amber-500/10",
@@ -198,16 +416,16 @@ function Podium({ players }: { players: GameState["players"] }) {
       >
         <div className={cn("text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground", place === "1st" && "text-amber-500")}>{place}</div>
         <div className="mt-1 w-full truncate text-center font-serif text-sm font-semibold sm:text-base">{p.name}</div>
-        <div className="text-sm tabular-nums text-amber-500">{p.score} pts</div>
-      </div>
+        <div className="text-sm tabular-nums text-amber-500"><CountUp value={p.score} /> pts</div>
+      </motion.div>
     ) : (
       <div className="w-28 sm:w-36" />
     );
   return (
     <div className="flex items-end justify-center gap-3">
-      <Step p={second} place="2nd" h="h-28" />
-      <Step p={first} place="1st" h="h-36" />
-      <Step p={third} place="3rd" h="h-24" />
+      <Step p={second} place="2nd" h="h-28" delay={0.35} />
+      <Step p={first} place="1st" h="h-36" delay={0.7} />
+      <Step p={third} place="3rd" h="h-24" delay={0} />
     </div>
   );
 }
@@ -237,7 +455,8 @@ function HostBoard({ state, gameId }: { state: GameState; gameId: number }) {
         <div>
           <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Players join at</div>
           <div className="font-mono text-lg">
-            {window.location.host}<span className="text-amber-500">/trivia</span>
+            {window.location.host}
+            <span className="text-amber-500">{gamePath()}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -330,7 +549,7 @@ function HostBoard({ state, gameId }: { state: GameState; gameId: number }) {
 function HostQuestion({ state, gameId }: { state: GameState; gameId: number }) {
   const utils = trpc.useUtils();
   const invalidate = () => utils.trivia.state.invalidate();
-  const close = trpc.trivia.closeQuestion.useMutation({ onSuccess: invalidate, onError: (e) => toast.error(e.message) });
+  const close = trpc.trivia.closeQuestion.useMutation({ onSuccess: () => { playCue("close"); invalidate(); }, onError: (e) => toast.error(e.message) });
   const reopen = trpc.trivia.reopenQuestion.useMutation({ onSuccess: invalidate, onError: (e) => toast.error(e.message) });
   const toggle = trpc.trivia.toggleCorrect.useMutation({ onSuccess: invalidate, onError: (e) => toast.error(e.message) });
   const revealQ = trpc.trivia.revealQuestion.useMutation({ onSuccess: invalidate, onError: (e) => toast.error(e.message) });
@@ -414,12 +633,32 @@ function PlayerQuestion({ state, gameId, meUserId }: { state: GameState; gameId:
   const utils = trpc.useUtils();
   const [text, setText] = useState("");
   const submit = trpc.trivia.submit.useMutation({
-    onSuccess: () => { setText(""); utils.trivia.state.invalidate(); },
+    onSuccess: () => { playCue("lock"); setText(""); utils.trivia.state.invalidate(); },
     onError: (e) => { toast.error(e.message); utils.trivia.state.invalidate(); },
   });
   const q = state.question!;
   const status = state.game.status;
   const mine = state.myAnswer;
+
+  const answeredChips = (
+    <AnimatePresence>
+      {state.answeredNames.length > 0 && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 flex flex-wrap justify-center gap-1.5">
+          {state.answeredNames.map((n, i) => (
+            <motion.span
+              key={`${n}-${i}`}
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="rounded-full bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground"
+            >
+              <Check className="mr-0.5 inline h-3 w-3 text-emerald-500" />
+              {n.split(" ")[0]}
+            </motion.span>
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <div className="space-y-5">
@@ -457,6 +696,7 @@ function PlayerQuestion({ state, gameId, meUserId }: { state: GameState; gameId:
           >
             {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Lock in answer"}
           </Button>
+          {answeredChips}
         </Panel>
       )}
 
@@ -466,6 +706,7 @@ function PlayerQuestion({ state, gameId, meUserId }: { state: GameState; gameId:
           <div className="font-medium">Answer locked in!</div>
           <p className="mt-1 text-sm text-muted-foreground">"{mine.text}"</p>
           <p className="mt-2 text-xs text-muted-foreground">{state.answersCount} of {state.players.length} players have answered…</p>
+          {answeredChips}
         </Panel>
       )}
 
@@ -486,15 +727,27 @@ function PlayerQuestion({ state, gameId, meUserId }: { state: GameState; gameId:
             {(() => {
               const winners = (state.answers ?? []).filter((a) => a.points > 0);
               const myRow = (state.answers ?? []).find((a) => a.userId === meUserId);
+              const t0 = winners.length ? new Date(winners[0].submittedAt).getTime() : 0;
               return (
                 <div className="space-y-2">
                   {winners.length ? (
                     winners.map((a, i) => (
-                      <div key={a.id} className="flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-2 text-sm">
+                      <motion.div
+                        key={a.id}
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.25 }}
+                        className="flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-2 text-sm"
+                      >
                         <RankBadge rank={i} points={a.points} />
                         <span className="flex-1 truncate">{a.name}{a.userId === meUserId ? " (you)" : ""}</span>
-                        <span className="truncate text-xs text-muted-foreground">"{a.text}"</span>
-                      </div>
+                        {i > 0 && (
+                          <span className="text-[10px] tabular-nums text-muted-foreground">
+                            +{((new Date(a.submittedAt).getTime() - t0) / 1000).toFixed(1)}s
+                          </span>
+                        )}
+                        <span className="max-w-[35%] truncate text-xs text-muted-foreground">"{a.text}"</span>
+                      </motion.div>
                     ))
                   ) : (
                     <p className="text-sm italic text-muted-foreground">Nobody scored on this one.</p>
@@ -520,12 +773,14 @@ export default function TriviaPage() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
 
-  const current = trpc.trivia.current.useQuery(undefined, { refetchInterval: 5000 });
+  // refetchIntervalInBackground: players will flip between apps mid-hangout —
+  // keep the game synced so their screen is current the moment they return.
+  const current = trpc.trivia.current.useQuery(undefined, { refetchInterval: 5000, refetchIntervalInBackground: true });
   const gameId = current.data?.id;
 
   const state = trpc.trivia.state.useQuery(
     { gameId: gameId! },
-    { enabled: !!gameId, refetchInterval: 2000 }
+    { enabled: !!gameId, refetchInterval: 2000, refetchIntervalInBackground: true }
   );
 
   const create = trpc.trivia.create.useMutation({
@@ -537,17 +792,24 @@ export default function TriviaPage() {
     onError: (e) => toast.error(e.message),
   });
 
-  // Celebrate once when the podium appears.
-  const celebratedRef = useRef(false);
+  // Sound cues on status transitions (question opened / revealed / podium).
+  const s = state.data;
+  const prevStatusRef = useRef<string | null>(null);
   useEffect(() => {
-    if (state.data?.game.status === "finished" && !celebratedRef.current) {
-      celebratedRef.current = true;
-      const winner = state.data.players[0];
+    const status = s?.game.status;
+    if (!status) return;
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+    if (prev === null || prev === status) return;
+    if (status === "question_open") playCue("open");
+    else if (status === "question_revealed") playCue("reveal");
+    else if (status === "finished") {
+      playCue("fanfare");
+      const winner = s?.players[0];
       if (winner) toast(`🏆 ${winner.name} carries the day with ${winner.score} points!`, { duration: 8000 });
     }
-  }, [state.data?.game.status, state.data?.players]);
+  }, [s?.game.status, s?.players]);
 
-  const s = state.data;
   const meUserId = user?.id as number | undefined;
 
   // ── no game yet ──
@@ -567,7 +829,8 @@ export default function TriviaPage() {
           <h2 className="font-serif text-2xl font-semibold">No game running</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             Host a live PI trivia game for the team. You'll run the questions and judge answers on your screen —
-            everyone else joins from their own device at <span className="font-mono text-foreground">/trivia</span> and races to answer.
+            everyone else joins from their own device at{" "}
+            <span className="font-mono text-foreground">{gamePath()}</span> and races to answer.
           </p>
           <Button
             size="lg"
@@ -587,10 +850,19 @@ export default function TriviaPage() {
     );
   }
 
+  const partyLayer = (
+    <>
+      <FloatingReactions reactions={s.reactions} />
+      {(s.joined || s.isHost) && s.game.status !== "finished" && <ReactionBar gameId={gameId} />}
+    </>
+  );
+
   // ── finished: podium for everyone ──
   if (s.game.status === "finished") {
     return (
       <Shell>
+        <ConfettiBurst />
+        <FloatingReactions reactions={s.reactions} />
         <div className="space-y-6 text-center">
           <div>
             <div className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">The jury has spoken</div>
@@ -621,6 +893,7 @@ export default function TriviaPage() {
   if (s.isHost) {
     return (
       <Shell wide>
+        {partyLayer}
         <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
           <div>
             {s.question ? <HostQuestion state={s} gameId={gameId} /> : <HostBoard state={s} gameId={gameId} />}
@@ -649,7 +922,7 @@ export default function TriviaPage() {
             size="lg"
             className="mt-5 bg-amber-500 font-semibold text-amber-950 hover:bg-amber-400"
             disabled={join.isPending}
-            onClick={() => join.mutate({ gameId })}
+            onClick={() => { playCue("lock"); join.mutate({ gameId }); }}
           >
             {join.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : `Join as ${user?.name || "player"}`}
           </Button>
@@ -661,6 +934,7 @@ export default function TriviaPage() {
   // ── player: in the game ──
   return (
     <Shell>
+      {partyLayer}
       {s.question && meUserId != null ? (
         <PlayerQuestion state={s} gameId={gameId} meUserId={meUserId} />
       ) : (

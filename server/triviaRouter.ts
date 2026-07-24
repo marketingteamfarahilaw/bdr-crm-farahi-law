@@ -22,6 +22,25 @@ import { TRIVIA_CATEGORIES, categoryMeta } from "./triviaQuestions";
 
 const gameCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ23456789", 4);
 
+// Live emoji reactions — ephemeral hype, so in-memory only (single-process
+// server). Clients poll state every ~2s and animate whatever is <10s old.
+type Reaction = { id: number; name: string; emoji: string; at: number };
+const reactionBuf = new Map<number, Reaction[]>();
+let reactionSeq = 1;
+const REACTION_TTL_MS = 10_000;
+
+function pushReaction(gameId: number, name: string, emoji: string) {
+  const now = Date.now();
+  const list = (reactionBuf.get(gameId) || []).filter((r) => now - r.at < REACTION_TTL_MS);
+  list.push({ id: reactionSeq++, name, emoji, at: now });
+  reactionBuf.set(gameId, list.slice(-60));
+}
+
+function recentReactions(gameId: number): Reaction[] {
+  const now = Date.now();
+  return (reactionBuf.get(gameId) || []).filter((r) => now - r.at < REACTION_TTL_MS);
+}
+
 async function db() {
   const d = await getDb();
   if (!d) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
@@ -142,8 +161,27 @@ export const triviaRouter = router({
 
     const scoreByUser = new Map<number, number>();
     for (const a of allAnswers) scoreByUser.set(a.userId, (scoreByUser.get(a.userId) || 0) + a.pointsAwarded);
+
+    // Hot streak = consecutive most-recent played questions where the player
+    // scored points. Order of play = done keys (+ the live question once revealed).
+    const playOrder = [...doneKeys(game)];
+    if (game.status === "question_revealed" && game.currentCat != null && game.currentQ != null) {
+      const k = `${game.currentCat}:${game.currentQ}`;
+      if (!playOrder.includes(k)) playOrder.push(k);
+    }
+    const scoredOn = (userId: number, key: string) =>
+      allAnswers.some((a) => a.userId === userId && `${a.catIdx}:${a.qIdx}` === key && a.pointsAwarded > 0);
+    const streakOf = (userId: number) => {
+      let n = 0;
+      for (let i = playOrder.length - 1; i >= 0; i--) {
+        if (scoredOn(userId, playOrder[i])) n++;
+        else break;
+      }
+      return n;
+    };
+
     const players = playerRows
-      .map((p) => ({ userId: p.userId, name: p.displayName, score: scoreByUser.get(p.userId) || 0 }))
+      .map((p) => ({ userId: p.userId, name: p.displayName, score: scoreByUser.get(p.userId) || 0, streak: streakOf(p.userId) }))
       .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
     const cur = currentQuestion(game);
@@ -181,6 +219,9 @@ export const triviaRouter = router({
             }
           : null,
       answersCount: qAnswers.length,
+      // Names only (never text) — lets players watch teammates lock in live.
+      answeredNames: game.status === "question_open" ? qAnswers.map((a) => a.displayName) : [],
+      reactions: recentReactions(game.id),
       myAnswer: mine ? { text: mine.answerText, submittedAt: mine.submittedAt } : null,
       // Answer texts: host sees them live while judging; players only after reveal.
       answers:
@@ -225,6 +266,17 @@ export const triviaRouter = router({
         displayName: player.displayName,
         answerText: input.text,
       });
+      return { ok: true };
+    }),
+
+  /** Tap an emoji — it floats up on everyone's screen. Pure fun, no points. */
+  react: protectedProcedure
+    .input(z.object({ gameId: z.number(), emoji: z.string().trim().min(1).max(8) }))
+    .mutation(async ({ ctx, input }) => {
+      const game = await getGame(input.gameId);
+      if (game.status === "finished") return { ok: true };
+      const name = ctx.user.name || ctx.user.email || "Someone";
+      pushReaction(game.id, name, input.emoji);
       return { ok: true };
     }),
 

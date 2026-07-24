@@ -85,8 +85,8 @@ function Router() {
   if (location.startsWith("/field")) return <FieldApp />;
 
   // TEAM TRIVIA — full-screen hangout game, outside the sidebar shell so
-  // players on phones get a clean game view.
-  if (location.startsWith("/trivia")) return <TriviaPage />;
+  // players on phones get a clean game view. /thegame is the easy-to-share alias.
+  if (location.startsWith("/trivia") || location.startsWith("/thegame")) return <TriviaPage />;
 
   // FRs opening the installed app on a phone/tablet land straight in Field
   // Mode — the "Full CRM" button inside sets a session flag to escape here.
