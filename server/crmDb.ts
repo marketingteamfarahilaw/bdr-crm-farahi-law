@@ -539,25 +539,36 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
 
   type Row = { key: string; label: string; facilityId: number | null; days: Map<string, number> };
   const reps = new Map<string, Map<string, Row>>();
-  const bucket = (rep: string, key: string, label: string, facilityId: number | null, day: string) => {
-    if (!reps.has(rep)) reps.set(rep, new Map());
-    const rows = reps.get(rep)!;
+  // One block per PERSON: merge rep-name variants ("LUPE", "Lupe", "Lupe Campos")
+  // by first name; display the longest nicely-cased variant seen.
+  const repDisplay = new Map<string, string>();
+  const canonRep = (raw: string | null | undefined) => {
+    const rep = (raw ?? "(unknown)").trim() || "(unknown)";
+    const key = rep.toLowerCase().split(/\s+/)[0];
+    const title = rep === rep.toUpperCase() || rep === rep.toLowerCase()
+      ? rep.toLowerCase().replace(/\b[a-z]/g, (ch) => ch.toUpperCase())
+      : rep;
+    const prev = repDisplay.get(key);
+    if (!prev || title.length > prev.length) repDisplay.set(key, title);
+    return key;
+  };
+  const bucket = (repKey: string, key: string, label: string, facilityId: number | null, day: string) => {
+    if (!reps.has(repKey)) reps.set(repKey, new Map());
+    const rows = reps.get(repKey)!;
     if (!rows.has(key)) rows.set(key, { key, label, facilityId, days: new Map() });
     const r = rows.get(key)!;
     r.days.set(day, (r.days.get(day) ?? 0) + 1);
   };
   for (const c of calls) {
     if (!c.contactDate) continue;
-    const rep = (c.repName ?? "(unknown)").trim() || "(unknown)";
-    bucket(rep, `f:${c.facilityId}`, c.facilityName ?? `Facility #${c.facilityId}`, c.facilityId, dayOf(c.contactDate as Date));
+    bucket(canonRep(c.repName), `f:${c.facilityId}`, c.facilityName ?? `Facility #${c.facilityId}`, c.facilityId, dayOf(c.contactDate as Date));
   }
   for (const u of unmatched) {
     if (!u.startTime) continue;
-    const rep = (u.agentName ?? "(unknown)").trim() || "(unknown)";
     const external = u.direction === "Inbound" ? u.fromNumber : u.toNumber;
     const p = last10(external);
     if (!p) continue;
-    bucket(rep, `p:${p}`, external ?? p, null, dayOf(u.startTime as Date));
+    bucket(canonRep(u.agentName), `p:${p}`, external ?? p, null, dayOf(u.startTime as Date));
   }
 
   // Agent scoping: match rep blocks by full name or first name (case-insensitive)
@@ -573,7 +584,7 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
       const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
       return { label: r.label, facilityId: r.facilityId, isPhoneOnly: r.facilityId == null, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
     }).sort((a, b) => (a.checkIns[0]?.date ?? "").localeCompare(b.checkIns[0]?.date ?? "") || b.total - a.total);
-    out.push({ rep, rows: list, totals: { facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) } });
+    out.push({ rep: repDisplay.get(rep) ?? rep, rows: list, totals: { facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) } });
   }
   return out.sort((a, b) => b.totals.calls - a.totals.calls);
 }
@@ -596,9 +607,21 @@ export async function getVisitMatrix(month: string, agentNames?: string[] | null
 
   type Row = { key: string; label: string; facilityId: number | null; days: Map<string, number> };
   const reps = new Map<string, Map<string, Row>>();
-  const bucket = (rep: string, key: string, label: string, facilityId: number | null, day: string, mode: "add" | "max") => {
-    if (!reps.has(rep)) reps.set(rep, new Map());
-    const rows = reps.get(rep)!;
+  // One block per PERSON: merge rep-name variants by first name (see checkin matrix).
+  const repDisplay = new Map<string, string>();
+  const canonRep = (raw: string | null | undefined) => {
+    const rep = (raw ?? "(unknown)").trim() || "(unknown)";
+    const key = rep.toLowerCase().split(/\s+/)[0];
+    const title = rep === rep.toUpperCase() || rep === rep.toLowerCase()
+      ? rep.toLowerCase().replace(/\b[a-z]/g, (ch) => ch.toUpperCase())
+      : rep;
+    const prev = repDisplay.get(key);
+    if (!prev || title.length > prev.length) repDisplay.set(key, title);
+    return key;
+  };
+  const bucket = (repKey: string, key: string, label: string, facilityId: number | null, day: string, mode: "add" | "max") => {
+    if (!reps.has(repKey)) reps.set(repKey, new Map());
+    const rows = reps.get(repKey)!;
     if (!rows.has(key)) rows.set(key, { key, label, facilityId, days: new Map() });
     const r = rows.get(key)!;
     r.days.set(day, mode === "add" ? (r.days.get(day) ?? 0) + 1 : Math.max(r.days.get(day) ?? 0, 1));
@@ -610,14 +633,12 @@ export async function getVisitMatrix(month: string, agentNames?: string[] | null
     .where(and(eq(contactLogs.contactType, "visit"), gte(contactLogs.contactDate, start), lte(contactLogs.contactDate, end)));
   for (const v of visitLogs) {
     if (!v.contactDate) continue;
-    const rep = (v.repName ?? "(unknown)").trim() || "(unknown)";
-    bucket(rep, `f:${v.facilityId}`, v.facilityName ?? `Facility #${v.facilityId}`, v.facilityId, dayOf(v.contactDate as Date), "add");
+    bucket(canonRep(v.repName), `f:${v.facilityId}`, v.facilityName ?? `Facility #${v.facilityId}`, v.facilityId, dayOf(v.contactDate as Date), "add");
   }
   // 2) FR field-visit log (presence per day — avoids double counting with #1)
   const fvRows = await db.select().from(fieldVisits).where(and(gte(fieldVisits.visitDate, start), lte(fieldVisits.visitDate, end)));
   for (const fv of fvRows) {
     if (!fv.visitDate) continue;
-    const rep = (fv.agentName ?? "(unknown)").trim() || "(unknown)";
     const day = dayOf(fv.visitDate as Date);
     const items: any[] = Array.isArray(fv.facilitiesVisited) ? (fv.facilitiesVisited as any[]) : [];
     for (const it of items) {
@@ -625,7 +646,7 @@ export async function getVisitMatrix(month: string, agentNames?: string[] | null
       const name = String(it?.name ?? it?.facilityName ?? "").trim();
       if (!fid && !name) continue;
       if (/^no visits?\b/i.test(name)) continue; // historical "No visits" placeholder rows
-      bucket(rep, fid ? `f:${fid}` : `n:${normName(name)}`, name || `Facility #${fid}`, fid ?? null, day, "max");
+      bucket(canonRep(fv.agentName), fid ? `f:${fid}` : `n:${normName(name)}`, name || `Facility #${fid}`, fid ?? null, day, "max");
     }
   }
 
@@ -641,7 +662,7 @@ export async function getVisitMatrix(month: string, agentNames?: string[] | null
       const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
       return { label: r.label, facilityId: r.facilityId, isPhoneOnly: false, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
     }).sort((a, b) => (a.checkIns[0]?.date ?? "").localeCompare(b.checkIns[0]?.date ?? "") || b.total - a.total);
-    out.push({ rep, rows: list, totals: { facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) } });
+    out.push({ rep: repDisplay.get(rep) ?? rep, rows: list, totals: { facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) } });
   }
   return out.sort((a, b) => b.totals.calls - a.totals.calls);
 }
