@@ -1,0 +1,134 @@
+[
+  {
+    "id": 450693,
+    "name": "New Hope Chiropractic",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 450744,
+    "name": "ProActive Chiropractic & Sports Medicine",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 450947,
+    "name": "J And B Auto Body",
+    "oldCategory": "chiropractor",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451012,
+    "name": "Dynamic Auto Body",
+    "oldCategory": "chiropractor",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451017,
+    "name": "Lifestyle Chiropractic & Wellness",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451018,
+    "name": "Complete Chiropractic Wellness Center",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451027,
+    "name": "Inland Chiropractic",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451041,
+    "name": "Agape Health & Wellness Center",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451042,
+    "name": "A Able Towing",
+    "oldCategory": "chiropractor",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451082,
+    "name": "Jaime Auto Repair",
+    "oldCategory": "medical_clinic",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451093,
+    "name": "Ryan Chiropractic",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451099,
+    "name": "Aguilera Health & Wellness Center",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451147,
+    "name": "New Beginnings Chiropractic",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451216,
+    "name": "Ultimate Collision Center",
+    "oldCategory": "medical_clinic",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451320,
+    "name": "Auto Collision Group - Bakersfield",
+    "oldCategory": "chiropractor",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451382,
+    "name": "Miracle Auto Painting & Collision",
+    "oldCategory": "medical_clinic",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451693,
+    "name": "Tip's Complete Automotive & Towing",
+    "oldCategory": "chiropractor",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451723,
+    "name": "Chiropractic Wellness Center",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 451805,
+    "name": "Distinctive Coach Auto Body",
+    "oldCategory": "chiropractor",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 451812,
+    "name": "Xtreme Auto Collision",
+    "oldCategory": "medical_clinic",
+    "newCategory": "body_shop"
+  },
+  {
+    "id": 630008,
+    "name": "Hess Rehabilitation & Chiropractic Centers, Inc.",
+    "oldCategory": "body_shop",
+    "newCategory": "chiropractor"
+  },
+  {
+    "id": 630009,
+    "name": "Certified Collision Pros",
+    "oldCategory": "chiropractor",
+    "newCategory": "body_shop"
+  }
+]

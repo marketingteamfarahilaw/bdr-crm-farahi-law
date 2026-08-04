@@ -1,387 +1,77 @@
 [
   {
-    "id": 450667,
-    "oldName": "BAJA BOYZ TOWING INC",
-    "newName": "Baja Boyz Towing Inc"
+    "id": 451803,
+    "oldName": "Auto Collision Group 2nd Location- Adam",
+    "newName": "Auto Collision Group - Bakersfield 2"
   },
   {
-    "id": 450681,
-    "oldName": "JC CUSTOMZ COLLISION CENTER",
-    "newName": "JC Customz Collision Center"
+    "id": 661135,
+    "oldName": "Samos Auto Body",
+    "newName": "Samo's Auto Body & Paint"
   },
   {
-    "id": 450683,
-    "oldName": "LA PUENTE PAINT & BODY",
-    "newName": "La Puente Paint & Body"
+    "id": 451271,
+    "oldName": "Horine Chiropractic",
+    "newName": "Triple G Collision Repair"
   },
   {
-    "id": 450685,
-    "oldName": "pc auto custom",
-    "newName": "PC Auto Custom"
+    "id": 451657,
+    "oldName": "ProColor Collision Modesto (Luxury Collision Center)",
+    "newName": "ProColor Collision Modesto"
   },
   {
-    "id": 450695,
-    "oldName": "24/7 AUTOBODY",
-    "newName": "24/7 Auto Body"
+    "id": 451666,
+    "oldName": "Restoration Health Center Accident Injury Doctors",
+    "newName": "Restoration Health Center"
   },
   {
-    "id": 450703,
-    "oldName": "ASSURANCE COLLISION",
-    "newName": "Assurance Collision"
+    "id": 720019,
+    "oldName": "EMPLERS TOWING",
+    "newName": "Eppler Towing & Recovery"
   },
   {
-    "id": 450733,
-    "oldName": "KIMS AUTO BODY",
-    "newName": "Kim's Auto Body"
+    "id": 750008,
+    "oldName": "JP SIGNS AND GRAPHICS",
+    "newName": "JP Signs & Graphics"
   },
   {
-    "id": 450784,
-    "oldName": "golden gate collision",
-    "newName": "Golden Gate Collision"
+    "id": 450718,
+    "oldName": "Element Chiropractic Wellness",
+    "newName": "A1 Chiropractic"
   },
   {
-    "id": 450828,
-    "oldName": "united towing",
-    "newName": "United Towing"
+    "id": 450881,
+    "oldName": "Feel Good Chiropractor",
+    "newName": "Hernandez Auto Repair"
   },
   {
-    "id": 450832,
-    "oldName": "EMMANUEL TOWING",
-    "newName": "Emmanuel Towing"
+    "id": 450891,
+    "oldName": "Fiesta Auto Insurance & Tax Service- Merced",
+    "newName": "Fiesta Auto Insurance & Tax Service - Merced"
   },
   {
-    "id": 450973,
-    "oldName": "TERANS TOWING & MINOR REPAIR",
-    "newName": "Teran's Towing & Minor Repair"
+    "id": 451075,
+    "oldName": "Express Body Works",
+    "newName": "Savage Auto Body"
   },
   {
-    "id": 451116,
-    "oldName": "Jeeo Health Center Dr. Gurwinder Bath Chiropractic Inc:",
-    "newName": "Jeeo Health Center - Dr. Gurwinder Bath Chiropractic Inc."
+    "id": 451092,
+    "oldName": "Ten Eight Towing",
+    "newName": "Ten Eight Tow"
   },
   {
-    "id": 451245,
-    "oldName": "9TH STREET COLLISION AND TOWING",
-    "newName": "9th Street Collision and Towing"
+    "id": 720004,
+    "oldName": "Loma Linda Spine and Nerve Center",
+    "newName": "Loma Linda Spine & Nerve Center"
   },
   {
-    "id": 451638,
-    "oldName": "KUSTOMS AUTOBODY & PAINT",
-    "newName": "Kustoms Auto Body & Paint"
+    "id": 720005,
+    "oldName": "Carter’s Auto Body Shop",
+    "newName": "Carter's Auto Body Shop"
   },
   {
-    "id": 451683,
-    "oldName": "A&G TOWING AND RECOVERY",
-    "newName": "A&G Towing and Recovery"
-  },
-  {
-    "id": 451818,
-    "oldName": "NEXT GEN COLLISION CENTER",
-    "newName": "Next Gen Collision Center"
-  },
-  {
-    "id": 630011,
-    "oldName": "V&G AUTO REPAIR",
-    "newName": "Certified Collision Repair"
-  },
-  {
-    "id": 660009,
-    "oldName": "4 STAR BODY AND FRAME",
-    "newName": "Four Star Body & Frame"
-  },
-  {
-    "id": 660013,
-    "oldName": "A & Al Body Shop in Ontario",
-    "newName": "A&Al Auto Body Paint Shop"
-  },
-  {
-    "id": 660039,
-    "oldName": "accident and sports injury clinic",
-    "newName": "Accident & Sports Injury Clinic"
-  },
-  {
-    "id": 660087,
-    "oldName": "ALL FOREIGN & DOMESTIC BODY SHOP",
-    "newName": "All Foreign & Domestic Body Shop North"
-  },
-  {
-    "id": 660095,
-    "oldName": "ALLSET AUTO BODY",
-    "newName": "Allset Auto Body"
-  },
-  {
-    "id": 660199,
-    "oldName": "Blacks Towing in Murrieta",
-    "newName": "Black's Towing"
-  },
-  {
-    "id": 660230,
-    "oldName": "CALI DREAM INSURANCE",
-    "newName": "Calidream Insurance Agency"
-  },
-  {
-    "id": 660252,
-    "oldName": "capital valley towing",
-    "newName": "Capital Valley Towing"
-  },
-  {
-    "id": 660289,
-    "oldName": "Chiropractic Joint Care in Irvine",
-    "newName": "The Alignment Studio"
-  },
-  {
-    "id": 660324,
-    "oldName": "COMMUNITY MEDICAL CENTERS",
-    "newName": "Community Medical Centers"
-  },
-  {
-    "id": 660332,
-    "oldName": "Consulate",
-    "newName": "Consulate General of Honduras"
-  },
-  {
-    "id": 660336,
-    "oldName": "CORRECAMINOS AUTO INSURANCE AGENCY",
-    "newName": "Correcaminos Auto Insurance Agency"
-  },
-  {
-    "id": 660378,
-    "oldName": "DK SPINE CHIROS",
-    "newName": "DK Spine Chiros"
-  },
-  {
-    "id": 660399,
-    "oldName": "DREAMS AUTO COLLISION",
-    "newName": "Dreams Auto Collision"
-  },
-  {
-    "id": 660407,
-    "oldName": "E3 COLLISION",
-    "newName": "E3 Collision"
-  },
-  {
-    "id": 660418,
-    "oldName": "ELITE AUTO BODY & COLLISION CENTER",
-    "newName": "Elite Auto Body & Collision Center"
-  },
-  {
-    "id": 660439,
-    "oldName": "Erikas Insurance in Corona",
-    "newName": "Erika's Insurance"
-  },
-  {
-    "id": 660463,
-    "oldName": "FABIANS COLLISION",
-    "newName": "Fabian's Collision Center"
-  },
-  {
-    "id": 660471,
-    "oldName": "Family insurance in LA-",
-    "newName": "Family Insurance"
-  },
-  {
-    "id": 660489,
-    "oldName": "felix",
-    "newName": "G&R Transport and Hauling LLC"
-  },
-  {
-    "id": 660494,
-    "oldName": "FIESTA AUTO INSURANCE",
-    "newName": "Fiesta Auto Insurance & Tax Service"
-  },
-  {
-    "id": 660499,
-    "oldName": "Fiesta Insurance in Norwalk",
-    "newName": "Fiesta Auto Insurance & Tax Service - Norwalk"
-  },
-  {
-    "id": 660500,
-    "oldName": "fiesta insurance services",
-    "newName": "Fiesta Auto Insurance & Tax Service"
-  },
-  {
-    "id": 660518,
-    "oldName": "forza body",
-    "newName": "Forza Auto Body"
-  },
-  {
-    "id": 660551,
-    "oldName": "GEWEKE TOWING",
-    "newName": "Geweke Towing"
-  },
-  {
-    "id": 660556,
-    "oldName": "GOLD CROWN INSURANCE AGENCY",
-    "newName": "Gold Crown Insurance Agency"
-  },
-  {
-    "id": 660576,
-    "oldName": "Greenlawn",
-    "newName": "Greenlawn Funeral Home Northeast"
-  },
-  {
-    "id": 660650,
-    "oldName": "INSURANCE ON THE GO",
-    "newName": "Insurance on the Go Services, Inc"
-  },
-  {
-    "id": 660679,
-    "oldName": "JC AUTO BODY & PAINT WORKS",
-    "newName": "JC Auto Body & Paint Works"
-  },
-  {
-    "id": 660681,
-    "oldName": "JD Auto Body in Whittier",
-    "newName": "JD Auto Body & Mechanic"
-  },
-  {
-    "id": 660689,
-    "oldName": "Jimenez Body Shop in Norwalk",
-    "newName": "Jimenez Body Shop Repairs"
-  },
-  {
-    "id": 660725,
-    "oldName": "KBL COLLISION",
-    "newName": "KBL Collision Repair"
-  },
-  {
-    "id": 660820,
-    "oldName": "MARTIN DEL TORO BODY SHOP",
-    "newName": "Martin Del Toro Body Shop"
-  },
-  {
-    "id": 660831,
-    "oldName": "MAXIMUM CHIROPRACTIC AND OCCUPATIONAL HEALTH",
-    "newName": "Maximum Chiropractic and Occupational Health"
-  },
-  {
-    "id": 660880,
-    "oldName": "Molina’s tire and towing-",
-    "newName": "Molina's Tire & Towing"
-  },
-  {
-    "id": 660920,
-    "oldName": "NICK'S AUTOBODY & COLLISION",
-    "newName": "Nick's Auto Body & Collision"
-  },
-  {
-    "id": 660921,
-    "oldName": "Nicole",
-    "newName": "Bond's Automotive & Collision"
-  },
-  {
-    "id": 660958,
-    "oldName": "pacific chiropractic center",
-    "newName": "Pacific Chiropractic Center"
-  },
-  {
-    "id": 661005,
-    "oldName": "Premier Collision in Placentia",
-    "newName": "Premier Collision Center"
-  },
-  {
-    "id": 661022,
-    "oldName": "Pro Auto Collision in Anaheim",
-    "newName": "Pro Auto Collision"
-  },
-  {
-    "id": 661026,
-    "oldName": "Procheckautocare",
-    "newName": "Pro Check Auto Care"
-  },
-  {
-    "id": 661070,
-    "oldName": "REGAL COLLISION REPAIR",
-    "newName": "Regal Collision Repair"
-  },
-  {
-    "id": 661072,
-    "oldName": "remotion chiropractic",
-    "newName": "ReMotion Chiropractic"
-  },
-  {
-    "id": 661089,
-    "oldName": "RIGHTWORKS INSURANCE SERVICES",
-    "newName": "Rightworks Insurance Services"
-  },
-  {
-    "id": 661119,
-    "oldName": "RTI COLLISION",
-    "newName": "RTI Collision Center"
-  },
-  {
-    "id": 661145,
-    "oldName": "sandoval solutions auto body",
-    "newName": "Sandoval Solutions Auto Body"
-  },
-  {
-    "id": 661154,
-    "oldName": "SCV Autohaus Collision Center:",
-    "newName": "SCV Autohaus Collision Center"
-  },
-  {
-    "id": 661201,
-    "oldName": "SS AUTO REPAIR",
-    "newName": "SS Auto Repair"
-  },
-  {
-    "id": 661239,
-    "oldName": "t and n body and paint",
-    "newName": "T & N Body & Paint"
-  },
-  {
-    "id": 661245,
-    "oldName": "TECH CENTER COLLISION",
-    "newName": "Tech Center Collision - Santa Ana"
-  },
-  {
-    "id": 661246,
-    "oldName": "TECH CENTER COLLISION - ORANGE",
-    "newName": "Tech Center Collision - Orange"
-  },
-  {
-    "id": 661258,
-    "oldName": "Therapydia",
-    "newName": "Therapydia Saratoga"
-  },
-  {
-    "id": 661263,
-    "oldName": "thrive insurance agency",
-    "newName": "Farmers Insurance - Daven Loomba"
-  },
-  {
-    "id": 661289,
-    "oldName": "Truspine",
-    "newName": "TruSpine"
-  },
-  {
-    "id": 661295,
-    "oldName": "TURLOCK CITY TOW",
-    "newName": "Turlock City Tow"
-  },
-  {
-    "id": 661297,
-    "oldName": "TWO RIVERS TOWING",
-    "newName": "Two Rivers Towing"
-  },
-  {
-    "id": 661320,
-    "oldName": "URGENT TOWING LLC",
-    "newName": "Urgent Towing LLC"
-  },
-  {
-    "id": 661327,
-    "oldName": "VALLEY AUTO COLLISION",
-    "newName": "Valley Auto Collision"
-  },
-  {
-    "id": 661369,
-    "oldName": "XTREME WHEELS & TIRES",
-    "newName": "Xtreme Wheels & Tires"
-  },
-  {
-    "id": 661375,
-    "oldName": "ZAKS TOWING",
-    "newName": "Zaks Towing"
+    "id": 720007,
+    "oldName": "LivewellSLO Chiropractic + Wellness",
+    "newName": "LiveWellSLO Chiropractic + Wellness"
   }
 ]
