@@ -31,6 +31,7 @@ import {
   type InsertRingcentralToken,
   type InsertUserRingcentralToken,
 } from "../drizzle/schema";
+import { isNonReportingRep } from "@shared/permissions";
 import { getDb } from "./db";
 
 // ─── Facilities ───────────────────────────────────────────────────────────────
@@ -606,7 +607,7 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
 
   const out = [];
   for (const [rep, rows] of Array.from(reps.entries())) {
-    if (!repMatches(rep)) continue;
+    if (!repMatches(rep) || isNonReportingRep(rep)) continue; // dev/test traffic stays out of team reports
     const list = Array.from(rows.values()).map((r) => {
       const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
       return { label: r.label, facilityId: r.facilityId, isPhoneOnly: r.facilityId == null, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
@@ -684,7 +685,7 @@ export async function getVisitMatrix(month: string, agentNames?: string[] | null
 
   const out = [];
   for (const [rep, rows] of Array.from(reps.entries())) {
-    if (!repMatches(rep)) continue;
+    if (!repMatches(rep) || isNonReportingRep(rep)) continue; // dev/test traffic stays out of team reports
     const list = Array.from(rows.values()).map((r) => {
       const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
       return { label: r.label, facilityId: r.facilityId, isPhoneOnly: false, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
@@ -1331,6 +1332,7 @@ export async function getBdrCallActivity(filters?: { repName?: string; month?: s
     partnerCheckin: number; bdrCheckin: number; frCheckin: number; internal: number; potentialLead: number;
   }> = [];
   for (const [rep, months] of Object.entries(byRepMonth)) {
+    if (isNonReportingRep(rep)) continue; // dev/test traffic stays out of team reports
     for (const [month, stats] of Object.entries(months)) {
       result.push({ repName: rep, month, ...stats });
     }
@@ -1394,7 +1396,9 @@ export async function getBdrPartnerCheckins(filters?: { repName?: string }) {
     if (d >= thirtyDaysAgo) repStats[rep].checkinsLast30Days++;
   }
 
-  return Object.values(repStats).sort((a, b) => b.totalPartners - a.totalPartners);
+  return Object.values(repStats)
+    .filter((r) => !isNonReportingRep(r.repName))
+    .sort((a, b) => b.totalPartners - a.totalPartners);
 }
 
 /** Top facilities by contact frequency */

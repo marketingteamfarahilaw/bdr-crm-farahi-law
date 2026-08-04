@@ -14,6 +14,7 @@ import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { formatInTimeZone } from "date-fns-tz";
 import { getDb } from "./db";
 import { contactLogs, facilities, fieldVisits, leadIntake, users } from "../drizzle/schema";
+import { isNonReportingRep } from "@shared/permissions";
 
 const LA = "America/Los_Angeles";
 const dayKey = (d: Date | string) => formatInTimeZone(new Date(d), LA, "yyyy-MM-dd");
@@ -127,7 +128,7 @@ export async function getCheckinVisitReport({ from, to }: Range) {
   }
 
   const serialize = (map: Map<string, Map<string, FacAct>>, slots: { checkins: number; visits: number }, targets: { checkins: number; visits: number }) => {
-    const reps = Array.from(map.entries()).map(([rep, facs]) => {
+    const reps = Array.from(map.entries()).filter(([rep]) => !isNonReportingRep(rep)).map(([rep, facs]) => {
       const rows = Array.from(facs.values()).map((f) => {
         const ck = Array.from(f.checkins.entries()).sort(([a], [b]) => a.localeCompare(b));
         const vs = Array.from(f.visits.entries()).sort(([a], [b]) => a.localeCompare(b));
@@ -298,7 +299,7 @@ export async function getNewFacilitiesReport(
   FR_FALLBACK.forEach((f) => { if (!groupByFirst.has(f)) groupByFirst.set(f, "FR"); });
 
   const reps = Array.from(byRep.values())
-    .filter((r) => repMatches(r.rep))
+    .filter((r) => repMatches(r.rep) && !isNonReportingRep(r.rep))
     .map((r) => ({
       ...r,
       added: r.added.sort((a, b) => a.date.localeCompare(b.date)),
@@ -351,7 +352,7 @@ export async function getCallActivityReport({ from, to }: Range) {
     m.set(day, d); agents.set(rep, m);
   }
 
-  const perAgent = Array.from(agents.entries()).map(([rep, days]) => {
+  const perAgent = Array.from(agents.entries()).filter(([rep]) => !isNonReportingRep(rep)).map(([rep, days]) => {
     const ds = Array.from(days.entries()).sort(([a], [b]) => a.localeCompare(b));
     const totalCalls = ds.reduce((s, [, d]) => s + d.calls, 0);
     const totalSec = ds.reduce((s, [, d]) => s + d.sec, 0);

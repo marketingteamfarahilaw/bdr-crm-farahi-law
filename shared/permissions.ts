@@ -83,3 +83,20 @@ export const canSeeIntake = (r?: string | null) => isIntakeOnly(r) || isSuperAdm
 /** Intake settings (Filevine webhook), lead deletion, assignment. */
 export const canManageIntake = (r?: string | null) =>
   normalizeRole(r) === "intake_manager" || isSuperAdmin(r);
+
+// ── Reporting exclusions ──────────────────────────────────────────────────────
+// People who use the system but are NOT part of BD/FR headcount — their calls
+// and visits are development/testing traffic and must not appear in team
+// reports, matrices or leaderboards.
+//
+// This is a REPORT-LAYER filter, not a delete: RingCentral re-syncs every 2
+// minutes, so removing the underlying call rows would simply re-import them.
+// Matched on first name, lower-cased, to mirror how reports canonicalise reps
+// ("Youssef", "YOUSSEF", "Youssef El Karmi" all collapse to one person).
+export const NON_REPORTING_REPS = new Set(["youssef"]);
+
+/** True when this rep's activity should be hidden from team reporting. */
+export const isNonReportingRep = (name?: string | null) => {
+  const first = String(name ?? "").trim().toLowerCase().split(/\s+/)[0];
+  return !!first && NON_REPORTING_REPS.has(first);
+};

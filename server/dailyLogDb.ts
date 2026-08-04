@@ -9,6 +9,7 @@
 import { and, gte, lte, inArray, eq, desc } from "drizzle-orm";
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { getDb } from "./db";
+import { isNonReportingRep } from "@shared/permissions";
 import {
   contactLogs, fieldVisits, facilityLeads, facilityTasks, facilityUpdates,
   facilityGratitude, facilityReferrals, podAppointments, facilities, rcMeetings,
@@ -111,7 +112,7 @@ export async function getDailyLog(dateStr: string, scope: { agentNames?: string[
   }
   // "carried over" = open tasks that are due or overdue as of this day
   for (const t of openTasks) { const who = t.assignedToName ?? ""; const due = t.dueDate && new Date(t.dueDate) <= end; if (due && persons.has(who)) persons.get(who).pendingFollowUps++; }
-  const byPerson = Array.from(persons.values()).map((p) => ({ ...p, facilitiesContacted: p.facilitiesContacted.size, events: p.events })).sort((a, b) => (b.calls + b.visits + b.meetings + b.notesAdded) - (a.calls + a.visits + a.meetings + a.notesAdded));
+  const byPerson = Array.from(persons.values()).filter((p) => !isNonReportingRep(p.person)).map((p) => ({ ...p, facilitiesContacted: p.facilitiesContacted.size, events: p.events })).sort((a, b) => (b.calls + b.visits + b.meetings + b.notesAdded) - (a.calls + a.visits + a.meetings + a.notesAdded));
 
   // ── Roll up BY FACILITY ──
   const openByFac = new Map<number, string[]>();

@@ -5,6 +5,7 @@
  */
 import { and, asc, desc, eq, gte, lte, inArray, isNull, or, sql } from "drizzle-orm";
 import { getDb, getSetting } from "./db";
+import { isNonReportingRep } from "@shared/permissions";
 import {
   facilities, facilityTasks, frExpenses, bdrExpenses, rcUnmatchedCalls,
   referralTracker, pdReferrals,
@@ -53,7 +54,9 @@ export async function getDailyWork(scope: Scope) {
   // 4) Unmatched RingCentral calls awaiting partner assignment
   const ucConds: any[] = [eq(rcUnmatchedCalls.status, "unassigned")];
   if (names && names.length) ucConds.push(inArray(rcUnmatchedCalls.agentName, names));
-  const unmatchedCalls = await db.select().from(rcUnmatchedCalls).where(and(...ucConds)).orderBy(desc(rcUnmatchedCalls.startTime)).limit(40);
+  const unmatchedCalls = (await db.select().from(rcUnmatchedCalls).where(and(...ucConds)).orderBy(desc(rcUnmatchedCalls.startTime)).limit(60))
+    .filter((c) => !isNonReportingRep(c.agentName)) // dev/test calls aren't team work
+    .slice(0, 40);
 
   // 5) Chiro cases awaiting assignment (referral tracker, Pending)
   const chiroConds: any[] = [eq(referralTracker.status, "Pending")];
@@ -98,7 +101,13 @@ export async function getIntegrationHealth(agents: Array<{ name: string | null; 
   const connected = agents.filter((a) => a.connected);
   const lastSync = connected.map((a) => a.lastSyncAt).filter(Boolean).sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())[0] ?? null;
   let unmatchedCount = 0;
-  if (db) { const rows: any[] = await db.select({ n: sql<number>`COUNT(*)` }).from(rcUnmatchedCalls).where(eq(rcUnmatchedCalls.status, "unassigned")); unmatchedCount = Number(rows[0]?.n ?? 0); }
+  if (db) {
+    // Count the real backlog only — dev/test agents' calls aren't team work.
+    const rows = await db.select({ agentName: rcUnmatchedCalls.agentName, n: sql<number>`COUNT(*)` })
+      .from(rcUnmatchedCalls).where(eq(rcUnmatchedCalls.status, "unassigned"))
+      .groupBy(rcUnmatchedCalls.agentName);
+    unmatchedCount = rows.reduce((s, r) => s + (isNonReportingRep(r.agentName) ? 0 : Number(r.n ?? 0)), 0);
+  }
   const fvUrl = (await getSetting("filevine_webhook_url")) || process.env.FILEVINE_WEBHOOK_URL || null;
   return {
     ringcentral: {
