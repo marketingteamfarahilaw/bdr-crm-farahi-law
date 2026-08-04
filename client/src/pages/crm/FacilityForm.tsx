@@ -225,7 +225,7 @@ export default function FacilityForm() {
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Contact Name</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Point Person</label>
               <Input value={form.contactName} onChange={set("contactName")} placeholder="Dr. John Smith" className="bg-background border-border" />
             </div>
             <div>
