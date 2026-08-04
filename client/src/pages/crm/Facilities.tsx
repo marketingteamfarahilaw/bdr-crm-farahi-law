@@ -18,6 +18,7 @@ import {
 import { formatDistanceToNow } from "@/lib/datetime";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { BulkImportDialog } from "./BulkImportDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import FacilitiesMap from "@/components/FacilitiesMap";
 
 import { STATUS_LABELS } from "@/lib/crmMeta";
@@ -160,6 +161,7 @@ export default function Facilities() {
             <Upload className="w-4 h-4" />
             Bulk Import
           </Button>
+          <LogFrVisitGlobal facilities={facilities ?? []} />
           <Button
             onClick={() => navigate("/crm/facilities/new")}
             className="gap-2"
@@ -422,5 +424,119 @@ export default function Facilities() {
 
       <BulkImportDialog open={showBulkImport} onClose={() => setShowBulkImport(false)} />
     </div>
+  );
+}
+
+// ── Rupert's FR VISIT form: global "Log FR Visit" with facility picker ─────────
+// Choose BDR/FR facility → pick the facility (search) → type auto-fills →
+// date + FR who visited. Saves a visit-type contact log credited to the FR, so
+// it feeds the Check-In Report's FR section and the Daily Log.
+const FR_VISITORS = ["Lupe", "Jezel", "Zulema", "Genysys"];
+function LogFrVisitGlobal({ facilities }: { facilities: any[] }) {
+  const utils = trpc.useUtils();
+  const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<string>("all");         // bdr | fr | all
+  const [q, setQ] = useState("");
+  const [picked, setPicked] = useState<any | null>(null);
+  const [frName, setFrName] = useState(FR_VISITORS[0]);
+  const [custom, setCustom] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [notes, setNotes] = useState("");
+  const createLog = trpc.crm.contactLogs.create.useMutation({
+    onSuccess: () => {
+      toast.success("FR visit logged — it will show in the Check-In Report");
+      utils.crm.facilities.list.invalidate();
+      setOpen(false); setPicked(null); setQ(""); setNotes("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const visitor = frName === "__other__" ? custom.trim() : frName;
+  const pool = facilities.filter((f) => kind === "all" || (f as any).managedBy === kind);
+  const results = q.length >= 2 ? pool.filter((f) => f.name?.toLowerCase().includes(q.toLowerCase())).slice(0, 10) : [];
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2 border-border">
+          <MapPin className="w-4 h-4" /> Log FR Visit
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="bg-card border-border max-w-md">
+        <DialogHeader><DialogTitle>Log FR Visit</DialogTitle></DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Facility type</label>
+            <Select value={kind} onValueChange={(v) => { setKind(v); setPicked(null); }}>
+              <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All facilities</SelectItem>
+                <SelectItem value="bdr">BDR facility</SelectItem>
+                <SelectItem value="fr">FR facility</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Name of facility</label>
+            {picked ? (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{picked.name}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Type: {CATEGORY_LABELS[picked.category] ?? picked.category}{picked.city ? ` · ${picked.city}` : ""}
+                  </p>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => setPicked(null)}>change</Button>
+              </div>
+            ) : (
+              <>
+                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search facility…" className="bg-background border-border" />
+                {results.length > 0 && (
+                  <div className="mt-1 border border-border rounded-lg max-h-44 overflow-y-auto">
+                    {results.map((f) => (
+                      <button key={f.id} className="block w-full text-left px-3 py-1.5 text-sm hover:bg-muted" onClick={() => setPicked(f)}>
+                        {f.name} <span className="text-xs text-muted-foreground">{CATEGORY_LABELS[f.category] ?? f.category}{f.city ? ` · ${f.city}` : ""}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Who visited (FR)</label>
+              <Select value={frName} onValueChange={setFrName}>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FR_VISITORS.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                  <SelectItem value="__other__">Other…</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Date of visit</label>
+              <Input type="date" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className="bg-background border-border" />
+            </div>
+          </div>
+          {frName === "__other__" && (
+            <Input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Who visited?" className="bg-background border-border" />
+          )}
+          <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What happened at the visit? (optional)" className="bg-background border-border" />
+          <Button
+            className="w-full"
+            style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
+            disabled={createLog.isPending || !picked || !visitor}
+            onClick={() => createLog.mutate({
+              facilityId: picked.id,
+              contactType: "visit",
+              contactDate: new Date(`${date}T12:00:00`).toISOString(),
+              summary: notes || `FR visit by ${visitor}`,
+              repName: visitor,
+            })}
+          >
+            {createLog.isPending ? "Saving…" : "Log Visit"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

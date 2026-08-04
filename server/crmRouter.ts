@@ -419,6 +419,14 @@ export const crmRouter = router({
         return { ...facility, contactHistory, tasks, leadsSent, totalLeads, referrals, totalReferrals };
       }),
 
+    // Distinct territory values (city / postal-area based) for the form dropdown.
+    territories: crmProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db.selectDistinct({ territory: facilities.territory }).from(facilities);
+      return rows.map((r) => r.territory).filter((t): t is string => !!t && !!t.trim()).sort((a, b) => a.localeCompare(b));
+    }),
+
     create: crmProcedure
       .input(
         z.object({
@@ -440,13 +448,17 @@ export const crmRouter = router({
           placeId: z.string().optional(),
           latitude: z.number().optional(),
           longitude: z.number().optional(),
+          territory: z.string().optional(),
+          managedBy: z.enum(["bdr", "fr"]).optional(),
+          assignedRepName: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         await createFacility({
           ...input,
           assignedRepId: ctx.user.id,
-          assignedRepName: ctx.user.name ?? ctx.user.email ?? "Unknown",
+          // The form's BDR/FR dropdown wins; fall back to the creator.
+          assignedRepName: input.assignedRepName || (ctx.user.name ?? ctx.user.email ?? "Unknown"),
         });
         return { success: true };
       }),
@@ -474,6 +486,8 @@ export const crmRouter = router({
           notes: z.string().optional(),
           managementFlag: z.boolean().optional(),
           managementNote: z.string().optional(),
+          territory: z.string().optional(),
+          managedBy: z.enum(["bdr", "fr"]).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {

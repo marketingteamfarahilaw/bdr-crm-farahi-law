@@ -29,7 +29,9 @@ const STATUSES = [
   { value: "do_not_use", label: "Do Not Use" },
 ];
 
-const BD_REPS = ["Ally", "Genysys", "Grace", "Jezel", "Lupe", "Malvin", "Queenie", "Miguel", "Zulema"];
+const FR_REPS = ["Genysys", "Jezel", "Lupe", "Zulema"];
+const BDR_REPS = ["Ally", "Grace", "Malvin", "Queenie", "Miguel"];
+const BD_REPS = [...BDR_REPS, ...FR_REPS].sort();
 
 interface FormState {
   name: string; category: string; address: string; city: string;
@@ -37,6 +39,7 @@ interface FormState {
   contactName: string; contactTitle: string; contactPhone: string; contactEmail: string;
   partnerStatus: string; assignedRepName: string; notes: string;
   managementNote: string; managementFlag: boolean;
+  territory: string; managedBy: string;
 }
 
 const EMPTY: FormState = {
@@ -45,6 +48,7 @@ const EMPTY: FormState = {
   contactName: "", contactTitle: "", contactPhone: "", contactEmail: "",
   partnerStatus: "prospect", assignedRepName: "", notes: "",
   managementNote: "", managementFlag: false,
+  territory: "", managedBy: "",
 };
 
 export default function FacilityForm() {
@@ -60,6 +64,7 @@ export default function FacilityForm() {
     { id: facilityId! },
     { enabled: isEdit }
   );
+  const { data: territories } = trpc.crm.facilities.territories.useQuery();
 
   useEffect(() => {
     if (existing) {
@@ -81,6 +86,8 @@ export default function FacilityForm() {
         notes: existing.notes ?? "",
         managementNote: existing.managementNote ?? "",
         managementFlag: existing.managementFlag === 1,
+        territory: (existing as any).territory ?? "",
+        managedBy: (existing as any).managedBy ?? "",
       });
     }
   }, [existing]);
@@ -126,6 +133,8 @@ export default function FacilityForm() {
       assignedRepName: form.assignedRepName || undefined,
       notes: form.notes || undefined,
       managementNote: form.managementNote || undefined,
+      territory: form.territory || undefined,
+      managedBy: (form.managedBy || undefined) as any,
     };
     if (isEdit) {
       updateFacility.mutate({ id: facilityId!, ...payload, managementFlag: form.managementFlag });
@@ -252,13 +261,31 @@ export default function FacilityForm() {
               </Select>
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Assigned BD Rep</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Managed by</label>
+              <Select value={form.managedBy || "unset"} onValueChange={(v) => setForm((f) => ({ ...f, managedBy: v === "unset" ? "" : v }))}>
+                <SelectTrigger className="bg-background border-border"><SelectValue placeholder="BDR or FR?" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unset">— choose —</SelectItem>
+                  <SelectItem value="bdr">BDR facility</SelectItem>
+                  <SelectItem value="fr">FR facility</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">BDR / FR Name</label>
               <Select value={form.assignedRepName} onValueChange={(v) => setForm((f) => ({ ...f, assignedRepName: v }))}>
                 <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select rep..." /></SelectTrigger>
                 <SelectContent>
-                  {BD_REPS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  {(form.managedBy === "fr" ? FR_REPS : form.managedBy === "bdr" ? BDR_REPS : BD_REPS).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Territory (city / postal area)</label>
+              <Input list="territory-options" value={form.territory} onChange={set("territory")} placeholder="e.g. Bakersfield" className="bg-background border-border" />
+              <datalist id="territory-options">
+                {(territories ?? []).map((t) => <option key={t} value={t} />)}
+              </datalist>
             </div>
           </div>
           <div>

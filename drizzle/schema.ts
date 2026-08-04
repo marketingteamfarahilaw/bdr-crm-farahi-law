@@ -270,6 +270,9 @@ export const facilities = mysqlTable("facilities", {
   // FR/BDR Partnership Model — the coordinated loop stage (§3) + partner-requested visit (§4)
   loopStage: mysqlEnum("loopStage", ["research", "first_contact", "appointment_set", "visited", "post_visit", "nurture"]),
   visitRequested: int("visitRequested").default(0).notNull(),    // partner asked for an in-person FR visit
+  // Territory (by city / postal area) + whether the facility is BDR- or FR-managed
+  territory: varchar("territory", { length: 120 }),
+  managedBy: mysqlEnum("managedBy", ["bdr", "fr"]),
   // Internal notes
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1054,7 +1057,8 @@ export type InsertPdReferral = typeof pdReferrals.$inferInsert;
 export const triviaGames = mysqlTable("trivia_games", {
   id: int("id").autoincrement().primaryKey(),
   code: varchar("code", { length: 8 }).notNull(),               // short join/share code shown on the host screen
-  hostUserId: int("hostUserId").notNull(),
+  hostUserId: int("hostUserId"),                                 // set when the host is a signed-in CRM user
+  hostKey: varchar("hostKey", { length: 64 }),                   // secret held by the creator's browser — grants host controls without a login
   hostName: varchar("hostName", { length: 120 }),
   status: mysqlEnum("status", [
     "lobby",              // players joining / between questions (board view)
@@ -1075,7 +1079,8 @@ export type TriviaGame = typeof triviaGames.$inferSelect;
 export const triviaPlayers = mysqlTable("trivia_players", {
   id: int("id").autoincrement().primaryKey(),
   gameId: int("gameId").notNull(),
-  userId: int("userId").notNull(),
+  userId: int("userId"),                                         // signed-in players; null for guests
+  guestKey: varchar("guestKey", { length: 64 }),                 // guests: random key held by their browser
   displayName: varchar("displayName", { length: 120 }).notNull(),
   joinedAt: timestamp("joinedAt").defaultNow().notNull(),
 });
@@ -1086,7 +1091,8 @@ export const triviaAnswers = mysqlTable("trivia_answers", {
   gameId: int("gameId").notNull(),
   catIdx: int("catIdx").notNull(),
   qIdx: int("qIdx").notNull(),
-  userId: int("userId").notNull(),
+  userId: int("userId"),                                         // signed-in players; null for guests
+  guestKey: varchar("guestKey", { length: 64 }),                 // guests: matches trivia_players.guestKey
   displayName: varchar("displayName", { length: 120 }).notNull(),
   answerText: text("answerText").notNull(),
   isCorrect: int("isCorrect").default(0).notNull(),              // host-judged: 1 = counts for points
