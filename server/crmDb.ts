@@ -481,6 +481,33 @@ export async function getReferralCountsMap(): Promise<Map<number, { sent: number
   return map;
 }
 
+// Batched companions to getLastContactLog / getTotalLeadsSent. The partner hub
+// lists ~1,900 facilities; calling those per row costs two round-trips each
+// (~32s). These fetch the same data in one query apiece.
+type ContactLogRow = NonNullable<Awaited<ReturnType<typeof getLastContactLog>>>;
+
+export async function getLastContactLogMap(): Promise<Map<number, ContactLogRow>> {
+  const db = await getDb();
+  const map = new Map<number, ContactLogRow>();
+  if (!db) return map;
+  // Ordered oldest→newest so the last write per facility wins = the latest log.
+  const rows = await db.select().from(contactLogs).orderBy(contactLogs.contactDate);
+  for (const r of rows) map.set(r.facilityId, r);
+  return map;
+}
+
+export async function getTotalLeadsSentMap(): Promise<Map<number, number>> {
+  const db = await getDb();
+  const map = new Map<number, number>();
+  if (!db) return map;
+  const rows = await db
+    .select({ facilityId: facilityLeadsSent.facilityId, total: sql<number>`SUM(${facilityLeadsSent.count})` })
+    .from(facilityLeadsSent)
+    .groupBy(facilityLeadsSent.facilityId);
+  for (const r of rows) map.set(r.facilityId, Number(r.total ?? 0));
+  return map;
+}
+
 // ── Per-facility expenses (FR + BDR combined) for the partner profile Expenses tab ──
 export async function listExpensesByFacility(facilityId: number) {
   const db = await getDb();

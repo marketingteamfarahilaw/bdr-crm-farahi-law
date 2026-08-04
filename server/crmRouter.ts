@@ -59,6 +59,8 @@ import {
   listAllTasks,
   setTaskStatus,
   getReferralCountsMap,
+  getLastContactLogMap,
+  getTotalLeadsSentMap,
   getCheckinMatrix,
   getVisitMatrix,
   listExpensesByFacility,
@@ -388,17 +390,38 @@ export const crmRouter = router({
         const scoped = seesAllData(ctx.user.role)
           ? (input ?? {})
           : { ...(input ?? {}), assignedRepId: ctx.user.id, assignedRepNames: ownerNameCandidates(ctx.user) };
-        const rows = await listFacilities(scoped);
+        // Normalize to listFacilities' own row type: `scoped` is a union (agent vs
+        // manager shape) and letting that union flow into the returned objects
+        // widens the inferred output enough that the client loses its types.
+        const rows: Awaited<ReturnType<typeof listFacilities>> = await listFacilities(scoped);
         // Enrich with last contact, total leads sent, and referral counts (sent/received).
-        const refMap = await getReferralCountsMap();
-        const enriched = await Promise.all(
-          rows.map(async (f: typeof rows[number]) => {
-            const lastContact = await getLastContactLog(f.id);
-            const totalLeadsSent = await getTotalLeadsSent(f.id);
-            const ref = refMap.get(f.id) ?? { sent: 0, received: 0 };
-            return { ...f, lastContact, totalLeadsSent, referralsSent: ref.sent, referralsReceived: ref.received };
-          })
-        );
+        // All three come from batched maps — per-row lookups here meant ~2 queries
+        // per facility and made this endpoint take ~32s over the full partner list.
+        const [refMap, lastContactMap, leadsSentMap] = await Promise.all([
+          getReferralCountsMap(),
+          getLastContactLogMap(),
+          getTotalLeadsSentMap(),
+        ]);
+        // `rows` is a union of array types (agent vs manager query shape). The map
+        // callback therefore needs an explicit element type, and the result must be
+        // pinned to ONE array type — otherwise the output is a union of arrays and
+        // the client loses its element typing. (The old Promise.all did this for us.)
+        type Enriched = typeof rows[number] & {
+          lastContact: Awaited<ReturnType<typeof getLastContactLog>>;
+          totalLeadsSent: number;
+          referralsSent: number;
+          referralsReceived: number;
+        };
+        const enriched: Enriched[] = rows.map((f: typeof rows[number]) => {
+          const ref = refMap.get(f.id) ?? { sent: 0, received: 0 };
+          return {
+            ...f,
+            lastContact: lastContactMap.get(f.id) ?? null,
+            totalLeadsSent: leadsSentMap.get(f.id) ?? 0,
+            referralsSent: ref.sent,
+            referralsReceived: ref.received,
+          };
+        });
         return enriched;
       }),
 
