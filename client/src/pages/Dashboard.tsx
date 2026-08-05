@@ -152,9 +152,10 @@ export default function Dashboard() {
       { label: "Leads Sent", value: leadsSent, tint: "#6a9bd8", icon: Send },
     ];
 
+    // Pipeline hidden alongside its sidebar entry (per request) — restore both together.
     const agentActions = isFR
-      ? [{ label: "Pipeline", icon: Workflow, path: "/crm/pipeline" }, { label: "Facilities", icon: Building2, path: "/crm/facilities" }, { label: "Field Visits", icon: MapPin, path: "/bdr/field-visits" }, { label: "FR Errands", icon: ClipboardList, path: "/bdr/fr-errands" }]
-      : [{ label: "Pipeline", icon: Workflow, path: "/crm/pipeline" }, { label: "Facilities", icon: Building2, path: "/crm/facilities" }, { label: "Search Leads", icon: Search, path: "/search" }, { label: "Lead Map", icon: Map, path: "/map" }];
+      ? [{ label: "Facilities", icon: Building2, path: "/crm/facilities" }, { label: "Field Visits", icon: MapPin, path: "/bdr/field-visits" }, { label: "FR Errands", icon: ClipboardList, path: "/bdr/fr-errands" }]
+      : [{ label: "Facilities", icon: Building2, path: "/crm/facilities" }, { label: "Search Leads", icon: Search, path: "/search" }, { label: "Lead Map", icon: Map, path: "/map" }];
 
     const tasksDue = [...overdueMine, ...todayMine];
 

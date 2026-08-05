@@ -53,11 +53,11 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: History, label: "Saved Searches", path: "/saved-searches", level: "bdr" },
   ] },
   { title: "Facility Partner CRM", items: [
-    { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
+    // { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
     { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr" },
     { icon: Phone, label: "RingCentral", path: "/crm/ringcentral", level: "bdr" },
     { icon: UtensilsCrossed, label: "Uber Eats", path: "/crm/uber-eats", level: "all" },
-    { icon: Car, label: "PD Car Tracker", path: "/pd-tracker", level: "bdr" },
+    // { icon: Car, label: "PD Car Tracker", path: "/pd-tracker", level: "bdr" },
     { icon: PhoneCall, label: "Check-In Report", path: "/checkin-report", level: "bdr" },
     { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
   ] },
@@ -91,7 +91,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards", level: "bdr" },
     // { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },
     { icon: Network, label: "Referral-Friendly List", path: "/bdr/referral-tracker", level: "bdr" },
-    { icon: Trophy, label: "Team Trivia", path: "/trivia", level: "all" },
+    // { icon: Trophy, label: "Team Trivia", path: "/trivia", level: "all" },
   ] },
   { title: "Partner Referrals", items: [
     { icon: ArrowLeftRight, label: "Partner Referrals", path: "/referral/tracker", level: "manage" },
@@ -100,8 +100,10 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   { title: "Team & Integrations", items: [
     { icon: Shield, label: "Team & Roles", path: "/team", level: "manage" },
     { icon: Users, label: "Agent Zones", path: "/agents", level: "manage" },
-    { icon: UserRound, label: "PI Clients", path: "/pi-clients", level: "manage" },
-    { icon: Link2, label: "Filevine", path: "/filevine", level: "manage" },
+    // Hidden for now (per request): Filevine + PI Clients. Pages/routes still
+    // exist and the Filevine sync keeps running — uncomment to restore.
+    // { icon: UserRound, label: "PI Clients", path: "/pi-clients", level: "manage" },
+    // { icon: Link2, label: "Filevine", path: "/filevine", level: "manage" },
     { icon: Settings, label: "Settings", path: "/settings", level: "manage" },
   ] },
 ];
