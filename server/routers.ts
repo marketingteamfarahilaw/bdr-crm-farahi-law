@@ -14,6 +14,7 @@ import { partnershipRouter } from "./partnershipRouter";
 import { dailyLogRouter } from "./dailyLogRouter";
 import { dailyWorkRouter } from "./dailyWorkRouter";
 import { pdRouter } from "./pdRouter";
+import { territoriesRouter } from "./territoriesRouter";
 import { triviaRouter } from "./triviaRouter";
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -756,6 +757,9 @@ export const appRouter = router({
 
   // PD Car Referral Tracker — body-shop pipeline + leadership dashboard.
   pd: pdRouter,
+
+  // Territories admin — ownership (shared with agent_zones / the CA map) + cleanup.
+  territories: territoriesRouter,
 
   // Team Trivia — live multiplayer quiz for team hangouts (/trivia).
   trivia: triviaRouter,

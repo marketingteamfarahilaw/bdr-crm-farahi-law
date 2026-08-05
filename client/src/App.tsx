@@ -31,6 +31,7 @@ import DailyLogPage from "./pages/DailyLog";
 import DailyWorkPage from "./pages/DailyWork";
 import PdTrackerPage from "./pages/PdTracker";
 import TaskBoardPage from "./pages/TaskBoard";
+import TerritoriesPage from "./pages/Territories";
 import CheckinReportPage from "./pages/CheckinReport";
 import FileVineNotePage from "./pages/FileVineNote";
 import AgentDashboardPage from "./pages/AgentDashboard";
@@ -149,6 +150,9 @@ function Router() {
 
         {/* BDR Check-In Report (MTD matrix) */}
         <Route path="/checkin-report" component={CheckinReportPage} />
+
+        {/* Territories admin — ownership + cleanup */}
+        <Route path="/territories" component={TerritoriesPage} />
 
         {/* FileVine Note Generator */}
         <Route path="/filevine-note" component={FileVineNotePage} />
