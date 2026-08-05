@@ -32,6 +32,7 @@ import DailyWorkPage from "./pages/DailyWork";
 import PdTrackerPage from "./pages/PdTracker";
 import TaskBoardPage from "./pages/TaskBoard";
 import TerritoriesPage from "./pages/Territories";
+import SignupsDashboardPage from "./pages/SignupsDashboard";
 import CheckinReportPage from "./pages/CheckinReport";
 import FileVineNotePage from "./pages/FileVineNote";
 import AgentDashboardPage from "./pages/AgentDashboard";
@@ -153,6 +154,9 @@ function Router() {
 
         {/* Territories admin — ownership + cleanup */}
         <Route path="/territories" component={TerritoriesPage} />
+
+        {/* Executive sign-ups dashboard */}
+        <Route path="/signups-report" component={SignupsDashboardPage} />
 
         {/* FileVine Note Generator */}
         <Route path="/filevine-note" component={FileVineNotePage} />

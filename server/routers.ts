@@ -100,6 +100,7 @@ import { fromZonedTime } from "date-fns-tz";
 const laDate = (s: string) => fromZonedTime(s, "America/Los_Angeles");
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
+import { getSignupsDashboard } from "./signupsReport";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -783,6 +784,8 @@ export const appRouter = router({
       newFacilities: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getNewFacilitiesReport(toRange(input)); }),
       callActivity: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getCallActivityReport(toRange(input)); }),
       leadsTargets: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getLeadsTargetReport(toRange(input)); }),
+      // Executive sign-ups dashboard: volume by facility type and territory.
+      signupsDashboard: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupsDashboard(toRange(input)); }),
     });
   })(),
 
