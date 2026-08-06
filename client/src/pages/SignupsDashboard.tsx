@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,30 +85,30 @@ export default function SignupsDashboard() {
         <div className="space-y-4">
           {/* KPI strip */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            <Kpi label="Total Leads" value={fmt(data.totals.leads)} icon={<Users className="w-7 h-7" />} big />
+            <Kpi label="Total Leads" value={fmt(data.totals.leads)} icon={<Users className="w-3.5 h-3.5" />} big />
             <Kpi
               label="Best Facility Type"
               value={data.headline.bestType?.name ?? "—"}
               sub={`${fmt(data.headline.bestType?.leads ?? 0)} leads`}
-              icon={<Building2 className="w-7 h-7" />}
+              icon={<Building2 className="w-3.5 h-3.5" />}
             />
             <Kpi
               label="Second Best Facility"
               value={data.headline.secondType?.name ?? "—"}
               sub={`${fmt(data.headline.secondType?.leads ?? 0)} leads`}
-              icon={<Truck className="w-7 h-7" />}
+              icon={<Truck className="w-3.5 h-3.5" />}
             />
             <Kpi
               label="Best Territory"
               value={data.headline.bestTerritory?.name ?? "—"}
               sub={`${fmt(data.headline.bestTerritory?.leads ?? 0)} leads`}
-              icon={<MapPin className="w-7 h-7" />}
+              icon={<MapPin className="w-3.5 h-3.5" />}
             />
             <Kpi
               label="Second Best Territory"
               value={data.headline.secondTerritory?.name ?? "—"}
               sub={`${fmt(data.headline.secondTerritory?.leads ?? 0)} leads`}
-              icon={<MapPin className="w-7 h-7" />}
+              icon={<MapPin className="w-3.5 h-3.5" />}
             />
           </div>
 
@@ -221,15 +221,25 @@ export default function SignupsDashboard() {
 }
 
 function Kpi({ label, value, sub, icon, big }: { label: string; value: string; sub?: string; icon: React.ReactNode; big?: boolean }) {
+  // Values are place names ("Bakersfield") and counts, so nothing is truncated:
+  // the icon is small and sits beside the label, leaving the full card width for
+  // the value, which wraps and steps down a size when the name is long.
+  const long = value.length > 11;
   return (
-    <div className="rounded-lg border border-border overflow-hidden">
-      <div className="px-3 py-1.5 text-white text-[11px] font-semibold uppercase tracking-wide" style={{ background: NAVY }}>{label}</div>
-      <div className="p-3 bg-card flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className={`font-bold leading-tight truncate ${big ? "text-3xl" : "text-lg"}`} style={{ color: big ? undefined : TEAL }}>{value}</div>
-          {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
+    <div className="rounded-lg border border-border overflow-hidden flex flex-col">
+      <div className="px-2.5 py-1.5 text-white flex items-center gap-1.5" style={{ background: NAVY }}>
+        <span className="shrink-0 opacity-90">{icon}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wide leading-tight">{label}</span>
+      </div>
+      <div className="px-3 py-2.5 bg-card flex-1">
+        <div
+          className={`font-bold leading-tight break-words ${big ? "text-3xl" : long ? "text-base" : "text-xl"}`}
+          style={{ color: big ? undefined : TEAL }}
+          title={value}
+        >
+          {value}
         </div>
-        <span className="shrink-0 opacity-70" style={{ color: NAVY }}>{icon}</span>
+        {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
       </div>
     </div>
   );
