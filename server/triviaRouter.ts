@@ -159,8 +159,13 @@ export const triviaRouter = router({
     const playerRows = await d.select().from(triviaPlayers).where(eq(triviaPlayers.gameId, game.id)).orderBy(asc(triviaPlayers.id));
     const allAnswers = await d.select().from(triviaAnswers).where(eq(triviaAnswers.gameId, game.id)).orderBy(asc(triviaAnswers.id));
 
-    const scoreByUser = new Map<number, number>();
-    for (const a of allAnswers) scoreByUser.set(a.userId, (scoreByUser.get(a.userId) || 0) + a.pointsAwarded);
+    // Players are identified by userId when signed in, and by guestKey otherwise —
+    // keying on userId alone would collapse every guest into one score.
+    const idOf = (r: { userId: number | null; guestKey: string | null }) =>
+      r.userId != null ? `u:${r.userId}` : `g:${r.guestKey ?? ""}`;
+
+    const scoreById = new Map<string, number>();
+    for (const a of allAnswers) scoreById.set(idOf(a), (scoreById.get(idOf(a)) || 0) + a.pointsAwarded);
 
     // Hot streak = consecutive most-recent played questions where the player
     // scored points. Order of play = done keys (+ the live question once revealed).
@@ -169,19 +174,19 @@ export const triviaRouter = router({
       const k = `${game.currentCat}:${game.currentQ}`;
       if (!playOrder.includes(k)) playOrder.push(k);
     }
-    const scoredOn = (userId: number, key: string) =>
-      allAnswers.some((a) => a.userId === userId && `${a.catIdx}:${a.qIdx}` === key && a.pointsAwarded > 0);
-    const streakOf = (userId: number) => {
+    const scoredOn = (id: string, key: string) =>
+      allAnswers.some((a) => idOf(a) === id && `${a.catIdx}:${a.qIdx}` === key && a.pointsAwarded > 0);
+    const streakOf = (id: string) => {
       let n = 0;
       for (let i = playOrder.length - 1; i >= 0; i--) {
-        if (scoredOn(userId, playOrder[i])) n++;
+        if (scoredOn(id, playOrder[i])) n++;
         else break;
       }
       return n;
     };
 
     const players = playerRows
-      .map((p) => ({ userId: p.userId, name: p.displayName, score: scoreByUser.get(p.userId) || 0, streak: streakOf(p.userId) }))
+      .map((p) => ({ userId: p.userId, name: p.displayName, score: scoreById.get(idOf(p)) || 0, streak: streakOf(idOf(p)) }))
       .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
     const cur = currentQuestion(game);

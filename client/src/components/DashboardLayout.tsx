@@ -277,7 +277,7 @@ function DashboardLayoutContent({
                 <button
                   onClick={() => document.dispatchEvent(new CustomEvent("open-quick-add"))}
                   className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
-                  style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
+                  style={{ background: "var(--action)", color: "var(--action-foreground)" }}
                 >
                   <Plus className="h-4 w-4" />
                   <span>Quick Add</span>
