@@ -1,0 +1,68 @@
+# Ship main to the VPS.
+#
+# Runs on every push to main, so a change made from anywhere (including
+# Claude Code on the web, which has no route to the server) goes live without
+# anyone needing to be at a particular machine. Also runnable by hand from the
+# Actions tab via the "Run workflow" button.
+#
+# The app is a pm2 process named farahi-crm listening on port 3100, behind the
+# Docker nginx that terminates TLS for bdcrm.farahilaw.com. See DEPLOY.md.
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never let two deploys build in the same directory at once; if pushes land
+# back to back, the newer one waits rather than racing.
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load the deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Pull, build, restart
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          cd /opt/farahi-lead-scraper
+
+          # Refuse to clobber uncommitted work someone left on the server.
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            echo "::error::Working tree on the VPS has uncommitted changes — deploy aborted."
+            git status --short
+            exit 1
+          fi
+
+          git fetch origin --quiet
+          git checkout main --quiet
+          git pull --ff-only --quiet
+          echo "Deploying $(git log --oneline -1)"
+
+          pnpm install --frozen-lockfile
+          pnpm build                      # VITE_* vars are baked in here, from the server's .env
+
+          pm2 restart farahi-crm --update-env
+          REMOTE
+
+      - name: Verify the site is up
+        run: |
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://bdcrm.farahilaw.com/ || true)
+            if [ "$code" = "200" ]; then echo "Live: HTTP 200"; exit 0; fi
+            echo "attempt $i: HTTP ${code:-none} — retrying"
+            sleep 10
+          done
+          echo "::error::Site did not return 200 after the restart."
+          exit 1
