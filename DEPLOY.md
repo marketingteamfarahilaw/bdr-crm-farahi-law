@@ -1,5 +1,24 @@
 # Deploying the Farahi BD Partner CRM to your VPS
 
+> **How it actually runs today (2026-08).** The sections below describe the
+> original from-scratch setup and are kept for reference, but the live
+> deployment differs in three ways that matter:
+>
+> - **Deploys are automatic.** Pushing to `main` triggers
+>   `.github/workflows/deploy.yml`, which SSHes to the VPS, pulls, builds,
+>   restarts pm2, and checks the site returns 200. Don't build by hand.
+> - **The app listens on port 3100**, not 3000 (`PORT=3100` in the server's
+>   `.env`), as pm2 process `farahi-crm` in `/opt/farahi-lead-scraper`.
+> - **Host nginx is not the front door.** A Docker container
+>   (`farahi-platform-web-1`, config in `/opt/farahi-platform/deploy/nginx.conf`)
+>   owns ports 80/443, terminates TLS for `bdcrm.farahilaw.com` with an
+>   auto-renewing Let's Encrypt cert, and proxies to `host.docker.internal:3100`.
+>   The `/etc/nginx/sites-enabled/farahi-crm` file on the host is an unused
+>   leftover — ignore it.
+>
+> So steps 5–7 below (pm2, nginx, certbot) are already done. Steps 1–4 still
+> apply if you ever rebuild the server from scratch.
+
 This app runs as **one Node process** that serves both the API and the built
 web client. Put a reverse proxy (nginx) in front of it for HTTPS and your
 domain. The database is the existing TiDB Cloud instance — you do **not** host
@@ -96,7 +115,7 @@ sudo systemctl daemon-reload && sudo systemctl enable --now farahi-crm
 ```
 </details>
 
-The app now listens on `http://127.0.0.1:3000` (or your `PORT`).
+The app now listens on `http://127.0.0.1:3100` (whatever `PORT` says).
 
 ## 6. Reverse proxy + HTTPS (nginx)
 
