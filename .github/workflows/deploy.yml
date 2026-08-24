@@ -31,19 +31,20 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           # Best-effort: if the host key can't be pre-seeded, the ssh call below
           # still accepts it on first use. Never fail the job here.
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -4 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Pull, build, restart
+        # -4 is required: the host has an AAAA record but GitHub runners have no
+        # IPv6 route, so ssh otherwise picks IPv6 and fails with "Network is
+        # unreachable" after a two-minute stall.
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes \
-            -o StrictHostKeyChecking=accept-new \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" 'bash -se' <<'REMOTE'
+          ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" 'bash -se' <<'REMOTE'
           set -euo pipefail
           cd /opt/farahi-lead-scraper
 
           # Refuse to clobber uncommitted work someone left on the server.
           if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-            echo "::error::Working tree on the VPS has uncommitted changes — deploy aborted."
+            echo "::error::Working tree on the VPS has uncommitted changes - deploy aborted."
             git status --short
             exit 1
           fi
@@ -64,7 +65,7 @@ jobs:
           for i in $(seq 1 12); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://bdcrm.farahilaw.com/ || true)
             if [ "$code" = "200" ]; then echo "Live: HTTP 200"; exit 0; fi
-            echo "attempt $i: HTTP ${code:-none} — retrying"
+            echo "attempt $i: HTTP ${code:-none} - retrying"
             sleep 10
           done
           echo "::error::Site did not return 200 after the restart."
