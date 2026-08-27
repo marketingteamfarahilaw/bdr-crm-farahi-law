@@ -41,8 +41,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Sparkles, label: "Intake Desk", path: "/intake", level: "intake" },
     { icon: Inbox, label: "Lead Queue", path: "/intake/leads", level: "intake" },
     { icon: ScanSearch, label: "Auditor", path: "/intake/auditor", level: "intake" },
-    // Hidden with the rest of Intake from the BD CRM view (per request); page still at /intake/agents.
-    // { icon: Bot, label: "Agents", path: "/intake/agents", level: "super" }, // TEST PHASE — super admin only until approved for the team
+    { icon: Bot, label: "Agents", path: "/intake/agents", level: "super" }, // TEST PHASE — super admin only until approved for the team
     { icon: PhoneCall, label: "Calls & Transcripts", path: "/intake/calls", level: "intake" },
     { icon: Settings, label: "Settings & RingCentral", path: "/intake/settings", level: "intake" },
   ] },
@@ -119,9 +118,7 @@ function canShow(level: NavLevel, role?: string | null) {
     case "fr": return canSeeFR(role) && !isIntakeOnly(role);
     case "manage": return canManage(role);
     case "super": return canAssignRoles(role);
-    // Intake nav shows ONLY for the intake team — hidden from the BD CRM view
-    // (incl. super admin) per request. Intake pages remain reachable by URL.
-    case "intake": return isIntakeOnly(role);
+    case "intake": return canSeeIntake(role);
     default: return false;
   }
 }
