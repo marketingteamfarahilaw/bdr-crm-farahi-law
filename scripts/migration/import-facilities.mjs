@@ -1,14 +1,15 @@
 // Import real facilities from the Centralized BDR/FR Reports workbook.
 // Header-aware: finds each sheet's header row and maps columns by keyword, so it
 // tolerates the different layouts. Dedupes by name+phone (active wins).
-//   node scripts/migration/import-facilities.mjs --dry   (parse + report only)
-//   node scripts/migration/import-facilities.mjs          (wipe + import)
+//   node scripts/migration/import-facilities.mjs "<workbook.xlsx>" --dry   (parse + report only)
+//   node scripts/migration/import-facilities.mjs "<workbook.xlsx>"         (wipe + import)
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
 
-const FILE = "C:/Users/EOR - 4055/Downloads/Centralized BDR_FR Reports (3).xlsx";
+const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"))
+  || "C:/Users/EOR - 4055/Downloads/Centralized BDR_FR Reports (3).xlsx";
 const dry = process.argv.includes("--dry");
 const wb = xlsx.readFile(FILE);
 
