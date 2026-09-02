@@ -1,0 +1,7 @@
+# Shell scripts run on the Linux VPS. Committing them with CRLF makes bash fail
+# with "\r: command not found", so keep them LF regardless of the OS they were
+# edited on.
+*.sh text eol=lf
+
+# Same for anything else executed on the server.
+*.mjs text eol=lf
