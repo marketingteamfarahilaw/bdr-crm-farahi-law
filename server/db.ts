@@ -1,4 +1,4 @@
-import { eq, and, desc, sql, gte, lte, like } from "drizzle-orm";
+import { eq, and, or, desc, sql, gte, lte, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { createPool } from "mysql2";
 import { InsertUser, users, appSettings, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead } from "../drizzle/schema";
@@ -398,11 +398,27 @@ export interface BdrFilters {
   search?: string;    // free-text search on client/facility name
 }
 
+/**
+ * Match a rep against a stored agent name, tolerating the two forms the same
+ * person is recorded under. Logins give a full name ("Queenie Miranda") while
+ * plenty of rows — the imported call history, the referral tracker — hold only
+ * a first name ("Queenie"). Matching exactly meant an agent saw almost none of
+ * their own work, so compare on the first name as well.
+ *
+ * Reports already canonicalise reps this way (see canonRep in crmDb).
+ */
+function agentMatches(column: any, name: string) {
+  const full = name.trim();
+  const first = full.split(/\s+/)[0];
+  if (!first) return eq(column, full);
+  return or(eq(column, full), eq(column, first), like(column, `${first} %`));
+}
+
 export async function getAllFieldVisits(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
-  if (filters.agent) conditions.push(eq(fieldVisits.agentName, filters.agent));
+  if (filters.agent) conditions.push(agentMatches(fieldVisits.agentName, filters.agent));
   if (filters.dateFrom) conditions.push(gte(fieldVisits.visitDate, new Date(filters.dateFrom)));
   if (filters.dateTo) {
     const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
@@ -442,7 +458,7 @@ export async function getAllFrExpenses(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
-  if (filters.agent) conditions.push(eq(frExpenses.agentName, filters.agent));
+  if (filters.agent) conditions.push(agentMatches(frExpenses.agentName, filters.agent));
   if (filters.dateFrom) conditions.push(gte(frExpenses.expenseDate, new Date(filters.dateFrom)));
   if (filters.dateTo) {
     const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
@@ -483,7 +499,7 @@ export async function getAllBdrExpenses(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
-  if (filters.agent) conditions.push(eq(bdrExpenses.agentName, filters.agent));
+  if (filters.agent) conditions.push(agentMatches(bdrExpenses.agentName, filters.agent));
   if (filters.dateFrom) conditions.push(gte(bdrExpenses.expenseDate, new Date(filters.dateFrom)));
   if (filters.dateTo) {
     const to = new Date(filters.dateTo); to.setHours(23,59,59,999);
@@ -524,7 +540,7 @@ export async function getAllReferralRewards(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
-  if (filters.agent) conditions.push(eq(referralRewards.agentName, filters.agent));
+  if (filters.agent) conditions.push(agentMatches(referralRewards.agentName, filters.agent));
   if (filters.status) conditions.push(eq(referralRewards.status, filters.status as "Accepted" | "Pending" | "Denied"));
   if (filters.search) conditions.push(like(referralRewards.clientName, `%${filters.search}%`));
   if (filters.dateFrom) conditions.push(gte(referralRewards.createdAt, new Date(filters.dateFrom)));
@@ -565,7 +581,7 @@ export async function getAllFrErrands(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
-  if (filters.agent) conditions.push(eq(frErrands.agentName, filters.agent));
+  if (filters.agent) conditions.push(agentMatches(frErrands.agentName, filters.agent));
   if (filters.status) conditions.push(eq(frErrands.status, filters.status as "Completed" | "Not Completed" | "In Progress"));
   if (filters.dateFrom) conditions.push(gte(frErrands.errandDate, new Date(filters.dateFrom)));
   if (filters.dateTo) {
@@ -606,7 +622,7 @@ export async function getAllReferralTracker(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
-  if (filters.agent) conditions.push(eq(referralTracker.bdrAssigned, filters.agent));
+  if (filters.agent) conditions.push(agentMatches(referralTracker.bdrAssigned, filters.agent));
   if (filters.status) conditions.push(eq(referralTracker.status, filters.status as "Successful Sent" | "Demo Sent" | "Pending" | "Unsuccessful" | "In Progress"));
   if (filters.month) conditions.push(like(referralTracker.month, `%${filters.month}%`));
   if (filters.search) conditions.push(like(referralTracker.clientName, `%${filters.search}%`));
