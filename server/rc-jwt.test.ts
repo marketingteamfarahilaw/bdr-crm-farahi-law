@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import axios from "axios";
 
-describe("RingCentral JWT Token Validation", () => {
+// Live check against RingCentral. Skipped when credentials are absent (cloud
+// sessions, CI) rather than failing, so a red test run always means something
+// is broken.
+describe.skipIf(!process.env.RINGCENTRAL_JWT)("RingCentral JWT Token Validation", () => {
   it("should authenticate with the JWT token and get an access token", async () => {
     const jwt = process.env.RINGCENTRAL_JWT;
     const clientId = process.env.RINGCENTRAL_CLIENT_ID;
