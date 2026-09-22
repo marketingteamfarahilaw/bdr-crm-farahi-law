@@ -44,7 +44,7 @@ export default function AgentDashboard() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Agent Dashboard</h1>
+        <h1 className="text-2xl font-bold">Representative Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">
           KPI summary per BDR agent — visits, expenses, rewards, and errands
         </p>
@@ -62,7 +62,7 @@ export default function AgentDashboard() {
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Users className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No agent data yet.</p>
+            <p className="text-muted-foreground">No representative data yet.</p>
             <p className="text-sm text-muted-foreground mt-1">
               Start logging field visits, expenses, and rewards to see KPIs here.
             </p>
@@ -86,7 +86,7 @@ export default function AgentDashboard() {
                     </div>
                     <div>
                       <CardTitle className="text-base">{agent.agentName}</CardTitle>
-                      <Badge variant="outline" className="text-xs mt-0.5">BDR Agent</Badge>
+                      <Badge variant="outline" className="text-xs mt-0.5">BDR Representative</Badge>
                     </div>
                   </div>
                 </CardHeader>

@@ -77,32 +77,32 @@ export default function AgentsPage() {
 
   const createMutation = trpc.agentZones.create.useMutation({
     onSuccess: () => {
-      toast.success("Agent created successfully!");
+      toast.success("Representative created successfully!");
       utils.agentZones.list.invalidate();
       setShowForm(false);
       setForm(EMPTY_FORM);
     },
-    onError: (e) => toast.error(e.message || "Failed to create agent"),
+    onError: (e) => toast.error(e.message || "Failed to create representative"),
   });
 
   const updateMutation = trpc.agentZones.update.useMutation({
     onSuccess: () => {
-      toast.success("Agent updated successfully!");
+      toast.success("Representative updated successfully!");
       utils.agentZones.list.invalidate();
       setEditingId(null);
       setShowForm(false);
       setForm(EMPTY_FORM);
     },
-    onError: (e) => toast.error(e.message || "Failed to update agent"),
+    onError: (e) => toast.error(e.message || "Failed to update representative"),
   });
 
   const deleteMutation = trpc.agentZones.delete.useMutation({
     onSuccess: () => {
-      toast.success("Agent deleted.");
+      toast.success("Representative deleted.");
       utils.agentZones.list.invalidate();
       setDeleteConfirmId(null);
     },
-    onError: (e) => toast.error(e.message || "Failed to delete agent"),
+    onError: (e) => toast.error(e.message || "Failed to delete representative"),
   });
 
   const handleSubmit = () => {
@@ -149,14 +149,14 @@ export default function AgentsPage() {
 
   const stats = [
     {
-      label: "Total Agents",
+      label: "Total Representatives",
       value: agents.length,
       icon: Users,
       numCls: "text-primary",
       badgeCls: "bg-primary/10 text-primary border-primary/20",
     },
     {
-      label: "Active Agents",
+      label: "Active Representatives",
       value: agents.filter((a: any) => a.active !== false).length,
       icon: UserCheck,
       numCls: "text-green-600 dark:text-green-400",
@@ -205,10 +205,10 @@ export default function AgentsPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="text-base font-bold text-foreground">
-                {editingId !== null ? "Edit Agent" : "New Agent"}
+                {editingId !== null ? "Edit Representative" : "New Representative"}
               </div>
               <div className="text-xs mt-0.5 text-muted-foreground">
-                {editingId !== null ? "Update agent profile information" : "Fill in the agent's profile details"}
+                {editingId !== null ? "Update representative profile information" : "Fill in the agent's profile details"}
               </div>
             </div>
             <button
@@ -310,7 +310,7 @@ export default function AgentsPage() {
           <div className="flex items-center gap-3">
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="gap-2">
               <Check size={14} strokeWidth={2.5} />
-              {editingId !== null ? "Save Changes" : "Create Agent"}
+              {editingId !== null ? "Save Changes" : "Create Representative"}
             </Button>
             <Button variant="outline" onClick={handleCancel} className="border-border">
               Cancel
@@ -340,7 +340,7 @@ export default function AgentsPage() {
 
       {/* ── Agent cards ── */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">Loading agents...</div>
+        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">Loading representatives...</div>
       ) : agents.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card px-8 py-12 text-center shadow-sm">
           <div className="text-5xl mb-4">👥</div>
@@ -350,7 +350,7 @@ export default function AgentsPage() {
           <div className="text-sm text-muted-foreground mb-5">
             Add your first Business Development Representative to get started.
           </div>
-          <Button onClick={() => setShowForm(true)}>Add First Agent</Button>
+          <Button onClick={() => setShowForm(true)}>Add First Representative</Button>
         </div>
       ) : (
         <div className="flex flex-col gap-4">

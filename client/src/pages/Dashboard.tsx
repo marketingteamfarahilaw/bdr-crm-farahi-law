@@ -27,7 +27,7 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   do_not_use: { label: "Do Not Use", color: "#9f1239" },
   churned: { label: "Churned", color: "#f87171" },
   do_not_contact: { label: "Do Not Contact", color: "#9f1239" },
-  needs_agent: { label: "Needs Agent", color: "#a78bfa" },
+  needs_agent: { label: "Needs Representative", color: "#a78bfa" },
 };
 
 const PRIORITY_META: Record<string, string> = {

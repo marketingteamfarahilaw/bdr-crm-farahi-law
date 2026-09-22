@@ -11,7 +11,7 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; label: string 
   cold:             { bg: "#60A5FA", border: "#3B82F6", label: "Cold" },
   churned:          { bg: "#6B7280", border: "#4B5563", label: "Churned" },
   do_not_contact:   { bg: "#EF4444", border: "#DC2626", label: "Do Not Contact" },
-  needs_agent:      { bg: "#A78BFA", border: "#7C3AED", label: "Needs Agent" },
+  needs_agent:      { bg: "#A78BFA", border: "#7C3AED", label: "Needs Representative" },
 };
 
 // Category → icon emoji for pin

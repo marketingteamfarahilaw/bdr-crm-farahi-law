@@ -223,7 +223,7 @@ function CallsTab({ from, to }: { from: string; to: string }) {
   return (
     <Card title="Call Activity" sub={`Calls ≥ 30s count toward handle time (the tracker's rule) · daily target ${fmtH(data.targetDailySec)} handle time`}>
       <table className="w-full text-sm">
-        <HeadRow cols={["Agent", "Calls", "Outbound", "Inbound", "<30s / missed", "Active Days", "Avg Calls/Day", "Total Handle", "Avg Daily Handle", "vs 2.5h Target"]} />
+        <HeadRow cols={["Representative", "Calls", "Outbound", "Inbound", "<30s / missed", "Active Days", "Avg Calls/Day", "Total Handle", "Avg Daily Handle", "vs 2.5h Target"]} />
         <tbody>
           {data.perAgent.map((a: any) => (
             <>

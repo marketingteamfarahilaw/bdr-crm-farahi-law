@@ -95,7 +95,7 @@ export default function FrExpenses() {
   }
 
   function handleSubmit() {
-    if (!form.agentName) return toast.error("Agent name required");
+    if (!form.agentName) return toast.error("Representative name required");
     if (editing !== null) {
       updateMutation.mutate({ id: editing, ...form });
     } else {
@@ -115,7 +115,7 @@ export default function FrExpenses() {
       return true;
     });
     if (filtered.length === 0) return toast.error("No expenses found in the selected date range");
-    const headers = ["Date", "Agent", "Facility", "Store", "Reason", "Amount", "Card Type", "Notes"];
+    const headers = ["Date", "Representative", "Facility", "Store", "Reason", "Amount", "Card Type", "Notes"];
     const rows = filtered.map((e) => [
       e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "",
       e.agentName, e.facilityName ?? "", (e as any).store ?? "",
@@ -199,7 +199,7 @@ export default function FrExpenses() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-28">Date</TableHead>
-                  <TableHead className="w-24">Agent</TableHead>
+                  <TableHead className="w-24">Representative</TableHead>
                   <TableHead className="w-36">Facility</TableHead>
                   <TableHead className="w-28">Store</TableHead>
                   <TableHead>Reason</TableHead>
@@ -271,10 +271,10 @@ export default function FrExpenses() {
                 <DatePickerField value={form.expenseDate} onChange={(v) => setForm({ ...form, expenseDate: v })} />
               </div>
               <div className="space-y-1">
-                <Label>Agent *</Label>
+                <Label>Representative *</Label>
                 {isAdmin ? (
                   <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select representative" /></SelectTrigger>
                     <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (

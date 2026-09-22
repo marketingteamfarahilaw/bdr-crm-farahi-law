@@ -17,7 +17,7 @@ export const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   cold:             { label: "Cold",             color: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
   churned:          { label: "Churned",          color: "bg-red-500/20 text-red-400 border-red-500/30" },
   do_not_contact:   { label: "Do Not Contact",   color: "bg-red-900/30 text-red-300 border-red-900/50" },
-  needs_agent:      { label: "Needs Agent",      color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+  needs_agent:      { label: "Needs Representative",      color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
 };
 
 /** Safe lookup with a neutral fallback for unknown/empty statuses. */

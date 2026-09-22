@@ -284,7 +284,7 @@ export default function PartnerReferralTracker() {
 
   function exportOutbound() {
     if (!outboundList?.length) return;
-    const headers = ["Client Name", "Filevine Ref", "Address", "City", "ZIP", "Date Signed", "Referral Needed", "Referral Type", "Agent", "Facility", "Facility Owner", "Distance", "Reason", "Sent Date", "Status", "Follow-Up Date", "Facility Confirmed", "Client Scheduled", "Client Attended", "Facility Sent Leads", "Notes", "Last Updated By"];
+    const headers = ["Client Name", "Filevine Ref", "Address", "City", "ZIP", "Date Signed", "Referral Needed", "Referral Type", "Representative", "Facility", "Facility Owner", "Distance", "Reason", "Sent Date", "Status", "Follow-Up Date", "Facility Confirmed", "Client Scheduled", "Client Attended", "Facility Sent Leads", "Notes", "Last Updated By"];
     const rows = outboundList.map(r => [
       r.clientName, r.filevineLinkOrRef ?? "", r.clientAddress ?? "", r.clientCity ?? "", r.clientZip ?? "",
       r.dateSigned ? new Date(r.dateSigned).toLocaleDateString() : "",
@@ -301,7 +301,7 @@ export default function PartnerReferralTracker() {
 
   function exportInbound() {
     if (!inboundList?.length) return;
-    const headers = ["Lead Name", "Date Received", "Referring Facility", "Facility Contact", "Agent", "Case Type", "Signed", "Signed Date", "Not Signed Reason", "Counts Toward Activity", "Notes"];
+    const headers = ["Lead Name", "Date Received", "Referring Facility", "Facility Contact", "Representative", "Case Type", "Signed", "Signed Date", "Not Signed Reason", "Counts Toward Activity", "Notes"];
     const rows = inboundList.map(l => [
       l.leadName, l.dateReceived ? new Date(l.dateReceived).toLocaleDateString() : "",
       l.referringFacility ?? "", l.facilityContact ?? "", l.assignedAgent ?? "", l.caseType ?? "",
@@ -389,7 +389,7 @@ export default function PartnerReferralTracker() {
                       <TableRow>
                         <TableHead>Client</TableHead>
                         <TableHead>City</TableHead>
-                        <TableHead>Agent</TableHead>
+                        <TableHead>Representative</TableHead>
                         <TableHead>Facility</TableHead>
                         <TableHead>Sent</TableHead>
                         <TableHead>Status</TableHead>
@@ -465,7 +465,7 @@ export default function PartnerReferralTracker() {
                         <TableHead>Lead Name</TableHead>
                         <TableHead>Received</TableHead>
                         <TableHead>Facility</TableHead>
-                        <TableHead>Agent</TableHead>
+                        <TableHead>Representative</TableHead>
                         <TableHead>Case Type</TableHead>
                         <TableHead>Signed</TableHead>
                         <TableHead>Counts</TableHead>
@@ -558,9 +558,9 @@ export default function PartnerReferralTracker() {
                 <Input placeholder="e.g. Chiro, Body Shop" value={outboundForm.referralType} onChange={e => setOutboundForm({ ...outboundForm, referralType: e.target.value })} />
               </div>
               <div className="space-y-1">
-                <Label>Assigned Agent</Label>
+                <Label>Assigned Representative</Label>
                 <Select value={outboundForm.assignedAgent} onValueChange={v => setOutboundForm({ ...outboundForm, assignedAgent: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select representative" /></SelectTrigger>
                   <SelectContent>{AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -606,7 +606,7 @@ export default function PartnerReferralTracker() {
               <div className="space-y-1">
                 <Label>Last Updated By</Label>
                 <Select value={outboundForm.lastUpdatedBy} onValueChange={v => setOutboundForm({ ...outboundForm, lastUpdatedBy: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select representative" /></SelectTrigger>
                   <SelectContent>{AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -670,9 +670,9 @@ export default function PartnerReferralTracker() {
                 <Input placeholder="Contact name" value={inboundForm.facilityContact} onChange={e => setInboundForm({ ...inboundForm, facilityContact: e.target.value })} />
               </div>
               <div className="space-y-1">
-                <Label>Assigned Agent</Label>
+                <Label>Assigned Representative</Label>
                 <Select value={inboundForm.assignedAgent} onValueChange={v => setInboundForm({ ...inboundForm, assignedAgent: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select representative" /></SelectTrigger>
                   <SelectContent>{AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                 </Select>
               </div>

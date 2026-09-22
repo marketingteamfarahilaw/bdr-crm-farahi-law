@@ -65,7 +65,7 @@ export default function AgentPerformance() {
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-[10px] bg-primary flex items-center justify-center shrink-0"><Sparkles className="w-[18px] h-[18px] text-primary-foreground" /></div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>Agent Performance</h1>
+            <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>Representative Performance</h1>
             <p className="text-sm text-muted-foreground">Activity, partner sentiment, and an AI review of each day — challenges and recommendations.</p>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function AgentPerformance() {
             <div><label className="text-[11px] text-muted-foreground block mb-1">To</label><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPreset("custom"); review.reset(); }} className="bg-card border-border h-9 w-[150px]" /></div>
           </div>
           {isManager && (
-            <div><label className="text-[11px] text-muted-foreground block mb-1">Agent</label>
+            <div><label className="text-[11px] text-muted-foreground block mb-1">Representative</label>
               <Select value={agent} onValueChange={(v) => { setAgent(v); review.reset(); }}>
                 <SelectTrigger className="bg-card border-border h-9 w-[180px]"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="__all__">Whole Team</SelectItem>{agents.map((a: any) => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}</SelectContent>

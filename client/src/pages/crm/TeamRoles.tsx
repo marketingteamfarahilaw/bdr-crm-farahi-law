@@ -27,7 +27,7 @@ function AgentNameCell({ u, canEdit }: { u: any; canEdit: boolean }) {
   const utils = trpc.useUtils();
   const [val, setVal] = useState<string>(u.agentName ?? "");
   const save = trpc.team.setAgentName.useMutation({
-    onSuccess: () => { toast.success("Agent name saved"); utils.team.list.invalidate(); },
+    onSuccess: () => { toast.success("Representative name saved"); utils.team.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
   if (!canEdit) return <span className="block max-w-[140px] truncate text-xs text-muted-foreground" title={u.agentName || undefined}>{u.agentName || "—"}</span>;
@@ -154,7 +154,7 @@ export default function TeamRoles() {
                   <th className="px-4 py-2.5 font-medium">Name</th>
                   <th className="px-4 py-2.5 font-medium">Email</th>
                   <th className="px-4 py-2.5 font-medium">Role</th>
-                  <th className="px-4 py-2.5 font-medium">Agent Name</th>
+                  <th className="px-4 py-2.5 font-medium">Representative Name</th>
                   <th className="px-4 py-2.5 font-medium">Password</th>
                 </tr>
               </thead>

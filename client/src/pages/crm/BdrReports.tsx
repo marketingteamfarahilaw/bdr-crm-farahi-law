@@ -74,7 +74,7 @@ function ActivePartnersTable({ agentFilter }: { agentFilter?: string }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Agent</th>
+              <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Representative</th>
               <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Type</th>
               <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Facility Name</th>
               <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Contact</th>
@@ -201,7 +201,7 @@ export default function BdrReports() {
   const agentRows = Object.values(byAgent).sort((a, b) => b.connected - a.connected);
 
   function exportCsv() {
-    const headers = ["Agent", "Total Calls", "Connected", "Voicemail", "No Answer", "Check-ins", "Potential Leads", "Connect %"];
+    const headers = ["Representative", "Total Calls", "Connected", "Voicemail", "No Answer", "Check-ins", "Potential Leads", "Connect %"];
     const rows = agentRows.map((a) => [a.repName, a.total, a.connected, a.voicemail, a.noAnswer, a.partnerCheckin + a.bdrCheckin + a.frCheckin, a.potentialLead, a.total ? Math.round((a.connected / a.total) * 100) + "%" : "0%"]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -229,11 +229,11 @@ export default function BdrReports() {
         <div className="flex gap-2 flex-wrap">
           <Select value={selectedAgent} onValueChange={setSelectedAgent}>
             <SelectTrigger className="w-36 bg-card border-border">
-              <SelectValue placeholder="All Agents" />
+              <SelectValue placeholder="All Representatives" />
             </SelectTrigger>
             <SelectContent>
               {AGENTS.map((a) => (
-                <SelectItem key={a} value={a}>{a === "All" ? "All Agents" : a}</SelectItem>
+                <SelectItem key={a} value={a}>{a === "All" ? "All Representatives" : a}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -376,7 +376,7 @@ export default function BdrReports() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
-                      <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Agent</th>
+                      <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Representative</th>
                       <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Month</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Total</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Connected</th>
@@ -446,7 +446,7 @@ export default function BdrReports() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
-                      <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Agent</th>
+                      <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Representative</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Total Partners</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Check-Ins (This Month)</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Check-Ins (30 Days)</th>

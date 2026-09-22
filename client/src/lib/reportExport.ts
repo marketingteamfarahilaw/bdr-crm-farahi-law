@@ -15,7 +15,7 @@ export function exportReportToExcel(report: any, agentLabel: string, rangeLabel:
 
   const summary = [
     ["Farahi Law — Activity Report"],
-    ["Agent", agentLabel],
+    ["Representative", agentLabel],
     ["Period", rangeLabel],
     [],
     ["Metric", "Value"],

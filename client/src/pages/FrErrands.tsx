@@ -201,7 +201,7 @@ export default function FrErrands() {
                   <TableHead className="py-1.5">Client</TableHead>
                   <TableHead className="py-1.5">Tier</TableHead>
                   <TableHead className="py-1.5">Task</TableHead>
-                  <TableHead className="py-1.5">Agent</TableHead>
+                  <TableHead className="py-1.5">Representative</TableHead>
                   <TableHead className="py-1.5">Address</TableHead>
                   <TableHead className="w-16 py-1.5">Actions</TableHead>
                 </TableRow>
@@ -264,10 +264,10 @@ export default function FrErrands() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label>Agent</Label>
+                <Label>Representative</Label>
                 {isAdmin ? (
                   <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select representative" /></SelectTrigger>
                     <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (

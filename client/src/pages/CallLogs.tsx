@@ -80,7 +80,7 @@ export default function CallLogs() {
   }), [filtered]);
 
   const exportCsv = () => {
-    const head = ["Date", "Time", "Facility", "Agent", "Direction", "Result", "Duration", "Source"];
+    const head = ["Date", "Time", "Facility", "Representative", "Direction", "Result", "Duration", "Source"];
     const lines = filtered.map((r) => {
       const d = r.date ? new Date(r.date) : null;
       const cell = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -106,7 +106,7 @@ export default function CallLogs() {
           <div className="w-9 h-9 rounded-[10px] bg-primary flex items-center justify-center shrink-0"><PhoneCall className="w-[18px] h-[18px] text-primary-foreground" /></div>
           <div>
             <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>Call Logs</h1>
-            <p className="text-sm text-muted-foreground">Every call — facility, time, duration, result, and agent.</p>
+            <p className="text-sm text-muted-foreground">Every call — facility, time, duration, result, and representative.</p>
           </div>
         </div>
 
@@ -122,10 +122,10 @@ export default function CallLogs() {
             <div><label className="text-[11px] text-muted-foreground block mb-1">To</label><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPreset("custom"); }} className="bg-card border-border h-9 w-[150px]" /></div>
           </div>
           {isManager && (
-            <div><label className="text-[11px] text-muted-foreground block mb-1">Agent</label>
+            <div><label className="text-[11px] text-muted-foreground block mb-1">Representative</label>
               <Select value={agent} onValueChange={setAgent}>
                 <SelectTrigger className="bg-card border-border h-9 w-[170px]"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="__all__">All Agents</SelectItem>{agents.map((a: any) => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="__all__">All Representatives</SelectItem>{agents.map((a: any) => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           )}
@@ -144,7 +144,7 @@ export default function CallLogs() {
           <div className="flex-1 min-w-[180px]"><label className="text-[11px] text-muted-foreground block mb-1">Search</label>
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Facility, agent…" className="bg-card border-border h-9 pl-8" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Facility, representative…" className="bg-card border-border h-9 pl-8" />
             </div>
           </div>
           <Button variant="outline" className="h-9 gap-2" onClick={exportCsv} disabled={!filtered.length}><Download className="w-4 h-4" /> Export</Button>
@@ -169,7 +169,7 @@ export default function CallLogs() {
                 <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground bg-muted/30">
                   <th className="px-4 py-2 font-semibold">When</th>
                   <th className="px-3 py-2 font-semibold">Facility</th>
-                  <th className="px-3 py-2 font-semibold">Agent</th>
+                  <th className="px-3 py-2 font-semibold">Representative</th>
                   <th className="px-3 py-2 font-semibold">Dir</th>
                   <th className="px-3 py-2 font-semibold">Result</th>
                   <th className="px-3 py-2 font-semibold text-right">Duration</th>

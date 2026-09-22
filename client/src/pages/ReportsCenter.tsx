@@ -102,7 +102,7 @@ export default function ReportsCenter() {
     if (r) { setFrom(r.from); setTo(r.to); }
   };
 
-  const agentLabel = isManager ? (agent === "__all__" ? "All Agents" : agent) : (user?.agentName || user?.name || "Me");
+  const agentLabel = isManager ? (agent === "__all__" ? "All Representatives" : agent) : (user?.agentName || user?.name || "Me");
   const rangeLabel = `${format(new Date(from + "T00:00:00"), "MMM d, yyyy")} – ${format(new Date(to + "T00:00:00"), "MMM d, yyyy")}`;
   const k = report?.kpis;
 
@@ -145,11 +145,11 @@ export default function ReportsCenter() {
             </div>
             {isManager && (
               <div>
-                <label className="text-[11px] text-muted-foreground block mb-1">Agent</label>
+                <label className="text-[11px] text-muted-foreground block mb-1">Representative</label>
                 <Select value={agent} onValueChange={setAgent}>
                   <SelectTrigger className="bg-card border-border h-9 w-[180px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__all__">All Agents</SelectItem>
+                    <SelectItem value="__all__">All Representatives</SelectItem>
                     {agents.map((a: any) => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -238,7 +238,7 @@ export default function ReportsCenter() {
               <>
                 <DocTable title="Calls" rows={report.detail.calls} columns={[{ key: "date", label: "Date" }, { key: "result", label: "Result" }, { key: "type", label: "Type" }, { key: "duration", label: "Dur." }, { key: "summary", label: "Notes" }]} />
                 <DocTable title="Leads" rows={report.detail.leads} columns={[{ key: "date", label: "Date" }, { key: "direction", label: "Direction" }, { key: "outcome", label: "Outcome" }, { key: "signed", label: "Signed" }, { key: "area", label: "Area" }]} />
-                <DocTable title="Field Visits" rows={report.detail.visits} columns={[{ key: "date", label: "Date" }, { key: "agent", label: "Agent" }, { key: "facilities", label: "Facilities" }, { key: "hours", label: "Hours" }, { key: "notes", label: "Notes" }]} />
+                <DocTable title="Field Visits" rows={report.detail.visits} columns={[{ key: "date", label: "Date" }, { key: "agent", label: "Representative" }, { key: "facilities", label: "Facilities" }, { key: "hours", label: "Hours" }, { key: "notes", label: "Notes" }]} />
                 <DocTable title="Referral Rewards" rows={report.detail.rewards} columns={[{ key: "date", label: "Date" }, { key: "client", label: "Client" }, { key: "tier", label: "Tier" }, { key: "type", label: "Type" }, { key: "payout", label: "Payout", money: true }, { key: "status", label: "Status" }]} />
                 <DocTable title="Errands" rows={report.detail.errands} columns={[{ key: "date", label: "Date" }, { key: "client", label: "Client" }, { key: "task", label: "Task" }, { key: "status", label: "Status" }]} />
                 <DocTable title="Expenses" rows={report.detail.expenses} columns={[{ key: "date", label: "Date" }, { key: "kind", label: "Type" }, { key: "store", label: "Store" }, { key: "reason", label: "Reason" }, { key: "amount", label: "Amount", money: true }]} />

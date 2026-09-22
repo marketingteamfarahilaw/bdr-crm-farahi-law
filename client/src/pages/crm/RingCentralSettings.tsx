@@ -95,7 +95,7 @@ export default function RingCentralSettings() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border/60">
-                    <th className="py-1.5 px-2 font-semibold">Agent</th>
+                    <th className="py-1.5 px-2 font-semibold">Representative</th>
                     <th className="py-1.5 px-2 font-semibold">RingCentral</th>
                     <th className="py-1.5 px-2 font-semibold">Status</th>
                     <th className="py-1.5 px-2 font-semibold">Last sync</th>

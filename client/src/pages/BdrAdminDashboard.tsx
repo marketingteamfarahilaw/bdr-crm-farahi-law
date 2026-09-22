@@ -86,7 +86,7 @@ export default function BdrAdminDashboard() {
   // ── Export helpers ────────────────────────────────────────────────────────
   const exportCSV = () => {
     const headers = [
-      "Agent", "Visits", "Facilities", "Hours",
+      "Representative", "Visits", "Facilities", "Hours",
       "FR Expenses", "BDR Expenses", "Total Expenses",
       "Rewards Paid", "Errands", "Errands Completed",
       "Referrals", "Successful Referrals",
@@ -145,7 +145,7 @@ export default function BdrAdminDashboard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">BDR Admin Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Aggregated metrics across all agents and time periods</p>
+          <p className="text-muted-foreground text-sm mt-1">Aggregated metrics across all representatives and time periods</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -174,16 +174,16 @@ export default function BdrAdminDashboard() {
         <KpiCard icon={ClipboardList} label="Total Errands" value={kpis.totalErrands} sub={`${kpis.completedErrands} completed`} color="text-blue-500" />
         <KpiCard icon={CheckCircle} label="Errand Completion" value={kpis.totalErrands > 0 ? `${Math.round((kpis.completedErrands / kpis.totalErrands) * 100)}%` : "—"} sub="completion rate" color="text-teal-500" />
         <KpiCard icon={TrendingUp} label="Leads Received from Partners" value={kpis.totalLeadsReceived ?? 0} sub="inbound partner leads" color="text-purple-500" />
-        <KpiCard icon={Users} label="Active Agents" value={byAgent.filter(a => a.visits > 0 || a.frExpenses > 0).length} sub="with recorded activity" color="text-orange-500" />
+        <KpiCard icon={Users} label="Active Representatives" value={byAgent.filter(a => a.visits > 0 || a.frExpenses > 0).length} sub="with recorded activity" color="text-orange-500" />
       </div>
 
       {/* Tabs for detailed charts */}
       <Tabs defaultValue="agents">
         <TabsList className="mb-4">
-          <TabsTrigger value="agents">By Agent</TabsTrigger>
+          <TabsTrigger value="agents">By Representative</TabsTrigger>
           <TabsTrigger value="trends">Monthly Trends</TabsTrigger>
           <TabsTrigger value="breakdown">Breakdowns</TabsTrigger>
-          <TabsTrigger value="table">Agent Table</TabsTrigger>
+          <TabsTrigger value="table">Representative Table</TabsTrigger>
         </TabsList>
 
         {/* ── By Agent ── */}
@@ -191,7 +191,7 @@ export default function BdrAdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Visits by agent */}
             <Card>
-              <CardHeader><CardTitle className="text-base">Field Visits by Agent</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Field Visits by Representative</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={byAgent} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -211,7 +211,7 @@ export default function BdrAdminDashboard() {
 
             {/* Expenses by agent */}
             <Card>
-              <CardHeader><CardTitle className="text-base">Total Expenses by Agent</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Total Expenses by Representative</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={byAgent} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -237,7 +237,7 @@ export default function BdrAdminDashboard() {
 
             {/* Referrals by agent */}
             <Card>
-              <CardHeader><CardTitle className="text-base">Referrals by Agent</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Referrals by Representative</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={byAgent} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -255,7 +255,7 @@ export default function BdrAdminDashboard() {
 
             {/* Errands by agent */}
             <Card>
-              <CardHeader><CardTitle className="text-base">Errands by Agent</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Errands by Representative</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={byAgent} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -413,12 +413,12 @@ export default function BdrAdminDashboard() {
         {/* ── Agent Table ── */}
         <TabsContent value="table">
           <Card>
-            <CardHeader><CardTitle className="text-base">Agent Performance Summary</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Representative Performance Summary</CardTitle></CardHeader>
             <CardContent className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="text-left py-2 pr-4 font-medium">Agent</th>
+                    <th className="text-left py-2 pr-4 font-medium">Representative</th>
                     <th className="text-right py-2 px-3 font-medium">Visits</th>
                     <th className="text-right py-2 px-3 font-medium">Facilities</th>
                     <th className="text-right py-2 px-3 font-medium">Hours</th>

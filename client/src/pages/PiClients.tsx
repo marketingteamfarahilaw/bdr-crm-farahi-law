@@ -501,7 +501,7 @@ export default function PiClientsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-600 mb-1.5" style={{ color:"rgba(148,163,184,0.7)",letterSpacing:"0.06em",textTransform:"uppercase" }}>Assigned Agent</label>
+              <label className="block text-xs font-600 mb-1.5" style={{ color:"rgba(148,163,184,0.7)",letterSpacing:"0.06em",textTransform:"uppercase" }}>Assigned Representative</label>
               <select value={form.assignedAgentName} onChange={e => setForm(f => ({ ...f, assignedAgentName: e.target.value }))}
                 className="w-full bg-[#0d1526] border border-[#1e2d4a] text-white rounded-md px-3 py-2 text-sm focus:border-[#ef4444] focus:outline-none">
                 <option value="">— Unassigned —</option>

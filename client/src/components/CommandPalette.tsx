@@ -12,7 +12,7 @@ const PAGES = [
   { label: "Lead Search", path: "/search", icon: Search },
   { label: "Lead Map", path: "/map", icon: Map },
   { label: "BDR Reports", path: "/crm/reports", icon: BarChart3 },
-  { label: "Agents", path: "/agents", icon: Users },
+  { label: "Representatives", path: "/agents", icon: Users },
   { label: "RingCentral Settings", path: "/crm/ringcentral", icon: Phone },
 ];
 

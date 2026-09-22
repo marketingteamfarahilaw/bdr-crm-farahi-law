@@ -69,7 +69,7 @@ export default function CallAnalytics() {
           <div className="w-9 h-9 rounded-[10px] bg-primary flex items-center justify-center shrink-0"><Phone className="w-[18px] h-[18px] text-primary-foreground" /></div>
           <div>
             <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>Call Analytics</h1>
-            <p className="text-sm text-muted-foreground">Call activity per agent + AI sentiment of your partners.</p>
+            <p className="text-sm text-muted-foreground">Call activity per representative + AI sentiment of your partners.</p>
           </div>
         </div>
 
@@ -85,10 +85,10 @@ export default function CallAnalytics() {
             <div><label className="text-[11px] text-muted-foreground block mb-1">To</label><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPreset("custom"); }} className="bg-card border-border h-9 w-[150px]" /></div>
           </div>
           {isManager && (
-            <div><label className="text-[11px] text-muted-foreground block mb-1">Agent</label>
+            <div><label className="text-[11px] text-muted-foreground block mb-1">Representative</label>
               <Select value={agent} onValueChange={setAgent}>
                 <SelectTrigger className="bg-card border-border h-9 w-[180px]"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="__all__">All Agents</SelectItem>{agents.map((a: any) => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="__all__">All Representatives</SelectItem>{agents.map((a: any) => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           )}
@@ -120,11 +120,11 @@ export default function CallAnalytics() {
 
         {/* Per-agent call log */}
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-border text-sm font-semibold text-foreground">Calls by Agent</div>
+          <div className="px-5 py-3 border-b border-border text-sm font-semibold text-foreground">Calls by Representative</div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-                <th className="px-5 py-2 font-semibold">Agent</th><th className="px-3 py-2 font-semibold">Calls</th><th className="px-3 py-2 font-semibold">Connected</th><th className="px-3 py-2 font-semibold">Voicemail</th><th className="px-3 py-2 font-semibold">No Answer</th><th className="px-3 py-2 font-semibold">Talk Time</th>
+                <th className="px-5 py-2 font-semibold">Representative</th><th className="px-3 py-2 font-semibold">Calls</th><th className="px-3 py-2 font-semibold">Connected</th><th className="px-3 py-2 font-semibold">Voicemail</th><th className="px-3 py-2 font-semibold">No Answer</th><th className="px-3 py-2 font-semibold">Talk Time</th>
               </tr></thead>
               <tbody>
                 {(data?.byAgent ?? []).map((a) => (

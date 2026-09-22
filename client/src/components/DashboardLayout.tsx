@@ -73,7 +73,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   //   { icon: GraduationCap, label: "QA Coach", path: "/partnership/qa", level: "manage" },
   //   { icon: Trophy, label: "Leadership", path: "/partnership/leadership", level: "manage" },
   // ] },
-  { title: "Agent Tools", items: [
+  { title: "Representative Tools", items: [
     { icon: LayoutDashboard, label: "Daily Work", path: "/daily-work", level: "all" },
     { icon: CalendarDays, label: "Daily Activity Log", path: "/daily-log", level: "all" },
     { icon: ListChecks, label: "Task Board", path: "/tasks", level: "all" },
@@ -82,7 +82,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: FileBarChart2, label: "Team Reports", path: "/team-reports", level: "manage" },
     { icon: Phone, label: "Call Analytics", path: "/call-analytics", level: "all" },
     { icon: ClipboardList, label: "Call Logs", path: "/call-logs", level: "all" },
-    { icon: Sparkles, label: "Agent Performance", path: "/agent-performance", level: "all" },
+    { icon: Sparkles, label: "Representative Performance", path: "/agent-performance", level: "all" },
     { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
     // FR-only items hidden for now (per request) — BDR focus. Pages/routes still
     // exist; uncomment to restore.
@@ -100,7 +100,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   ] },
   { title: "Team & Integrations", items: [
     { icon: Shield, label: "Team & Roles", path: "/team", level: "manage" },
-    { icon: Users, label: "Agent Zones", path: "/agents", level: "manage" },
+    { icon: Users, label: "Representative Zones", path: "/agents", level: "manage" },
     // Hidden for now (per request): Filevine + PI Clients. Pages/routes still
     // exist and the Filevine sync keeps running — uncomment to restore.
     // { icon: UserRound, label: "PI Clients", path: "/pi-clients", level: "manage" },

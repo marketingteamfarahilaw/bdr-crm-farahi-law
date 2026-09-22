@@ -110,16 +110,16 @@ export function BdrFilterBar({
         {/* Agent filter — admin only */}
         {showAgent && showAgentFilter && (
           <div className="min-w-[140px]">
-            <Label className="text-xs text-muted-foreground mb-1 block">Agent</Label>
+            <Label className="text-xs text-muted-foreground mb-1 block">Representative</Label>
             <Select
               value={filters.agent ?? "all"}
               onValueChange={(v) => set("agent", v === "all" ? undefined : v)}
             >
               <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="All agents" />
+                <SelectValue placeholder="All representatives" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All agents</SelectItem>
+                <SelectItem value="all">All representatives</SelectItem>
                 {AGENTS.map((a) => (
                   <SelectItem key={a} value={a}>{a}</SelectItem>
                 ))}

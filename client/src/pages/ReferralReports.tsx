@@ -186,14 +186,14 @@ export default function ReferralReports() {
             {byAgent.length === 0 ? (
               <div className="m-4 rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
                 <User className="w-8 h-8 mx-auto text-muted-foreground" />
-                <p className="mt-3 text-sm font-medium text-foreground">No agent activity yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">Per-agent referral activity appears here once logged.</p>
+                <p className="mt-3 text-sm font-medium text-foreground">No representative activity yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">Per-representative referral activity appears here once logged.</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Agent</TableHead>
+                    <TableHead>Representative</TableHead>
                     <TableHead className="text-center">Referrals Sent</TableHead>
                     <TableHead className="text-center">Leads Received</TableHead>
                     <TableHead className="text-center">Total Activity</TableHead>

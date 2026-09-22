@@ -437,9 +437,9 @@ export default function CaliforniaMapPage() {
   const { data: agentZones = [] } = trpc.agentZones.list.useQuery();
   const assignLeadMutation = trpc.agentZones.assignLead.useMutation({
     onSuccess: () => {
-      toast.success("Agent assigned!");
+      toast.success("Representative assigned!");
     },
-    onError: () => toast.error("Failed to assign agent."),
+    onError: () => toast.error("Failed to assign representative."),
   });
 
   // Map & markers
@@ -1192,7 +1192,7 @@ export default function CaliforniaMapPage() {
                     }}
                   >
                     <span style={{ fontSize: 13 }}>👥</span>
-                    <span style={{ flex: 1 }}>All Agents</span>
+                    <span style={{ flex: 1 }}>All Representatives</span>
                     <span style={{
                       fontSize: 10, fontWeight: 800,
                       background: agentFilter === "all" ? "rgba(212,175,55,0.2)" : "rgba(255,255,255,0.06)",

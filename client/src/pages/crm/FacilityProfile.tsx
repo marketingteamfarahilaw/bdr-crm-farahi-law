@@ -886,7 +886,7 @@ function ExpensesTab({ facilityId, facilityName }: { facilityId: number; facilit
   const total = rows.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
   const STT: Record<string, string> = { pending: "bg-amber-500/15 text-amber-600 dark:text-amber-400", submitted: "bg-blue-500/15 text-blue-600 dark:text-blue-400", approved: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" };
   const exportCsv = () => {
-    const out = [["Date", "Kind", "Store", "Reason", "Amount", "Reimbursement", "Agent"], ...rows.map((e: any) => [e.date ? new Date(e.date).toISOString().slice(0, 10) : "", e.kind, e.store, e.reason, e.amount, e.reimbursementStatus, e.agentName])];
+    const out = [["Date", "Kind", "Store", "Reason", "Amount", "Reimbursement", "Representative"], ...rows.map((e: any) => [e.date ? new Date(e.date).toISOString().slice(0, 10) : "", e.kind, e.store, e.reason, e.amount, e.reimbursementStatus, e.agentName])];
     const csv = out.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); const a = document.createElement("a"); a.href = url; a.download = `Expenses - ${facilityName ?? facilityId}.csv`; a.click(); URL.revokeObjectURL(url);
   };

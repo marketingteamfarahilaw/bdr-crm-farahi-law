@@ -113,8 +113,8 @@ export default function CheckinReport() {
         <div className="flex gap-2 items-center flex-wrap">
           {isMgr && (
             <Select value={agent || "all"} onValueChange={(v) => setAgent(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-40"><SelectValue placeholder="All agents" /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All agents</SelectItem>{agentNames.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
+              <SelectTrigger className="w-40"><SelectValue placeholder="All representatives" /></SelectTrigger>
+              <SelectContent><SelectItem value="all">All representatives</SelectItem>{agentNames.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
             </Select>
           )}
           <Select value={month} onValueChange={setMonth}>

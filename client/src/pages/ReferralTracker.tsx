@@ -274,7 +274,7 @@ export default function ReferralTracker() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label>BDR Agent</Label>
+                <Label>BDR Representative</Label>
                 {isAdmin ? (
                   <Select value={form.bdrAgent} onValueChange={(v) => setForm({ ...form, bdrAgent: v })}>
                     <SelectTrigger><SelectValue placeholder="Select BDR" /></SelectTrigger>

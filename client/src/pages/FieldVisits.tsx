@@ -88,7 +88,7 @@ export default function FieldVisits() {
   }
 
   function handleSubmit() {
-    if (!form.agentName) return toast.error("Agent name required");
+    if (!form.agentName) return toast.error("Representative name required");
     if (editing !== null) {
       updateMutation.mutate({ id: editing, ...form });
     } else {
@@ -98,7 +98,7 @@ export default function FieldVisits() {
 
   function exportCsv() {
     if (!visits?.length) return toast.error("No data to export");
-    const headers = ["Date", "Agent", "Facility Count", "Hours Worked", "Facilities", "Notes"];
+    const headers = ["Date", "Representative", "Facility Count", "Hours Worked", "Facilities", "Notes"];
     const rows = visits.map((v) => [
       v.visitDate ? new Date(v.visitDate).toLocaleDateString() : "",
       v.agentName,
@@ -123,7 +123,7 @@ export default function FieldVisits() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Field Visits</h1>
-          <p className="text-muted-foreground text-sm mt-1">Daily log of facility visits by FR/BDR agents</p>
+          <p className="text-muted-foreground text-sm mt-1">Daily log of facility visits by FR/BDR representatives</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={exportCsv} disabled={!visits?.length}>
@@ -197,7 +197,7 @@ export default function FieldVisits() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Agent</TableHead>
+                  <TableHead>Representative</TableHead>
                   <TableHead>Facilities</TableHead>
                   <TableHead>Hours</TableHead>
                   <TableHead>Notes</TableHead>
@@ -236,10 +236,10 @@ export default function FieldVisits() {
                 <DatePickerField value={form.visitDate} onChange={(v) => setForm({ ...form, visitDate: v })} />
               </div>
               <div className="space-y-1">
-                <Label>Agent *</Label>
+                <Label>Representative *</Label>
                 {isAdmin ? (
                   <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select representative" /></SelectTrigger>
                     <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (

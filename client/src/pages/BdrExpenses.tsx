@@ -95,7 +95,7 @@ export default function BdrExpenses() {
   }
 
   function handleSubmit() {
-    if (!form.agentName) return toast.error("Agent name required");
+    if (!form.agentName) return toast.error("Representative name required");
     if (editing !== null) {
       updateMutation.mutate({ id: editing, ...form });
     } else {
@@ -122,7 +122,7 @@ export default function BdrExpenses() {
       return;
     }
 
-    const headers = ["Month", "Date", "Agent", "Facility", "Facility Phone", "Store", "Reason", "Amount", "Notes"];
+    const headers = ["Month", "Date", "Representative", "Facility", "Facility Phone", "Store", "Reason", "Amount", "Notes"];
     const rows = filtered.map((e) => [
       e.month ?? "",
       e.expenseDate ? new Date(e.expenseDate).toLocaleDateString() : "",
@@ -221,7 +221,7 @@ export default function BdrExpenses() {
                 <TableRow>
                   <TableHead>Month</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Agent</TableHead>
+                  <TableHead>Representative</TableHead>
                   <TableHead>Facility</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Store</TableHead>
@@ -314,10 +314,10 @@ export default function BdrExpenses() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label>Agent *</Label>
+                <Label>Representative *</Label>
                 {isAdmin ? (
                   <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select representative" /></SelectTrigger>
                     <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (

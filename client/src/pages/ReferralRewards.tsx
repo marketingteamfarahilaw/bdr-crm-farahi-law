@@ -100,7 +100,7 @@ export default function ReferralRewards() {
   }
 
   function handleSubmit() {
-    if (!form.agentName) return toast.error("Agent name required");
+    if (!form.agentName) return toast.error("Representative name required");
     if (editing !== null) {
       updateMutation.mutate({ id: editing, ...form });
     } else {
@@ -173,7 +173,7 @@ export default function ReferralRewards() {
             <Table className="text-sm [&_td]:py-2 [&_th]:py-2">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Agent</TableHead>
+                  <TableHead>Representative</TableHead>
                   <TableHead>SUD</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Facility</TableHead>
@@ -265,10 +265,10 @@ export default function ReferralRewards() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label>Agent *</Label>
+                <Label>Representative *</Label>
                 {isAdmin ? (
                   <Select value={form.agentName} onValueChange={(v) => setForm({ ...form, agentName: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select representative" /></SelectTrigger>
                     <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (
