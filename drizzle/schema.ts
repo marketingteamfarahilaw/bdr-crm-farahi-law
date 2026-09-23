@@ -1,5 +1,6 @@
 import {
   int,
+  bigint,
   mysqlEnum,
   mysqlTable,
   text,
@@ -1105,3 +1106,17 @@ export const triviaAnswers = mysqlTable("trivia_answers", {
   submittedAt: timestamp("submittedAt", { fsp: 3 }).default(sql`CURRENT_TIMESTAMP(3)`).notNull(), // (now()) is invalid for timestamp(3) on TiDB
 });
 export type TriviaAnswer = typeof triviaAnswers.$inferSelect;
+
+
+/**
+ * Every Lead Docket lead the sync has checked, with the LastUpdateDate it had.
+ * A lead is only read again once Lead Docket reports a change, which makes the
+ * sync resumable across restarts and keeps each 8-hourly run small. isOurs
+ * records whether it was credited to the BD/FR team.
+ */
+export const leaddocketSeen = mysqlTable("leaddocket_seen", {
+  leadId: bigint("leadId", { mode: "number" }).primaryKey(),
+  lastUpdate: varchar("lastUpdate", { length: 40 }),
+  isOurs: int("isOurs").default(0).notNull(),
+  checkedAt: timestamp("checkedAt").defaultNow().onUpdateNow().notNull(),
+});

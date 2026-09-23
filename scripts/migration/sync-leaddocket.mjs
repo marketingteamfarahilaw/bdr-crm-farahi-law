@@ -159,23 +159,53 @@ for (const st of wanted) {
 
 const LIMIT = arg("--limit") ? Number(arg("--limit")) : null;   // for spot-checks
 const changed = SINCE ? rows.filter((r) => new Date(r.LastUpdateDate ?? r.CreatedDate ?? 0) > SINCE) : rows;
-const fresh = LIMIT ? changed.slice(0, LIMIT) : changed;
-console.log("\n" + rows.length + " leads total, " + fresh.length + " to read" + (SINCE ? " (changed since " + SINCE.toISOString().slice(0, 10) + ")" : ""));
 
 const c = DRY ? null : await mysql.createConnection(process.env.DATABASE_URL);
+
+// Every lead checked is remembered with the LastUpdateDate it had — ours or not —
+// so a lead is only read again once Lead Docket says it changed. That makes the
+// sync resumable: a deploy or restart mid-run (the server restarts on every push)
+// picks up where it stopped instead of re-reading hours of leads from the start.
+// It also makes each 8-hourly run read only genuinely new or edited leads.
+const seen = new Map();
+if (c) {
+  await c.query(`CREATE TABLE IF NOT EXISTS leaddocket_seen (
+    leadId BIGINT NOT NULL PRIMARY KEY,
+    lastUpdate VARCHAR(40) NULL,
+    isOurs TINYINT NOT NULL DEFAULT 0,
+    checkedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  )`);
+  const [s] = await c.query("SELECT leadId, lastUpdate FROM leaddocket_seen");
+  for (const r of s) seen.set(String(r.leadId), r.lastUpdate);
+}
+const stamp = (r) => String(r.LastUpdateDate ?? r.CreatedDate ?? "");
+const unseen = changed.filter((r) => seen.get(String(r.Id)) !== stamp(r));
+const fresh = LIMIT ? unseen.slice(0, LIMIT) : unseen;
+console.log("\n" + rows.length + " leads total, " + changed.length + " in range" + (SINCE ? " (changed since " + SINCE.toISOString().slice(0, 10) + ")" : "") +
+  ", " + (changed.length - unseen.length) + " already checked and unchanged, " + fresh.length + " to read");
+
 let ours = 0, inserted = 0, updated = 0, skipped = 0, failed = 0;
+let lastWasOurs = false;
 const byRep = new Map();
 const skippedSources = new Map();
 
 // Sequential on purpose: the pacing in api() is what keeps us under the limit.
-// A lead that can't be read is queued and retried at the end, never dropped.
+// A lead that can't be read is queued and retried at the end, never dropped —
+// and it is not marked as seen, so it can't be skipped next time either.
 const retry = [];
-async function processLead(id) {
+async function processLead(row) {
   let raw;
-  try { raw = await api("/api/Leads/" + id); } catch { return "failed"; }
+  try { raw = await api("/api/Leads/" + row.Id); } catch { return "failed"; }
   const d = raw?.Data ?? raw;
   if (!d) return "failed";
+  lastWasOurs = false;
   await store(d);
+  if (c) {
+    await c.query(
+      "INSERT INTO leaddocket_seen (leadId, lastUpdate, isOurs) VALUES (?,?,?) ON DUPLICATE KEY UPDATE lastUpdate=VALUES(lastUpdate), isOurs=VALUES(isOurs)",
+      [row.Id, stamp(row), lastWasOurs ? 1 : 0]
+    );
+  }
   return "done";
 }
 
@@ -189,6 +219,7 @@ async function store(d) {
       return;
     }
     ours++;
+    lastWasOurs = true;
     byRep.set(rep.role + " " + rep.member, (byRep.get(rep.role + " " + rep.member) || 0) + 1);
     if (DRY) return;
 
@@ -227,7 +258,7 @@ async function store(d) {
 
 const started = Date.now();
 for (let i = 0; i < fresh.length; i++) {
-  if ((await processLead(fresh[i].Id)) === "failed") retry.push(fresh[i].Id);
+  if ((await processLead(fresh[i])) === "failed") retry.push(fresh[i]);
   if (i % 200 === 0 || i === fresh.length - 1) {
     const mins = ((Date.now() - started) / 60000).toFixed(1);
     console.log("  …" + (i + 1) + "/" + fresh.length + " read in " + mins + " min — " + ours + " ours, " + skipped + " not ours, " + retry.length + " to retry");
@@ -240,7 +271,7 @@ if (retry.length) {
   console.log("\nretrying " + retry.length + " leads that could not be read the first time…");
   await sleep(60000);                          // let the per-minute window fully reset
   const still = [];
-  for (const id of retry) if ((await processLead(id)) === "failed") still.push(id);
+  for (const row of retry) if ((await processLead(row)) === "failed") still.push(row.Id);
   failed = still.length;
   if (still.length) console.log("STILL UNREADABLE (" + still.length + "): " + still.slice(0, 30).join(", ") + (still.length > 30 ? " …" : ""));
 }
