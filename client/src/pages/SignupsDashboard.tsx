@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LeadDocketSyncButton } from "@/components/DataSyncPanel";
 import {
   Users, Building2, Truck, MapPin, Lightbulb, ClipboardList, Target,
   CheckCircle2, FileBarChart2, Download, AlertTriangle,
@@ -78,6 +79,7 @@ export default function SignupsDashboard() {
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9 w-[150px]" />
           </div>
           <Button size="sm" variant="outline" onClick={exportCsv}><Download className="w-4 h-4 mr-1.5" /> CSV</Button>
+          <LeadDocketSyncButton />
         </div>
       </div>
 

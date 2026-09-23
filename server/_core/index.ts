@@ -21,6 +21,7 @@ import { syncIntakeCalls } from "../intakeSync";
 import { listConnectedRcUsers, setUserRcLastSync } from "../crmDb";
 import { getSetting } from "../db";
 import { isIntakeOnly } from "@shared/permissions";
+import { runDueJobs } from "../dataSync";
 // Note: RingCentral auto-connect via JWT has been removed.
 // Agents now log in to RingCentral directly through the embedded widget UI.
 // The server still stores tokens when agents connect via OAuth through the widget.
@@ -93,7 +94,25 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
     startRingCentralAutoSync();
+    startDataSyncSchedule();
   });
+}
+
+// ─── Background: Lead Docket + Google Sheets, every 8 hours ──────────────────
+// Rather than a fixed 8h timer — which a deploy or restart would reset, or fire
+// on every boot — check often whether each job's last success is older than 8h.
+// Skipped in local dev: a laptop running `pnpm dev` must not quietly rewrite
+// production data or spend the Lead Docket rate-limit budget.
+function startDataSyncSchedule() {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[dataSync] scheduled syncs disabled outside production.");
+    return;
+  }
+  const CHECK_MS = 15 * 60 * 1000;
+  const tick = () => runDueJobs().catch((e) => console.warn("[dataSync] schedule check failed:", e?.message ?? e));
+  setTimeout(tick, 2 * 60 * 1000);      // shortly after boot, once the server has settled
+  setInterval(tick, CHECK_MS);
+  console.log("[dataSync] Lead Docket + Google Sheets sync scheduled every 8h (checked every 15 min).");
 }
 
 // ─── Background: auto-sync RingCentral calls every few minutes ───────────────

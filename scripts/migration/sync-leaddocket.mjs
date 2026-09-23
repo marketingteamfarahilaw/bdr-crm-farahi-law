@@ -58,17 +58,42 @@ const TEAM = [
 ];
 const BY_FIRST = new Map(TEAM.map(([full, role]) => [full.split(" ")[0].toLowerCase(), { full, role }]));
 
+// Lead Docket rate-limits per endpoint group (see X-RateLimit-Group / -Limit):
+//   list    /api/Leads?Status=…   "LeadsAndOpportunities"  250 / minute
+//   detail  /api/Leads/{id}       "LeadsByIdFull"           50 / minute
+// Detail is where MarketingSource lives, so it sets the pace: a full backfill of
+// ~7,700 sign-ups takes about 2½ hours, while an incremental run only reads the
+// leads that changed. Going faster doesn't finish sooner — it earns 429s, and
+// before this pacing existed those were retried three times, given up on, and
+// the lead silently dropped (one run skipped 2,248 leads without a word).
+const GAP_MS = { detail: 1300, list: 290 };    // ≈46/min and ≈207/min, under each cap
+const lastCall = { detail: 0, list: 0 };
+const sleep = (ms) => new Promise((s) => setTimeout(s, ms));
+
 const api = async (p) => {
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  const group = /^\/api\/Leads\/\d+/.test(p) ? "detail" : "list";
+  for (let attempt = 1; attempt <= 12; attempt++) {
+    const wait = lastCall[group] + GAP_MS[group] - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastCall[group] = Date.now();
+
+    let r;
     try {
-      const r = await fetch(BASE + p, { headers: { api_key: KEY } });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return await r.json();
+      r = await fetch(BASE + p, { headers: { api_key: KEY } });
     } catch (e) {
-      if (attempt === 3) throw e;
-      await new Promise((s) => setTimeout(s, 500 * attempt));
+      await sleep(Math.min(30000, 1000 * attempt));   // network blip
+      continue;
     }
+    if (r.status === 429) {
+      // Wait for the window the server names, plus a margin; never give up quietly.
+      const reset = Number(r.headers.get("retry-after") ?? r.headers.get("x-ratelimit-reset") ?? 0);
+      await sleep(Math.max(reset * 1000, 5000 * attempt) + 500);
+      continue;
+    }
+    if (!r.ok) throw new Error("HTTP " + r.status + " for " + p);
+    return await r.json();
   }
+  throw new Error("gave up after repeated rate limiting: " + p);
 };
 
 /** Some fields come back as objects ({Id, Name, …}) rather than strings. */
@@ -132,7 +157,9 @@ for (const st of wanted) {
   console.log("  " + st.name + ": " + rows.filter((r) => r.StatusName === st.name).length);
 }
 
-const fresh = SINCE ? rows.filter((r) => new Date(r.LastUpdateDate ?? r.CreatedDate ?? 0) > SINCE) : rows;
+const LIMIT = arg("--limit") ? Number(arg("--limit")) : null;   // for spot-checks
+const changed = SINCE ? rows.filter((r) => new Date(r.LastUpdateDate ?? r.CreatedDate ?? 0) > SINCE) : rows;
+const fresh = LIMIT ? changed.slice(0, LIMIT) : changed;
 console.log("\n" + rows.length + " leads total, " + fresh.length + " to read" + (SINCE ? " (changed since " + SINCE.toISOString().slice(0, 10) + ")" : ""));
 
 const c = DRY ? null : await mysql.createConnection(process.env.DATABASE_URL);
@@ -140,23 +167,30 @@ let ours = 0, inserted = 0, updated = 0, skipped = 0, failed = 0;
 const byRep = new Map();
 const skippedSources = new Map();
 
-const BATCH = 8;
-for (let i = 0; i < fresh.length; i += BATCH) {
-  const details = await Promise.all(fresh.slice(i, i + BATCH).map((r) => api("/api/Leads/" + r.Id).catch(() => null)));
-  for (const raw of details) {
-    const d = raw?.Data ?? raw;
-    if (!d) { failed++; continue; }
+// Sequential on purpose: the pacing in api() is what keeps us under the limit.
+// A lead that can't be read is queued and retried at the end, never dropped.
+const retry = [];
+async function processLead(id) {
+  let raw;
+  try { raw = await api("/api/Leads/" + id); } catch { return "failed"; }
+  const d = raw?.Data ?? raw;
+  if (!d) return "failed";
+  await store(d);
+  return "done";
+}
+
+async function store(d) {
     const source = str(d.MarketingSource);
     const rep = creditedRep(source);
     if (!rep) {
       skipped++;
       const key = source || "(no marketing source)";
       skippedSources.set(key, (skippedSources.get(key) || 0) + 1);
-      continue;
+      return;
     }
     ours++;
     byRep.set(rep.role + " " + rep.member, (byRep.get(rep.role + " " + rep.member) || 0) + 1);
-    if (DRY) continue;
+    if (DRY) return;
 
     const contact = d.Contact ?? {};
     const when = d.SignedUpDate ?? d.CreatedDate ?? null;
@@ -189,16 +223,36 @@ for (let i = 0; i < fresh.length; i += BATCH) {
       await c.query("INSERT INTO lead_intake (" + cols + ", createdAt, updatedAt) VALUES (" + qs + ", NOW(), NOW())", Object.values(vals));
       inserted++;
     }
+}
+
+const started = Date.now();
+for (let i = 0; i < fresh.length; i++) {
+  if ((await processLead(fresh[i].Id)) === "failed") retry.push(fresh[i].Id);
+  if (i % 200 === 0 || i === fresh.length - 1) {
+    const mins = ((Date.now() - started) / 60000).toFixed(1);
+    console.log("  …" + (i + 1) + "/" + fresh.length + " read in " + mins + " min — " + ours + " ours, " + skipped + " not ours, " + retry.length + " to retry");
   }
-  if ((i / BATCH) % 40 === 0) console.log("  …" + Math.min(i + BATCH, fresh.length) + "/" + fresh.length + " read — " + ours + " ours");
-  await new Promise((r) => setTimeout(r, 150));
+}
+
+// Second pass for anything that failed; after that, report what is still missing
+// rather than pretending the run was complete.
+if (retry.length) {
+  console.log("\nretrying " + retry.length + " leads that could not be read the first time…");
+  await sleep(60000);                          // let the per-minute window fully reset
+  const still = [];
+  for (const id of retry) if ((await processLead(id)) === "failed") still.push(id);
+  failed = still.length;
+  if (still.length) console.log("STILL UNREADABLE (" + still.length + "): " + still.slice(0, 30).join(", ") + (still.length > 30 ? " …" : ""));
 }
 
 console.log("\nBD/FR leads found : " + ours);
-console.log("not the team's    : " + skipped + (failed ? "  |  unreadable: " + failed : ""));
+console.log("not the team's    : " + skipped + (failed ? "  |  STILL UNREADABLE: " + failed : ""));
 console.log("\nby representative:");
 [...byRep.entries()].sort((a, b) => b[1] - a[1]).forEach(([k, v]) => console.log("  " + String(v).padStart(5) + "  " + k));
 console.log("\ntop sources NOT credited to the team (check for miscredited work):");
 [...skippedSources.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15).forEach(([k, v]) => console.log("  " + String(v).padStart(5) + "  " + k));
 console.log(DRY ? "\n[DRY RUN] nothing written." : "\n✅ inserted " + inserted + ", updated " + updated + ".");
+// One machine-readable line, so the in-app sync can show the result.
+console.log("SYNC_RESULT " + JSON.stringify({ scanned: fresh.length, ours, skipped, failed, inserted, updated, byRep: Object.fromEntries(byRep) }));
 if (c) await c.end();
+if (failed > 0) process.exit(2);   // a partial sync must not look like a success

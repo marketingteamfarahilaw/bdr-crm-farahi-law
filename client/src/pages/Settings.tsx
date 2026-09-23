@@ -7,6 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { canManage } from "@shared/permissions";
 import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock } from "lucide-react";
 import { DEFAULT_LOGO } from "@/hooks/useBranding";
+import { DataSyncPanel } from "@/components/DataSyncPanel";
 
 const MAX_DIM = 256; // logos render <=112px; 256 keeps them crisp on retina while tiny in storage
 
@@ -171,6 +172,8 @@ export default function SettingsPage() {
       <p className="text-sm text-muted-foreground ml-12 mb-8">
         Brand your CRM. Upload a logo for dark and light mode — it appears on the sign-in screen and the sidebar.
       </p>
+
+      {isManager && <DataSyncPanel />}
 
       {!isManager && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm mb-6">

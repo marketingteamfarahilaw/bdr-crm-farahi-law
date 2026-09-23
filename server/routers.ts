@@ -92,6 +92,8 @@ import {
   setUserPhoto,
 } from "./db";
 import { canManage, canAssignRoles, seesAllData, isIntakeOnly } from "@shared/permissions";
+import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS } from "./dataSync";
+import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
 import { fromZonedTime } from "date-fns-tz";
 
@@ -209,6 +211,27 @@ export const appRouter = router({
         if (await getUserByEmail(email)) throw new TRPCError({ code: "BAD_REQUEST", message: "A user with that email already exists." });
         await createUserAccount({ openId: `local_${nanoid()}`, name: input.name, email, role: input.role, passwordHash: hashPassword(input.password) });
         return { success: true };
+      }),
+  }),
+
+  // Lead Docket + Google Sheets syncs. Managers only: a sync rewrites team data.
+  dataSync: router({
+    status: bdProcedure.query(async ({ ctx }) => {
+      mgrOnly(ctx);
+      const [leaddocket, sheets, sheetAccess] = await Promise.all([
+        getSyncStatus("leaddocket"), getSyncStatus("sheets"), checkSheets(),
+      ]);
+      return { leaddocket, sheets, sheetAccess, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
+    }),
+    run: bdProcedure
+      .input(z.object({ job: z.enum(["leaddocket", "sheets"]) }))
+      .mutation(async ({ ctx, input }) => {
+        mgrOnly(ctx);
+        if (input.job === "leaddocket" && !process.env.LEADDOCKET_API_KEY) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Lead Docket is not configured on the server." });
+        }
+        const started = await startSyncJob(input.job, "manual");
+        return { started, alreadyRunning: !started };
       }),
   }),
 
