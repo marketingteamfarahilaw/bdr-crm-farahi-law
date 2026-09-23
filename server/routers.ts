@@ -218,16 +218,16 @@ export const appRouter = router({
   dataSync: router({
     status: bdProcedure.query(async ({ ctx }) => {
       mgrOnly(ctx);
-      const [leaddocket, sheets, sheetAccess] = await Promise.all([
-        getSyncStatus("leaddocket"), getSyncStatus("sheets"), checkSheets(),
+      const [leaddocket, leaddocket_history, sheets, sheetAccess] = await Promise.all([
+        getSyncStatus("leaddocket"), getSyncStatus("leaddocket_history"), getSyncStatus("sheets"), checkSheets(),
       ]);
-      return { leaddocket, sheets, sheetAccess, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
+      return { leaddocket, leaddocket_history, sheets, sheetAccess, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
     }),
     run: bdProcedure
-      .input(z.object({ job: z.enum(["leaddocket", "sheets"]) }))
+      .input(z.object({ job: z.enum(["leaddocket", "leaddocket_history", "sheets"]) }))
       .mutation(async ({ ctx, input }) => {
         mgrOnly(ctx);
-        if (input.job === "leaddocket" && !process.env.LEADDOCKET_API_KEY) {
+        if (input.job !== "sheets" && !process.env.LEADDOCKET_API_KEY) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Lead Docket is not configured on the server." });
         }
         const started = await startSyncJob(input.job, "manual");

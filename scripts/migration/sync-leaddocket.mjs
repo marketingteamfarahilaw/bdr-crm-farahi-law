@@ -26,6 +26,8 @@
  *   node scripts/migration/sync-leaddocket.mjs                       (every status)
  *   node scripts/migration/sync-leaddocket.mjs --since 2026-09-01    (incremental)
  *   node scripts/migration/sync-leaddocket.mjs --dry                 (report only)
+ *   node scripts/migration/sync-leaddocket.mjs --since 2020-01-01 --status-names "Signed Up,Referred,Closed,Lost"
+ *                                                                    (history: every sign-up since 2020)
  */
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
@@ -40,6 +42,8 @@ const arg = (n) => { const i = process.argv.indexOf(n); return i > -1 ? process.
 const DRY = process.argv.includes("--dry");
 const SINCE = arg("--since") ? new Date(arg("--since")) : null;
 const ONLY = arg("--status") ? Number(arg("--status")) : null;
+// --status-names "Signed Up,Referred,Closed,Lost": scan these statuses by name (ids differ per account).
+const NAMES = arg("--status-names") ? arg("--status-names").split(",").map((x) => x.trim().toLowerCase()) : null;
 
 // Lead Docket rate-limits per endpoint group (see X-RateLimit-Group / -Limit):
 //   list    /api/Leads?Status=…   "LeadsAndOpportunities"  250 / minute
@@ -81,7 +85,9 @@ const api = async (p) => {
 
 // ── fetch ───────────────────────────────────────────────────────────────────
 const statuses = (await api("/api/Statuses")).map((x) => ({ id: x.Data.Id, name: x.Data.StatusName }));
-const wanted = ONLY ? statuses.filter((s) => s.id === ONLY) : statuses;
+const wanted = ONLY ? statuses.filter((s) => s.id === ONLY)
+  : NAMES ? statuses.filter((s) => NAMES.includes(String(s.name).toLowerCase()))
+  : statuses;
 console.log("statuses to scan:", wanted.map((s) => s.id + "=" + s.name).join(", "));
 
 const rows = [];

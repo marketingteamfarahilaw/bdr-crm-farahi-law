@@ -53,8 +53,10 @@ export function DataSyncPanel() {
   });
   const run = trpc.dataSync.run.useMutation({
     onSuccess: (r, vars) => {
-      if (r.alreadyRunning) toast.info(`${vars.job === "leaddocket" ? "Lead Docket" : "Google Sheets"} is already syncing.`);
-      else toast.success(`${vars.job === "leaddocket" ? "Lead Docket" : "Google Sheets"} sync started — you can keep working.`);
+      const label = vars.job === "sheets" ? "Google Sheets" : vars.job === "leaddocket_history" ? "The Lead Docket history backfill" : "Lead Docket";
+      // Lead Docket jobs share one rate limit, so "already running" can mean the other one is.
+      if (r.alreadyRunning) toast.info(vars.job === "sheets" ? "Google Sheets is already syncing." : "A Lead Docket sync is already running — try again when it finishes.");
+      else toast.success(`${label} started — you can keep working.`);
       utils.dataSync.status.invalidate();
     },
     onError: (e) => toast.error(e.message || "Could not start the sync"),
@@ -110,6 +112,35 @@ export function DataSyncPanel() {
           );
         })}
       </div>
+
+      {data && data.leadDocketConfigured && (() => {
+        const h = data.leaddocket_history;
+        const busy = h.state === "running" || (run.isPending && run.variables?.job === "leaddocket_history");
+        const blocked = data.leaddocket.state === "running";
+        return (
+          <div className="mt-3 rounded-xl border border-dashed border-border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Database className="w-4 h-4 text-muted-foreground" />
+                <span className="font-medium text-foreground">Lead Docket history</span>
+                <StateBadge state={h.state} />
+              </div>
+              <Button size="sm" variant="outline" className="gap-2" disabled={busy || blocked} onClick={() => run.mutate({ job: "leaddocket_history" })}>
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {busy ? "Backfilling…" : "Backfill history"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              One-off: brings in every BD/FR sign-up since 2020, including clients whose case was later closed or lost.
+              Takes a few hours because Lead Docket allows 50 lookups a minute. Leads already checked are skipped.
+              {blocked && " Waits for the regular Lead Docket sync to finish first."}
+            </p>
+            {h.lastSuccessAt && <div className="text-xs text-muted-foreground mt-2">Completed {ago(h.lastSuccessAt)}.</div>}
+            {h.summary && h.state !== "failed" && <p className="text-xs text-foreground/80 mt-1.5">{h.summary}</p>}
+            {h.error && (h.state === "failed" || h.state === "partial") && <p className="text-xs text-red-600 dark:text-red-400 mt-1.5 break-words">{h.error}</p>}
+          </div>
+        );
+      })()}
 
       {data?.sheetAccess && data.sheetAccess.some((a: any) => !a.ok) && (
         <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs">

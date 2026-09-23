@@ -19,7 +19,21 @@ import path from "node:path";
 import { getSetting, setSetting } from "./db";
 import { downloadWorkbook } from "./googleSheets";
 
-export type JobName = "leaddocket" | "sheets";
+/**
+ * leaddocket_history is a one-off backfill of every sign-up since 2020. It
+ * scans Signed Up and Referred plus Closed and Lost — a client signed in 2023
+ * whose case was later lost is still a 2023 sign-up. Manual only, never
+ * scheduled. It shares Lead Docket's 50-reads-a-minute budget with the regular
+ * sync, so the two never run at the same time.
+ */
+export type JobName = "leaddocket" | "leaddocket_history" | "sheets";
+
+/** Jobs that draw on the same external rate limit and must not overlap. */
+const SHARES_BUDGET: Record<JobName, JobName[]> = {
+  leaddocket: ["leaddocket_history"],
+  leaddocket_history: ["leaddocket"],
+  sheets: [],
+};
 
 export type JobStatus = {
   state: "idle" | "running" | "ok" | "partial" | "failed";
@@ -79,13 +93,24 @@ async function runLeadDocket(): Promise<{ ok: boolean; partial?: boolean; summar
   const since = prev.lastSuccessAt
     ? new Date(new Date(prev.lastSuccessAt).getTime() - 60 * 60 * 1000)      // 1h overlap, in case of clock skew
     : new Date(new Date().getFullYear(), 0, 1);
-  const { code, out } = await runScript("scripts/migration/sync-leaddocket.mjs", ["--since", since.toISOString()]);
+  return runLeadDocketScript(["--since", since.toISOString()], "changed leads");
+}
 
+/** Every sign-up since Lead Docket began (2020). Leads already checked are skipped. */
+async function runLeadDocketHistory() {
+  return runLeadDocketScript(
+    ["--since", "2020-01-01", "--status-names", "Signed Up,Referred,Closed,Lost"],
+    "historical leads",
+  );
+}
+
+async function runLeadDocketScript(args: string[], what: string): Promise<{ ok: boolean; partial?: boolean; summary: string }> {
+  const { code, out } = await runScript("scripts/migration/sync-leaddocket.mjs", args);
   const line = out.split("\n").find((l) => l.startsWith("SYNC_RESULT "));
   if (line) {
     const r = JSON.parse(line.slice("SYNC_RESULT ".length));
     const reps = Object.entries(r.byRep ?? {}).map(([k, v]) => `${k}: ${v}`).join(", ");
-    const summary = `${r.scanned} changed leads read, ${r.ours} belong to the team (${r.inserted} new, ${r.updated} updated)` +
+    const summary = `${r.scanned} ${what} read, ${r.ours} belong to the team (${r.inserted} new, ${r.updated} updated)` +
       (r.failed ? ` — ${r.failed} could not be read and will be retried next run` : "") + (reps ? `. ${reps}` : "");
     return { ok: code === 0, partial: code === 2, summary };
   }
@@ -119,13 +144,19 @@ async function runSheets(): Promise<{ ok: boolean; summary: string }> {
  */
 export async function startJob(job: JobName, trigger: "schedule" | "manual"): Promise<boolean> {
   if (running.has(job)) return false;
+  // Two jobs on the same external rate limit would each run at half speed and
+  // trip it; wait for the other to finish instead.
+  if (SHARES_BUDGET[job].some((other) => running.has(other))) return false;
   running.add(job);
   const startedAt = new Date().toISOString();
   await save(job, { state: "running", startedAt, finishedAt: null, error: null, trigger });
 
   (async () => {
     try {
-      const result = job === "leaddocket" ? await runLeadDocket() : await runSheets();
+      const result =
+        job === "leaddocket" ? await runLeadDocket()
+        : job === "leaddocket_history" ? await runLeadDocketHistory()
+        : await runSheets();
       const finishedAt = new Date().toISOString();
       const partial = "partial" in result && result.partial;
       await save(job, {
