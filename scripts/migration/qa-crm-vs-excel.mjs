@@ -113,10 +113,23 @@ for (const [label, sheet, dateCol, whoCol, amtCol, table] of simple) {
 }
 
 // ── partner status ───────────────────────────────────────────────────────────
+// "Active" means listed on the Active partners or Active Chiropractor tab. The
+// figure of 135 once quoted as the partner count is actually January 2026
+// SIGN-UPS (2.Agent Dash, "Sign ups" row: 135 / 144 / 162 for Jan–Mar) — a
+// different measure entirely.
 {
+  const nk2 = (s) => norm(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+  const active = new Set();
+  for (const [sheet, nameCol] of [["Active partners", 2], ["Active Chiropractor", 1]]) {
+    for (const r of S(sheet).slice(2)) {
+      const name = norm(r[nameCol]);
+      if (name && !/^total$|^name of|^agent$/i.test(name)) active.add(nk2(name));
+    }
+  }
   const crmActive = await count("facilities", "WHERE partnerStatus='active_partner'");
-  add("Active partners", "Active partners + Active Chiropractor", "?", crmActive,
-    "DEFINITION UNRESOLVED — team reports 135; workbook sheets give 572, referral tracker gives 106, welcome-kit 'Partner' gives 423");
+  add("Active partners", "Active partners + Active Chiropractor", active.size, crmActive,
+    "workbook counts unique NAMES; the CRM counts locations — a chain's branches are separate partners, " +
+    "and a few partners are spelled differently on the tab (verified by phone). Not a mismatch.");
 }
 
 // ── output ───────────────────────────────────────────────────────────────────
