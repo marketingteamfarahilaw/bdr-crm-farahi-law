@@ -289,17 +289,19 @@ export async function createFacilityLead(data: InsertFacilityLead) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   await db.insert(facilityLeads).values(data);
-  // Update denormalized counters
+  // Update denormalized counters — only when the lead is attached to a facility.
+  if (data.facilityId == null) return;
+  const facilityId = data.facilityId;
   if (data.direction === "sent_to_facility") {
     await db
       .update(facilities)
       .set({ totalLeadsSent: sql`${facilities.totalLeadsSent} + 1` })
-      .where(eq(facilities.id, data.facilityId));
+      .where(eq(facilities.id, facilityId));
   } else {
     await db
       .update(facilities)
       .set({ totalLeadsReceived: sql`${facilities.totalLeadsReceived} + 1` })
-      .where(eq(facilities.id, data.facilityId));
+      .where(eq(facilities.id, facilityId));
   }
   if (data.signedCase === 1) {
     await db
@@ -308,7 +310,7 @@ export async function createFacilityLead(data: InsertFacilityLead) {
         totalSignedCases: sql`${facilities.totalSignedCases} + 1`,
         lastSignedCaseDate: (data.signedDate ?? new Date()) as Date,
       })
-      .where(eq(facilities.id, data.facilityId));
+      .where(eq(facilities.id, facilityId));
   }
 }
 
@@ -318,14 +320,14 @@ export async function updateFacilityLead(id: number, data: Partial<InsertFacilit
   // If marking as signed for the first time, increment counter
   if (data.signedCase === 1) {
     const existing = await db.select().from(facilityLeads).where(eq(facilityLeads.id, id)).limit(1);
-    if (existing[0] && existing[0].signedCase !== 1) {
+    if (existing[0] && existing[0].signedCase !== 1 && existing[0].facilityId != null) {
       await db
         .update(facilities)
         .set({
           totalSignedCases: sql`${facilities.totalSignedCases} + 1`,
           lastSignedCaseDate: (data.signedDate ?? new Date()) as Date,
         })
-        .where(eq(facilities.id, existing[0].facilityId));
+        .where(eq(facilities.id, existing[0].facilityId as number));
     }
   }
   await db.update(facilityLeads).set(data).where(eq(facilityLeads.id, id));
@@ -475,6 +477,7 @@ export async function getReferralCountsMap(): Promise<Map<number, { sent: number
   const rows = await db.select({ facilityId: facilityLeads.facilityId, direction: facilityLeads.direction, n: sql<number>`COUNT(*)` })
     .from(facilityLeads).groupBy(facilityLeads.facilityId, facilityLeads.direction);
   for (const r of rows) {
+    if (r.facilityId == null) continue;   // a rep-credited lead with no known partner
     const e = map.get(r.facilityId) ?? { sent: 0, received: 0 };
     if (r.direction === "sent_to_facility") e.sent = Number(r.n); else e.received = Number(r.n);
     map.set(r.facilityId, e);

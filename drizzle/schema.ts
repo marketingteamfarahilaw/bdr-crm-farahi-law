@@ -358,7 +358,13 @@ export type InsertFacilityLeadsSent = typeof facilityLeadsSent.$inferInsert;
  */
 export const facilityLeads = mysqlTable("facility_leads", {
   id: int("id").autoincrement().primaryKey(),
-  facilityId: int("facilityId").notNull(),
+  // Null for a lead credited to a rep whose referring partner isn't known —
+  // it still counts for the rep; it just isn't attached to a facility.
+  facilityId: int("facilityId"),
+  // Lead Docket lead id, so re-mirroring updates rows in place. Null for leads
+  // entered in the app.
+  externalId: varchar("externalId", { length: 64 }),
+  externalSource: varchar("externalSource", { length: 40 }),
   // Direction: did we send this lead to the facility, or did they send it to us?
   direction: mysqlEnum("direction", ["sent_to_facility", "received_from_facility"]).notNull(),
   leadDate: timestamp("leadDate").notNull(),

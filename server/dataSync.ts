@@ -107,14 +107,24 @@ async function runLeadDocketHistory() {
 async function runLeadDocketScript(args: string[], what: string): Promise<{ ok: boolean; partial?: boolean; summary: string }> {
   const { code, out } = await runScript("scripts/migration/sync-leaddocket.mjs", args);
   const line = out.split("\n").find((l) => l.startsWith("SYNC_RESULT "));
-  if (line) {
-    const r = JSON.parse(line.slice("SYNC_RESULT ".length));
-    const reps = Object.entries(r.byRep ?? {}).map(([k, v]) => `${k}: ${v}`).join(", ");
-    const summary = `${r.scanned} ${what} read, ${r.ours} belong to the team (${r.inserted} new, ${r.updated} updated)` +
-      (r.failed ? ` — ${r.failed} could not be read and will be retried next run` : "") + (reps ? `. ${reps}` : "");
-    return { ok: code === 0, partial: code === 2, summary };
+  if (!line) return { ok: false, summary: tail(out) || `exited with code ${code}` };
+
+  const r = JSON.parse(line.slice("SYNC_RESULT ".length));
+  const reps = Object.entries(r.byRep ?? {}).map(([k, v]) => `${k}: ${v}`).join(", ");
+  let summary = `${r.scanned} ${what} read, ${r.ours} belong to the team (${r.inserted} new, ${r.updated} updated)` +
+    (r.failed ? ` — ${r.failed} could not be read and will be retried next run` : "") + (reps ? `. ${reps}` : "");
+
+  // The sync fills lead_intake, which only the Sign-ups Report reads. The
+  // Command Center, facility profiles and rep reports read facility_leads, so
+  // mirror into it every time — otherwise new leads appear on one page only.
+  const m = await runScript("scripts/migration/mirror-leads-to-facilities.mjs", []);
+  const mline = m.out.split("\n").find((l) => l.startsWith("MIRROR_RESULT "));
+  if (m.code !== 0 || !mline) {
+    return { ok: false, summary: summary + ` — but updating the other CRM pages failed: ${tail(m.out, 300)}` };
   }
-  return { ok: false, summary: tail(out) || `exited with code ${code}` };
+  const mr = JSON.parse(mline.slice("MIRROR_RESULT ".length));
+  summary += `. Shown across the CRM: ${mr.leads} team leads, ${mr.signed} signed, ${mr.linked} linked to a partner.`;
+  return { ok: code === 0, partial: code === 2, summary };
 }
 
 async function runSheets(): Promise<{ ok: boolean; summary: string }> {
