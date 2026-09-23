@@ -30,6 +30,7 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
+import { creditedRep, outcomeFor, str } from "./leaddocket-rules.mjs";
 
 const BASE = process.env.LEADDOCKET_BASE_URL || "https://farahi.leaddocket.com";
 const KEY = process.env.LEADDOCKET_API_KEY || "";
@@ -39,24 +40,6 @@ const arg = (n) => { const i = process.argv.indexOf(n); return i > -1 ? process.
 const DRY = process.argv.includes("--dry");
 const SINCE = arg("--since") ? new Date(arg("--since")) : null;
 const ONLY = arg("--status") ? Number(arg("--status")) : null;
-
-// ── the team ────────────────────────────────────────────────────────────────
-// Role is how the person is credited when the source carries no prefix.
-const TEAM = [
-  ["Queenie Miranda", "BDR"],
-  ["Ally Maceda", "BDR"],
-  ["Miguel Flores", "BDR"],
-  ["Grace Lanayon", "BDR"],
-  ["John Bautista", "BDR"],
-  ["Angelica Tobias", "BDR"],
-  ["Jaque Solayao", "BDR"],
-  ["Malvin Rosales", "BDR"],
-  ["Zulema Salas", "FR"],
-  ["Lupe Campos", "FR"],
-  ["Jezel Mercado", "FR"],
-  ["Genysys Sanchez", "FR"],
-];
-const BY_FIRST = new Map(TEAM.map(([full, role]) => [full.split(" ")[0].toLowerCase(), { full, role }]));
 
 // Lead Docket rate-limits per endpoint group (see X-RateLimit-Group / -Limit):
 //   list    /api/Leads?Status=…   "LeadsAndOpportunities"  250 / minute
@@ -94,50 +77,6 @@ const api = async (p) => {
     return await r.json();
   }
   throw new Error("gave up after repeated rate limiting: " + p);
-};
-
-/** Some fields come back as objects ({Id, Name, …}) rather than strings. */
-const str = (v) => {
-  if (v == null) return "";
-  if (typeof v === "object") return String(v.Name ?? v.Value ?? v.Title ?? "");
-  return String(v);
-};
-
-const tidy = (s) => String(s).replace(/\s*[-–—].*$/, "").replace(/\s+/g, " ").trim();
-
-/** Map a bare or shortened first name onto the roster spelling ("Quee" → Queenie Miranda). */
-function canonical(name) {
-  const first = String(name).trim().split(/\s+/)[0].toLowerCase();
-  if (!first) return null;
-  for (const [key, hit] of BY_FIRST) if (key.startsWith(first) || first.startsWith(key)) return hit;
-  return null;
-}
-
-/** The representative a lead belongs to, or null when it is not the team's. */
-function creditedRep(marketingSource) {
-  const s = String(marketingSource ?? "").trim();
-  if (!s) return null;
-
-  // An explicit prefix wins, so someone tagged "BDR <name>" keeps that role.
-  const bdr = s.match(/^BDR\s+(.+?)(?:\s+BC\b.*)?$/i);
-  if (bdr) { const hit = canonical(tidy(bdr[1])); return { role: "BDR", member: hit ? hit.full : tidy(bdr[1]) }; }
-
-  const fr = s.match(/^(?:Field\s+Representative|FR)\s+(.+?)(?:\s+BC\b.*)?$/i);
-  if (fr) { const hit = canonical(tidy(fr[1])); return { role: "FR", member: hit ? hit.full : tidy(fr[1]) }; }
-
-  // Otherwise credit whoever on the roster is named anywhere in the source.
-  for (const [full, role] of TEAM) {
-    const pattern = new RegExp("\\b" + full.replace(/\s+/g, "\\s+") + "\\b", "i");
-    if (pattern.test(s)) return { role, member: full };
-  }
-  return null;
-}
-
-const outcomeFor = (s) => {
-  const t = String(s ?? "").toLowerCase();
-  if (t.includes("signed up")) return "Signed";
-  if (t === "referred") return "Signed Referred Out";
-  return String(s ?? "");
 };
 
 // ── fetch ───────────────────────────────────────────────────────────────────
@@ -233,7 +172,8 @@ async function store(d) {
       lastName: str(contact.LastName).slice(0, 255) || null,
       phone: str(contact.MobilePhone || contact.PhoneNumber).slice(0, 60) || null,
       email: str(contact.Email).slice(0, 320) || null,
-      outcome: outcomeFor(str(d.Status) || str(d.StatusName)).slice(0, 120),
+      outcome: outcomeFor(str(d.Status) || str(d.StatusName), d.SignedUpDate).slice(0, 120),
+      notes: ("Lead Docket status: " + (str(d.Status) || str(d.StatusName) || "unknown")).slice(0, 4000),
       classification: str(d.PracticeArea || d.CaseType).slice(0, 120) || null,
       sud: d.SignedUpDate ? String(d.SignedUpDate).slice(0, 10) : null,
       disposition: str(d.SubStatus).slice(0, 120) || null,
