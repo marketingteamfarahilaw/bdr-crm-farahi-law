@@ -41,10 +41,14 @@ const key = (s) => low(s).replace(/[^a-z0-9]/g, "");
 /** Excel serial, or a typed date like "3/25/2026" (the sheet also contains
  *  typos such as "2//27/2026" and "3/25//2026", so slashes are collapsed). */
 function excelDate(serial) {
+  // The sheet contains typed years like 5026 for 2026. Excel stores those as a
+  // real date 3000 years out, which MySQL rejects outright, silently losing the
+  // row — so pull it back rather than dropping a real errand.
+  const fix = (d) => { if (d && d.getUTCFullYear() > 2100) d.setUTCFullYear(d.getUTCFullYear() - 3000); return d; };
   const n = Number(serial);
   if (isFinite(n) && n > 1000) {
     const d = new Date(Math.round((n - 25569) * 86400 * 1000));
-    return isNaN(d.getTime()) ? null : d;
+    return isNaN(d.getTime()) ? null : fix(d);
   }
   const t = norm(serial).replace(/\/{2,}/g, "/");
   const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);

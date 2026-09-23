@@ -774,6 +774,11 @@ export const leadIntake = mysqlTable("lead_intake", {
   fvDocumentation: text("fvDocumentation"),
   createdById: int("createdById"),
   notes: text("notes"),
+  // Lead Docket lead id, so a re-sync updates the same row instead of
+  // duplicating it. Null for rows entered in the app or imported from Excel.
+  externalId: varchar("externalId", { length: 64 }),
+  externalSource: varchar("externalSource", { length: 40 }),  // "leaddocket"
+  marketingSource: varchar("marketingSource", { length: 255 }), // raw Lead Docket value — how the rep is credited
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

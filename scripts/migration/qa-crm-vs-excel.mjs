@@ -49,13 +49,21 @@ const add = (dataset, sheet, wbCount, crmCount, note = "") =>
   const missing = facs.filter((f) => !seen.has(nk(f.name))).length;
   add("Facilities", "21 facility sheets", "≈", crm, missing ? `${missing} CRM facilities not found by name in those sheets` : "every CRM facility appears in the workbook");
 
-  const dupes = (await c.query(
-    "SELECT COUNT(*) n FROM (SELECT LOWER(REGEXP_REPLACE(name,'[^A-Za-z0-9]','')) k FROM facilities GROUP BY k HAVING COUNT(*)>1) x"
-  ))[0][0].n;
-  const dupRows = (await c.query(
-    "SELECT COALESCE(SUM(n-1),0) s FROM (SELECT COUNT(*) n FROM facilities GROUP BY LOWER(REGEXP_REPLACE(name,'[^A-Za-z0-9]',''))) x WHERE n>1"
-  ))[0][0].s;
-  add("  └ duplicates", "—", 0, Number(dupRows), `${dupRows} extra rows across ${dupes} businesses — inflates every partner count`);
+  // Same name in DIFFERENT cities is a chain with several branches — correct to
+  // keep. Same name in the SAME city is a real duplicate and inflates counts.
+  const [all] = await c.query("SELECT id, name, city, totalCalls FROM facilities");
+  const key = (x) => String(x ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const groups = new Map();
+  for (const x of all) groups.set(key(x.name), [...(groups.get(key(x.name)) || []), x]);
+  let branchRows = 0, branchBiz = 0, dupRows = 0, dupBiz = 0;
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    const cities = new Set(g.map((x) => String(x.city ?? "").trim().toLowerCase()).filter(Boolean));
+    if (cities.size > 1) { branchBiz++; branchRows += g.length - 1; }
+    else { dupBiz++; dupRows += g.length - 1; }
+  }
+  add("  └ same name, other city", "—", branchRows, branchRows, `${branchBiz} chains with branches in different cities — expected, kept deliberately`);
+  add("  └ true duplicates", "—", 0, dupRows, dupRows ? `${dupRows} extra rows across ${dupBiz} businesses still to merge` : "none left");
 }
 
 // ── calls ────────────────────────────────────────────────────────────────────
