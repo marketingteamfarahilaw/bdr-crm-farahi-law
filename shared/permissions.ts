@@ -93,7 +93,9 @@ export const canManageIntake = (r?: string | null) =>
 // minutes, so removing the underlying call rows would simply re-import them.
 // Matched on first name, lower-cased, to mirror how reports canonicalise reps
 // ("Youssef", "YOUSSEF", "Youssef El Karmi" all collapse to one person).
-export const NON_REPORTING_REPS = new Set(["youssef"]);
+// Malvin Rosales is the Intake Department Manager: Lead Docket credits him with
+// the leads he brings in, but he is not BD/FR, so reports leave him out.
+export const NON_REPORTING_REPS = new Set(["youssef", "malvin"]);
 
 /** True when this rep's activity should be hidden from team reporting. */
 export const isNonReportingRep = (name?: string | null) => {

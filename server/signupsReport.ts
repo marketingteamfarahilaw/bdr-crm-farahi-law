@@ -18,6 +18,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { getDb } from "./db";
 import { leadIntake, facilities, facilityLeads } from "../drizzle/schema";
 import { isCurrentRep, CURRENT_TEAM, MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
+import { isNonReportingRep } from "@shared/permissions";
 import { formatInTimeZone } from "date-fns-tz";
 
 // Words that carry no identifying signal when matching a facility name.
@@ -92,7 +93,8 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   if (range?.from) conds.push(gte(leadIntake.leadDate, range.from));
   if (range?.to) conds.push(lte(leadIntake.leadDate, range.to));
   const all = await db.select().from(leadIntake).where(conds.length ? and(...conds) : undefined);
-  const leads = all.filter((l) =>
+  // People outside BD/FR (NON_REPORTING_REPS, e.g. Malvin Rosales of Intake) stay out of team reporting.
+  const leads = all.filter((l) => !isNonReportingRep(l.member) &&
     (!filter.role || l.role === filter.role) &&
     (filter.team !== "current" || isCurrentRep(l.member)));
 

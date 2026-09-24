@@ -7,6 +7,7 @@
 import { and, gte, lte, inArray, eq, desc, sql } from "drizzle-orm";
 import { formatInTimeZone } from "date-fns-tz";
 import { getDb } from "./db";
+import { isNonReportingRep } from "@shared/permissions";
 import { invokeLLM } from "./_core/llm";
 
 const APP_TZ = "America/Los_Angeles";
@@ -339,13 +340,16 @@ export async function getAgentPerformanceData(opts: { names?: string[]; from: Da
   if (!db) return empty;
   const nf = (col: any) => (names && names.length ? [inArray(col, names)] : []);
 
-  const [calls, updates, leads] = await Promise.all([
+  const [callsAll, updates, leadsAll] = await Promise.all([
     db.select().from(contactLogs).where(and(eq(contactLogs.contactType, "call"), gte(contactLogs.contactDate, from), lte(contactLogs.contactDate, to), ...nf(contactLogs.repName))),
     db.select({ date: facilityUpdates.updateDate, facilityId: facilityUpdates.facilityId, facility: facilities.name, extractedData: facilityUpdates.extractedData, summary: facilityUpdates.summary })
       .from(facilityUpdates).leftJoin(facilities, eq(facilityUpdates.facilityId, facilities.id))
       .where(and(eq(facilityUpdates.updateType, "transcript"), gte(facilityUpdates.updateDate, from), lte(facilityUpdates.updateDate, to), ...nf(facilityUpdates.repName))),
     db.select().from(facilityLeads).where(and(gte(facilityLeads.leadDate, from), lte(facilityLeads.leadDate, to), ...nf(facilityLeads.repName))),
   ]);
+  // People outside BD/FR (NON_REPORTING_REPS) stay out of team reporting.
+  const calls = (callsAll as any[]).filter((c) => !isNonReportingRep(c.repName));
+  const leads = (leadsAll as any[]).filter((l) => !isNonReportingRep(l.repName));
 
   const callRows = (calls as any[]).filter((c) => c.contactType === "call");
   const facSet = new Set<number>();

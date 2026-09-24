@@ -186,7 +186,7 @@ export async function getSignupReport({ from, to }: Range) {
   const rows = await db.select().from(leadIntake)
     .where(and(gte(leadIntake.leadDate, wide), lte(leadIntake.leadDate, to)));
 
-  const signed = rows.filter((r) => isSigned(normOutcome(r.outcome))).map((r) => {
+  const signed = rows.filter((r) => isSigned(normOutcome(r.outcome)) && !isNonReportingRep(r.member)).map((r) => {
     const eff = parseSud(r.sud) ?? (r.leadDate ? new Date(r.leadDate) : null);
     return { ...r, eff };
   }).filter((r) => r.eff && r.eff >= from && r.eff <= to);

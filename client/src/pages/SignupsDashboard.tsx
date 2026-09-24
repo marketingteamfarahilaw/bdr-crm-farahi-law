@@ -115,7 +115,7 @@ export default function SignupsDashboard() {
               ))}
             </div>
             <div className="sr-seg" role="group" aria-label="Team">
-              {([["all", "All"], ["BDR", "BDR"], ["FR", "FR"], ["Intake", "Intake"]] as const).map(([v, label]) => (
+              {([["all", "All"], ["BDR", "BDR"], ["FR", "FR"]] as const).map(([v, label]) => (
                 <button key={v} className={role === v ? "on" : ""} onClick={() => setRole(v)}>{label}</button>
               ))}
             </div>
@@ -513,8 +513,8 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
               <summary><span>Where leads come from</span></summary>
               <p>
                 Leads and sign-ups come from Lead Docket. A lead belongs to a representative when its Marketing Source names
-                them — "BDR Miguel Flores", "Field Representative Lupe Campos". Leads brought in by Malvin Rosales, the Intake
-                Department Manager, count under Intake; other marketing, intake and website leads are not counted.
+                them — "BDR Miguel Flores", "Field Representative Lupe Campos". Marketing, intake (including leads Malvin Rosales,
+                the Intake Department Manager, brings in) and website leads are not counted.
               </p>
             </details>
             <details className="sr-acc">

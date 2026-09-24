@@ -29,6 +29,10 @@ const bad = (msg) => { failures++; console.log("  ✗ " + msg); };
 const same = (label, a, b) => (Number(a) === Number(b) ? ok(`${label}: ${a}`) : bad(`${label}: ${a} vs ${b}`));
 
 const SIGNED = "('Signed','Signed Referred Out')";
+// People outside BD/FR whom the reports leave out — mirrors NON_REPORTING_REPS
+// in shared/permissions.ts (matched on first name).
+const NON_REPORTING = ["youssef", "malvin"];
+const NOT_OUT = (col) => `(${col} IS NULL OR LOWER(SUBSTRING_INDEX(TRIM(${col}), ' ', 1)) NOT IN (${NON_REPORTING.map((n) => `'${n}'`).join(",")}))`;
 const WENT_OUT = ["Referral Sent", "Facility Confirmed", "Client Scheduled", "Client Attended", "Completed"];
 
 // ── 1. the same fact in two tables ───────────────────────────────────────────
@@ -154,14 +158,14 @@ const periods = [
 for (const [name, from, to] of periods) {
   console.log(`  — ${name} (${from} → ${to})`);
   const R = [la(from), la(to, true)];
-  const dbLeads = await one("SELECT COUNT(*) FROM lead_intake WHERE externalSource='leaddocket' AND leadDate BETWEEN ? AND ?", R);
-  const dbSigned = await one(`SELECT COUNT(*) FROM lead_intake WHERE externalSource='leaddocket' AND outcome IN ${SIGNED} AND leadDate BETWEEN ? AND ?`, R);
-  const dbSent = await one("SELECT COUNT(*) FROM facility_leads WHERE direction='sent_to_facility' AND leadDate BETWEEN ? AND ?", R);
+  const dbLeads = await one(`SELECT COUNT(*) FROM lead_intake WHERE externalSource='leaddocket' AND leadDate BETWEEN ? AND ? AND ${NOT_OUT('member')}`, R);
+  const dbSigned = await one(`SELECT COUNT(*) FROM lead_intake WHERE externalSource='leaddocket' AND outcome IN ${SIGNED} AND leadDate BETWEEN ? AND ? AND ${NOT_OUT('member')}`, R);
+  const dbSent = await one(`SELECT COUNT(*) FROM facility_leads WHERE direction='sent_to_facility' AND leadDate BETWEEN ? AND ? AND ${NOT_OUT('repName')}`, R);
 
   const sd = await page("teamReports.signupsDashboard", { from, to });
   same(`Sign-ups Report leads (database ${dbLeads})`, sd.totals.leads, dbLeads);
   same(`Sign-ups Report signed (database ${dbSigned})`, sd.totals.signed, dbSigned);
-  const partnerLinked = await one("SELECT COUNT(*) FROM facility_leads WHERE externalSource='leaddocket' AND facilityId IS NOT NULL AND leadDate BETWEEN ? AND ?", R);
+  const partnerLinked = await one(`SELECT COUNT(*) FROM facility_leads WHERE externalSource='leaddocket' AND facilityId IS NOT NULL AND leadDate BETWEEN ? AND ? AND ${NOT_OUT('repName')}`, R);
   same("Sign-ups Report partner-referred leads vs partner links", sd.totals.attributed, partnerLinked);
 
   const ap = await page("reports.agentPerformance", { from, to });
