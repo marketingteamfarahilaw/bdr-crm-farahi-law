@@ -20,11 +20,13 @@ import { getSetting, setSetting } from "./db";
 import { downloadWorkbook } from "./googleSheets";
 
 /**
- * leaddocket_history is a one-off backfill of every sign-up since 2020. It
- * scans Signed Up and Referred plus Closed and Lost — a client signed in 2023
- * whose case was later lost is still a 2023 sign-up. Manual only, never
- * scheduled. It shares Lead Docket's 50-reads-a-minute budget with the regular
- * sync, so the two never run at the same time.
+ * leaddocket_history is a one-off backfill of every lead since 2020, in every
+ * status. It first covered only the sign-up statuses, which left ~29,000 older
+ * leads — mostly Rejected — never read, so pre-2026 lead counts were short and
+ * conversion too high (`sync-leaddocket.mjs --coverage` shows any such gap).
+ * Leads already checked are skipped, so it reads only what is missing. Manual
+ * only, never scheduled. It shares Lead Docket's 50-reads-a-minute budget with
+ * the regular sync, so the two never run at the same time.
  */
 export type JobName = "leaddocket" | "leaddocket_history" | "sheets";
 
@@ -96,12 +98,9 @@ async function runLeadDocket(): Promise<{ ok: boolean; partial?: boolean; summar
   return runLeadDocketScript(["--since", since.toISOString()], "changed leads");
 }
 
-/** Every sign-up since Lead Docket began (2020). Leads already checked are skipped. */
+/** Every lead since Lead Docket began (2020). Leads already checked are skipped. */
 async function runLeadDocketHistory() {
-  return runLeadDocketScript(
-    ["--since", "2020-01-01", "--status-names", "Signed Up,Referred,Closed,Lost"],
-    "historical leads",
-  );
+  return runLeadDocketScript(["--since", "2020-01-01"], "historical leads");
 }
 
 async function runLeadDocketScript(args: string[], what: string): Promise<{ ok: boolean; partial?: boolean; summary: string }> {

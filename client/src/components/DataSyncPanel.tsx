@@ -131,7 +131,7 @@ export function DataSyncPanel() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              One-off: brings in every BD/FR sign-up since 2020, including clients whose case was later closed or lost.
+              One-off: brings in every BD/FR lead since 2020 in any status, including rejected leads and clients whose case was later closed or lost.
               Takes a few hours because Lead Docket allows 50 lookups a minute. Leads already checked are skipped.
               {blocked && " Waits for the regular Lead Docket sync to finish first."}
             </p>
