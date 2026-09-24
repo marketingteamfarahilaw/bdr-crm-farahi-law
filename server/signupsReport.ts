@@ -15,6 +15,7 @@
 import { and, gte, lte } from "drizzle-orm";
 import { getDb } from "./db";
 import { leadIntake, facilities } from "../drizzle/schema";
+import { isCurrentRep } from "@shared/team";
 
 // Words that carry no identifying signal when matching a facility name.
 const STOP = new Set([
@@ -56,14 +57,24 @@ const isSigned = (o: unknown) => SIGNED.has(String(o ?? "").toLowerCase().replac
 
 export type SignupsDashboard = Awaited<ReturnType<typeof getSignupsDashboard>>;
 
-export async function getSignupsDashboard(range?: { from?: Date; to?: Date }) {
+export type SignupsFilter = {
+  /** Only BDR or only FR leads. */
+  role?: "BDR" | "FR";
+  /** "current" hides former representatives (see @shared/team). */
+  team?: "current" | "all";
+};
+
+export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, filter: SignupsFilter = {}) {
   const db = await getDb();
   if (!db) return null;
 
   const conds = [] as any[];
   if (range?.from) conds.push(gte(leadIntake.leadDate, range.from));
   if (range?.to) conds.push(lte(leadIntake.leadDate, range.to));
-  const leads = await db.select().from(leadIntake).where(conds.length ? and(...conds) : undefined);
+  const all = await db.select().from(leadIntake).where(conds.length ? and(...conds) : undefined);
+  const leads = all.filter((l) =>
+    (!filter.role || l.role === filter.role) &&
+    (filter.team !== "current" || isCurrentRep(l.member)));
 
   const facs = await db
     .select({ id: facilities.id, name: facilities.name, category: facilities.category, territory: facilities.territory })
@@ -100,18 +111,47 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }) {
   const monthCount = new Map<string, number>();
   let matched = 0, withText = 0, signed = 0;
 
+  // Per-representative, per-month and per-partner tallies — the view the team
+  // actually manages by: who signed what, when, and how well each rep converts.
+  const repStats = new Map<string, { name: string; role: string; leads: number; signed: number }>();
+  const monthStats = new Map<string, { leads: number; signed: number }>();
+  const repMonth = new Map<string, Map<string, number>>();      // rep → month → signed
+  const roleStats: Record<string, { leads: number; signed: number }> = { BDR: { leads: 0, signed: 0 }, FR: { leads: 0, signed: 0 } };
+  const partnerStats = new Map<number, { facilityId: number; name: string; territory: string | null; leads: number; signed: number }>();
+
   for (const l of leads) {
-    if (isSigned(l.outcome)) signed++;
+    const isS = isSigned(l.outcome);
+    if (isS) signed++;
     if (l.member) memberCount.set(l.member, (memberCount.get(l.member) ?? 0) + 1);
-    if (l.leadDate) {
-      const k = new Date(l.leadDate).toISOString().slice(0, 7);
-      monthCount.set(k, (monthCount.get(k) ?? 0) + 1);
+    const month = l.leadDate ? new Date(l.leadDate).toISOString().slice(0, 7) : null;
+    if (month) monthCount.set(month, (monthCount.get(month) ?? 0) + 1);
+
+    if (l.member) {
+      const r = repStats.get(l.member) ?? { name: l.member, role: l.role ?? "", leads: 0, signed: 0 };
+      r.leads++; if (isS) r.signed++;
+      repStats.set(l.member, r);
+      if (month && isS) {
+        const m = repMonth.get(l.member) ?? new Map<string, number>();
+        m.set(month, (m.get(month) ?? 0) + 1);
+        repMonth.set(l.member, m);
+      }
     }
+    if (month) {
+      const m = monthStats.get(month) ?? { leads: 0, signed: 0 };
+      m.leads++; if (isS) m.signed++;
+      monthStats.set(month, m);
+    }
+    if (l.role && roleStats[l.role]) { roleStats[l.role].leads++; if (isS) roleStats[l.role].signed++; }
 
     const text = String(l.facility ?? "").trim();
     if (text) withText++;
     const hit = text ? matchFacility(text) : null;
-    if (hit) matched++;
+    if (hit) {
+      matched++;
+      const p = partnerStats.get(hit.id) ?? { facilityId: hit.id, name: hit.name, territory: hit.territory ?? null, leads: 0, signed: 0 };
+      p.leads++; if (isS) p.signed++;
+      partnerStats.set(hit.id, p);
+    }
 
     // Type: the matched facility's category, but let an unmistakable keyword in
     // the source text split towing/insurance/marketing out of "other".
@@ -145,21 +185,57 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }) {
 
   // Insights are computed from the numbers above, never hard-coded — the page
   // renders whatever the data actually says for the selected period.
+  // ── representatives, months, partners ────────────────────────────────────────
+  const conv = (s: number, n: number) => (n ? Math.round((s / n) * 1000) / 10 : 0);
+  const reps = Array.from(repStats.values())
+    .map((r) => ({ ...r, conversion: conv(r.signed, r.leads), current: isCurrentRep(r.name) }))
+    .sort((a, b) => b.signed - a.signed || b.leads - a.leads || a.name.localeCompare(b.name));
+  const months = Array.from(monthStats.entries())
+    .map(([month, v]) => ({ month, ...v, conversion: conv(v.signed, v.leads) }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+  const monthKeys = months.map((m) => m.month);
+  const repMonths = {
+    months: monthKeys,
+    rows: reps.map((r) => {
+      const m = repMonth.get(r.name) ?? new Map<string, number>();
+      return { name: r.name, role: r.role, current: r.current, cells: monthKeys.map((k) => m.get(k) ?? 0), total: r.signed };
+    }),
+  };
+  const roles = (["BDR", "FR"] as const).map((role) => ({
+    role, ...roleStats[role], conversion: conv(roleStats[role].signed, roleStats[role].leads),
+    share: signed ? Math.round((roleStats[role].signed / signed) * 1000) / 10 : 0,
+  }));
+  const partners = Array.from(partnerStats.values())
+    .map((p) => ({ ...p, conversion: conv(p.signed, p.leads) }))
+    .sort((a, b) => b.signed - a.signed || b.leads - a.leads)
+    .slice(0, 15);
+
+  // Insights are computed from the numbers above, never hard-coded — the page
+  // renders whatever the data actually says for the selected period.
   const insights: string[] = [];
-  if (topTypes[0]) insights.push(`${topTypes[0].name} generated the highest volume of leads: ${topTypes[0].leads}.`);
-  if (topTypes[1]) insights.push(`${topTypes[1].name} ranked second with ${topTypes[1].leads} leads.`);
-  if (topTypes[2]) insights.push(`${topTypes[2].name} contributed ${topTypes[2].leads} leads.`);
-  const naTerr = byTerritory.find((t) => t.name === "N/A");
-  if (naTerr) insights.push(`${naTerr.leads} leads have no territory attributed and should be reviewed.`);
-  if (topTerritories[0] && topTerritories[1]) {
-    insights.push(`${topTerritories[0].name} and ${topTerritories[1].name} are the strongest territories.`);
+  if (total) insights.push(`${signed} of ${total} leads signed — ${pct(signed)}% conversion.`);
+  const topRep = reps[0];
+  if (topRep && topRep.signed) insights.push(`${topRep.name} leads with ${topRep.signed} sign-ups from ${topRep.leads} leads (${topRep.conversion}%).`);
+  const converter = reps.filter((r) => r.leads >= 10).sort((a, b) => b.conversion - a.conversion)[0];
+  if (converter && converter.name !== topRep?.name) insights.push(`${converter.name} converts best: ${converter.conversion}% of leads signed.`);
+  const fr = roles.find((r) => r.role === "FR"), bdr = roles.find((r) => r.role === "BDR");
+  if (fr && bdr && signed) insights.push(`FR delivered ${fr.signed} sign-ups (${fr.share}%), BDR ${bdr.signed} (${bdr.share}%).`);
+  if (months.length >= 2) {
+    const [prev, last] = months.slice(-2);
+    const d = last.signed - prev.signed;
+    insights.push(`${monthName(last.month)}: ${last.signed} sign-ups, ${d === 0 ? "level with" : d > 0 ? `${d} more than` : `${-d} fewer than`} ${monthName(prev.month)}.`);
   }
-  if (total) insights.push(`${signed} of ${total} leads signed (${pct(signed)}%).`);
+  if (partners[0]) insights.push(`Top referring partner: ${partners[0].name} — ${partners[0].signed} sign-ups from ${partners[0].leads} leads.`);
+  // Most leads name no referring partner in Lead Docket; that is normal, not a
+  // data fault, so say so plainly rather than asking anyone to "review" it.
+  if (total) insights.push(`${matched} of ${total} leads name a referring partner we can match; the rest are credited to the representative only.`);
 
   const recommendations: string[] = [];
+  const quiet = reps.filter((r) => r.current && r.leads >= 5 && r.conversion < pct(signed) - 10);
+  if (quiet.length) recommendations.push(`Review lead quality with ${quiet.map((r) => r.name).join(", ")} — conversion well below the team average.`);
+  if (partners.length >= 2) recommendations.push(`Invest in the partners that sign: ${partners.slice(0, 3).map((p) => p.name).join(", ")}.`);
   if (topTypes[0] && topTypes[1]) recommendations.push(`Double down on ${topTypes[0].name} and ${topTypes[1].name} relationships.`);
-  if (topTerritories[0] && topTerritories[1]) recommendations.push(`Expand outreach in ${topTerritories[0].name} and ${topTerritories[1].name}.`);
-  if (naTerr) recommendations.push("Clean up missing territory attribution for better reporting.");
+  if (total && matched / total < 0.5) recommendations.push("Ask intake to record the referring partner in Lead Docket's \"Referred by\" field, so sign-ups can be credited to the partner that sent them.");
 
   const topTwoTerritoryLeads = (topTerritories[0]?.leads ?? 0) + (topTerritories[1]?.leads ?? 0);
 
@@ -190,7 +266,16 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }) {
     byTerritory,
     byMember,
     byMonth,
+    reps,
+    months,
+    repMonths,
+    roles,
+    partners,
+    filter: { role: filter.role ?? null, team: filter.team ?? "all" },
     insights,
     recommendations,
   };
 }
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const monthName = (ym: string) => { const [y, m] = ym.split("-").map(Number); return `${MONTHS[m - 1]} ${y}`; };

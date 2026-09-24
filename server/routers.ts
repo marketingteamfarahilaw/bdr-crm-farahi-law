@@ -808,7 +808,9 @@ export const appRouter = router({
       callActivity: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getCallActivityReport(toRange(input)); }),
       leadsTargets: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getLeadsTargetReport(toRange(input)); }),
       // Executive sign-ups dashboard: volume by facility type and territory.
-      signupsDashboard: bdProcedure.input(range).query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupsDashboard(toRange(input)); }),
+      signupsDashboard: bdProcedure
+        .input(range.extend({ role: z.enum(["BDR", "FR"]).optional(), team: z.enum(["current", "all"]).optional() }))
+        .query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupsDashboard(toRange(input), { role: input.role, team: input.team }); }),
     });
   })(),
 

@@ -156,7 +156,7 @@ export function DataSyncPanel() {
 }
 
 /** Compact button for report pages — pulls the latest Lead Docket sign-ups. */
-export function LeadDocketSyncButton() {
+export function LeadDocketSyncButton({ onDark = false }: { onDark?: boolean } = {}) {
   const utils = trpc.useUtils();
   const { data } = trpc.dataSync.status.useQuery(undefined, {
     refetchInterval: (q) => ((q.state.data as any)?.leaddocket?.state === "running" ? 5000 : 60000),
@@ -181,8 +181,14 @@ export function LeadDocketSyncButton() {
 
   return (
     <div className="flex items-center gap-2">
-      {s && <span className="text-xs text-muted-foreground hidden sm:inline">Lead Docket synced {ago(s.lastSuccessAt)}</span>}
-      <Button size="sm" variant="outline" className="gap-2" disabled={busy || !data?.leadDocketConfigured} onClick={() => run.mutate({ job: "leaddocket" })}>
+      {s && <span className={`text-xs hidden sm:inline ${onDark ? "text-white/70" : "text-muted-foreground"}`}>Lead Docket synced {ago(s.lastSuccessAt)}</span>}
+      <Button
+        size="sm"
+        variant="outline"
+        className={`gap-2 ${onDark ? "bg-white/10 border-white/25 text-white hover:bg-white/20 hover:text-white" : ""}`}
+        disabled={busy || !data?.leadDocketConfigured}
+        onClick={() => run.mutate({ job: "leaddocket" })}
+      >
         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
         {busy ? "Syncing…" : "Sync Lead Docket"}
       </Button>
