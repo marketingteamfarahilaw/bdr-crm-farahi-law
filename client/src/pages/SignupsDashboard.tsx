@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { LeadDocketSyncButton } from "@/components/DataSyncPanel";
 import {
   Inbox, CheckCircle2, User, Download, ArrowUpRight, Loader2,
-  Trophy, Percent, Users, TrendingUp, Handshake, Info,
+  Trophy, Percent, Users, TrendingUp, Handshake, Info, X,
 } from "lucide-react";
 import "./SignupsDashboard.css";
 
@@ -33,7 +33,7 @@ const initials = (s: string) => s.split(" ").filter(Boolean).slice(0, 2).map((w)
 const hueStyle = (name: string) => ({ "--h": hue(name) }) as React.CSSProperties;
 const roleName = (role: string) => (role === "FR" ? "Field Representative" : role === "BDR" ? "Business Development Rep." : role);
 
-type Role = "all" | "BDR" | "FR";
+type Role = "all" | "BDR" | "FR" | "Intake";
 type Team = "all" | "current";
 type ReportData = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["signupsDashboard"]>;
 
@@ -66,7 +66,7 @@ export default function SignupsDashboard() {
   const period = data?.period.firstLead
     ? `${monthLabel(data.period.firstLead)} – ${monthLabel(data.period.lastLead ?? data.period.firstLead)}`
     : `${from} – ${to}`;
-  const scope = [role === "all" ? "BDR + FR" : role, team === "current" ? "current team only" : "including former representatives"].join(" · ");
+  const scope = [role === "all" ? "all roles" : role, team === "current" ? "current team only" : "including former representatives"].join(" · ");
 
   const exportCsv = () => {
     if (!data) return;
@@ -87,7 +87,11 @@ export default function SignupsDashboard() {
       "Month,Leads,Signed,Conversion %",
       ...data.months.map((m) => [monthLabel(m.month), m.leads, m.signed, m.conversion].join(",")), "",
       "Referring partner,Territory,Leads,Signed,Conversion %",
-      ...data.partners.map((p) => [q(p.name), q(p.territory ?? ""), p.leads, p.signed, p.conversion].join(",")),
+      ...data.partners.map((p) => [q(p.name), q(p.territory ?? ""), p.leads, p.signed, p.conversion].join(",")), "",
+      "Case type,Leads,Signed,Conversion %",
+      ...data.caseTypes.map((c) => [q(c.name), c.leads, c.signed, c.conversion].join(",")), "",
+      "Lead,Case type,Representative,Role,Date,Outcome,Referred by",
+      ...data.leadList.map((l) => [q(l.name), q(l.caseType), q(l.member), l.role, l.date ? l.date.slice(0, 10) : "", q(l.outcome), q(l.partner ?? "")].join(",")),
     ];
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
     const a = document.createElement("a");
@@ -111,7 +115,7 @@ export default function SignupsDashboard() {
               ))}
             </div>
             <div className="sr-seg" role="group" aria-label="Team">
-              {([["all", "BDR + FR"], ["BDR", "BDR"], ["FR", "FR"]] as const).map(([v, label]) => (
+              {([["all", "All"], ["BDR", "BDR"], ["FR", "FR"], ["Intake", "Intake"]] as const).map(([v, label]) => (
                 <button key={v} className={role === v ? "on" : ""} onClick={() => setRole(v)}>{label}</button>
               ))}
             </div>
@@ -159,11 +163,13 @@ export default function SignupsDashboard() {
 function HeroBottom({ data }: { data: ReportData }) {
   const fr = data.roles.find((r) => r.role === "FR")?.signed ?? 0;
   const bdr = data.roles.find((r) => r.role === "BDR")?.signed ?? 0;
+  const intake = data.roles.find((r) => r.role === "Intake")?.signed ?? 0;
   const total = data.totals.leads;
   const share = (n: number) => (total ? `${Math.round((n / total) * 1000) / 10}%` : "0%");
   const segments = [
     { label: "FR signed", n: fr, cls: "sr-s-dark" },
     { label: "BDR signed", n: bdr, cls: "sr-s-sun" },
+    { label: "Intake signed", n: intake, cls: "sr-s-hatch" },
     { label: "Not signed", n: total - data.totals.signed, cls: "sr-s-line" },
   ].filter((s) => s.n > 0);
 
@@ -188,6 +194,8 @@ function HeroBottom({ data }: { data: ReportData }) {
 
 function Report({ data }: { data: ReportData }) {
   const partnersRef = useRef<HTMLDivElement>(null);
+  // Clicking a rep (or one of their monthly numbers) opens the clients behind it.
+  const [focus, setFocus] = useState<{ rep: string; role: string; month?: string } | null>(null);
   const avg = data.totals.signedPct;
   const top = data.reps[0];
   const converter = data.reps.filter((r) => r.leads >= 10).sort((a, b) => b.conversion - a.conversion)[0];
@@ -306,7 +314,8 @@ function Report({ data }: { data: ReportData }) {
                       const s = standing(r.conversion, avg);
                       const latest = data.repMonths.rows.find((x) => x.name === r.name)?.cells.at(-1) ?? 0;
                       return (
-                        <tr key={r.name} className={r.current ? "" : "former"}>
+                        <tr key={r.name} className={`sr-click ${r.current ? "" : "former"}`} title={`See ${r.name}'s clients`}
+                          onClick={() => setFocus({ rep: r.name, role: r.role })}>
                           <td>
                             <div className="sr-who">
                               <span className="sr-av" style={hueStyle(r.name)}>{initials(r.name)}</span>
@@ -317,7 +326,11 @@ function Report({ data }: { data: ReportData }) {
                           <td className="num"><span className="sr-score">{fmt(r.signed)}</span></td>
                           <td className="num"><span className={`sr-score ${s.score}`}>{r.conversion}%</span></td>
                           <td><span className={`sr-badge ${s.badge}`}>{s.label}</span></td>
-                          {lastMonth && <td className="mid"><span className={`sr-flag ${latest ? "" : "zero"}`}>{latest}</span></td>}
+                          {lastMonth && (
+                            <td className="mid" onClick={(e) => { e.stopPropagation(); setFocus({ rep: r.name, role: r.role, month: lastMonth }); }}>
+                              <span className={`sr-flag ${latest ? "" : "zero"}`}>{latest}</span>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -344,9 +357,15 @@ function Report({ data }: { data: ReportData }) {
                     <tbody>
                       {data.repMonths.rows.map((r) => (
                         <tr key={r.name} className={r.current ? "" : "former"}>
-                          <td className="name">{r.name}<i>{r.role}</i></td>
-                          {r.cells.map((v, i) => <td key={i} className={`cell ${level(v)}`}>{v || "·"}</td>)}
-                          <td className="tot">{r.total}</td>
+                          <td className="name sr-click" onClick={() => setFocus({ rep: r.name, role: r.role })}>{r.name}<i>{r.role}</i></td>
+                          {r.cells.map((v, i) => (
+                            <td key={i} className={`cell ${level(v)} ${v ? "sr-click" : ""}`}
+                              title={v ? `${r.name} · ${monthLabel(data.repMonths.months[i])}: see the ${v} sign-up${v === 1 ? "" : "s"}` : undefined}
+                              onClick={v ? () => setFocus({ rep: r.name, role: r.role, month: data.repMonths.months[i] }) : undefined}>
+                              {v || "·"}
+                            </td>
+                          ))}
+                          <td className="tot sr-click" onClick={() => setFocus({ rep: r.name, role: r.role })}>{r.total}</td>
                         </tr>
                       ))}
                       <tr className="foot">
@@ -409,6 +428,36 @@ function Report({ data }: { data: ReportData }) {
             )}
           </div>
 
+          {/* Case types */}
+          <div className="sr-panel">
+            <div className="sr-panel-h">
+              <div className="sr-ttl"><h2>Case types</h2><span className="sr-count">{data.caseTypes.length}</span></div>
+            </div>
+            <p className="sr-sub">As classified in Lead Docket.</p>
+            {data.caseTypes.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
+              <div className="sr-scroll">
+                <table className="sr-t" style={{ minWidth: 480 }}>
+                  <thead>
+                    <tr><th>Case type</th><th className="num">Leads</th><th className="num">Signed</th><th>Conversion</th></tr>
+                  </thead>
+                  <tbody>
+                    {data.caseTypes.map((c) => (
+                      <tr key={c.name}>
+                        <td><b style={{ color: "var(--ink)", fontWeight: 600 }}>{c.name}</b></td>
+                        <td className="num">{fmt(c.leads)}</td>
+                        <td className="num"><span className="sr-score">{fmt(c.signed)}</span></td>
+                        <td><span className={`sr-badge ${c.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{c.conversion}%</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <LeadList leads={data.leadList} />
+          {focus && <RepClients focus={focus} leads={data.leadList} onClose={() => setFocus(null)} />}
+
           {/* Partner type + territory (partner-attributed leads only) */}
           <div className="sr-pair">
             <div className="sr-panel">
@@ -462,7 +511,8 @@ function Report({ data }: { data: ReportData }) {
               <summary><span>Where leads come from</span></summary>
               <p>
                 Leads and sign-ups come from Lead Docket. A lead belongs to a representative when its Marketing Source names
-                them — "BDR Miguel Flores", "Field Representative Lupe Campos". Marketing, intake and website leads are not counted.
+                them — "BDR Miguel Flores", "Field Representative Lupe Campos". Leads brought in by Malvin Rosales, the Intake
+                Department Manager, count under Intake; other marketing, intake and website leads are not counted.
               </p>
             </details>
             <details className="sr-acc">
@@ -480,6 +530,115 @@ function Report({ data }: { data: ReportData }) {
         </aside>
       </div>
     </>
+  );
+}
+
+const leadDay = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/Los_Angeles" }) : "—";
+const outcomeBadge = (o: string, signed: boolean) =>
+  signed ? "sr-b-ok" : /^(lost|rejected)/i.test(o) ? "sr-b-bad" : "sr-b-sun";
+
+/** Every lead in the period by name — searchable, newest first. */
+function LeadList({ leads }: { leads: ReportData["leadList"] }) {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"all" | "signed" | "open">("all");
+  const [showAll, setShowAll] = useState(false);
+  const q = search.trim().toLowerCase();
+  const rows = leads.filter((l) =>
+    (status === "all" || (status === "signed") === l.signed) &&
+    (!q || [l.name, l.caseType, l.member, l.partner ?? "", l.outcome].some((v) => v.toLowerCase().includes(q))));
+  const shown = showAll ? rows : rows.slice(0, 50);
+
+  return (
+    <div className="sr-panel">
+      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
+        <div className="sr-ttl"><h2>Leads</h2><span className="sr-count">{fmt(rows.length)}</span></div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input className="sr-input" placeholder="Search lead, case type, rep, partner…" value={search}
+            onChange={(e) => setSearch(e.target.value)} style={{ width: 260 }} aria-label="Search leads" />
+          <div className="sr-seg" role="group" aria-label="Outcome">
+            {([["all", "All"], ["signed", "Signed"], ["open", "Not signed"]] as const).map(([v, label]) => (
+              <button key={v} className={status === v ? "on" : ""} onClick={() => setStatus(v)}>{label}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="sr-sub">Newest first. The date is the sign-up date for signed leads, otherwise the day the lead came in.</p>
+      {rows.length === 0 ? <p className="sr-nil">No leads match.</p> : (
+        <>
+          <LeadTable rows={shown} showRep />
+          {rows.length > shown.length && (
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
+              <button className="sr-btn2" onClick={() => setShowAll(true)}>Show all {fmt(rows.length)} leads</button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Clients by name — shared by the Leads list and a rep's client window. */
+function LeadTable({ rows, showRep }: { rows: ReportData["leadList"]; showRep?: boolean }) {
+  return (
+    <div className="sr-scroll">
+      <table className="sr-t" style={{ minWidth: showRep ? 820 : 640 }}>
+        <thead>
+          <tr><th>Client</th><th>Case type</th>{showRep && <th>Representative</th>}<th>Date</th><th>Outcome</th><th>Referred by</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((l) => (
+            <tr key={l.id}>
+              <td><b style={{ color: "var(--ink)", fontWeight: 600, whiteSpace: "nowrap" }}>{l.name}</b></td>
+              <td>{l.caseType}</td>
+              {showRep && <td style={{ whiteSpace: "nowrap" }}>{l.member} <span style={{ fontSize: 11, color: "var(--mute)" }}>{l.role}</span></td>}
+              <td style={{ whiteSpace: "nowrap" }}>{leadDay(l.date)}</td>
+              <td><span className={`sr-badge ${outcomeBadge(l.outcome, l.signed)}`}>{l.outcome || "—"}</span></td>
+              <td>{l.partnerId ? <Link href={`/crm/facilities/${l.partnerId}`}>{l.partner}</Link> : <span style={{ color: "var(--mute2)" }}>—</span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const pacificMonth = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }).slice(0, 7) : "";
+
+/** The clients behind a rep's numbers — opened by clicking the rep or one of their months. */
+function RepClients({ focus, leads, onClose }: {
+  focus: { rep: string; role: string; month?: string }; leads: ReportData["leadList"]; onClose: () => void;
+}) {
+  const [signedOnly, setSignedOnly] = useState(true);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  const mine = leads.filter((l) => l.member === focus.rep && (!focus.month || pacificMonth(l.date) === focus.month));
+  const signedN = mine.filter((l) => l.signed).length;
+  const rows = signedOnly ? mine.filter((l) => l.signed) : mine;
+
+  return (
+    <div className="sr-modal-back" onClick={onClose}>
+      <div className="sr-modal" role="dialog" aria-modal="true" aria-label={`${focus.rep}'s clients`} onClick={(e) => e.stopPropagation()}>
+        <div className="sr-panel-h" style={{ flexWrap: "wrap", marginBottom: 14 }}>
+          <div className="sr-who">
+            <span className="sr-av" style={hueStyle(focus.rep)}>{initials(focus.rep)}</span>
+            <div><b style={{ fontSize: 17 }}>{focus.rep}</b><i>{roleName(focus.role)} · {focus.month ? monthLabel(focus.month) : "the selected period"}</i></div>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div className="sr-seg" role="group" aria-label="Show">
+              <button className={signedOnly ? "on" : ""} onClick={() => setSignedOnly(true)}>Signed ({signedN})</button>
+              <button className={signedOnly ? "" : "on"} onClick={() => setSignedOnly(false)}>All leads ({mine.length})</button>
+            </div>
+            <button className="sr-arr" aria-label="Close" onClick={onClose}><X /></button>
+          </div>
+        </div>
+        {rows.length === 0 ? <p className="sr-nil">None.</p> : <LeadTable rows={rows} />}
+      </div>
+    </div>
   );
 }
 

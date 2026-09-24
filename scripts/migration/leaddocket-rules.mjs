@@ -7,8 +7,9 @@
 
 // ── the team ────────────────────────────────────────────────────────────────
 // Role is how the person is credited when the source carries no prefix.
-// Current BDR: Ally, Grace, Malvin, Miguel, Queenie. Current FR: Zulema, Lupe, Jezel,
-// Genysys. The rest are former team members, kept so their past sign-ups stay
+// Current BDR: Ally, Grace, Miguel, Queenie. Current FR: Zulema, Lupe, Jezel,
+// Genysys. Malvin Rosales is intake, but the leads he brings in count, as
+// "Intake". The rest are former team members, kept so their past sign-ups stay
 // in historical reporting.
 export const TEAM = [
   ["Queenie Miranda", "BDR"],
@@ -18,7 +19,7 @@ export const TEAM = [
   ["John Bautista", "BDR"],
   ["Angelica Tobias", "BDR"],
   ["Jaque Solayao", "BDR"],
-  ["Malvin Rosales", "BDR"],
+  ["Malvin Rosales", "Intake"],   // intake staff who also brings in leads — credited, under his own role
   ["Zulema Salas", "FR"],
   ["Lupe Campos", "FR"],
   ["Jezel Mercado", "FR"],

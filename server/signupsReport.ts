@@ -17,7 +17,7 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { getDb } from "./db";
 import { leadIntake, facilities, facilityLeads } from "../drizzle/schema";
-import { isCurrentRep } from "@shared/team";
+import { isCurrentRep, type TeamRole } from "@shared/team";
 import { formatInTimeZone } from "date-fns-tz";
 
 // Words that carry no identifying signal when matching a facility name.
@@ -62,7 +62,7 @@ export type SignupsDashboard = Awaited<ReturnType<typeof getSignupsDashboard>>;
 
 export type SignupsFilter = {
   /** Only BDR or only FR leads. */
-  role?: "BDR" | "FR";
+  role?: TeamRole;
   /** "current" hides former representatives (see @shared/team). */
   team?: "current" | "all";
 };
@@ -134,8 +134,17 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   const repStats = new Map<string, { name: string; role: string; leads: number; signed: number }>();
   const monthStats = new Map<string, { leads: number; signed: number }>();
   const repMonth = new Map<string, Map<string, number>>();      // rep → month → signed
-  const roleStats: Record<string, { leads: number; signed: number }> = { BDR: { leads: 0, signed: 0 }, FR: { leads: 0, signed: 0 } };
+  const roleStats: Record<string, { leads: number; signed: number }> = { BDR: { leads: 0, signed: 0 }, FR: { leads: 0, signed: 0 }, Intake: { leads: 0, signed: 0 } };
   const partnerStats = new Map<number, { facilityId: number; name: string; territory: string | null; leads: number; signed: number }>();
+  // Every lead by name with its case type (Lead Docket's classification — Auto,
+  // Workers Comp…), for the report's lead list, plus the case-type mix. Case
+  // types are grouped ignoring case and spacing, so "Workers Comp " and
+  // "workers comp" are one type.
+  const leadList: {
+    id: number; name: string; caseType: string; member: string; role: string;
+    date: string | null; outcome: string; signed: boolean; partner: string | null; partnerId: number | null;
+  }[] = [];
+  const caseStats = new Map<string, { name: string; leads: number; signed: number }>();
 
   for (const l of leads) {
     const isS = isSigned(l.outcome);
@@ -184,7 +193,29 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
 
     const territory = hit?.territory?.trim() || "N/A";
     territoryCount.set(territory, (territoryCount.get(territory) ?? 0) + 1);
+
+    const written = String(l.classification ?? "").replace(/\s+/g, " ").trim();
+    const caseKey = written.toLowerCase() || "not recorded";
+    const cs = caseStats.get(caseKey) ?? { name: written || "Not recorded", leads: 0, signed: 0 };
+    cs.leads++; if (isS) cs.signed++;
+    caseStats.set(caseKey, cs);
+    leadList.push({
+      id: l.id,
+      name: l.leadName,
+      caseType: cs.name,
+      member: l.member ?? "",
+      role: l.role ?? "",
+      date: l.leadDate ? new Date(l.leadDate).toISOString() : null,
+      outcome: l.outcome ?? "",
+      signed: isS,
+      partner: hit?.name ?? null,
+      partnerId: hit?.id ?? null,
+    });
   }
+  leadList.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+  const caseTypes = Array.from(caseStats.values())
+    .map((c) => ({ ...c, conversion: c.leads ? Math.round((c.signed / c.leads) * 1000) / 10 : 0 }))
+    .sort((a, b) => b.leads - a.leads || a.name.localeCompare(b.name));
 
   const rank = (m: Map<string, number>) =>
     Array.from(m.entries())
@@ -220,7 +251,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
       return { name: r.name, role: r.role, current: r.current, cells: monthKeys.map((k) => m.get(k) ?? 0), total: r.signed };
     }),
   };
-  const roles = (["BDR", "FR"] as const).map((role) => ({
+  const roles = (["BDR", "FR", "Intake"] as const).map((role) => ({
     role, ...roleStats[role], conversion: conv(roleStats[role].signed, roleStats[role].leads),
     share: signed ? Math.round((roleStats[role].signed / signed) * 1000) / 10 : 0,
   }));
@@ -237,8 +268,9 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   if (topRep && topRep.signed) insights.push(`${topRep.name} leads with ${topRep.signed} sign-ups from ${topRep.leads} leads (${topRep.conversion}%).`);
   const converter = reps.filter((r) => r.leads >= 10).sort((a, b) => b.conversion - a.conversion)[0];
   if (converter && converter.name !== topRep?.name) insights.push(`${converter.name} converts best: ${converter.conversion}% of leads signed.`);
-  const fr = roles.find((r) => r.role === "FR"), bdr = roles.find((r) => r.role === "BDR");
-  if (fr && bdr && signed) insights.push(`FR delivered ${fr.signed} sign-ups (${fr.share}%), BDR ${bdr.signed} (${bdr.share}%).`);
+  // Share of sign-ups by role — FR, BDR and, for leads Malvin brings in, Intake.
+  const shares = roles.filter((r) => r.signed).sort((a, b) => b.signed - a.signed).map((r) => `${r.role} ${r.signed} (${r.share}%)`);
+  if (shares.length > 1) insights.push(`Sign-ups by role: ${shares.join(", ")}.`);
   if (months.length >= 2) {
     const [prev, last] = months.slice(-2);
     const now = new Date();
@@ -300,6 +332,8 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     repMonths,
     roles,
     partners,
+    caseTypes,
+    leadList,
     filter: { role: filter.role ?? null, team: filter.team ?? "all" },
     insights,
     recommendations,
