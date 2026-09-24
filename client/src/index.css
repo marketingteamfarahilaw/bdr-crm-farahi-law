@@ -40,80 +40,115 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-sun: var(--sun);
+  --color-sun-soft: var(--sun-soft);
+  --color-sun-ink: var(--sun-ink);
 }
 
+/*
+ * Design: the Voice Agents board (ChatBot Nora / agentsdash) — a warm cream
+ * canvas that warms to yellow on the right, frosted-white cards, charcoal pill
+ * buttons and active states, sun-yellow highlights, thin display numbers.
+ * NOTE: --gold is a legacy name used across many components; it is the brand
+ * accent, now charcoal. --sun is the yellow highlight.
+ */
 :root {
-  --radius: 0.625rem;
-  /* Light theme — clean white + navy accent (Farahi brand) */
-  --background: oklch(0.985 0.004 90);
-  --foreground: oklch(0.22 0.018 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.018 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.018 260);
-  --primary: oklch(0.40 0.09 257);
-  --primary-foreground: oklch(0.99 0.004 90);
-  --secondary: oklch(0.965 0.006 90);
-  --secondary-foreground: oklch(0.28 0.018 260);
-  --muted: oklch(0.965 0.006 90);
-  --muted-foreground: oklch(0.52 0.012 260);
-  --accent: oklch(0.95 0.012 85);
-  --accent-foreground: oklch(0.28 0.018 260);
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.99 0.004 0);
-  --border: oklch(0.90 0.006 260);
-  --input: oklch(0.92 0.006 260);
-  --ring: oklch(0.45 0.09 257);
-  --gold: oklch(0.40 0.09 257);
-  --gold-foreground: oklch(0.99 0.004 90);
+  --radius: 1rem;
+  --background: #ecebe6;
+  --foreground: #1c1c1c;
+  --card: rgb(255 255 255 / 0.66);
+  --card-foreground: #1c1c1c;
+  --popover: #ffffff;
+  --popover-foreground: #1c1c1c;
+  --primary: #262626;
+  --primary-foreground: #ffffff;
+  --secondary: rgb(255 255 255 / 0.72);
+  --secondary-foreground: #3a3a38;
+  --muted: rgb(28 28 28 / 0.05);
+  --muted-foreground: #7b7a73;
+  --accent: rgb(255 255 255 / 0.8);
+  --accent-foreground: #1c1c1c;
+  --destructive: #c2410c;
+  --destructive-foreground: #ffffff;
+  --border: rgb(28 28 28 / 0.08);
+  --input: rgb(28 28 28 / 0.12);
+  --ring: #262626;
+  --gold: #262626;
+  --gold-foreground: #ffffff;
+  --sun: #f6cf4b;
+  --sun-soft: #fdf3cc;
+  --sun-ink: #7a5a00;
+  --edge: rgb(255 255 255 / 0.9);
+  --lift: 0 1px 1px rgb(40 34 10 / 0.03), 0 12px 32px -18px rgb(40 34 10 / 0.22);
   /* Action accent — the sidebar's Quick Add call-to-action. */
   --action: oklch(0.66 0.17 48);
   --action-foreground: oklch(0.99 0.004 90);
-  --sidebar: oklch(0.97 0.005 90);
-  --sidebar-foreground: oklch(0.26 0.018 260);
-  --sidebar-border: oklch(0.90 0.006 260);
-  --sidebar-accent: oklch(0.94 0.010 85);
-  --sidebar-accent-foreground: oklch(0.26 0.018 260);
-  --sidebar-primary: oklch(0.40 0.09 257);
-  --sidebar-primary-foreground: oklch(0.99 0.004 90);
-  --sidebar-ring: oklch(0.45 0.09 257);
+  --chart-1: #262626;
+  --chart-2: #f6cf4b;
+  --chart-3: #9a9890;
+  --chart-4: #2f7d4f;
+  --chart-5: #c2410c;
+  --sidebar: #f1f0ec;
+  --sidebar-foreground: #3a3a38;
+  --sidebar-border: transparent;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-primary: #262626;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-ring: #262626;
+  --canvas:
+    radial-gradient(110% 80% at 100% 100%, #fae3a0 0%, rgb(250 227 160 / 0) 55%),
+    radial-gradient(80% 60% at 100% 0%, #fbf0c9 0%, rgb(251 240 201 / 0) 60%),
+    linear-gradient(180deg, #f4f4f1 0%, #ecebe6 100%);
 }
 
-/* Dark theme — Farahi brand: deep navy + steel-blue accent.
-   NOTE: the --gold token name is legacy; its value is now the navy/steel brand accent. */
+/* Dark: the same design at night — warm charcoal, the same yellow highlights. */
 .dark {
-  --background: oklch(0.12 0.015 255);
-  --foreground: oklch(0.95 0.008 60);
-  --card: oklch(0.16 0.018 255);
-  --card-foreground: oklch(0.95 0.008 60);
-  --popover: oklch(0.14 0.018 255);
-  --popover-foreground: oklch(0.95 0.008 60);
-  --primary: oklch(0.62 0.12 250);
-  --primary-foreground: oklch(0.12 0.015 255);
-  --secondary: oklch(0.20 0.020 255);
-  --secondary-foreground: oklch(0.85 0.010 60);
-  --muted: oklch(0.20 0.018 255);
-  --muted-foreground: oklch(0.60 0.010 255);
-  --accent: oklch(0.22 0.022 255);
-  --accent-foreground: oklch(0.90 0.010 60);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0.005 0);
-  --border: oklch(0.24 0.018 255);
-  --input: oklch(0.20 0.018 255);
-  --ring: oklch(0.62 0.12 250);
-  --gold: oklch(0.72 0.10 248);
-  --gold-foreground: oklch(0.14 0.018 255);
-  /* Slightly brighter on dark so it reads as clearly against the navy sidebar. */
+  --background: #161613;
+  --foreground: #efede6;
+  --card: rgb(255 255 255 / 0.05);
+  --card-foreground: #efede6;
+  --popover: #22221e;
+  --popover-foreground: #efede6;
+  --primary: #f1efe8;
+  --primary-foreground: #161613;
+  --secondary: rgb(255 255 255 / 0.07);
+  --secondary-foreground: #d6d3c9;
+  --muted: rgb(255 255 255 / 0.06);
+  --muted-foreground: #9a978d;
+  --accent: rgb(255 255 255 / 0.09);
+  --accent-foreground: #efede6;
+  --destructive: #e2703f;
+  --destructive-foreground: #161613;
+  --border: rgb(255 255 255 / 0.09);
+  --input: rgb(255 255 255 / 0.14);
+  --ring: #f6cf4b;
+  --gold: #f1efe8;
+  --gold-foreground: #161613;
+  --sun: #f6cf4b;
+  --sun-soft: rgb(246 207 75 / 0.16);
+  --sun-ink: #f6cf4b;
+  --edge: rgb(255 255 255 / 0.08);
+  --lift: 0 12px 32px -18px rgb(0 0 0 / 0.6);
   --action: oklch(0.70 0.18 50);
   --action-foreground: oklch(0.14 0.018 255);
-  --sidebar: oklch(0.10 0.015 255);
-  --sidebar-foreground: oklch(0.90 0.008 60);
-  --sidebar-border: oklch(0.20 0.018 255);
-  --sidebar-accent: oklch(0.18 0.020 255);
-  --sidebar-accent-foreground: oklch(0.95 0.010 60);
-  --sidebar-primary: oklch(0.62 0.12 250);
-  --sidebar-primary-foreground: oklch(0.12 0.015 255);
-  --sidebar-ring: oklch(0.62 0.12 250);
+  --chart-1: #f1efe8;
+  --chart-2: #f6cf4b;
+  --chart-3: #77756d;
+  --chart-4: #7fcf9f;
+  --chart-5: #e2703f;
+  --sidebar: #1b1b18;
+  --sidebar-foreground: #d6d3c9;
+  --sidebar-border: transparent;
+  --sidebar-accent: #f1efe8;
+  --sidebar-accent-foreground: #161613;
+  --sidebar-primary: #f1efe8;
+  --sidebar-primary-foreground: #161613;
+  --sidebar-ring: #f6cf4b;
+  --canvas:
+    radial-gradient(110% 80% at 100% 100%, rgb(246 207 75 / 0.10) 0%, rgb(246 207 75 / 0) 55%),
+    radial-gradient(80% 60% at 100% 0%, rgb(246 207 75 / 0.06) 0%, rgb(246 207 75 / 0) 60%),
+    linear-gradient(180deg, #1b1b18 0%, #161613 100%);
 }
 
 @layer base {
@@ -122,7 +157,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Manrope', sans-serif;
+    font-family: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, "Helvetica Neue", Arial, sans-serif;
   }
   /* Force the native date/time picker icon to be light/visible on dark inputs.
      color-scheme alone is unreliable once a custom background is set, so we
@@ -206,61 +241,48 @@
 }
 /* Tier badges */
 .tier-hot {
-  background: oklch(0.65 0.22 25 / 0.15);
-  color: oklch(0.80 0.22 25);
-  border: 1px solid oklch(0.65 0.22 25 / 0.35);
+  background: oklch(0.65 0.22 25 / 0.12);
+  color: oklch(0.50 0.20 30);
+  border: 1px solid oklch(0.65 0.22 25 / 0.28);
 }
 .tier-warm {
-  background: oklch(0.75 0.18 65 / 0.15);
-  color: oklch(0.85 0.18 65);
-  border: 1px solid oklch(0.75 0.18 65 / 0.35);
+  background: var(--sun-soft);
+  color: var(--sun-ink);
+  border: 1px solid oklch(0.80 0.14 85 / 0.45);
 }
 .tier-cold {
-  background: oklch(0.55 0.12 230 / 0.15);
-  color: oklch(0.72 0.12 230);
-  border: 1px solid oklch(0.55 0.12 230 / 0.35);
+  background: oklch(0.55 0.12 230 / 0.10);
+  color: oklch(0.45 0.10 235);
+  border: 1px solid oklch(0.55 0.12 230 / 0.28);
 }
+.dark .tier-hot { color: oklch(0.80 0.18 30); }
+.dark .tier-cold { color: oklch(0.75 0.10 230); }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: oklch(0.82 0.01 260); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: oklch(0.72 0.01 260); }
-.dark ::-webkit-scrollbar-thumb { background: oklch(0.30 0.018 255); }
-.dark ::-webkit-scrollbar-thumb:hover { background: oklch(0.40 0.018 255); }
+::-webkit-scrollbar-thumb { background: rgb(28 28 28 / 0.16); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(28 28 28 / 0.28); }
+.dark ::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 0.14); }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgb(255 255 255 / 0.24); }
 
-/* ── Premium utilities ─────────────────────────────────────── */
-.font-display { font-family: 'Playfair Display', serif; letter-spacing: -0.01em; }
-.gold-text {
-  background: linear-gradient(115deg, oklch(0.42 0.10 257), oklch(0.30 0.09 260));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* ── Design utilities ─────────────────────────────────────── */
+/* The page canvas behind every screen: cream, warming to yellow on the right. */
+.app-canvas { background: var(--canvas); background-attachment: fixed; }
+/* Titles and big numbers: thin display type, as on the Voice Agents board. */
+.font-display {
+  font-family: "Segoe UI Variable Display", "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.03em;
 }
-.dark .gold-text {
-  background: linear-gradient(115deg, oklch(0.84 0.06 245), oklch(0.64 0.12 250));
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-.dashboard-mesh {
-  background:
-    radial-gradient(70% 55% at 88% -8%, oklch(0.45 0.09 257 / 0.06), transparent 70%),
-    radial-gradient(55% 45% at -8% 108%, oklch(0.55 0.10 255 / 0.05), transparent 70%);
-}
-.dark .dashboard-mesh {
-  background:
-    radial-gradient(70% 55% at 88% -8%, oklch(0.62 0.12 250 / 0.10), transparent 70%),
-    radial-gradient(55% 45% at -8% 108%, oklch(0.55 0.10 255 / 0.12), transparent 70%);
-}
+.gold-text { color: var(--foreground); }
+.dashboard-mesh { background: transparent; }
 .premium-card {
-  background: linear-gradient(158deg, oklch(1 0 0), oklch(0.985 0.004 90));
-  border: 1px solid oklch(0.91 0.006 260);
-  box-shadow: 0 1px 3px 0 oklch(0.55 0.03 260 / 0.07), 0 1px 2px -1px oklch(0.55 0.03 260 / 0.07);
-  transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  border-radius: 26px;
+  box-shadow: var(--lift);
+  transition: background .2s ease, box-shadow .25s ease, transform .25s ease;
 }
-.dark .premium-card {
-  background: linear-gradient(158deg, oklch(0.175 0.018 255), oklch(0.135 0.016 255));
-  border: 1px solid oklch(0.26 0.020 255);
-  box-shadow: inset 0 1px 0 0 oklch(0.32 0.02 255 / 0.35);
-}
-.premium-card:hover { border-color: oklch(0.55 0.10 252 / 0.45); }
+.premium-card:hover { background: rgb(255 255 255 / 0.82); }
+.dark .premium-card:hover { background: rgb(255 255 255 / 0.08); }

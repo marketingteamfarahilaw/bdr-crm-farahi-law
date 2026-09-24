@@ -39,10 +39,11 @@ and the server do the rest. Don't burn time trying to boot it.
 
 ## Things that will bite you
 
-- **`--gold` is not gold.** It's a legacy CSS token whose value is now the navy
-  brand accent, and many components share it. To recolour one element, add a
-  token (see `--action`, the orange Quick Add button) rather than editing
-  `--gold`.
+- **`--gold` is not gold.** It's a legacy CSS token whose value is now the
+  brand accent (charcoal, since the Voice Agents redesign — see the top of
+  `client/src/index.css`), and many components share it. The yellow highlight
+  is `--sun`. To recolour one element, add a token (see `--action`, the orange
+  Quick Add button) rather than editing `--gold`.
 - **There is only the production database.** No staging, no seed data. Any
   write you make while testing is real and the team sees it.
 - **A background RingCentral sync runs every 2 minutes** (`server/_core/index.ts`)

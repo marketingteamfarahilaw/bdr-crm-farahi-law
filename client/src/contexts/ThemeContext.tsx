@@ -23,7 +23,8 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (switchable) {
-      const stored = localStorage.getItem("theme");
+      // "theme-v2": the redesign starts everyone on light once; a later choice is kept.
+      const stored = localStorage.getItem("theme-v2");
       return (stored as Theme) || defaultTheme;
     }
     return defaultTheme;
@@ -38,7 +39,7 @@ export function ThemeProvider({
     }
 
     if (switchable) {
-      localStorage.setItem("theme", theme);
+      localStorage.setItem("theme-v2", theme);
     }
   }, [theme, switchable]);
 

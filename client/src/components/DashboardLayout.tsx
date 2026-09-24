@@ -253,8 +253,8 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex flex-col min-w-0">
-                  <img src={logo} alt="Farahi Law Firm" className="h-14 w-auto max-w-[190px] object-contain" />
-                  <span className="text-sm font-semibold text-muted-foreground mt-1.5 leading-snug">{slogan}</span>
+                  <img src={logo} alt="Farahi Law Firm" className="self-start h-14 w-auto max-w-[190px] object-contain rounded-2xl shadow-[var(--lift)]" />
+                  <span className="text-xs font-medium text-muted-foreground mt-2 px-1 leading-snug">{slogan}</span>
                 </div>
               ) : (
                 <img src={logo} alt="Farahi Law Firm" className="h-9 w-9 object-contain" />
@@ -268,15 +268,15 @@ function DashboardLayoutContent({
               <div className="px-3 pt-3 space-y-2">
                 <button
                   onClick={() => document.dispatchEvent(new CustomEvent("open-command-palette"))}
-                  className="w-full flex items-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                  className="w-full flex items-center gap-2 rounded-full bg-white/65 shadow-[inset_0_0_0_1px_var(--edge)] dark:bg-white/5 px-4 py-2.5 text-sm text-muted-foreground hover:bg-white hover:text-foreground dark:hover:bg-white/10 transition-colors"
                 >
                   <Search className="h-4 w-4" />
                   <span>Search…</span>
-                  <kbd className="ml-auto text-[10px] font-mono bg-background/60 border border-border rounded px-1.5 py-0.5">⌘K</kbd>
+                  <kbd className="ml-auto text-[10px] font-mono bg-white/70 dark:bg-white/10 rounded-full px-2 py-0.5">⌘K</kbd>
                 </button>
                 <button
                   onClick={() => document.dispatchEvent(new CustomEvent("open-quick-add"))}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+                  className="w-full flex items-center justify-center gap-2 rounded-full px-3 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 shadow-[0_10px_22px_-12px_rgb(0_0_0/0.45)]"
                   style={{ background: "var(--action)", color: "var(--action-foreground)" }}
                 >
                   <Plus className="h-4 w-4" />
@@ -292,9 +292,9 @@ function DashboardLayoutContent({
                     isActive={location === "/"}
                     onClick={() => setLocation("/")}
                     tooltip={intakeOnly ? "Intake Desk" : "Command Center"}
-                    className="h-10 transition-all font-medium"
+                    className="h-11 transition-all font-medium"
                   >
-                    <LayoutDashboard className={`h-4 w-4 ${location === "/" ? "text-primary" : ""}`} />
+                    <LayoutDashboard className={`h-4 w-4 ${location === "/" ? "text-sun" : "text-muted-foreground"}`} />
                     <span>{intakeOnly ? "Intake Desk" : "Command Center"}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -306,10 +306,10 @@ function DashboardLayoutContent({
               if (items.length === 0) return null;
               return (
                 <div key={section.title}>
-                  <div className="mx-3 my-1 border-t border-border/40" />
+                  <div className="h-1" />
                   <div className="px-3 pt-1 pb-3">
                     {!isCollapsed && (
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">{section.title}</p>
+                      <p className="text-[11.5px] font-medium text-muted-foreground/70 px-3.5 pt-2 pb-1.5">{section.title}</p>
                     )}
                     <SidebarMenu>
                       {items.map((item) => {
@@ -320,9 +320,9 @@ function DashboardLayoutContent({
                               isActive={isActive}
                               onClick={() => setLocation(item.path)}
                               tooltip={item.label}
-                              className="h-9 transition-all font-normal"
+                              className="h-10 transition-all font-medium"
                             >
-                              <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+                              <item.icon className={`h-4 w-4 ${isActive ? "text-sun" : "text-muted-foreground"}`} />
                               <span>{item.label}</span>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
@@ -340,7 +340,7 @@ function DashboardLayoutContent({
             {toggleTheme && (
               <button
                 onClick={toggleTheme}
-                className="flex items-center gap-3 rounded-lg px-2 py-2 mb-1 w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex items-center gap-3 rounded-full px-3.5 py-2 mb-1 w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {theme === "dark" ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
@@ -349,7 +349,7 @@ function DashboardLayoutContent({
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button className="flex items-center gap-3 rounded-2xl p-2.5 bg-white/65 shadow-[inset_0_0_0_1px_var(--edge)] dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border shrink-0">
                     {(user as any)?.photoUrl && <AvatarImage src={(user as any).photoUrl} className="object-cover" />}
                     <AvatarFallback className="text-xs font-medium">
@@ -398,9 +398,9 @@ function DashboardLayoutContent({
         />
       </div>
 
-      <SidebarInset>
+      <SidebarInset className="app-canvas">
         {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+          <div className="flex h-14 items-center justify-between bg-white/60 dark:bg-black/30 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
               <div className="flex items-center gap-3">

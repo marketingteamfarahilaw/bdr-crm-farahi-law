@@ -17,9 +17,9 @@ import { LogOutcomeDialog } from "@/components/LogOutcomeDialog";
 import { PhraseOfTheDay } from "@/components/PhraseOfTheDay";
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  active_partner: { label: "Active Partner", color: "#34d399" },
-  priority_partner: { label: "Priority Partner", color: "#6a9bd8" },
-  prospect: { label: "Prospect", color: "#7dd3fc" },
+  active_partner: { label: "Active Partner", color: "#f6cf4b" },   // sun + charcoal, the design palette
+  priority_partner: { label: "Priority Partner", color: "#b98f16" },
+  prospect: { label: "Prospect", color: "#8a887f" },
   warm_lead: { label: "Warm Lead", color: "#fbbf24" },
   cold: { label: "Cold", color: "#64748b" },
   dormant: { label: "Dormant", color: "#94a3b8" },
@@ -171,7 +171,7 @@ export default function Dashboard() {
               return (
                 <motion.div key={k.label} variants={item} className="premium-card rounded-2xl p-4">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: `${k.tint}1a`, border: `1px solid ${k.tint}33` }}>
-                    <Icon className="w-[18px] h-[18px]" style={{ color: k.tint }} />
+                    <Icon className="w-[18px] h-[18px] text-foreground" />
                   </div>
                   <div className="font-display text-2xl font-bold text-foreground">{k.value.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{k.label}</div>
@@ -292,14 +292,14 @@ export default function Dashboard() {
                 onClick={() => k.path && navigate(k.path)}
                 role="button" tabIndex={0}
                 onKeyDown={(e) => { if (k.path && (e.key === "Enter" || e.key === " ")) navigate(k.path); }}
-                className="premium-card group rounded-2xl p-4 cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(106,155,216,0.30)]">
+                className="premium-card group p-4 cursor-pointer hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${k.tint}1a`, border: `1px solid ${k.tint}33` }}>
-                    <Icon className="w-[18px] h-[18px]" style={{ color: k.tint }} />
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center bg-white/80 dark:bg-white/10 shadow-[inset_0_0_0_1px_var(--edge)]">
+                    <Icon className="w-[18px] h-[18px] text-foreground" />
                   </div>
                   {k.badge ? <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">{k.badge} overdue</span> : null}
                 </div>
-                <div className={`font-display font-bold text-foreground ${k.hero ? "text-3xl" : "text-2xl"}`}>{(k.value ?? 0).toLocaleString()}</div>
+                <div className={`font-display text-foreground ${k.hero ? "text-4xl" : "text-3xl"}`}>{(k.value ?? 0).toLocaleString()}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{k.label}</div>
               </motion.div>
             );
