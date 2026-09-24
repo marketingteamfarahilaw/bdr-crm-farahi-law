@@ -70,10 +70,11 @@ export default function Dashboard() {
   const today = format(new Date(), "EEEE, MMMM d");
   const myOpen = myTasks ?? [];
 
+  // Search Leads / Lead Map hidden with the Lead Scraper menu (per request) — restore together.
   const quickActions = [
     { label: "Facilities", icon: Building2, path: "/crm/facilities" },
-    { label: "Search Leads", icon: Search, path: "/search" },
-    { label: "Lead Map", icon: Map, path: "/map" },
+    // { label: "Search Leads", icon: Search, path: "/search" },
+    // { label: "Lead Map", icon: Map, path: "/map" },
     { label: "Reports", icon: BarChart3, path: "/crm/reports" },
   ];
 
@@ -153,9 +154,10 @@ export default function Dashboard() {
     ];
 
     // Pipeline hidden alongside its sidebar entry (per request) — restore both together.
+    // Search Leads / Lead Map likewise, with the Lead Scraper menu.
     const agentActions = isFR
       ? [{ label: "Facilities", icon: Building2, path: "/crm/facilities" }, { label: "Field Visits", icon: MapPin, path: "/bdr/field-visits" }, { label: "FR Errands", icon: ClipboardList, path: "/bdr/fr-errands" }]
-      : [{ label: "Facilities", icon: Building2, path: "/crm/facilities" }, { label: "Search Leads", icon: Search, path: "/search" }, { label: "Lead Map", icon: Map, path: "/map" }];
+      : [{ label: "Facilities", icon: Building2, path: "/crm/facilities" }];
 
     const tasksDue = [...overdueMine, ...todayMine];
 
@@ -451,11 +453,14 @@ function TaskColumn({ title, icon: Icon, tint, tasks, navigate, emptyText }: { t
   );
 }
 
+// As many columns as buttons (up to four), so hiding a shortcut leaves no gap.
+const QUICK_COLS = ["grid-cols-1", "grid-cols-2 sm:grid-cols-2", "grid-cols-2 sm:grid-cols-3", "grid-cols-2 sm:grid-cols-4"];
+
 function QuickActions({ actions, navigate }: { actions: { label: string; icon: any; path: string }[]; navigate: (p: string) => void }) {
   return (
     <motion.section variants={item} initial="hidden" animate="show" className="premium-card rounded-2xl p-6">
       <SectionTitle icon={Sparkles} title="Quick Actions" />
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+      <div className={`grid ${QUICK_COLS[Math.min(actions.length, 4) - 1]} gap-3 mt-5`}>
         {actions.map((a) => {
           const Icon = a.icon;
           return (

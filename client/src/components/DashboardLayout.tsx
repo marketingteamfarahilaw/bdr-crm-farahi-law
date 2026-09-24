@@ -46,12 +46,14 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: PhoneCall, label: "Calls & Transcripts", path: "/intake/calls", level: "intake" },
     { icon: Settings, label: "Settings & RingCentral", path: "/intake/settings", level: "intake" },
   ] },
-  { title: "Lead Scraper", items: [
-    { icon: Map, label: "CA Lead Map", path: "/map", level: "bdr" },
-    { icon: Search, label: "Lead Search", path: "/search", level: "bdr" },
-    { icon: Bookmark, label: "Saved Leads", path: "/saved-leads", level: "bdr" },
-    { icon: History, label: "Saved Searches", path: "/saved-searches", level: "bdr" },
-  ] },
+  // Lead Scraper hidden (per request, Sept 2026), with its shortcuts on the home
+  // page and in the Ctrl+K palette. Pages/routes still exist; uncomment to restore.
+  // { title: "Lead Scraper", items: [
+  //   { icon: Map, label: "CA Lead Map", path: "/map", level: "bdr" },
+  //   { icon: Search, label: "Lead Search", path: "/search", level: "bdr" },
+  //   { icon: Bookmark, label: "Saved Leads", path: "/saved-leads", level: "bdr" },
+  //   { icon: History, label: "Saved Searches", path: "/saved-searches", level: "bdr" },
+  // ] },
   { title: "Facility Partner CRM", items: [
     // { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
     { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr" },

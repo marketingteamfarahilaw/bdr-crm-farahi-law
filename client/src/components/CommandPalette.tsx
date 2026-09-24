@@ -9,8 +9,9 @@ import { Building2, Search, LayoutDashboard, Map, BarChart3, Users, Phone, MapPi
 const PAGES = [
   { label: "Command Center", path: "/", icon: LayoutDashboard },
   { label: "Facilities", path: "/crm/facilities", icon: Building2 },
-  { label: "Lead Search", path: "/search", icon: Search },
-  { label: "Lead Map", path: "/map", icon: Map },
+  // Lead Search and Lead Map hidden with the Lead Scraper menu (per request).
+  // { label: "Lead Search", path: "/search", icon: Search },
+  // { label: "Lead Map", path: "/map", icon: Map },
   { label: "BDR Reports", path: "/crm/reports", icon: BarChart3 },
   { label: "Representatives", path: "/agents", icon: Users },
   { label: "RingCentral Settings", path: "/crm/ringcentral", icon: Phone },
