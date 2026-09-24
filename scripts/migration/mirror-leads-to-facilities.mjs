@@ -120,7 +120,8 @@ for (const l of leads) {
     const cols = Object.keys(row).map((k) => `\`${k}\``).join(", ");
     const qs = Object.keys(row).map(() => "?").join(", ");
     // createdAt = the lead's own date, so notifications only surface genuinely new leads.
-    await c.query(`INSERT INTO facility_leads (${cols}, createdAt, updatedAt) VALUES (${qs}, ?, NOW())`, [...Object.values(row), when]);
+    // IGNORE: a unique key (externalSource, externalId) stops two overlapping runs from storing a lead twice.
+    await c.query(`INSERT IGNORE INTO facility_leads (${cols}, createdAt, updatedAt) VALUES (${qs}, ?, NOW())`, [...Object.values(row), when]);
     inserted++;
   }
 }
@@ -158,7 +159,7 @@ if (!DRY) {
       await c.query(`UPDATE inbound_leads SET ${OWNED.map((f) => "`" + f + "`=?").join(", ")}, createdAt=?, updatedAt=NOW() WHERE id=?`, [...OWNED.map((f) => r[f]), r.when, id]);
       inbUpd++;
     } else {
-      await c.query(`INSERT INTO inbound_leads (${OWNED.map((f) => "`" + f + "`").join(", ")}, notes, countsTowardPartnerActivity, externalId, externalSource, createdAt, updatedAt)
+      await c.query(`INSERT IGNORE INTO inbound_leads (${OWNED.map((f) => "`" + f + "`").join(", ")}, notes, countsTowardPartnerActivity, externalId, externalSource, createdAt, updatedAt)
         VALUES (${OWNED.map(() => "?").join(", ")}, ?, 1, ?, 'leaddocket', ?, NOW())`, [...OWNED.map((f) => r[f]), r.notes, r.externalId, r.when]);
       inbIns++;
     }

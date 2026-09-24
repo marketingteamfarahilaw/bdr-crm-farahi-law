@@ -115,6 +115,27 @@ let matched = 0;
 for (const call of calls) { const f = call.phone ? byPhone.get(call.phone) : null; if (f) { call.facilityId = f.id; matched++; } }
 console.log(`Matched to a facility: ${matched} / ${calls.length}  (unmatched ${calls.length - matched} → rc_unmatched_calls)`);
 
+// The sheet and the live RingCentral sync overlap (the sheet runs to the end of
+// August; the live sync began Aug 27), so the same call arrived twice. A sheet
+// call with a RingCentral call to the same facility or number within 3 minutes
+// is that call — RingCentral's copy wins.
+const WINDOW = 180000;
+const rcByFacility = new Map(), rcByPhone = new Map();
+const push = (m, k, t) => { if (!k || !t) return; const a = m.get(k) ?? []; a.push(new Date(t).getTime()); m.set(k, a); };
+for (const r of (await c.query("SELECT facilityId, contactDate FROM contact_logs WHERE fromRingCentral = 1 AND contactType = 'call'"))[0]) push(rcByFacility, r.facilityId, r.contactDate);
+for (const r of (await c.query("SELECT toNumber, fromNumber, startTime FROM rc_unmatched_calls WHERE rcCallId NOT LIKE 'xls:%'"))[0]) {
+  push(rcByPhone, last10(r.toNumber), r.startTime);
+  push(rcByPhone, last10(r.fromNumber), r.startTime);
+}
+const near = (list, t) => !!list && list.some((x) => Math.abs(x - t) <= WINDOW);
+const fresh = calls.filter((call) => {
+  const t = call.when.getTime();
+  return !(near(rcByFacility.get(call.facilityId), t) || near(rcByPhone.get(call.phone), t));
+});
+console.log(`Already in the live RingCentral data (skipped): ${calls.length - fresh.length}`);
+calls.length = 0;
+calls.push(...fresh);
+
 if (dry) { console.log("\n[DRY RUN] nothing written."); await c.end(); process.exit(0); }
 
 const [dl] = await c.query("DELETE FROM contact_logs WHERE fromRingCentral = 0 AND rcCallId LIKE 'xls:%'");
