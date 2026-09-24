@@ -7,7 +7,7 @@
 
 // ── the team ────────────────────────────────────────────────────────────────
 // Role is how the person is credited when the source carries no prefix.
-// Current BDR: Ally, Grace, Miguel, Queenie. Current FR: Zulema, Lupe, Jezel,
+// Current BDR: Ally, Grace, Malvin, Miguel, Queenie. Current FR: Zulema, Lupe, Jezel,
 // Genysys. The rest are former team members, kept so their past sign-ups stay
 // in historical reporting.
 export const TEAM = [

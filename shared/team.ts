@@ -9,7 +9,7 @@
 // Update this when someone joins or leaves the team.
 
 export const CURRENT_TEAM: Record<"BDR" | "FR", readonly string[]> = {
-  BDR: ["Ally Maceda", "Grace Lanayon", "Miguel Flores", "Queenie Miranda"],
+  BDR: ["Ally Maceda", "Grace Lanayon", "Malvin Rosales", "Miguel Flores", "Queenie Miranda"],
   FR: ["Zulema Salas", "Lupe Campos", "Jezel Mercado", "Genysys Sanchez"],
 };
 
