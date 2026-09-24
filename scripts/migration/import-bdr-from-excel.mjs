@@ -12,6 +12,8 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
+import { createHash } from "node:crypto";
+import { canonical } from "./leaddocket-rules.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
 const dry = process.argv.includes("--dry");
@@ -103,12 +105,36 @@ for (const r of sheet("2.Rfral Rewrd").slice(2)) {
     notes: [norm(r[15]), norm(r[16]), norm(r[17]), norm(r[18]), norm(r[19])].filter(Boolean).join(" · ") });
 }
 
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+/** The tracker's Month column mixes typed names ("January ") with dates Excel
+ *  stored as serials (46082). A bare name takes the year that puts it closest
+ *  to the row's own sent or sign-up date. */
+function monthOf(v, ref) {
+  const n = Number(norm(v));
+  if (norm(v) && isFinite(n) && n > 1000) {
+    const d = excelDate(n);
+    return d ? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)) : null;
+  }
+  const i = MONTH_NAMES.findIndex((m) => low(v).length >= 3 && m.toLowerCase().startsWith(low(v).slice(0, 3)));
+  if (i < 0) return null;
+  const at = (ref ?? new Date()).getTime();
+  const y0 = new Date(at).getUTCFullYear();
+  const y = [y0 - 1, y0, y0 + 1].reduce((best, yr) =>
+    Math.abs(Date.UTC(yr, i, 15) - at) < Math.abs(Date.UTC(best, i, 15) - at) ? yr : best);
+  return new Date(Date.UTC(y, i, 1));
+}
+const monthName = (d) => (d ? MONTH_NAMES[d.getUTCMonth()] + " " + d.getUTCFullYear() : "");
+
 const tracker = [];
 for (const r of sheet("2.Rfral Frndly fclt").slice(1)) {
   const client = norm(r[1]); if (!client) continue;
   const st = low(r[9]);
-  tracker.push({ month: norm(r[0]), client, facilityType: norm(r[3]), coordinator: norm(r[4]),
-    partnerStatus: norm(r[5]), facility: norm(r[6]), bdr: norm(r[8]),
+  const sud = excelDate(r[2]), sent = excelDate(r[10]);
+  const month = monthOf(r[0], sent ?? sud);
+  // A bare number in PD Coordinator is a date typed into the wrong column, not a person.
+  const coordinator = /^\d+(\.\d+)?$/.test(norm(r[4])) ? "" : norm(r[4]);
+  tracker.push({ month: monthName(month) || norm(r[0]), monthDate: month, sud, sent, client, facilityType: norm(r[3]), coordinator,
+    partnerStatus: norm(r[5]), facility: norm(r[6]), owner: norm(r[7]), bdr: norm(r[8]),
     status: st.includes("successful sent") ? "Successful Sent" : st.includes("demo") ? "Demo Sent"
       : st.includes("unsuccessful") ? "Unsuccessful" : st.includes("progress") ? "In Progress" : "Pending",
     notes: [norm(r[7]) ? "Facility owner: " + norm(r[7]) : "", iso(excelDate(r[10])) ? "Date sent: " + iso(excelDate(r[10])) : ""].filter(Boolean).join(" · ") });
@@ -190,9 +216,79 @@ await load("referral_rewards", rewards, (r) => [
   "INSERT INTO referral_rewards (agentName, sud, referralType, facilityId, facilityName, clientName, clientTier, payoutAmount, status, caseNumber, coordinator, deliveryType, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())",
   [clamp(r.agent, 255), clamp(r.sud, 100), r.refType, facId(r.facility, ""), clamp(r.facility, 255), clamp(r.client || "(unknown)", 255), r.tier, r.payout, r.status, clamp(r.caseNumber, 100), clamp(r.coordinator, 255), clamp(r.delivery, 100), text(r.notes)]]);
 
+// createdAt is the referral's own date, not the import time: the tracker's
+// year and date filters read it.
 await load("referral_tracker", tracker, (t) => [
-  "INSERT INTO referral_tracker (month, clientName, pdCoordinator, partnerStatus, facilityId, facilityName, facilityType, bdrAssigned, status, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,?,NOW(),NOW())",
-  [clamp(t.month, 20), clamp(t.client, 255), clamp(t.coordinator, 255), clamp(t.partnerStatus, 100), facId(t.facility, ""), clamp(t.facility, 255), clamp(t.facilityType, 100), clamp(t.bdr, 255), t.status, text(t.notes)]]);
+  "INSERT INTO referral_tracker (month, clientName, pdCoordinator, partnerStatus, facilityId, facilityName, facilityType, bdrAssigned, status, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW())",
+  [clamp(t.month, 20), clamp(t.client, 255), clamp(t.coordinator, 255), clamp(t.partnerStatus, 100), facId(t.facility, ""), clamp(t.facility, 255), clamp(t.facilityType, 100), clamp(t.bdr, 255), t.status, text(t.notes),
+    t.sent ?? t.monthDate ?? t.sud ?? new Date()]]);
+
+// ─── Partner Referral Tracker (outbound_referrals) ────────────────────────────
+// The team logs the clients it refers out to partners in this sheet, so the
+// sheet is the source of the Partner Referral Tracker's outbound rows. The sheet
+// has no ids, so each row is keyed on its own contents. A row someone has
+// edited in the app (updatedAt later than syncedAt) is left alone from then on,
+// and referrals added in the app are never touched.
+{
+  const OUT_STATUS = {
+    "Successful Sent": "Referral Sent",
+    "Demo Sent": "Referral Sent",          // client demographics sent to the facility
+    "In Progress": "Facility Selected",
+    "Pending": "Pending Review",
+    "Unsuccessful": "Not Referred",
+  };
+  const fullName = (s) => canonical(s)?.full ?? norm(s);
+  const seen = new Map();
+  const rows = tracker.map((t) => {
+    const base = [key(t.client), key(t.facility), iso(t.sud), iso(t.sent)].join("|");
+    const n = (seen.get(base) ?? 0) + 1;       // the sheet repeats some rows exactly
+    seen.set(base, n);
+    return {
+      externalId: createHash("sha1").update(base + "#" + n).digest("hex"),
+      when: t.sent ?? t.monthDate ?? t.sud ?? new Date(),
+      clientName: clamp(t.client, 255),
+      dateSigned: t.sud,
+      referralType: clamp(t.facilityType, 100),
+      assignedAgent: clamp(fullName(t.bdr), 100),
+      recommendedFacility: clamp(t.facility, 255),
+      facilityOwner: clamp(fullName(t.owner), 100),
+      referralSentDate: t.sent,
+      status: OUT_STATUS[t.status] ?? "Pending Review",
+      facilityHadSentLeads: /^active/i.test(t.partnerStatus) ? 1 : 0,
+      notes: [`From the Referral-Friendly Facility sheet${t.month ? ` (${t.month})` : ""}`, `sheet status: ${t.status}`,
+        t.partnerStatus && `partner: ${t.partnerStatus}`, t.coordinator && `PD coordinator: ${t.coordinator}`].filter(Boolean).join(" · "),
+    };
+  });
+
+  const have = new Map((await c.query(
+    "SELECT id, externalId, UNIX_TIMESTAMP(updatedAt) u, UNIX_TIMESTAMP(syncedAt) s FROM outbound_referrals WHERE externalSource='sheet'"))[0]
+    .map((r) => [r.externalId, r]));
+  const editedInApp = (r) => r.s != null && Number(r.u) > Number(r.s) + 1;
+  const FIELDS = ["clientName", "dateSigned", "referralType", "assignedAgent", "recommendedFacility", "facilityOwner", "referralSentDate", "status", "facilityHadSentLeads", "notes"];
+  let ins = 0, upd = 0, kept = 0, del = 0;
+  for (const r of rows) {
+    const cur = have.get(r.externalId);
+    have.delete(r.externalId);
+    if (cur && editedInApp(cur)) { kept++; continue; }
+    if (cur) {
+      await c.query(`UPDATE outbound_referrals SET ${FIELDS.map((f) => "`" + f + "`=?").join(", ")}, lastUpdatedBy='Google Sheets', syncedAt=NOW(), updatedAt=NOW() WHERE id=?`,
+        [...FIELDS.map((f) => r[f]), cur.id]);
+      upd++;
+    } else {
+      await c.query(`INSERT INTO outbound_referrals (${FIELDS.map((f) => "`" + f + "`").join(", ")}, referralNeeded, lastUpdatedBy, externalId, externalSource, syncedAt, createdAt, updatedAt)
+        VALUES (${FIELDS.map(() => "?").join(", ")}, 1, 'Google Sheets', ?, 'sheet', NOW(), ?, NOW())`,
+        [...FIELDS.map((f) => r[f]), r.externalId, r.when]);
+      ins++;
+    }
+  }
+  // Gone from the sheet: remove it here too, unless someone has worked on it in the app.
+  for (const r of have.values()) {
+    if (editedInApp(r)) { kept++; continue; }
+    await c.query("DELETE FROM outbound_referrals WHERE id=?", [r.id]);
+    del++;
+  }
+  console.log(`outbound_referrals: ${ins} added, ${upd} updated, ${del} removed, ${kept} left alone (edited in the app)`);
+}
 
 await load("fr_errands", errands, (e) => [
   "INSERT INTO fr_errands (errandDate, clientName, clientTier, taskType, agentName, status, address, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,NOW(),NOW())",

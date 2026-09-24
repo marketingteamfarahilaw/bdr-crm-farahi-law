@@ -18,7 +18,9 @@
  *                            would send every manager 1,200 alerts
  *
  * Facility totals (leads received, signed cases, last signed date) are then
- * recomputed from facility_leads. Idempotent; runs after every Lead Docket sync.
+ * recomputed from facility_leads, and the partner-linked leads are copied to
+ * inbound_leads for the Partner Referral Tracker. Idempotent; runs after every
+ * Lead Docket sync.
  *
  *   node scripts/migration/mirror-leads-to-facilities.mjs [--dry]
  */
@@ -60,9 +62,11 @@ const users = await q("SELECT id, name FROM users WHERE name IS NOT NULL");
 const userId = (name) => users.find((u) => String(u.name).trim().toLowerCase() === String(name ?? "").trim().toLowerCase())?.id ?? null;
 
 // ── mirror ───────────────────────────────────────────────────────────────────
-const leads = await q(`SELECT externalId, member, facility, outcome, leadDate, sud, marketingSource, clientLocation, notes
+const leads = await q(`SELECT externalId, leadName, member, facility, outcome, classification, leadDate, sud, marketingSource, clientLocation, notes
   FROM lead_intake WHERE externalSource='leaddocket'`);
 const existing = new Map((await q("SELECT id, externalId FROM facility_leads WHERE externalSource='leaddocket'")).map((r) => [r.externalId, r.id]));
+const facName = new Map(facs.map((f) => [f.id, f.name]));
+const inbound = [];   // partner-referred leads, for the Partner Referral Tracker
 
 let inserted = 0, updated = 0, linked = 0, signed = 0;
 for (const l of leads) {
@@ -72,6 +76,21 @@ for (const l of leads) {
   if (facilityId) linked++;
   if (isSigned) signed++;
   const when = l.leadDate ? new Date(l.leadDate) : new Date();
+
+  if (facilityId) inbound.push({
+    externalId: String(l.externalId),
+    when,
+    leadName: String(l.leadName ?? "").slice(0, 255) || "(no name)",
+    dateReceived: when,
+    referringFacility: String(facName.get(facilityId) ?? "").slice(0, 255) || null,
+    facilityContact: String(l.facility).slice(0, 255),
+    assignedAgent: String(l.member ?? "").slice(0, 100) || null,
+    caseType: String(l.classification ?? "").trim().slice(0, 100) || null,
+    signed: isSigned ? 1 : 0,
+    signedDate: isSigned && l.sud ? new Date(l.sud) : null,
+    notSignedReason: !isSigned && /^(lost|rejected)/i.test(String(l.outcome ?? "")) ? String(l.outcome).slice(0, 255) : null,
+    notes: [`Lead Docket #${l.externalId}`, l.marketingSource ? `source: ${l.marketingSource}` : ""].filter(Boolean).join(" · "),
+  });
 
   const row = {
     facilityId,
@@ -123,7 +142,32 @@ if (!DRY) {
         f.lastSignedCaseDate = x.lastSigned`);
 }
 
+// ── Partner Referral Tracker (inbound_leads) ─────────────────────────────────
+// The partner-referred leads above are what the tracker's Inbound tab lists.
+// Lead Docket owns every field except notes and "counts toward partner
+// activity", which are set once so edits made in the app survive.
+let inbIns = 0, inbUpd = 0, inbDel = 0;
+if (!DRY) {
+  const OWNED = ["leadName", "dateReceived", "referringFacility", "facilityContact", "assignedAgent", "caseType", "signed", "signedDate", "notSignedReason"];
+  const have = new Map((await q("SELECT id, externalId FROM inbound_leads WHERE externalSource='leaddocket'")).map((r) => [r.externalId, r.id]));
+  for (const r of inbound) {
+    const id = have.get(r.externalId);
+    have.delete(r.externalId);
+    if (id) {
+      await c.query(`UPDATE inbound_leads SET ${OWNED.map((f) => "`" + f + "`=?").join(", ")}, updatedAt=NOW() WHERE id=?`, [...OWNED.map((f) => r[f]), id]);
+      inbUpd++;
+    } else {
+      await c.query(`INSERT INTO inbound_leads (${OWNED.map((f) => "`" + f + "`").join(", ")}, notes, countsTowardPartnerActivity, externalId, externalSource, createdAt, updatedAt)
+        VALUES (${OWNED.map(() => "?").join(", ")}, ?, 1, ?, 'leaddocket', ?, NOW())`, [...OWNED.map((f) => r[f]), r.notes, r.externalId, r.when]);
+      inbIns++;
+    }
+  }
+  // No longer linked to a partner (or gone from Lead Docket): no longer an inbound partner lead.
+  for (const id of have.values()) { await c.query("DELETE FROM inbound_leads WHERE id=?", [id]); inbDel++; }
+}
+
 console.log(`team leads: ${leads.length} · signed: ${signed} · linked to a partner facility: ${linked}`);
 console.log(DRY ? "[DRY RUN] nothing written." : `✅ facility_leads: ${inserted} inserted, ${updated} updated. Facility totals recomputed.`);
-console.log("MIRROR_RESULT " + JSON.stringify({ leads: leads.length, signed, linked, inserted, updated }));
+if (!DRY) console.log(`✅ inbound_leads: ${inbIns} added, ${inbUpd} updated, ${inbDel} removed.`);
+console.log("MIRROR_RESULT " + JSON.stringify({ leads: leads.length, signed, linked, inserted, updated, inbound: inbound.length }));
 await c.end();

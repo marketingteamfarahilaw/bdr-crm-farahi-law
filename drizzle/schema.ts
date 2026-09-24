@@ -722,6 +722,13 @@ export const outboundReferrals = mysqlTable("outbound_referrals", {
   lastUpdatedBy: varchar("lastUpdatedBy", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+
+  // Rows synced from the Referral-Friendly Facility sheet (externalSource "sheet").
+  // syncedAt is when the sync last wrote the row; an updatedAt later than that
+  // means someone edited it in the app, and the sync leaves it alone from then on.
+  externalId: varchar("externalId", { length: 64 }),
+  externalSource: varchar("externalSource", { length: 32 }),
+  syncedAt: timestamp("syncedAt"),
 });
 
 export type OutboundReferral = typeof outboundReferrals.$inferSelect;
@@ -754,6 +761,11 @@ export const inboundLeads = mysqlTable("inbound_leads", {
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+
+  // Team leads from Lead Docket whose "Referred by" matches a partner
+  // (externalSource "leaddocket", externalId = the Lead Docket id).
+  externalId: varchar("externalId", { length: 64 }),
+  externalSource: varchar("externalSource", { length: 32 }),
 });
 
 export type InboundLead = typeof inboundLeads.$inferSelect;

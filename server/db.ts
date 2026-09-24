@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { createPool } from "mysql2";
 import { InsertUser, users, appSettings, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { TRPCError } from "@trpc/server";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -767,6 +768,9 @@ export async function updateOutboundReferral(id: number, data: Partial<Omit<Inse
 export async function deleteOutboundReferral(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
+  // A synced row would come straight back on the next sync, so say where it lives instead.
+  const [row] = await db.select({ src: outboundReferrals.externalSource }).from(outboundReferrals).where(eq(outboundReferrals.id, id));
+  if (row?.src) throw new TRPCError({ code: "BAD_REQUEST", message: "This referral comes from the Referral-Friendly Facility sheet. Remove it there and it disappears here on the next sync." });
   await db.delete(outboundReferrals).where(eq(outboundReferrals.id, id));
 }
 
@@ -793,6 +797,8 @@ export async function updateInboundLead(id: number, data: Partial<Omit<InsertInb
 export async function deleteInboundLead(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
+  const [row] = await db.select({ src: inboundLeads.externalSource }).from(inboundLeads).where(eq(inboundLeads.id, id));
+  if (row?.src) throw new TRPCError({ code: "BAD_REQUEST", message: "This lead comes from Lead Docket, where the referring partner is recorded. Change it there and it updates here on the next sync." });
   await db.delete(inboundLeads).where(eq(inboundLeads.id, id));
 }
 

@@ -36,7 +36,7 @@ export const str = (v) => {
 const tidy = (s) => String(s).replace(/\s*[-–—].*$/, "").replace(/\s+/g, " ").trim();
 
 /** Map a bare or shortened first name onto the roster spelling ("Quee" → Queenie Miranda). */
-function canonical(name) {
+export function canonical(name) {
   const first = String(name).trim().split(/\s+/)[0].toLowerCase();
   if (!first) return null;
   for (const [key, hit] of BY_FIRST) if (key.startsWith(first) || first.startsWith(key)) return hit;

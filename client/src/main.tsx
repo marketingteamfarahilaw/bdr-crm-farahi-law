@@ -63,3 +63,20 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </trpc.Provider>
 );
+
+// After a deploy the new service worker takes over at once (skipWaiting +
+// clientsClaim), but the page already open is still the old build — so people
+// kept seeing the previous version until a second refresh. Reload once when a
+// new worker takes control, and look for one whenever the tab comes back.
+if ("serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloading) return;   // first install: nothing stale to replace
+    reloading = true;
+    window.location.reload();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => {});
+  });
+}
