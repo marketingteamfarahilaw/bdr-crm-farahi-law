@@ -136,8 +136,9 @@ if (!DRY) {
              MAX(CASE WHEN signedCase=1 THEN COALESCE(signedDate, leadDate) END) lastSigned
       FROM facility_leads WHERE facilityId IS NOT NULL GROUP BY facilityId
     ) x ON x.facilityId = f.id
+    LEFT JOIN (SELECT facilityId, SUM(count) n FROM facility_leads_sent GROUP BY facilityId) m ON m.facilityId = f.id
     SET f.totalLeadsReceived = COALESCE(x.recv, 0),
-        f.totalLeadsSent = COALESCE(x.sent, 0),
+        f.totalLeadsSent = COALESCE(x.sent, 0) + COALESCE(m.n, 0),   -- logged + monthly counts, as the app defines it
         f.totalSignedCases = COALESCE(x.signedN, 0),
         f.lastSignedCaseDate = x.lastSigned`);
 }

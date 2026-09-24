@@ -15,6 +15,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
 import { pacific, serialParts } from "./dates.mjs";
+import { fullName } from "./leaddocket-rules.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
 const dry = process.argv.includes("--dry");
@@ -77,7 +78,7 @@ const rows = xlsx.utils.sheet_to_json(ws, { header: 1, defval: "" });
 const calls = [];
 let skippedNoDate = 0;
 for (const r of rows) {
-  const agent = norm(r[COL.agent]);
+  const agent = fullName(norm(r[COL.agent]));   // "Grace" → "Grace Lanayon", as RingCentral writes it
   if (!agent || /^agent$/i.test(agent)) continue;
   const when = excelDate(r[COL.date], r[COL.time]);
   if (!when) { skippedNoDate++; continue; }

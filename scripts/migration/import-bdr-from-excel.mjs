@@ -13,7 +13,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
 import { createHash } from "node:crypto";
-import { canonical } from "./leaddocket-rules.mjs";
+import { fullName } from "./leaddocket-rules.mjs";
 import { pacific, serialParts } from "./dates.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
@@ -40,6 +40,8 @@ const money = (v) => {
 const text = (s) => (norm(s) === "" ? null : norm(s).slice(0, 4000));
 const clamp = (s, n) => (norm(s) === "" ? null : norm(s).replace(/[\r\n\t]+/g, " ").slice(0, n));
 const key = (s) => low(s).replace(/[^a-z0-9]/g, "");
+// Representatives in full, as Lead Docket and RingCentral spell them ("Grace" → "Grace Lanayon").
+const rep = (s) => fullName(norm(s));
 
 /** Excel serial, or a typed date like "3/25/2026" (the sheet also contains
  *  typos such as "2//27/2026" and "3/25//2026", so slashes are collapsed). */
@@ -72,7 +74,7 @@ const sheet = (n) => (wb.Sheets[n] ? xlsx.utils.sheet_to_json(wb.Sheets[n], { he
 // ─── parse ────────────────────────────────────────────────────────────────────
 const frExpenses = [];
 for (const r of sheet("2.FR Expen").slice(1)) {
-  const when = excelDate(r[1]); const agent = norm(r[2]);
+  const when = excelDate(r[1]); const agent = rep(r[2]);
   const amt = money(r[8]) ?? 0;      // a blank amount is still a real logged expense row
   if (!when || !agent) continue;
   frExpenses.push({ when, agent, facility: norm(r[3]), store: norm(r[6]), reason: norm(r[5]), amount: amt,
@@ -81,7 +83,7 @@ for (const r of sheet("2.FR Expen").slice(1)) {
 
 const bdrExpenses = [];
 for (const r of sheet("2.BDR Expen").slice(1)) {
-  const when = excelDate(r[1]); const agent = norm(r[2]);
+  const when = excelDate(r[1]); const agent = rep(r[2]);
   const amt = money(r[7]) ?? 0;      // a blank amount is still a real logged expense row
   if (!when || !agent) continue;
   bdrExpenses.push({ month: norm(r[0]), when, agent, facility: norm(r[3]), phone: norm(r[4]),
@@ -90,7 +92,7 @@ for (const r of sheet("2.BDR Expen").slice(1)) {
 
 const rewards = [];
 for (const r of sheet("2.Rfral Rewrd").slice(2)) {
-  const agent = norm(r[1]); const client = norm(r[5]);
+  const agent = rep(r[1]); const client = norm(r[5]);
   if (!agent && !client) continue;   // keep rows missing one or the other
   const st = low(r[8]);
   const t = low(r[3]);
@@ -110,7 +112,10 @@ for (const r of sheet("2.Rfral Rewrd").slice(2)) {
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 /** The tracker's Month column mixes typed names ("January ") with dates Excel
  *  stored as serials (46082). A bare name takes the year that puts it closest
- *  to the row's own sent or sign-up date. */
+ *  to a reference date — the row's own sent or sign-up date, else the nearest
+ *  dated row above it (the sheet runs in date order) — and a referral month is
+ *  never in the future: guessing from today turned "January" into January of
+ *  next year. */
 function monthOf(v, ref) {
   const n = Number(norm(v));
   if (norm(v) && isFinite(n) && n > 1000) {
@@ -123,20 +128,23 @@ function monthOf(v, ref) {
   const y0 = new Date(at).getUTCFullYear();
   const y = [y0 - 1, y0, y0 + 1].reduce((best, yr) =>
     Math.abs(Date.UTC(yr, i, 15) - at) < Math.abs(Date.UTC(best, i, 15) - at) ? yr : best);
-  return pacific(y, i + 1, 1);
+  const d = pacific(y, i + 1, 1);
+  return d > new Date() ? pacific(y - 1, i + 1, 1) : d;
 }
 const monthName = (d) => (d ? MONTH_NAMES[d.getUTCMonth()] + " " + d.getUTCFullYear() : "");
 
 const tracker = [];
+let lastRef = null;   // the most recent date seen above, for rows that carry none
 for (const r of sheet("2.Rfral Frndly fclt").slice(1)) {
   const client = norm(r[1]); if (!client) continue;
   const st = low(r[9]);
   const sud = excelDate(r[2]), sent = excelDate(r[10]);
-  const month = monthOf(r[0], sent ?? sud);
+  const month = monthOf(r[0], sent ?? sud ?? lastRef);
+  lastRef = sent ?? sud ?? month ?? lastRef;
   // A bare number in PD Coordinator is a date typed into the wrong column, not a person.
   const coordinator = /^\d+(\.\d+)?$/.test(norm(r[4])) ? "" : norm(r[4]);
   tracker.push({ month: monthName(month) || norm(r[0]), monthDate: month, sud, sent, client, facilityType: norm(r[3]), coordinator,
-    partnerStatus: norm(r[5]), facility: norm(r[6]), owner: norm(r[7]), bdr: norm(r[8]),
+    partnerStatus: norm(r[5]), facility: norm(r[6]), owner: rep(r[7]), bdr: rep(r[8]),
     status: st.includes("successful sent") ? "Successful Sent" : st.includes("demo") ? "Demo Sent"
       : st.includes("unsuccessful") ? "Unsuccessful" : st.includes("progress") ? "In Progress" : "Pending",
     notes: [norm(r[7]) ? "Facility owner: " + norm(r[7]) : "", iso(excelDate(r[10])) ? "Date sent: " + iso(excelDate(r[10])) : ""].filter(Boolean).join(" · ") });
@@ -148,7 +156,7 @@ for (const r of sheet("2.FR Errand").slice(7)) {
   const client = norm(r[1]); const task = norm(r[3]) || norm(r[6]) || "Errand";
   if (!when || !client) continue;
   const st = low(r[5]);
-  errands.push({ when, client, tier: tier(r[2]), task, agent: norm(r[4]),
+  errands.push({ when, client, tier: tier(r[2]), task, agent: rep(r[4]),
     status: st.includes("complete") ? "Completed" : (st.includes("pending") || st.includes("progress")) ? "In Progress" : "Not Completed",
     address: norm(r[8]),
     notes: [norm(r[7]), norm(r[6]) ? "Type: " + norm(r[6]) : "", norm(r[11]) ? "Urgency: " + norm(r[11]) : ""].filter(Boolean).join(" · ") });
@@ -162,7 +170,7 @@ const visits = [];
   for (let base = 0; base + 4 < header.length; base += 8) {
     if (!/date/i.test(norm(header[base]))) continue;
     for (const r of rows.slice(2)) {
-      const when = excelDate(r[base]); const agent = norm(r[base + 2]);
+      const when = excelDate(r[base]); const agent = rep(r[base + 2]);
       if (!when || !agent) continue;
       const facilityText = norm(r[base + 4]);
       const names = facilityText.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
@@ -239,7 +247,6 @@ await load("referral_tracker", tracker, (t) => [
     "Pending": "Pending Review",
     "Unsuccessful": "Not Referred",
   };
-  const fullName = (s) => canonical(s)?.full ?? norm(s);
   const seen = new Map();
   const rows = tracker.map((t) => {
     const base = [key(t.client), key(t.facility), iso(t.sud), iso(t.sent)].join("|");
@@ -273,8 +280,8 @@ await load("referral_tracker", tracker, (t) => [
     have.delete(r.externalId);
     if (cur && editedInApp(cur)) { kept++; continue; }
     if (cur) {
-      await c.query(`UPDATE outbound_referrals SET ${FIELDS.map((f) => "`" + f + "`=?").join(", ")}, lastUpdatedBy='Google Sheets', syncedAt=NOW(), updatedAt=NOW() WHERE id=?`,
-        [...FIELDS.map((f) => r[f]), cur.id]);
+      await c.query(`UPDATE outbound_referrals SET ${FIELDS.map((f) => "`" + f + "`=?").join(", ")}, lastUpdatedBy='Google Sheets', createdAt=?, syncedAt=NOW(), updatedAt=NOW() WHERE id=?`,
+        [...FIELDS.map((f) => r[f]), r.when, cur.id]);
       upd++;
     } else {
       await c.query(`INSERT INTO outbound_referrals (${FIELDS.map((f) => "`" + f + "`").join(", ")}, referralNeeded, lastUpdatedBy, externalId, externalSource, syncedAt, createdAt, updatedAt)
@@ -323,10 +330,12 @@ await load("referral_tracker", tracker, (t) => [
     }
   }
   for (const id of have.values()) { await c.query("DELETE FROM facility_leads WHERE id=?", [id]); del++; }
+  // Logged leads plus monthly counts entered on the profile — the app's definition (crmDb getTotalLeadsSentMap).
   await c.query(`UPDATE facilities f
     LEFT JOIN (SELECT facilityId, COUNT(*) n FROM facility_leads WHERE direction='sent_to_facility' AND facilityId IS NOT NULL GROUP BY facilityId) x
       ON x.facilityId = f.id
-    SET f.totalLeadsSent = COALESCE(x.n, 0)`);
+    LEFT JOIN (SELECT facilityId, SUM(count) n FROM facility_leads_sent GROUP BY facilityId) m ON m.facilityId = f.id
+    SET f.totalLeadsSent = COALESCE(x.n, 0) + COALESCE(m.n, 0)`);
   console.log(`leads sent to partners: ${outs.length} (${linkedOut} matched to a facility) — ${ins} added, ${upd} updated, ${del} removed; facility totals recounted`);
 }
 

@@ -35,6 +35,25 @@ export const str = (v) => {
 
 const tidy = (s) => String(s).replace(/\s*[-–—].*$/, "").replace(/\s+/g, " ").trim();
 
+/**
+ * The roster spelling of a representative written in a spreadsheet: "Grace" →
+ * "Grace Lanayon", "Jezel Mercadoo" → "Jezel Mercado". Reports group by name,
+ * so a first name in one table and the full name in another split one person
+ * in two. Stricter than canonical(): the first name must match exactly (no
+ * "Angel" → Angelica), and a surname, if given, must start like the roster's.
+ * Anything else — former reps, other staff — is returned as written.
+ */
+export function fullName(name) {
+  const raw = String(name ?? "").replace(/\s+/g, " ").trim();
+  if (!raw) return raw;
+  const [first, ...rest] = raw.toLowerCase().split(" ");
+  const hit = BY_FIRST.get(first);
+  if (!hit) return raw;
+  const surname = hit.full.split(" ").slice(1).join(" ").toLowerCase();
+  if (!rest.length || rest.join(" ").slice(0, 4) === surname.slice(0, 4)) return hit.full;
+  return raw;
+}
+
 /** Map a bare or shortened first name onto the roster spelling ("Quee" → Queenie Miranda). */
 export function canonical(name) {
   const first = String(name).trim().split(/\s+/)[0].toLowerCase();

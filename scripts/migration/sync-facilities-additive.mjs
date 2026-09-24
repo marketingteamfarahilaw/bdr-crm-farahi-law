@@ -7,6 +7,7 @@
  *   · INSERTs facilities present in the workbook but missing from the database
  *   · fills BLANK fields on existing rows (never overwrites edits made in the app)
  *   · promotes a facility to active_partner when the workbook says it is one
+ *   · spells owners in full ("Lupe" → "Lupe Campos"), as the rest of the CRM does
  * Nothing is deleted or renamed. Facilities that exist only in the database are
  * reported, never removed.
  *
@@ -17,6 +18,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
+import { fullName } from "./leaddocket-rules.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
 const APPLY = process.argv.includes("--apply");
@@ -102,7 +104,7 @@ for (const sheet of SHEETS) {
       phone3: idx.phone3 !== undefined ? norm(row[idx.phone3]) : "",
       contactEmail: idx.email !== undefined ? norm(row[idx.email]) : "",
       notes: idx.notes !== undefined ? norm(row[idx.notes]) : "",
-      assignedRepName: idx.agent !== undefined ? cleanAgent(row[idx.agent]) : "",
+      assignedRepName: idx.agent !== undefined ? fullName(cleanAgent(row[idx.agent])) : "",
       status,
     };
     const prev = byKey.get(key);
@@ -160,11 +162,22 @@ for (const rec of wanted) {
   }
 }
 
+// Owners spelled in full, as everywhere else ("Lupe" → "Lupe Campos"). Same
+// person, so this is a spelling fix, not an overwrite of an edit made in the app.
+let respelled = 0;
+for (const f of existing) {
+  const full = fullName(f.assignedRepName);
+  if (!f.assignedRepName || full === f.assignedRepName) continue;
+  respelled++;
+  if (APPLY) await c.query("UPDATE facilities SET assignedRepName=? WHERE id=?", [full, f.id]);
+}
+
 const dbOnly = existing.filter((f) => !seen.has(f.id));
 console.log(`\nWorkbook: ${wanted.length} facilities | database before: ${existing.length}`);
 console.log(`  to insert (missing from DB): ${toInsert}`);
 console.log(`  existing rows with blanks to fill: ${toFill}`);
 console.log(`  to promote to active partner: ${toPromote}`);
+console.log(`  owner names respelled in full: ${respelled}`);
 console.log(`  in DB but not in this workbook (left untouched): ${dbOnly.length}`);
 if (APPLY) {
   const [[after]] = await c.query("SELECT COUNT(*) n FROM facilities");

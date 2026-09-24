@@ -11,6 +11,7 @@ import {
   facilityReferrals,
   facilityTasks,
   facilityLeads,
+  inboundLeads,
   facilityGratitude,
   facilityUpdates,
   fieldVisits,
@@ -500,15 +501,27 @@ export async function getLastContactLogMap(): Promise<Map<number, ContactLogRow>
   return map;
 }
 
+/**
+ * Leads sent to each facility: every lead logged as sent (facility_leads — which
+ * includes the outbound referrals from the Referral-Friendly sheet) plus any
+ * monthly counts entered on the facility profile. The facility totals, the
+ * Command Center and the partner list all use this one definition; reading the
+ * monthly counts alone showed 0 wherever referrals existed.
+ */
 export async function getTotalLeadsSentMap(): Promise<Map<number, number>> {
   const db = await getDb();
   const map = new Map<number, number>();
   if (!db) return map;
-  const rows = await db
-    .select({ facilityId: facilityLeadsSent.facilityId, total: sql<number>`SUM(${facilityLeadsSent.count})` })
-    .from(facilityLeadsSent)
-    .groupBy(facilityLeadsSent.facilityId);
-  for (const r of rows) map.set(r.facilityId, Number(r.total ?? 0));
+  const [monthly, logged] = await Promise.all([
+    db.select({ facilityId: facilityLeadsSent.facilityId, total: sql<number>`SUM(${facilityLeadsSent.count})` })
+      .from(facilityLeadsSent).groupBy(facilityLeadsSent.facilityId),
+    db.select({ facilityId: facilityLeads.facilityId, total: sql<number>`COUNT(*)` })
+      .from(facilityLeads).where(eq(facilityLeads.direction, "sent_to_facility")).groupBy(facilityLeads.facilityId),
+  ]);
+  for (const r of [...monthly, ...logged]) {
+    if (r.facilityId == null) continue;
+    map.set(r.facilityId, (map.get(r.facilityId) ?? 0) + Number(r.total ?? 0));
+  }
   return map;
 }
 
@@ -779,14 +792,17 @@ export async function upsertLeadsSent(data: InsertFacilityLeadsSent) {
     });
 }
 
+/** Leads sent to one facility — the same definition as getTotalLeadsSentMap. */
 export async function getTotalLeadsSent(facilityId: number): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
-  const rows = await db
-    .select({ total: sql<number>`SUM(${facilityLeadsSent.count})` })
-    .from(facilityLeadsSent)
-    .where(eq(facilityLeadsSent.facilityId, facilityId));
-  return rows[0]?.total ?? 0;
+  const [monthly, logged] = await Promise.all([
+    db.select({ total: sql<number>`COALESCE(SUM(${facilityLeadsSent.count}), 0)` })
+      .from(facilityLeadsSent).where(eq(facilityLeadsSent.facilityId, facilityId)),
+    db.select({ total: sql<number>`COUNT(*)` })
+      .from(facilityLeads).where(and(eq(facilityLeads.facilityId, facilityId), eq(facilityLeads.direction, "sent_to_facility"))),
+  ]);
+  return Number(monthly[0]?.total ?? 0) + Number(logged[0]?.total ?? 0);
 }
 
 // ─── Referrals (legacy) ───────────────────────────────────────────────────────
@@ -976,13 +992,13 @@ export async function getDashboardStats() {
     .from(facilityTasks)
     .where(eq(facilityTasks.status, "open"));
 
-  const totalReferralsRow = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(facilityReferrals);
-
-  const totalLeadsSentRow = await db
-    .select({ total: sql<number>`COALESCE(SUM(${facilityLeadsSent.count}), 0)` })
-    .from(facilityLeadsSent);
+  // "Referrals" links to the Partner Referral Tracker, so it counts what that page
+  // lists as received: referrals logged on a facility plus partner-referred leads
+  // from Lead Docket (inbound_leads). facility_referrals alone is no longer filled.
+  const [referralsLogged, inboundReferred] = await Promise.all([
+    db.select({ count: sql<number>`COUNT(*)` }).from(facilityReferrals),
+    db.select({ count: sql<number>`COUNT(*)` }).from(inboundLeads),
+  ]);
 
   const totalContactLogsRow = await db
     .select({ count: sql<number>`COUNT(*)` })
@@ -1045,9 +1061,10 @@ export async function getDashboardStats() {
     topReferrers,
     statusBreakdown,
     totalSignedCases,
-    totalLeadsSent: Number(totalLeadsSentRow[0]?.total ?? 0),
+    // Same source as totalLeadsReceived: the facility totals, kept equal to their rows.
+    totalLeadsSent: allFacilities.reduce((s, f) => s + (f.totalLeadsSent ?? 0), 0),
     totalLeadsReceived,
-    totalReferrals: Number(totalReferralsRow[0]?.count ?? 0),
+    totalReferrals: Number(referralsLogged[0]?.count ?? 0) + Number(inboundReferred[0]?.count ?? 0),
     totalContactLogs: Number(totalContactLogsRow[0]?.count ?? 0),
     lowReciprocity,
   };

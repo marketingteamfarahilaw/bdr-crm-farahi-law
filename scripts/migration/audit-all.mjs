@@ -62,11 +62,13 @@ same("referrals that went out — tracker vs leads sent to partners",
 // ── 2. totals must equal the rows they summarise ─────────────────────────────
 console.log("\n2. FACILITY TOTALS vs THE ROWS BEHIND THEM");
 {
+  // "Leads sent" = logged leads plus monthly counts entered on the profile (crmDb getTotalLeadsSentMap).
   const rows = await q(`SELECT f.id, f.name, f.totalLeadsReceived tr, f.totalLeadsSent ts, f.totalSignedCases tsc,
-      COALESCE(x.recv,0) recv, COALESCE(x.sent,0) sent, COALESCE(x.sg,0) sg
+      COALESCE(x.recv,0) recv, COALESCE(x.sent,0) + COALESCE(m.n,0) sent, COALESCE(x.sg,0) sg
     FROM facilities f LEFT JOIN (
       SELECT facilityId, SUM(direction='received_from_facility') recv, SUM(direction='sent_to_facility') sent, SUM(signedCase=1) sg
-      FROM facility_leads WHERE facilityId IS NOT NULL GROUP BY facilityId) x ON x.facilityId=f.id`);
+      FROM facility_leads WHERE facilityId IS NOT NULL GROUP BY facilityId) x ON x.facilityId=f.id
+    LEFT JOIN (SELECT facilityId, SUM(count) n FROM facility_leads_sent GROUP BY facilityId) m ON m.facilityId=f.id`);
   for (const [col, want, label] of [["tr", "recv", "leads received"], ["ts", "sent", "leads sent"], ["tsc", "sg", "signed cases"]]) {
     const off = rows.filter((r) => Number(r[col] ?? 0) !== Number(r[want]));
     off.length ? bad(`${off.length} facilities show the wrong ${label} (e.g. ${off.slice(0, 3).map((r) => `${r.name}: ${r[col]} vs ${r[want]}`).join("; ")})`)
@@ -177,7 +179,11 @@ for (const [name, from, to] of periods) {
   same("Command Center active partners", cc.activePartners, await one("SELECT COUNT(*) FROM facilities WHERE partnerStatus='active_partner'"));
   same("Command Center leads received from partners", cc.totalLeadsReceived, await one("SELECT COUNT(*) FROM facility_leads WHERE direction='received_from_facility' AND facilityId IS NOT NULL"));
   same("Command Center signed cases from partners", cc.totalSignedCases, await one("SELECT COUNT(*) FROM facility_leads WHERE signedCase=1 AND facilityId IS NOT NULL"));
-  same("Command Center leads sent to partners", cc.totalLeadsSent, await one("SELECT COUNT(*) FROM facility_leads WHERE direction='sent_to_facility' AND facilityId IS NOT NULL"));
+  same("Command Center leads sent to partners", cc.totalLeadsSent,
+    await one("SELECT COUNT(*) FROM facility_leads WHERE direction='sent_to_facility' AND facilityId IS NOT NULL")
+    + await one("SELECT COALESCE(SUM(count),0) FROM facility_leads_sent"));
+  same("Command Center referrals", cc.totalReferrals,
+    await one("SELECT COUNT(*) FROM facility_referrals") + await one("SELECT COUNT(*) FROM inbound_leads"));
 
   const rs = await page("referralWorkflow.stats");
   same("Referral Reports outbound", rs.summary.totalOutbound, await one("SELECT COUNT(*) FROM outbound_referrals"));
