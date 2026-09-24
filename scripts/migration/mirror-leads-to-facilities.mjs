@@ -41,7 +41,7 @@ const nk = (s) => String(s ?? "").toLowerCase().replace(/&/g, " and ").replace(/
 // Exact normalised name first. Containment only when the facility name is long
 // enough to be distinctive AND exactly one facility matches — a short or shared
 // name ("Collision", "Auto Body") must never attach a lead to the wrong partner.
-const facs = await q("SELECT id, name FROM facilities");
+const facs = await q("SELECT id, name, city, territory FROM facilities");
 const exact = new Map();
 const multi = new Set();
 for (const f of facs) {
@@ -76,6 +76,7 @@ const KINDS = [
   ["chiro", /chiro|spine/],
   ["medical", /medical|clinic|health|urgent|care|wellness|pain|imaging|mri|therap|rehab/],
   ["insurance", /insur|insruance|agency/],
+  ["sales", /\bsales\b|dealer/],                 // "Universal Auto Sales" is not Universal Auto Repair
 ];
 const kinds = (s) => new Set(KINDS.filter(([, re]) => re.test(String(s).toLowerCase())).map(([k]) => k));
 const facKinds = new Map(facs.map((f) => [f.id, kinds(f.name)]));
@@ -102,10 +103,91 @@ function matchByWords(referrer) {
   return best && best.score >= 0.7 && best.score - second >= 0.15 ? best.id : null;
 }
 
+// Fourth pass — the partner's name with a word left out. Intake drops words
+// ("Caruthers" for Caruthers Towing, "Collision King" for Collision King of
+// Tracy) and misspells them ("Reginos" for Regino), so a partner matches when
+// every word of its name but one is in the text, spelled the same or one letter
+// off. Each guard below is a wrong link the first version of this pass made:
+//   · the word left out is the trade or the partner's town, never part of the
+//     name — "Four Star Collision" is not Gold Star Collision
+//   · at least one matched word is a real name, not a trade ("Colision" counts
+//     as the trade) — "Rudy from Collision Center" names no one
+//   · the words come in the name's order — "Sams Towing Richard Bravo" is not
+//     Richard's Towing
+//   · a lone matched word must be spelled exactly, be rare, and the text must say
+//     it's the same kind of business — "Superior Market" is not Superior
+//     Collision, "Former Client Gilberto Hernandez" not M.Fernandez Towing
+// Two partners matching equally well means no link.
+const TRADE = new Set(["auto", "autos", "body", "shop", "collision", "collisions", "center", "centre", "repair", "repairs",
+  "towing", "tow", "medical", "health", "clinic", "care", "insurance", "services", "service", "group", "chiropractic",
+  "chiro", "wellness", "urgent", "paint", "painting", "garage", "motors", "automotive", "recovery", "transport", "agency",
+  "office", "mechanic", "tires", "tire", "glass", "smog", "therapy", "physical", "rehab", "spine", "injury", "accident",
+  "pain", "imaging", "mri", "cars", "car", "truck", "trucks", "detail", "detailing", "wrecker", "customs", "works"]);
+const isTrade = (w) => TRADE.has(w) || [...TRADE].some((t) => oneOff(w, t));
+const distinctive = (w, maxDf) => /^[a-z]{4,}$/.test(w) && !isTrade(w) && (df.get(w) ?? 1) <= maxDf;
+// The name as people say it: without "(Hector)" or a trailing "- Dr Westbrook".
+// Only a trailing one — "Dr. Christy Anthony, MD" stripped of "Dr. Christy" is
+// just "Anthony", which every Anthony in the text would match.
+const spoken = (name) => String(name ?? "").replace(/\([^)]*\)/g, " ").replace(/\s*[-–]\s*dr\.?\s+[a-z]+\s*$/i, " ");
+const facAll = facs.map((f) => ({
+  id: f.id,
+  w: [...new Set(words(spoken(f.name)))],            // in the name's order
+  place: new Set(words(`${f.city ?? ""} ${f.territory ?? ""}`)),
+})).filter((f) => f.w.length >= 1);
+// One letter added, dropped or changed, for words of five letters or more.
+function oneOff(a, b) {
+  if (a === b) return true;
+  if (Math.min(a.length, b.length) < 5 || Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++edits > 1) return false;
+    if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; }
+  }
+  return edits + (a.length - i) + (b.length - j) <= 1;
+}
+
+function matchMissingWord(referrer) {
+  const said = words(referrer);
+  if (!said.length) return null;
+  const rk = kinds(referrer);
+  const cands = [];
+  for (const f of facAll) {
+    const fk = facKinds.get(f.id);
+    if (clash(rk, fk)) continue;
+    // Where each word of the name sits in the text, spelled exactly or one letter off.
+    const at = f.w.map((w) => {
+      const i = said.indexOf(w);
+      if (i >= 0) return { i, exact: true };
+      const j = said.findIndex((s) => oneOff(s, w));
+      return j >= 0 ? { i: j, exact: false } : null;
+    });
+    const found = f.w.filter((_, k) => at[k]);
+    const missing = f.w.filter((_, k) => !at[k]);
+    if (!found.length || missing.length > 1) continue;
+    if (missing.length && !isTrade(missing[0]) && !f.place.has(missing[0])) continue;
+    const pos = at.filter(Boolean).map((a) => a.i);
+    if (pos.some((p, k) => k > 0 && p <= pos[k - 1])) continue;
+    if (found.length === 1) {
+      if (!at.find(Boolean).exact || !distinctive(found[0], 2)) continue;
+      const sameKind = [...rk].some((k) => fk.has(k));
+      if (fk.size ? !sameKind : found[0].length < 6 || (df.get(found[0]) ?? 1) > 1) continue;
+    } else if (!found.some((w) => distinctive(w, 4))) continue;
+    cands.push({ id: f.id, found: found.length, missing: missing.length });
+  }
+  if (!cands.length) return null;
+  cands.sort((a, b) => b.found - a.found || a.missing - b.missing);
+  const [best, next] = cands;
+  if (next && next.found === best.found && next.missing === best.missing) return null;
+  return best.id;
+}
+
 // Intake often puts the rep first: "Field Representative Genysys Sanchez / Reginos
 // Auto Body". The rep is not the partner — that text once matched Sanchez Auto
 // Body — so the parts naming a team member or a role are dropped before matching.
-const ROLE_WORDS = /\b(field rep(resentative)?|bdr|intake)\b/i;
+// So are former clients and employees who referred someone: they are people,
+// not partners ("Former Client Ignacio Hernandez", "Employee Referral Diana Lopez").
+const ROLE_WORDS = /\b(field rep(resentative)?|bdr|intake|(former|existing|current|past|previous) client|employee referral)\b/i;
 const teamKeys = TEAM.map(([full]) => nk(full));
 const partnerPart = (referrer) => String(referrer ?? "").split("/")
   .filter((part) => !ROLE_WORDS.test(part) && !teamKeys.some((t) => nk(part).includes(t)))
@@ -122,7 +204,10 @@ function matchFacility(text) {
   if (ids.length === 1) return ids[0];
   const byWords = matchByWords(referrer);
   if (byWords && EXPLAIN) console.log(`  word match: "${referrer}" → ${facs.find((f) => f.id === byWords)?.name}`);
-  return byWords;
+  if (byWords) return byWords;
+  const missingWord = matchMissingWord(referrer);
+  if (missingWord && EXPLAIN) console.log(`  missing-word match: "${referrer}" → ${facs.find((f) => f.id === missingWord)?.name}`);
+  return missingWord;
 }
 
 // ── users, for repId ─────────────────────────────────────────────────────────
