@@ -75,10 +75,12 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   //   { icon: Trophy, label: "Leadership", path: "/partnership/leadership", level: "manage" },
   // ] },
   { title: "Representative Tools", items: [
-    { icon: LayoutDashboard, label: "Daily Work", path: "/daily-work", level: "all" },
+    // Daily Work, Task Board and FileVine Note hidden (per request, Sept 2026).
+    // Pages/routes still exist; uncomment to restore.
+    // { icon: LayoutDashboard, label: "Daily Work", path: "/daily-work", level: "all" },
     { icon: CalendarDays, label: "Daily Activity Log", path: "/daily-log", level: "all" },
-    { icon: ListChecks, label: "Task Board", path: "/tasks", level: "all" },
-    { icon: FileText, label: "FileVine Note", path: "/filevine-note", level: "all" },
+    // { icon: ListChecks, label: "Task Board", path: "/tasks", level: "all" },
+    // { icon: FileText, label: "FileVine Note", path: "/filevine-note", level: "all" },
     { icon: BarChart3, label: "Reports", path: "/reports", level: "all" },
     { icon: FileBarChart2, label: "Team Reports", path: "/team-reports", level: "manage" },
     { icon: Phone, label: "Call Analytics", path: "/call-analytics", level: "all" },
