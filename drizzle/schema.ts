@@ -361,6 +361,11 @@ export const facilityLeads = mysqlTable("facility_leads", {
   // Null for a lead credited to a rep whose referring partner isn't known —
   // it still counts for the rep; it just isn't attached to a facility.
   facilityId: int("facilityId"),
+  // Set when someone picks (or clears) the referring partner by hand in the
+  // Sign-ups Report. The Lead Docket mirror then leaves facilityId alone —
+  // otherwise its text matching would undo the correction on the next sync.
+  facilityLinkedBy: varchar("facilityLinkedBy", { length: 255 }),
+  facilityLinkedAt: timestamp("facilityLinkedAt"),
   // Lead Docket lead id, so re-mirroring updates rows in place. Null for leads
   // entered in the app.
   externalId: varchar("externalId", { length: 64 }),

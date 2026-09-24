@@ -10,7 +10,9 @@
  *   · repName / repId      — the credited representative
  *   · facilityId           — the referring partner, when Lead Docket's
  *                            "Referred by" names one that matches safely;
- *                            otherwise null, and the lead still counts for the rep
+ *                            otherwise null, and the lead still counts for the rep.
+ *                            A partner someone picked by hand in the Sign-ups
+ *                            Report (facilityLinkedBy set) is never overwritten
  *   · signedCase / signedDate / outcome — from the sign-up date, so a client
  *                            whose case later closed still counts as signed
  *   · createdAt = the lead's own date, NOT now — notifications alert on recently
@@ -22,11 +24,12 @@
  * inbound_leads for the Partner Referral Tracker. Idempotent; runs after every
  * Lead Docket sync.
  *
- *   node scripts/migration/mirror-leads-to-facilities.mjs [--dry]
+ *   node scripts/migration/mirror-leads-to-facilities.mjs [--dry] [--explain]   (--explain lists word-pass links)
  */
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
+import { TEAM } from "./leaddocket-rules.mjs";
 
 const DRY = process.argv.includes("--dry");
 const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
@@ -48,13 +51,78 @@ for (const f of facs) {
 }
 const longKeys = facs.map((f) => ({ id: f.id, k: nk(f.name) })).filter((f) => f.k.length >= 10);
 
-function matchFacility(referrer) {
+// Third pass — distinctive words. Intake writes partners the way people say them:
+// "Luke with First Health Medical" for First Health Medical Center, "Salman of
+// Bloom Auto Collision" for Bloom Auto Collision & Repair — so the full name is
+// never in the text and the passes above miss it. Each facility is scored by
+// the share of its words found in the text, weighted by how rare each word is
+// across all facility names ("Bloom" says far more than "Collision"). A link
+// needs two matching words, one of them rare, and a clear single winner — a
+// client's surname alone ("… Ignacio Hernandez") must not attach a lead to
+// "Hernandez Auto Body".
+const FILLER = new Set(["the", "and", "inc", "llc", "ltd", "corp", "company", "with", "from", "for", "dba"]);
+const words = (s) => String(s ?? "").toLowerCase().replace(/'s\b/g, "").replace(/&/g, " ")
+  .split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !FILLER.has(w));
+const facWords = facs.map((f) => ({ id: f.id, w: [...new Set(words(f.name))] })).filter((f) => f.w.length >= 2);
+const df = new Map();
+for (const f of facWords) for (const w of f.w) df.set(w, (df.get(w) ?? 0) + 1);
+const idf = (w) => Math.log((facs.length + 1) / (df.get(w) ?? 1));
+// A body shop is not a towing company of the same name ("Golden State Body Shop"
+// vs "Golden State Towing"): when both texts say what kind of business they are
+// and the kinds don't overlap, it isn't a match.
+const KINDS = [
+  ["towing", /\btow(ing)?\b|wrecker/],
+  ["body", /body|collision|paint|auto ?repair|coach/],
+  ["chiro", /chiro|spine/],
+  ["medical", /medical|clinic|health|urgent|care|wellness|pain|imaging|mri|therap|rehab/],
+  ["insurance", /insur|insruance|agency/],
+];
+const kinds = (s) => new Set(KINDS.filter(([, re]) => re.test(String(s).toLowerCase())).map(([k]) => k));
+const facKinds = new Map(facs.map((f) => [f.id, kinds(f.name)]));
+const clash = (a, b) => a.size > 0 && b.size > 0 && ![...a].some((k) => b.has(k));
+
+function matchByWords(referrer) {
+  const r = new Set(words(referrer));
+  if (r.size < 2) return null;
+  const rk = kinds(referrer);
+  let best = null, second = 0;
+  for (const f of facWords) {
+    if (clash(rk, facKinds.get(f.id))) continue;
+    let hit = 0, total = 0, hits = 0, rare = false;
+    for (const w of f.w) {
+      total += idf(w);
+      // A number alone is not a name: "Martin 559 Towing" is not "H Towing 559".
+      if (r.has(w)) { hit += idf(w); hits++; if ((df.get(w) ?? 1) <= 3 && /[a-z]/.test(w)) rare = true; }
+    }
+    if (hits < 2 || !rare) continue;
+    const score = hit / total;
+    if (!best || score > best.score) { second = best ? best.score : second; best = { id: f.id, score }; }
+    else if (score > second) second = score;
+  }
+  return best && best.score >= 0.7 && best.score - second >= 0.15 ? best.id : null;
+}
+
+// Intake often puts the rep first: "Field Representative Genysys Sanchez / Reginos
+// Auto Body". The rep is not the partner — that text once matched Sanchez Auto
+// Body — so the parts naming a team member or a role are dropped before matching.
+const ROLE_WORDS = /\b(field rep(resentative)?|bdr|intake)\b/i;
+const teamKeys = TEAM.map(([full]) => nk(full));
+const partnerPart = (referrer) => String(referrer ?? "").split("/")
+  .filter((part) => !ROLE_WORDS.test(part) && !teamKeys.some((t) => nk(part).includes(t)))
+  .join(" / ").trim();
+
+const EXPLAIN = process.argv.includes("--explain");
+function matchFacility(text) {
+  const referrer = partnerPart(text);
   const k = nk(referrer);
   if (k.length < 5) return null;
   if (exact.has(k) && !multi.has(k)) return exact.get(k);
   const hits = longKeys.filter((f) => k.includes(f.k) || (k.length >= 10 && f.k.includes(k)));
   const ids = [...new Set(hits.map((h) => h.id))];
-  return ids.length === 1 ? ids[0] : null;
+  if (ids.length === 1) return ids[0];
+  const byWords = matchByWords(referrer);
+  if (byWords && EXPLAIN) console.log(`  word match: "${referrer}" → ${facs.find((f) => f.id === byWords)?.name}`);
+  return byWords;
 }
 
 // ── users, for repId ─────────────────────────────────────────────────────────
@@ -64,7 +132,7 @@ const userId = (name) => users.find((u) => String(u.name).trim().toLowerCase() =
 // ── mirror ───────────────────────────────────────────────────────────────────
 const leads = await q(`SELECT externalId, leadName, member, facility, outcome, classification, leadDate, sud, marketingSource, clientLocation, notes
   FROM lead_intake WHERE externalSource='leaddocket'`);
-const existing = new Map((await q("SELECT id, externalId FROM facility_leads WHERE externalSource='leaddocket'")).map((r) => [r.externalId, r.id]));
+const existing = new Map((await q("SELECT id, externalId, facilityId, facilityLinkedBy FROM facility_leads WHERE externalSource='leaddocket'")).map((r) => [r.externalId, r]));
 const facName = new Map(facs.map((f) => [f.id, f.name]));
 const inbound = [];   // partner-referred leads, for the Partner Referral Tracker
 
@@ -72,7 +140,9 @@ let inserted = 0, updated = 0, linked = 0, signed = 0;
 for (const l of leads) {
   const isSigned = l.outcome === "Signed" || l.outcome === "Signed Referred Out";
   const lostish = /^(lost|rejected|closed)/i.test(String(l.notes ?? "").replace(/^Lead Docket status:\s*/i, ""));
-  const facilityId = l.facility ? matchFacility(l.facility) : null;
+  const prior = existing.get(String(l.externalId));
+  // Linked (or unlinked) by hand in the app: that choice stands.
+  const facilityId = prior?.facilityLinkedBy ? prior.facilityId : l.facility ? matchFacility(l.facility) : null;
   if (facilityId) linked++;
   if (isSigned) signed++;
   const when = l.leadDate ? new Date(l.leadDate) : new Date();
@@ -83,7 +153,7 @@ for (const l of leads) {
     leadName: String(l.leadName ?? "").slice(0, 255) || "(no name)",
     dateReceived: when,
     referringFacility: String(facName.get(facilityId) ?? "").slice(0, 255) || null,
-    facilityContact: String(l.facility).slice(0, 255),
+    facilityContact: String(l.facility ?? "").slice(0, 255) || null,   // empty when linked by hand
     assignedAgent: String(l.member ?? "").slice(0, 100) || null,
     caseType: String(l.classification ?? "").trim().slice(0, 100) || null,
     signed: isSigned ? 1 : 0,
@@ -111,7 +181,7 @@ for (const l of leads) {
   };
   if (DRY) continue;
 
-  const id = existing.get(String(l.externalId));
+  const id = prior?.id;
   if (id) {
     const sets = Object.keys(row).map((k) => `\`${k}\`=?`).join(", ");
     await c.query(`UPDATE facility_leads SET ${sets}, createdAt=?, updatedAt=NOW() WHERE id=?`, [...Object.values(row), when, id]);

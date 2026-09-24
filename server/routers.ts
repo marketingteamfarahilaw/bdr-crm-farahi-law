@@ -106,7 +106,7 @@ const laDate = (s: string) => fromZonedTime(s, "America/Los_Angeles");
 const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59:59.999`) : laDate(s));
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
-import { getSignupsDashboard } from "./signupsReport";
+import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -815,6 +815,14 @@ export const appRouter = router({
       signupsDashboard: bdProcedure
         .input(range.extend({ role: z.enum(["BDR", "FR", "Intake"]).optional(), team: z.enum(["current", "all"]).optional() }))
         .query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupsDashboard(toRange(input), { role: input.role, team: input.team }); }),
+      // Pick a lead's referring partner by hand from the report's lead lists.
+      partnerOptions: bdProcedure.query(async ({ ctx }) => { mgrOnly(ctx); return getPartnerOptions(); }),
+      linkLeadPartner: bdProcedure
+        .input(z.object({ leadId: z.number().int(), facilityId: z.number().int().nullable() }))
+        .mutation(async ({ ctx, input }) => {
+          mgrOnly(ctx);
+          return linkLeadToPartner(input.leadId, input.facilityId, String(ctx.user.name || ctx.user.email || `user ${ctx.user.id}`));
+        }),
     });
   })(),
 

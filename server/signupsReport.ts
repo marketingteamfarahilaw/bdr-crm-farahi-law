@@ -14,9 +14,10 @@
  * for the representative; the response carries the match rate so the page can
  * say how much of the picture is partner-attributed.
  */
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { leadIntake, facilities, facilityLeads } from "../drizzle/schema";
+import { leadIntake, facilities, facilityLeads, inboundLeads } from "../drizzle/schema";
 import { isCurrentRep, CURRENT_TEAM, MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
 import { isNonReportingRep } from "@shared/permissions";
 import { formatInTimeZone } from "date-fns-tz";
@@ -109,10 +110,11 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   // facility profiles and the Partner Referral Tracker read, so every page agrees
   // on who sent a lead. Only leads entered by hand fall back to text matching.
   const links = await db
-    .select({ externalId: facilityLeads.externalId, facilityId: facilityLeads.facilityId })
+    .select({ externalId: facilityLeads.externalId, facilityId: facilityLeads.facilityId, linkedBy: facilityLeads.facilityLinkedBy })
     .from(facilityLeads)
     .where(eq(facilityLeads.externalSource, "leaddocket"));
   const linkedTo = new Map(links.map((r) => [String(r.externalId), r.facilityId]));
+  const linkedByHand = new Map(links.filter((r) => r.linkedBy).map((r) => [String(r.externalId), r.linkedBy!]));
 
   /** exact → containment → distinctive-token overlap. Null when nothing is confident. */
   const matchFacility = (text: string) => {
@@ -162,6 +164,10 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   const leadList: {
     id: number; name: string; caseType: string; member: string; role: string;
     date: string | null; outcome: string; signed: boolean; partner: string | null; partnerId: number | null;
+    // Lead Docket's own "Marketing Source Details" text, shown when it names no
+    // CRM partner, so the list never hides who intake wrote down.
+    referredBy: string | null;
+    linkable: boolean; linkedBy: string | null;
   }[] = [];
   const caseStats = new Map<string, { name: string; leads: number; signed: number }>();
   // The team's scorecard: each lead lands in exactly one column, so the columns
@@ -233,6 +239,9 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
       signed: isS,
       partner: hit?.name ?? null,
       partnerId: hit?.id ?? null,
+      referredBy: text || null,
+      linkable: l.externalSource === "leaddocket" && linkedTo.has(String(l.externalId)),
+      linkedBy: l.externalSource === "leaddocket" ? linkedByHand.get(String(l.externalId)) ?? null : null,
     });
 
     if (l.member) {
@@ -418,3 +427,93 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const monthName = (ym: string) => { const [y, m] = ym.split("-").map(Number); return `${MONTHS[m - 1]} ${y}`; };
+
+/** Every partner, for the "Link to a partner" picker. */
+export async function getPartnerOptions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: facilities.id, name: facilities.name, territory: facilities.territory })
+    .from(facilities).orderBy(asc(facilities.name));
+}
+
+/**
+ * Pick a Lead Docket lead's referring partner by hand, from the report's lead
+ * lists. Intake writes partners the way people say them ("Luke with First
+ * Health Medical"), so the mirror's text matching misses some and can get a few
+ * wrong; the BDR who owns the relationship knows. The choice goes everywhere a
+ * partner's leads are read — facility_leads (facility profile, Command Center,
+ * this report), the facility's totals, and inbound_leads (Partner Referral
+ * Tracker) — the same writes mirror-leads-to-facilities.mjs makes for an
+ * automatic link. facilityLinkedBy tells that script to keep it from then on.
+ * facilityId null records "no partner", which also sticks.
+ */
+export async function linkLeadToPartner(leadId: number, facilityId: number | null, by: string) {
+  const db = await getDb();
+  if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+  const [lead] = await db.select().from(leadIntake).where(eq(leadIntake.id, leadId)).limit(1);
+  if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found." });
+  if (lead.externalSource !== "leaddocket" || !lead.externalId) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Only Lead Docket leads can be linked to a partner here." });
+  }
+  const externalId = String(lead.externalId);
+  const [row] = await db.select({ id: facilityLeads.id, facilityId: facilityLeads.facilityId })
+    .from(facilityLeads)
+    .where(and(eq(facilityLeads.externalSource, "leaddocket"), eq(facilityLeads.externalId, externalId)))
+    .limit(1);
+  if (!row) {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: "This lead only just arrived from Lead Docket — try again after the next sync." });
+  }
+  let partner: { id: number; name: string } | undefined;
+  if (facilityId != null) {
+    [partner] = await db.select({ id: facilities.id, name: facilities.name }).from(facilities).where(eq(facilities.id, facilityId)).limit(1);
+    if (!partner) throw new TRPCError({ code: "NOT_FOUND", message: "That partner no longer exists." });
+  }
+
+  await db.update(facilityLeads)
+    .set({ facilityId, facilityLinkedBy: by.slice(0, 255), facilityLinkedAt: new Date() })
+    .where(eq(facilityLeads.id, row.id));
+
+  // Both the partner that lost the lead and the one that gained it.
+  for (const id of Array.from(new Set([row.facilityId, facilityId].filter((x): x is number => x != null)))) {
+    await db.execute(sql`UPDATE facilities f SET
+      f.totalLeadsReceived = (SELECT COUNT(*) FROM facility_leads WHERE facilityId = ${id} AND direction = 'received_from_facility'),
+      f.totalLeadsSent = (SELECT COUNT(*) FROM facility_leads WHERE facilityId = ${id} AND direction = 'sent_to_facility')
+                       + (SELECT COALESCE(SUM(count), 0) FROM facility_leads_sent WHERE facilityId = ${id}),
+      f.totalSignedCases = (SELECT COUNT(*) FROM facility_leads WHERE facilityId = ${id} AND signedCase = 1),
+      f.lastSignedCaseDate = (SELECT MAX(COALESCE(signedDate, leadDate)) FROM facility_leads WHERE facilityId = ${id} AND signedCase = 1)
+      WHERE f.id = ${id}`);
+  }
+
+  const inboundKey = and(eq(inboundLeads.externalSource, "leaddocket"), eq(inboundLeads.externalId, externalId));
+  if (!partner) {
+    await db.delete(inboundLeads).where(inboundKey);
+    return { partner: null };
+  }
+  const signed = isSigned(lead.outcome);
+  const when = lead.leadDate ?? new Date();
+  const owned = {
+    leadName: (lead.leadName || "(no name)").slice(0, 255),
+    dateReceived: when,
+    referringFacility: partner.name.slice(0, 255),
+    facilityContact: String(lead.facility ?? "").slice(0, 255) || null,
+    assignedAgent: String(lead.member ?? "").slice(0, 100) || null,
+    caseType: String(lead.classification ?? "").trim().slice(0, 100) || null,
+    signed,
+    signedDate: signed ? when : null,
+    notSignedReason: !signed && /^(lost|rejected)/i.test(String(lead.outcome ?? "")) ? String(lead.outcome) : null,
+  };
+  const [have] = await db.select({ id: inboundLeads.id }).from(inboundLeads).where(inboundKey).limit(1);
+  if (have) {
+    await db.update(inboundLeads).set(owned).where(eq(inboundLeads.id, have.id));
+  } else {
+    await db.insert(inboundLeads).values({
+      ...owned,
+      notes: `Lead Docket #${externalId} · linked by ${by}`,
+      countsTowardPartnerActivity: true,
+      externalId,
+      externalSource: "leaddocket",
+      createdAt: when,
+    });
+  }
+  return { partner: partner.name };
+}
