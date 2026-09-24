@@ -14,7 +14,8 @@ import "./SignupsDashboard.css";
 
 // English formatting regardless of the browser's language, to match the rest of the CRM.
 const fmt = (n: number) => n.toLocaleString("en-US");
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+// The local calendar date as YYYY-MM-DD (toISOString is UTC: after 5pm Pacific it gave tomorrow).
+const iso = (d: Date) => d.toLocaleDateString("en-CA");
 const dateOf = (m: string) => {
   const [y, mo] = m.split("-");
   return new Date(Number(y), Number(mo) - 1, 1);
@@ -51,7 +52,8 @@ function presets(today: Date) {
 
 export default function SignupsDashboard() {
   const today = new Date();
-  const [from, setFrom] = useState(`${today.getFullYear()}-01-01`);
+  // Opens on the current month — what the team reviews day to day.
+  const [from, setFrom] = useState(iso(new Date(today.getFullYear(), today.getMonth(), 1)));
   const [to, setTo] = useState(iso(today));
   const [role, setRole] = useState<Role>("all");
   const [team, setTeam] = useState<Team>("all");
@@ -457,8 +459,6 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
             )}
           </div>
 
-          <LeadList leads={data.leadList} />
-          {focus && <RepClients focus={focus} leads={data.leadList} onClose={() => setFocus(null)} />}
 
           {/* Partner type + territory (partner-attributed leads only) */}
           <div className="sr-pair">
@@ -531,6 +531,10 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
           </div>
         </aside>
       </div>
+
+      {/* Every lead by name — full width, so long client names have room */}
+      <LeadList leads={data.leadList} />
+      {focus && <RepClients focus={focus} leads={data.leadList} onClose={() => setFocus(null)} />}
     </>
   );
 }
@@ -659,19 +663,21 @@ function Scorecard({ sc, label, onRep }: { sc: ReportData["scorecard"]; label: s
 function LeadTable({ rows, showRep }: { rows: ReportData["leadList"]; showRep?: boolean }) {
   return (
     <div className="sr-scroll">
-      <table className="sr-t" style={{ minWidth: showRep ? 820 : 640 }}>
+      {/* Long names ("… Passenger of …", "… as the Mother of …") wrap instead of
+          pushing Outcome and Referred by off the edge. */}
+      <table className="sr-t sr-leads" style={{ minWidth: showRep ? 760 : 600 }}>
         <thead>
           <tr><th>Client</th><th>Case type</th>{showRep && <th>Representative</th>}<th>Date</th><th>Outcome</th><th>Referred by</th></tr>
         </thead>
         <tbody>
           {rows.map((l) => (
             <tr key={l.id}>
-              <td><b style={{ color: "var(--ink)", fontWeight: 600, whiteSpace: "nowrap" }}>{l.name}</b></td>
-              <td>{l.caseType}</td>
-              {showRep && <td style={{ whiteSpace: "nowrap" }}>{l.member} <span style={{ fontSize: 11, color: "var(--mute)" }}>{l.role}</span></td>}
-              <td style={{ whiteSpace: "nowrap" }}>{leadDay(l.date)}</td>
-              <td><span className={`sr-badge ${outcomeBadge(l.outcome, l.signed)}`}>{l.outcome || "—"}</span></td>
-              <td>{l.partnerId ? <Link href={`/crm/facilities/${l.partnerId}`}>{l.partner}</Link> : <span style={{ color: "var(--mute2)" }}>—</span>}</td>
+              <td className="client"><b>{l.name}</b></td>
+              <td className="nowrap">{l.caseType}</td>
+              {showRep && <td className="nowrap">{l.member} <span className="role">{l.role}</span></td>}
+              <td className="nowrap">{leadDay(l.date)}</td>
+              <td className="nowrap"><span className={`sr-badge ${outcomeBadge(l.outcome, l.signed)}`}>{l.outcome || "—"}</span></td>
+              <td className="partner">{l.partnerId ? <Link href={`/crm/facilities/${l.partnerId}`}>{l.partner}</Link> : <span style={{ color: "var(--mute2)" }}>—</span>}</td>
             </tr>
           ))}
         </tbody>

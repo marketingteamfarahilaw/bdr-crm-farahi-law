@@ -326,3 +326,10 @@ table.sr-sct td.blue { color: #1f5fbf; font-weight: 700; }
 table.sr-sct tr.total td { background: var(--char); color: #fff; font-weight: 700; border-bottom: 0; }
 .dark .sr table.sr-sct tr.total td { color: #161613; }
 table.sr-sct tr.total td.big { background: #3f8f3a; color: #fff; font-size: 15px; }
+
+/* ---- lead lists: names wrap, short columns stay compact */
+table.sr-leads td.client { min-width: 200px; max-width: 360px; }
+table.sr-leads td.client b { color: var(--ink); font-weight: 600; line-height: 1.35; }
+table.sr-leads td.nowrap { white-space: nowrap; }
+table.sr-leads td.partner { min-width: 140px; max-width: 240px; line-height: 1.35; }
+table.sr-leads .role { font-size: 11px; color: var(--mute); }
