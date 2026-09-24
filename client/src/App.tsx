@@ -421,9 +421,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="dashboard-mesh min-h-screen flex flex-col items-center justify-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-          <Scale className="w-6 h-6 text-primary" />
+      <div className="app-canvas min-h-screen flex flex-col items-center justify-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-[0_10px_22px_-12px_rgb(0_0_0/0.6)]">
+          <Scale className="w-6 h-6 text-sun" />
         </div>
         <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
       </div>

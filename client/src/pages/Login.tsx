@@ -42,22 +42,22 @@ export default function Login() {
   };
 
   return (
-    <div className="dashboard-mesh min-h-screen flex items-center justify-center p-4">
+    <div className="app-canvas min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
           <img
             src={logo}
             alt="Farahi Law Firm"
-            className="max-h-36 w-auto max-w-[85%] object-contain mb-3 drop-shadow-md"
+            className="max-h-32 w-auto max-w-[85%] object-contain mb-4 rounded-3xl shadow-[var(--lift)]"
           />
           <p className="text-base font-medium text-foreground/90 text-center">{slogan}</p>
         </div>
 
         {/* Card */}
-        <form onSubmit={submit} className="premium-card rounded-2xl p-6 space-y-4">
+        <form onSubmit={submit} className="premium-card p-7 space-y-4">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-foreground">Sign in</h2>
+            <h2 className="font-display text-4xl text-foreground">Welcome in</h2>
             <p className="text-xs text-muted-foreground">
               Enter your credentials to access the dashboard.
             </p>
@@ -67,7 +67,7 @@ export default function Login() {
             <>
               <a
                 href="/api/auth/google"
-                className="flex items-center justify-center gap-2.5 w-full rounded-md border border-border bg-white text-gray-700 text-sm font-medium py-2.5 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-center gap-2.5 w-full rounded-full bg-white text-gray-700 text-sm font-medium py-2.5 shadow-[inset_0_0_0_1px_var(--edge),var(--lift)] hover:bg-gray-50 transition-colors"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -130,7 +130,7 @@ export default function Login() {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={login.isPending}>
+          <Button type="submit" className="w-full h-11" disabled={login.isPending}>
             {login.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

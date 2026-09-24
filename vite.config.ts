@@ -165,8 +165,8 @@ const plugins = [
       name: "Farahi Law · BD Command Center",
       short_name: "Farahi CRM",
       description: "Farahi Law BD partner CRM — pipeline, calls, visits, expenses, and referrals.",
-      theme_color: "#16264a",
-      background_color: "#0f1b33",
+      theme_color: "#ecebe6",
+      background_color: "#ecebe6",
       display: "standalone",
       start_url: "/",
       scope: "/",
@@ -187,12 +187,19 @@ const plugins = [
       ],
     },
     workbox: {
-      globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+      // The page itself (index.html) is NOT precached. It used to be, and the
+      // worker served that saved copy on every visit, so after a deploy people
+      // kept the old app until a second reload — or longer. Pages now come from
+      // the network first (the cache is only a fallback when offline), and each
+      // new index.html names the new hashed JS/CSS, so a deploy shows at once.
+      globPatterns: ["**/*.{js,css,svg,png,woff2}"],
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-      navigateFallback: "/index.html",
-      navigateFallbackDenylist: [/^\/api/],
-      // CRM data must always be fresh — never cache the API.
-      runtimeCaching: [{ urlPattern: /\/api\//, handler: "NetworkOnly" }],
+      navigateFallback: null,
+      runtimeCaching: [
+        { urlPattern: ({ request }) => request.mode === "navigate", handler: "NetworkFirst", options: { cacheName: "pages", networkTimeoutSeconds: 4 } },
+        // CRM data must always be fresh — never cache the API.
+        { urlPattern: /\/api\//, handler: "NetworkOnly" },
+      ],
       cleanupOutdatedCaches: true,
       clientsClaim: true,
       skipWaiting: true,
