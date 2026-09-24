@@ -25,7 +25,7 @@ const KEY = process.env.LEADDOCKET_API_KEY || "";
 const sampleAt = process.argv.indexOf("--sample");
 const SAMPLE = sampleAt > -1 ? Number(process.argv[sampleAt + 1]) : 40;
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const q = async (sql, p = []) => (await c.query(sql, p))[0];
 const one = async (sql, p = []) => (await q(sql, p))[0].n;
 let problems = 0;

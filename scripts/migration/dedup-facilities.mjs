@@ -17,7 +17,7 @@ const nameKey = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 const RANK = { priority_partner: 6, active_partner: 5, needs_follow_up: 4, prospect: 3, dormant: 2, do_not_use: 1 };
 const dry = process.argv.includes("--dry");
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, partnerStatus, assignedRepId, assignedRepName FROM facilities WHERE phone IS NOT NULL AND phone<>''");
 const [cols] = await c.query("SELECT TABLE_NAME t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND COLUMN_NAME='facilityId'");
 const childTables = cols.map((x) => x.t);

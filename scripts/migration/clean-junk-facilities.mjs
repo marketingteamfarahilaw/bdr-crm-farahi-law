@@ -22,7 +22,7 @@ const PLACEHOLDERS = [
   "towing company", "body shop", "eruc", "non fr chiro", "needs an agent", "unassigned",
 ];
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT * FROM facilities");
 
 const isJunk = (name) => {

@@ -51,6 +51,11 @@ and the server do the rest. Don't burn time trying to boot it.
 - **Hard wall between BD/FR and Intake.** Intake roles must never see facility
   or partner data, and BD/FR roles must never see intake case facts. Only
   `super_admin` crosses it. See `isIntakeOnly` / `canSeeIntake`.
+- **Dates: the app reads the database as UTC; the server's clock is Pacific.**
+  Any script must connect with `{ uri: DATABASE_URL, timezone: "Z" }` like
+  `server/db.ts`, or every date it writes shows up 7–8 hours off. Lead Docket
+  sends UTC without a zone marker; the Google Sheets hold Pacific dates. Convert
+  through `scripts/migration/dates.mjs`, and group reports by Pacific days.
 - **`todo.md` is stale** — it describes an early lead-scraper phase, not the
   app as it stands. Trust the code.
 - `DEPLOY.md` documents the original manual setup; the deploy workflow and the

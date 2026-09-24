@@ -23,7 +23,7 @@ const serialToUs = (v) => {
 };
 const clean = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 let inserted = 0, skipped = 0, dupes = 0;
 
 for (let i = 2; i < rows.length; i++) {  // rows 1-2 are headers

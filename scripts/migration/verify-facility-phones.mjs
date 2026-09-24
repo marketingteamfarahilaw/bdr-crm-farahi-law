@@ -38,7 +38,7 @@ const lookup = async (phone10) => {
   catch (e) { return { status: "FETCH_ERROR", name: null, addr: null }; }
 };
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, category, city, phone FROM facilities WHERE phone IS NOT NULL AND phone <> '' ORDER BY id");
 const targets = facs.filter((f) => last10(f.phone));
 console.log(`Verifying ${targets.length} facilities by phone against Google Places…`);

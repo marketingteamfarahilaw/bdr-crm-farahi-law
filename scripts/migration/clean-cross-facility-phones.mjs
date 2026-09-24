@@ -8,7 +8,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import mysql from "mysql2/promise";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const last10 = (s) => { const d = (s || "").replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : ""; };
 
 const [rows] = await c.query("SELECT id, name, phone, phone2, phone3, contactPhone FROM facilities");

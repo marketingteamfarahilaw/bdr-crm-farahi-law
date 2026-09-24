@@ -129,7 +129,7 @@ for (const f of facilities.slice(0, 4)) console.log("  ", JSON.stringify({ name:
 if (dry) { console.log("\n[DRY RUN] nothing written."); process.exit(0); }
 
 // ---- apply: wipe facilities + their children, then insert ----
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const childTables = ["contact_logs", "facility_updates", "facility_tasks", "facility_referrals", "facility_leads", "facility_leads_sent", "facility_gratitude"];
 for (const t of childTables) { try { const [r] = await c.query(`DELETE FROM \`${t}\``); console.log(`cleared ${t}: ${r.affectedRows}`); } catch (e) { console.warn(t, e.message); } }
 const [df] = await c.query("DELETE FROM facilities");

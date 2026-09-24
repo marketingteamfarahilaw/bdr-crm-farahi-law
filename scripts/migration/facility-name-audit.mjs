@@ -29,7 +29,7 @@ for (let i = 2; i < rows.length; i++) {
 }
 console.log("Workbook rows:", book.length);
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, phone2, phone3, contactPhone, assignedRepName, category, city FROM facilities");
 console.log("CRM facilities:", facs.length);
 

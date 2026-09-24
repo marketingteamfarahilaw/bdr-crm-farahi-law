@@ -1,20 +1,21 @@
 /**
  * The one place the importers and syncs turn source dates into instants.
  *
- * The firm works in Pacific time and every report groups by Pacific days, but
- * the sources write dates three different ways — and each one was being read
- * wrong, moving records onto the neighbouring day (and, at month end, into the
- * neighbouring month):
+ * Two rules, both easy to get wrong:
  *
- *   · Lead Docket writes UTC with no zone marker ("2026-09-23T00:37:08.923").
- *     The server runs in Pacific time, so a bare parse read it as Pacific and
- *     put every lead 7–8 hours late — a third of them on the next day.
- *   · The Google Sheets hold Pacific calendar dates and wall-clock times, which
- *     were stored as if they were UTC: a "9/1" expense became 5pm on Aug 31, and
- *     every call from the call-history sheet showed 7–8 hours early.
+ *  1. Connect to the database with timezone "Z", exactly as the app does
+ *     (server/db.ts). The server runs in Pacific time, and a connection without
+ *     it writes and reads every date as Pacific wall-clock, while the app reads
+ *     them as UTC — so each date a script wrote showed up 7–8 hours off in the
+ *     app. Every script in this folder now connects with { timezone: "Z" }.
  *
- * A date with no time of day becomes Pacific noon, which is the same calendar
- * date in Pacific time and in UTC, so no page can show it on another day.
+ *  2. Convert each source's dates to real instants:
+ *     · Lead Docket writes UTC with no zone marker ("2026-09-23T00:37:08.923").
+ *       Parse it as UTC (ldInstant), and derive calendar dates in Pacific time.
+ *     · The Google Sheets hold Pacific calendar dates and wall-clock times.
+ *       A date with no time of day becomes Pacific noon, which is the same
+ *       calendar date in Pacific time and in UTC, so no page can show it on
+ *       another day.
  */
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 

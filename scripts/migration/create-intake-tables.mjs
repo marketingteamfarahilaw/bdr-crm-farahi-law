@@ -7,7 +7,7 @@
 import "dotenv/config";
 import mysql from "mysql2/promise";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 // 1) users.role enum — add intake_manager / intake_agent
 const [cols] = await c.query("SHOW COLUMNS FROM users LIKE 'role'");

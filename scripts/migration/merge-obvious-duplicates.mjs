@@ -21,7 +21,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 
 const APPLY = process.argv.includes("--apply");
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 const p10 = (s) => { const d = String(s ?? "").replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : ""; };
 // "and" vs "&" is a spelling difference, not a different business.

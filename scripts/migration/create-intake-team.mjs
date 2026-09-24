@@ -33,7 +33,7 @@ const tempPassword = () => {
 };
 const rid = () => randomBytes(12).toString("hex");
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const created = [];
 for (const m of TEAM) {
   const [existing] = await c.query("SELECT id, role FROM users WHERE email = ?", [m.email]);

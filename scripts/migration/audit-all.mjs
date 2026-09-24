@@ -19,7 +19,7 @@ import { SignJWT } from "jose";
 import { fromZonedTime } from "date-fns-tz";
 import { TEAM } from "./leaddocket-rules.mjs";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const q = async (sql, p = []) => (await c.query(sql, p))[0];
 const one = async (sql, p = []) => Number(Object.values((await q(sql, p))[0] ?? { n: 0 })[0] ?? 0);
 

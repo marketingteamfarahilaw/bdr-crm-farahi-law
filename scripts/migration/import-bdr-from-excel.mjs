@@ -187,7 +187,7 @@ console.log("Field visits     : " + visits.length + " rows");
 
 if (dry) { console.log("\n[DRY RUN] nothing written."); process.exit(0); }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, phone2, phone3 FROM facilities");
 const facByName = new Map(), facByPhone = new Map();
 for (const f of facs) {

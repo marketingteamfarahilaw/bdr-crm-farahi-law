@@ -24,7 +24,7 @@ for (const r of rows) { const name = clean(r[4]); if (!name) continue; const add
 const audit = (() => { try { return JSON.parse(fs.readFileSync("scripts/migration/facility-audit-result.json", "utf8")); } catch { return { wrongName: [] }; } })();
 const googleNearestById = new Map((audit.wrongName || []).map((x) => [x.id, x.bestGuess]));
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, address, city, phone, phone2, phone3, category, assignedRepName FROM facilities");
 await c.end();
 

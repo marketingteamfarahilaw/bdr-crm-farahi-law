@@ -21,7 +21,7 @@ const CHILD = [
 const p10 = (s) => { const d = String(s ?? "").replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : ""; };
 const nname = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const q = async (s, p = []) => (await c.query(s, p))[0];
 const rows = await q("SELECT * FROM facilities");
 

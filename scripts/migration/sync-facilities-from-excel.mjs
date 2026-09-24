@@ -73,7 +73,7 @@ for (const [sh, type] of Object.entries(CAT)) {
   }
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [db] = await c.query("SELECT * FROM facilities");
 if (APPLY) fs.writeFileSync("scripts/migration/backup-facilities-full.json", JSON.stringify(db, null, 2));
 

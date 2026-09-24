@@ -48,7 +48,7 @@ for (let i = 2; i < rows.length; i++) {
   });
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, phone2, phone3, contactPhone, assignedRepName, category, city, contactName FROM facilities");
 
 const slotIndex = new Map(); // phone10 → { f, slot }

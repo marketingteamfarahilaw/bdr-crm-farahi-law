@@ -8,7 +8,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import mysql from "mysql2/promise";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [flagged] = await c.query("SELECT * FROM facilities WHERE managementNote='Not in active Excel master — review'");
 if (!flagged.length) { console.log("Nothing flagged."); await c.end(); process.exit(0); }
 const ids = flagged.map((r) => r.id);

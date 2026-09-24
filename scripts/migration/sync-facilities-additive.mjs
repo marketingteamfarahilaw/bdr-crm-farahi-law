@@ -117,7 +117,7 @@ for (const sheet of SHEETS) {
 }
 const wanted = [...byKey.values()];
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [existing] = await c.query("SELECT * FROM facilities");
 const byPhone = new Map(), byName = new Map();
 for (const f of existing) {

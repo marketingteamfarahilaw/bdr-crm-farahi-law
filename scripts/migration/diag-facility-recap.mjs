@@ -7,7 +7,7 @@ import "dotenv/config";
 import mysql from "mysql2/promise";
 
 const num = process.argv[2] || "9168610028";
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 const [facs] = await c.query(
   `SELECT id, name, city, partnerStatus, phone, phone2, phone3, contactPhone

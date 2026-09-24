@@ -1,7 +1,7 @@
 import "dotenv/config";
 import mysql from "mysql2/promise";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 await c.query(`CREATE TABLE IF NOT EXISTS lead_intake (
   id INT AUTO_INCREMENT PRIMARY KEY,
   leadDate TIMESTAMP NULL,

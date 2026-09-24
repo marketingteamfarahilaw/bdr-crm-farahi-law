@@ -15,7 +15,7 @@ if (!Number.isInteger(keep) || dups.length === 0) {
   process.exit(1);
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [cols] = await c.query(
   "SELECT TABLE_NAME t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND COLUMN_NAME='facilityId'"
 );

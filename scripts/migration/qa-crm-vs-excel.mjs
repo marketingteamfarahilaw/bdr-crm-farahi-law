@@ -26,7 +26,7 @@ const isDate = (v) => { const n = Number(v); if (isFinite(n) && n > 1000) return
 
 const wb = xlsx.readFile(FILE);
 const S = (n) => (wb.Sheets[n] ? xlsx.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: "" }) : []);
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const count = async (t, where = "") => (await c.query(`SELECT COUNT(*) n FROM \`${t}\` ${where}`))[0][0].n;
 
 const rows = [];

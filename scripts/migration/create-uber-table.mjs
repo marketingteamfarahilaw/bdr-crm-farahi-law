@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 await c.query(`CREATE TABLE IF NOT EXISTS uber_receipts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   orderId VARCHAR(128) NOT NULL,

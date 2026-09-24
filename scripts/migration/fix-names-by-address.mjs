@@ -36,7 +36,7 @@ for (let i = 2; i < rows.length; i++) {
   ex.push({ name, addr, city, num: stnum(addr), toks: new Set(sttok(addr)), cityN: cityN(city) });
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, address, city, assignedRepName FROM facilities");
 
 const candidates = []; const ambiguous = [];

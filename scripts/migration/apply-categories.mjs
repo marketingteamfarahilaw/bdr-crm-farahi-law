@@ -15,7 +15,7 @@ const APPLY = process.argv.includes("--apply");
 const VALID = new Set(["body_shop", "chiropractor", "physical_therapist", "imaging_center", "medical_clinic", "other"]);
 const cls = JSON.parse(fs.readFileSync("scripts/migration/cat-classified.json", "utf8"));
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, category FROM facilities");
 const cur = new Map(facs.map((f) => [f.id, f]));
 

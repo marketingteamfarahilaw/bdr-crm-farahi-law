@@ -29,7 +29,7 @@ for (const r of rows) {
   if (stnum(addr) && cityOf(addr)) { if (!fvByAddr.has(key)) fvByAddr.set(key, new Set()); fvByAddr.get(key).add(name); }
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, phone2, phone3, address, city, assignedRepName, notes FROM facilities WHERE notes IS NULL OR notes NOT LIKE 'Imported from Filevine%'");
 await c.end();
 

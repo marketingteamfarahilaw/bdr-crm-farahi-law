@@ -31,7 +31,7 @@ const TARGETS = [
   ["lead_intake", "member"],
 ];
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 const [users] = await c.query("SELECT id, name FROM users WHERE name IS NOT NULL AND name <> ''");
 const byFirst = new Map();

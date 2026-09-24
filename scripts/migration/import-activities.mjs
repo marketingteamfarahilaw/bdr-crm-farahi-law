@@ -19,7 +19,7 @@ const toDate = (v) => {
 const num = (v) => { let n = parseFloat(String(v).replace(/[^0-9.\-]/g, "")); if (isNaN(n)) n = 0; return Math.max(-99999999.99, Math.min(99999999.99, n)); };
 const clip = (s, n) => { const t = norm(s); return t ? t.slice(0, n) : null; };
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone FROM facilities");
 const fidByName = new Map();
 for (const f of facs) { const k = norm(f.name).toLowerCase().replace(/[^a-z0-9]/g, ""); if (k && !fidByName.has(k)) fidByName.set(k, f.id); }

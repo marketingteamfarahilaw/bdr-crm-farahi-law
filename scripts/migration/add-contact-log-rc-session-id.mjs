@@ -9,7 +9,7 @@
 import "dotenv/config";
 import mysql from "mysql2/promise";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 const [cols] = await c.query("SHOW COLUMNS FROM contact_logs LIKE 'rcSessionId'");
 if (cols.length === 0) {

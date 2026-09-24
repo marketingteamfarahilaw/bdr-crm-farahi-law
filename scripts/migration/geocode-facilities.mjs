@@ -4,7 +4,7 @@ import mysql from "mysql2/promise";
 const key = process.env.GOOGLE_MAPS_API_KEY;
 if (!key) { console.error("No GOOGLE_MAPS_API_KEY"); process.exit(1); }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [rows] = await c.query(
   "SELECT id, name, address, city FROM facilities WHERE (latitude IS NULL OR longitude IS NULL) AND ((address IS NOT NULL AND address<>'') OR (city IS NOT NULL AND city<>''))"
 );

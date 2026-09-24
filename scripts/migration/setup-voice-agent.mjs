@@ -49,7 +49,7 @@ Conduct a personal-injury intake interview. Collect, conversationally (NOT as an
 - Close every potential-client call with: their information is going straight to the intake team, who will call them back as soon as possible — usually within the hour during business hours, or first thing next morning.
 - Keep your answers short (1-2 sentences). Let the caller do the talking.`;
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const getSetting = async (k) => {
   const [r] = await c.query("SELECT settingValue v FROM app_settings WHERE settingKey = ?", [k]);
   return r[0]?.v ?? null;

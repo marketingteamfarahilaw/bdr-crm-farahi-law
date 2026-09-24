@@ -64,7 +64,7 @@ for (const r of rows) {
 }
 
 // ── CRM dedup keys ──
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT name, phone, phone2, phone3, address, city FROM facilities");
 const crmNames = new Set(facs.map((f) => norm(f.name)));
 const crmPhones = new Set(); for (const f of facs) for (const p of [f.phone, f.phone2, f.phone3]) { const x = last10(p); if (x) crmPhones.add(x); }

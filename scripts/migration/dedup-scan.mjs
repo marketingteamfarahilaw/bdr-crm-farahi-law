@@ -5,7 +5,7 @@
 import "dotenv/config";
 import mysql from "mysql2/promise";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const norm = `RIGHT(REGEXP_REPLACE(phone, '[^0-9]', ''), 10)`;
 const [groups] = await c.query(
   `SELECT ${norm} np, COUNT(*) n, GROUP_CONCAT(id ORDER BY id) ids

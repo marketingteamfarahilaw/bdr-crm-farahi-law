@@ -26,7 +26,7 @@ const infer = (name) => {
   return null;
 };
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const b = JSON.parse(fs.readFileSync("scripts/migration/fix-facility-names-v6-backup.json", "utf8"));
 let n = 0;
 for (const r of b.renamed || []) {

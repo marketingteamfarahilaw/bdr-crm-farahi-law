@@ -66,7 +66,7 @@ const frCheckins = checkins.filter((e) => NO_RC_AGENTS.has(first(e.agent)));
 console.log(`Parsed: ${visits.length} visit entries (all agents) | ${checkins.length} check-in entries → ${frCheckins.length} for no-RC agents (backfillable)`);
 
 // ── Facility matching ──
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name FROM facilities");
 const byNorm = new Map();
 for (const f of facs) { const k = norm(f.name); if (!byNorm.has(k)) byNorm.set(k, []); byNorm.get(k).push(f); }

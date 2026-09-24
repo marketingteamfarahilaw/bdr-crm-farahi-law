@@ -58,7 +58,7 @@ for (const r of rows) {
   if (stnum(addr) && cityOf(addr)) { if (!fvByAddr.has(key)) fvByAddr.set(key, new Set()); fvByAddr.get(key).add(name); }
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, category, address, city, phone, phone2, phone3, assignedRepName, latitude, longitude, partnerStatus, notes FROM facilities ORDER BY id");
 
 // ── Deterministic checks ──

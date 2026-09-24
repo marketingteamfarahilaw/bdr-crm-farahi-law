@@ -53,7 +53,7 @@ for (let i = 2; i < rows.length; i++) {
   });
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT * FROM facilities");
 const byName = new Map();
 for (const f of facs) { const k = norm(f.name); if (k && !byName.has(k)) byName.set(k, f); }

@@ -40,7 +40,7 @@ function formatIssue(name) {
   return null;
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, address, city, phone, category, assignedRepName, latitude, longitude, notes, createdAt FROM facilities");
 await c.end();
 

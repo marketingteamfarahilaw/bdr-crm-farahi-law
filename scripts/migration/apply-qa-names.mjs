@@ -16,7 +16,7 @@ const clean = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 const norm = (s) => clean(s).toLowerCase().replace(/[^a-z0-9]/g, "");
 const res = JSON.parse(fs.readFileSync("scripts/migration/qa-names-researched.json", "utf8"));
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name FROM facilities");
 const cur = new Map(facs.map((f) => [f.id, f.name]));
 

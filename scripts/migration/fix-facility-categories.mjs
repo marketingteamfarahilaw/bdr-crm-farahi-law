@@ -30,7 +30,7 @@ const infer = (name) => {
   return null;
 };
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, category FROM facilities");
 
 const backup = [];

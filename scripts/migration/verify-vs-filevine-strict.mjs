@@ -27,7 +27,7 @@ for (const f of fv) if (!fvByNameExact.has(f.key)) fvByNameExact.set(f.key, f);
 const fvByPhone = new Map();
 for (const f of fv) for (const p of f.phones) if (!fvByPhone.has(p)) fvByPhone.set(p, f);
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, phone2, phone3, address, city, assignedRepName FROM facilities");
 
 let exact = 0, agentMismatchExact = 0;

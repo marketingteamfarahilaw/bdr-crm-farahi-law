@@ -5,7 +5,7 @@
 import "dotenv/config";
 import mysql from "mysql2/promise";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 const [tables] = await c.query("SHOW TABLES LIKE 'user_ringcentral_tokens'");
 if (tables.length === 0) {

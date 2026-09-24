@@ -19,7 +19,7 @@ const CHILD_TABLES = [
   "fr_expenses", "bdr_expenses", "referral_rewards", "referral_tracker", "uber_receipts",
 ];
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const ph = DUPS.map(() => "?").join(",");
 console.log(`Merging facilities [${DUPS.join(", ")}] → #${CANONICAL}\n`);
 let moved = 0;

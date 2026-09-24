@@ -19,7 +19,7 @@ const MIN_FACILITIES = 5;
 const PALETTE = ["#FF6B35", "#4ECDC4", "#A855F7", "#F59E0B", "#3B82F6", "#10B981", "#EF4444", "#EC4899",
   "#14B8A6", "#8B5CF6", "#F97316", "#22C55E", "#0EA5E9", "#E11D48", "#84CC16", "#6366F1"];
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const rows = (await c.query(
   `SELECT assignedRepName rep, city, COUNT(*) n FROM facilities
     WHERE assignedRepName IS NOT NULL AND assignedRepName <> '' AND city IS NOT NULL AND city <> ''

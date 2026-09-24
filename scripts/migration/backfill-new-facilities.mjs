@@ -62,7 +62,7 @@ for (const e of entries) { byAgent.set(e.agent, (byAgent.get(e.agent) ?? 0) + 1)
 for (const [a, n] of byAgent) console.log(`  ${a}: ${n}`);
 
 // ── Match against the CRM ──
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, assignedRepName, createdAt, notes FROM facilities");
 const byNorm = new Map();
 for (const f of facs) { const k = norm(f.name); if (!byNorm.has(k)) byNorm.set(k, []); byNorm.get(k).push(f); }

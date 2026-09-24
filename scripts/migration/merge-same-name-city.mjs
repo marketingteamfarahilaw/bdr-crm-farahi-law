@@ -19,7 +19,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 
 const APPLY = process.argv.includes("--apply");
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 const nk = (s) => String(s ?? "").toLowerCase().replace(/&/g, " and ").replace(/\band\b/g, " ").replace(/[^a-z0-9]/g, "");
 const ck = (s) => String(s ?? "").toLowerCase().replace(/[^a-z]/g, "");

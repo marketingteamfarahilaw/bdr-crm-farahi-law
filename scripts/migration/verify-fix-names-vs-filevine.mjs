@@ -20,7 +20,7 @@ const nameish = (a, b) => { const x = norm(a), y = norm(b); if (!x || !y) return
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const cands = JSON.parse(fs.readFileSync("scripts/migration/find-wrong-names-vs-filevine-report.json", "utf8")).filter((c) => c.by === "address");
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 const nearest = async (lat, lng) => {
   try {

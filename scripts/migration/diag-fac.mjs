@@ -4,7 +4,7 @@ import mysql from "mysql2/promise";
 
 const q = process.argv[2] || "";
 const digits = q.replace(/\D/g, "");
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query(
   `SELECT id, name, city, phone FROM facilities
    WHERE name LIKE ?

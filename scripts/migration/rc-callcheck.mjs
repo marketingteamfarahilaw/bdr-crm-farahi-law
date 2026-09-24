@@ -28,7 +28,7 @@ const log =
     })
   ).data.records || [];
 
-const conn = await mysql.createConnection(process.env.DATABASE_URL);
+const conn = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await conn.query("SELECT id, name, phone, phone2, phone3, contactPhone FROM facilities");
 const facPhones = facs.flatMap((f) =>
   [f.phone, f.phone2, f.phone3, f.contactPhone].filter(Boolean).map((p) => ({ id: f.id, name: f.name, p: norm(p) })),

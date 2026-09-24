@@ -29,7 +29,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 
 const APPLY = process.argv.includes("--apply");
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const q = async (sql, p = []) => (await c.query(sql, p))[0];
 const exec = async (sql, p = []) => (APPLY ? (await c.query(sql, p))[0].affectedRows ?? 0 : 0);
 

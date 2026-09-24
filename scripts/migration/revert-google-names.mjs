@@ -7,7 +7,7 @@
 import "dotenv/config";
 import fs from "fs";
 import mysql from "mysql2/promise";
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const b = JSON.parse(fs.readFileSync("scripts/migration/apply-google-names-backup.json", "utf8"));
 let n = 0;
 for (const r of b) {

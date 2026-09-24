@@ -6,7 +6,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import mysql from "mysql2/promise";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const LIKE = "repName LIKE '%Youssef%'";
 const TASK_WHERE = "assignedToName LIKE '%Youssef%' AND (description LIKE '%synced call%' OR description LIKE '%from call on%')";
 

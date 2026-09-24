@@ -29,7 +29,7 @@ function realRelated(a, b) {
   return wa.length >= 2 && wb.length >= 2 && wa[0] === wb[0] && wa[1] === wb[1];
 }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, partnerStatus, assignedRepId, assignedRepName FROM facilities WHERE phone IS NOT NULL AND phone<>''");
 const [cols] = await c.query("SELECT TABLE_NAME t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND COLUMN_NAME='facilityId'");
 const childTables = cols.map((x) => x.t);

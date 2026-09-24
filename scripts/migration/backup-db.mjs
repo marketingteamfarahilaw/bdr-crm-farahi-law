@@ -3,7 +3,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import fs from "fs";
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [tables] = await c.query("SELECT TABLE_NAME t FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_TYPE='BASE TABLE'");
 const dump = {};
 for (const { t } of tables) {

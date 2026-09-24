@@ -2,7 +2,7 @@
 import "dotenv/config";
 import mysql from "mysql2/promise";
 
-const conn = await mysql.createConnection(process.env.DATABASE_URL);
+const conn = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [rows] = await conn.query(
   "SELECT id, openId, name, role, loginMethod, lastSignedIn FROM users ORDER BY id",
 );

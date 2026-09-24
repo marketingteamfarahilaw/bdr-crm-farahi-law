@@ -12,7 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const APPLY = process.argv.includes("--apply");
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const norm = `RIGHT(REGEXP_REPLACE(phone, '[^0-9]', ''), 10)`;
 const CHILD = [
   "contact_logs", "facility_tasks", "facility_leads_sent", "facility_leads",

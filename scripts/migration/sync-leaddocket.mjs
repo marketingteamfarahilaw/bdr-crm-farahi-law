@@ -109,7 +109,7 @@ for (const st of wanted) {
 const LIMIT = arg("--limit") ? Number(arg("--limit")) : null;   // for spot-checks
 const changed = SINCE ? rows.filter((r) => (ldInstant(r.LastUpdateDate ?? r.CreatedDate) ?? new Date(0)) > SINCE) : rows;
 
-const c = DRY && !COVERAGE ? null : await mysql.createConnection(process.env.DATABASE_URL);
+const c = DRY && !COVERAGE ? null : await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 // Every lead checked is remembered with the LastUpdateDate it had — ours or not —
 // so a lead is only read again once Lead Docket says it changed. That makes the

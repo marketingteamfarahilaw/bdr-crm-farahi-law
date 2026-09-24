@@ -28,7 +28,7 @@ const digits = (s) => norm(s).replace(/\D/g, "");
 const last10 = (s) => { const d = digits(s); return d.length >= 10 ? d.slice(-10) : ""; };
 
 /** Excel serial date + optional day-fraction time, both Pacific wall-clock time
- *  as RingCentral exported them (they were stored as if UTC, 7–8 hours early). */
+ *  as RingCentral exported them — see dates.mjs. */
 function excelDate(serial, timeFrac) {
   const n = Number(serial);
   if (!isFinite(n) || n < 1000) return null;
@@ -104,7 +104,7 @@ console.log("By type:", byType);
 console.log("By agent:", Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([k,v])=>`${k}:${v}`).join("  "));
 
 // --- match against facilities by any of their phone fields ---
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, phone2, phone3, contactPhone FROM facilities");
 const byPhone = new Map();
 for (const f of facs) for (const p of [f.phone, f.phone2, f.phone3, f.contactPhone]) {

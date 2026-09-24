@@ -1,6 +1,6 @@
 import dotenv from "dotenv"; dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 await c.query("ALTER TABLE contact_logs ADD COLUMN IF NOT EXISTS rcCallId VARCHAR(64) NULL");
 // Index so dedup lookups (WHERE rcCallId IN (...)) are fast.
 try {

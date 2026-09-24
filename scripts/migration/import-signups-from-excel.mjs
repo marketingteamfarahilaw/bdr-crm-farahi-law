@@ -85,7 +85,7 @@ if (tierMismatch) console.log(`note: ${tierMismatch} month cells where HIGH+MEDI
 
 if (dry) { console.log("\n[DRY RUN] nothing written."); process.exit(0); }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [del] = await c.query("DELETE FROM lead_intake WHERE notes LIKE 'Reconstructed from SIGN UPS PER FACILITY%'");
 console.log(`cleared previous reconstructions: ${del.affectedRows}`);
 

@@ -40,7 +40,7 @@ const rows = xlsx.utils.sheet_to_json(xlsx.readFile("C:/Users/EOR - 4055/Downloa
 const exByPhone = new Map(); const exNames = new Set();
 for (let i = 2; i < rows.length; i++) { const r = rows[i]; const nm = clean(r[2]); if (!nm) continue; exNames.add(norm(nm)); const p = last10(r[6]) || last10(r[7]); if (p && !exByPhone.has(p)) exByPhone.set(p, nm); }
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const [facs] = await c.query("SELECT id, name, phone, category, assignedRepName FROM facilities");
 const suspects = facs.filter((f) => last10(f.phone) && !exNames.has(norm(f.name)));
 console.log(`Suspect facilities (name not in Excel): ${suspects.length}. Cross-checking Excel + Google by phone…`);

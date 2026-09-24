@@ -24,7 +24,7 @@ const last10 = (s) => { const d = String(s ?? "").replace(/\D/g, ""); return d.l
 const stnum = (a) => (String(a ?? "").match(/\d+/) || [])[0] || "";
 const cityNorm = (city, addr) => { const c = norm(city); if (c) return c; const m = String(addr ?? "").match(/,?\s*([A-Za-z .]+?),?\s*(?:CA|California)\s*\d{5}/i); return m ? norm(m[1]) : ""; };
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 
 // Tables that reference a facility — discover dynamically so none are missed.
 const [cols] = await c.query("SELECT table_name AS t FROM information_schema.columns WHERE table_schema=DATABASE() AND column_name='facilityId' AND table_name<>'facilities'");

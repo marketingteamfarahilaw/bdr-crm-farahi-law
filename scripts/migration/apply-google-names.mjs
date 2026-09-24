@@ -29,7 +29,7 @@ const infer = (name) => {
   return null;
 };
 
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const backup = [];
 let applied = 0;
 for (const m of report.mismatch) {

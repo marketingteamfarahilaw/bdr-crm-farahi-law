@@ -2,7 +2,7 @@
 // 'admin'/'user' values are preserved.
 import dotenv from "dotenv"; dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
-const c = await mysql.createConnection(process.env.DATABASE_URL);
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 await c.query(
   "ALTER TABLE users MODIFY COLUMN role ENUM('user','admin','super_admin','bdr_manager','fr_manager','bdr_agent','fr_agent') NOT NULL DEFAULT 'user'",
 );
