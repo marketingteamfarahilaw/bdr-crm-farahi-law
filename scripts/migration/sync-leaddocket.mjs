@@ -9,7 +9,7 @@
  *   "BDR Miguel Flores"                → BDR, Miguel Flores
  *   "Field Representative Lupe Campos" → FR,  Lupe Campos
  *   "Jezel Mercado BC - Sacramento"    → FR,  Jezel Mercado   (business card)
- *   "Malvin Rosales"                   → BDR, Malvin Rosales  (bare name)
+ *   "Malvin Rosales"                   → Intake, Malvin Rosales  (bare name)
  *
  * Because the last shape carries no prefix, matching is done against the team
  * roster below rather than against a pattern alone. Anything naming nobody on
@@ -26,6 +26,7 @@
  *   node scripts/migration/sync-leaddocket.mjs                       (every status)
  *   node scripts/migration/sync-leaddocket.mjs --since 2026-09-01    (incremental)
  *   node scripts/migration/sync-leaddocket.mjs --dry                 (report only)
+ *   node scripts/migration/sync-leaddocket.mjs --ours-only           (re-read the team's leads only)
  *   node scripts/migration/sync-leaddocket.mjs --since 2020-01-01 --status-names "Signed Up,Referred,Closed,Lost"
  *                                                                    (history: every sign-up since 2020)
  */
@@ -44,6 +45,9 @@ const DRY = process.argv.includes("--dry");
 // --coverage: list every lead and report which the sync has never checked (or
 // checked before its last change), by status and year. Reads no lead details.
 const COVERAGE = process.argv.includes("--coverage");
+// --ours-only: re-read just the leads already credited to the team (e.g. to pick
+// up a newly synced field) without waiting behind the whole backlog.
+const OURS_ONLY = process.argv.includes("--ours-only");
 const SINCE = arg("--since") ? new Date(arg("--since")) : null;
 const ONLY = arg("--status") ? Number(arg("--status")) : null;
 // --status-names "Signed Up,Referred,Closed,Lost": scan these statuses by name (ids differ per account).
@@ -117,6 +121,7 @@ const c = DRY && !COVERAGE ? null : await mysql.createConnection({ uri: process.
 // picks up where it stopped instead of re-reading hours of leads from the start.
 // It also makes each 8-hourly run read only genuinely new or edited leads.
 const seen = new Map();
+const wasOurs = new Set();   // leads the ledger already credits to the team
 if (c) {
   await c.query(`CREATE TABLE IF NOT EXISTS leaddocket_seen (
     leadId BIGINT NOT NULL PRIMARY KEY,
@@ -124,8 +129,8 @@ if (c) {
     isOurs TINYINT NOT NULL DEFAULT 0,
     checkedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`);
-  const [s] = await c.query("SELECT leadId, lastUpdate FROM leaddocket_seen");
-  for (const r of s) seen.set(String(r.leadId), r.lastUpdate);
+  const [s] = await c.query("SELECT leadId, lastUpdate, isOurs FROM leaddocket_seen");
+  for (const r of s) { seen.set(String(r.leadId), r.lastUpdate); if (r.isOurs) wasOurs.add(String(r.leadId)); }
 }
 const stamp = (r) => String(r.LastUpdateDate ?? r.CreatedDate ?? "");
 const unseen = changed.filter((r) => seen.get(String(r.Id)) !== stamp(r));
@@ -141,7 +146,11 @@ if (COVERAGE) {
   await c.end();
   process.exit(0);
 }
-const fresh = LIMIT ? unseen.slice(0, LIMIT) : unseen;
+// The team's own leads first: they are what the reports show, so a long backlog
+// of other leads never holds them up.
+const queue = (OURS_ONLY ? unseen.filter((r) => wasOurs.has(String(r.Id))) : unseen)
+  .sort((a, b) => Number(wasOurs.has(String(b.Id))) - Number(wasOurs.has(String(a.Id))));
+const fresh = LIMIT ? queue.slice(0, LIMIT) : queue;
 console.log("\n" + rows.length + " leads total, " + changed.length + " in range" + (SINCE ? " (changed since " + SINCE.toISOString().slice(0, 10) + ")" : "") +
   ", " + (changed.length - unseen.length) + " already checked and unchanged, " + fresh.length + " to read");
 

@@ -69,7 +69,7 @@ export function canonical(name) {
  *   "BDR Miguel Flores"                → BDR, Miguel Flores
  *   "Field Representative Lupe Campos" → FR,  Lupe Campos
  *   "Jezel Mercado BC - Sacramento"    → FR,  Jezel Mercado   (business card)
- *   "Malvin Rosales"                   → BDR, Malvin Rosales  (bare name)
+ *   "Malvin Rosales"                   → Intake, Malvin Rosales  (bare name)
  *
  * Marketing, intake, website and employee-referral sources name nobody on the
  * roster and return null.
