@@ -11,7 +11,7 @@
  * rows, averages that skipped agents). All day-bucketing is America/Los_Angeles.
  */
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getDb } from "./db";
 import { contactLogs, facilities, fieldVisits, leadIntake, users } from "../drizzle/schema";
 import { isNonReportingRep } from "@shared/permissions";
@@ -39,6 +39,10 @@ const parseSud = (s?: string | null): Date | null => {
     const d = new Date(y, parseInt(us[1], 10) - 1, parseInt(us[2], 10), 12);
     return isNaN(d.getTime()) ? null : d;
   }
+  // A bare "YYYY-MM-DD" is a Pacific calendar day. Noon keeps it on that day; a
+  // plain parse made it UTC midnight, the previous evening in Pacific time, so a
+  // sign-up on the 1st was counted in the month before.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return fromZonedTime(`${t}T12:00:00`, LA);
   const d = new Date(t);
   return isNaN(d.getTime()) ? null : d;
 };

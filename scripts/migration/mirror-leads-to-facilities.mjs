@@ -87,7 +87,7 @@ for (const l of leads) {
     assignedAgent: String(l.member ?? "").slice(0, 100) || null,
     caseType: String(l.classification ?? "").trim().slice(0, 100) || null,
     signed: isSigned ? 1 : 0,
-    signedDate: isSigned && l.sud ? new Date(l.sud) : null,
+    signedDate: isSigned ? when : null,          // the moment it was signed (leadDate = SignedUpDate)
     notSignedReason: !isSigned && /^(lost|rejected)/i.test(String(l.outcome ?? "")) ? String(l.outcome).slice(0, 255) : null,
     notes: [`Lead Docket #${l.externalId}`, l.marketingSource ? `source: ${l.marketingSource}` : ""].filter(Boolean).join(" · "),
   });
@@ -101,7 +101,7 @@ for (const l of leads) {
     clientArea: (l.clientLocation ?? "").slice(0, 255) || null,
     outcome: isSigned ? "signed" : lostish ? "not_signed" : "pending",
     signedCase: isSigned ? 1 : 0,
-    signedDate: isSigned && l.sud ? new Date(l.sud) : null,
+    signedDate: isSigned ? when : null,          // the moment it was signed (leadDate = SignedUpDate)
     notes: [`Lead Docket #${l.externalId}`, l.marketingSource ? `source: ${l.marketingSource}` : "", l.facility ? `referred by: ${l.facility}` : ""]
       .filter(Boolean).join(" · ").slice(0, 4000),
     repId: userId(l.member),
@@ -114,7 +114,7 @@ for (const l of leads) {
   const id = existing.get(String(l.externalId));
   if (id) {
     const sets = Object.keys(row).map((k) => `\`${k}\`=?`).join(", ");
-    await c.query(`UPDATE facility_leads SET ${sets}, updatedAt=NOW() WHERE id=?`, [...Object.values(row), id]);
+    await c.query(`UPDATE facility_leads SET ${sets}, createdAt=?, updatedAt=NOW() WHERE id=?`, [...Object.values(row), when, id]);
     updated++;
   } else {
     const cols = Object.keys(row).map((k) => `\`${k}\``).join(", ");
@@ -137,7 +137,7 @@ if (!DRY) {
       FROM facility_leads WHERE facilityId IS NOT NULL GROUP BY facilityId
     ) x ON x.facilityId = f.id
     SET f.totalLeadsReceived = COALESCE(x.recv, 0),
-        f.totalLeadsSent = COALESCE(x.sent, f.totalLeadsSent, 0),
+        f.totalLeadsSent = COALESCE(x.sent, 0),
         f.totalSignedCases = COALESCE(x.signedN, 0),
         f.lastSignedCaseDate = x.lastSigned`);
 }
@@ -154,7 +154,7 @@ if (!DRY) {
     const id = have.get(r.externalId);
     have.delete(r.externalId);
     if (id) {
-      await c.query(`UPDATE inbound_leads SET ${OWNED.map((f) => "`" + f + "`=?").join(", ")}, updatedAt=NOW() WHERE id=?`, [...OWNED.map((f) => r[f]), id]);
+      await c.query(`UPDATE inbound_leads SET ${OWNED.map((f) => "`" + f + "`=?").join(", ")}, createdAt=?, updatedAt=NOW() WHERE id=?`, [...OWNED.map((f) => r[f]), r.when, id]);
       inbUpd++;
     } else {
       await c.query(`INSERT INTO inbound_leads (${OWNED.map((f) => "`" + f + "`").join(", ")}, notes, countsTowardPartnerActivity, externalId, externalSource, createdAt, updatedAt)

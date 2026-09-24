@@ -100,6 +100,10 @@ import { fromZonedTime } from "date-fns-tz";
 /** Interpret a "YYYY-MM-DDTHH:mm:ss" report-range boundary as California
  *  (Pacific) local time, returning the matching UTC instant for DB comparison. */
 const laDate = (s: string) => fromZonedTime(s, "America/Los_Angeles");
+/** A plain "YYYY-MM-DD" end date means the whole of that day in LA. Reading it
+ *  as the day's first instant silently dropped the last day of every period on
+ *  Representative Performance, Call Analytics, Call Logs and the Reports Center. */
+const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59:59.999`) : laDate(s));
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard } from "./signupsReport";
@@ -832,7 +836,7 @@ export const appRouter = router({
       }))
       .query(async ({ ctx, input }) => {
         const from = laDate(input.from);
-        const to = laDate(input.to);
+        const to = laEnd(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         if (!seesAll) {
@@ -849,7 +853,7 @@ export const appRouter = router({
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
         const from = laDate(input.from);
-        const to = laDate(input.to);
+        const to = laEnd(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         if (!seesAll) {
@@ -866,7 +870,7 @@ export const appRouter = router({
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
         const from = laDate(input.from);
-        const to = laDate(input.to);
+        const to = laEnd(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         if (!seesAll) {
@@ -883,7 +887,7 @@ export const appRouter = router({
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
         const from = laDate(input.from);
-        const to = laDate(input.to);
+        const to = laEnd(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         if (!seesAll) {
@@ -900,7 +904,7 @@ export const appRouter = router({
       .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const from = laDate(input.from);
-        const to = laDate(input.to);
+        const to = laEnd(input.to);
         const seesAll = seesAllData(ctx.user.role);
         let names: string[] | undefined;
         let agentLabel: string | undefined;

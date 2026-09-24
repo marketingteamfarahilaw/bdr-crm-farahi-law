@@ -14,6 +14,7 @@ import mysql from "mysql2/promise";
 import xlsx from "xlsx";
 import { createHash } from "node:crypto";
 import { canonical } from "./leaddocket-rules.mjs";
+import { pacific, serialParts } from "./dates.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
 const dry = process.argv.includes("--dry");
@@ -43,21 +44,22 @@ const key = (s) => low(s).replace(/[^a-z0-9]/g, "");
 /** Excel serial, or a typed date like "3/25/2026" (the sheet also contains
  *  typos such as "2//27/2026" and "3/25//2026", so slashes are collapsed). */
 function excelDate(serial) {
-  // The sheet contains typed years like 5026 for 2026. Excel stores those as a
-  // real date 3000 years out, which MySQL rejects outright, silently losing the
-  // row — so pull it back rather than dropping a real errand.
-  const fix = (d) => { if (d && d.getUTCFullYear() > 2100) d.setUTCFullYear(d.getUTCFullYear() - 3000); return d; };
+  // Pacific noon of the sheet's calendar date — see dates.mjs.
+  const at = (y, m, d) => { const x = pacific(y, m, d); return isNaN(x.getTime()) ? null : x; };
   const n = Number(serial);
   if (isFinite(n) && n > 1000) {
-    const d = new Date(Math.round((n - 25569) * 86400 * 1000));
-    return isNaN(d.getTime()) ? null : fix(d);
+    const p = serialParts(n);
+    if (!p) return null;
+    // The sheet contains typed years like 5026 for 2026. Excel stores those as a
+    // real date 3000 years out, which MySQL rejects outright, silently losing the
+    // row — so pull it back rather than dropping a real errand.
+    return at(p.y > 2100 ? p.y - 3000 : p.y, p.m, p.d);
   }
   const t = norm(serial).replace(/\/{2,}/g, "/");
   const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (m) {
     const yr = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3]);
-    const d = new Date(Date.UTC(yr, Number(m[1]) - 1, Number(m[2])));
-    return isNaN(d.getTime()) ? null : d;
+    return at(yr, Number(m[1]), Number(m[2]));
   }
   return null;
 }
@@ -113,7 +115,7 @@ function monthOf(v, ref) {
   const n = Number(norm(v));
   if (norm(v) && isFinite(n) && n > 1000) {
     const d = excelDate(n);
-    return d ? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)) : null;
+    return d ? pacific(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) : null;
   }
   const i = MONTH_NAMES.findIndex((m) => low(v).length >= 3 && m.toLowerCase().startsWith(low(v).slice(0, 3)));
   if (i < 0) return null;
@@ -121,7 +123,7 @@ function monthOf(v, ref) {
   const y0 = new Date(at).getUTCFullYear();
   const y = [y0 - 1, y0, y0 + 1].reduce((best, yr) =>
     Math.abs(Date.UTC(yr, i, 15) - at) < Math.abs(Date.UTC(best, i, 15) - at) ? yr : best);
-  return new Date(Date.UTC(y, i, 1));
+  return pacific(y, i + 1, 1);
 }
 const monthName = (d) => (d ? MONTH_NAMES[d.getUTCMonth()] + " " + d.getUTCFullYear() : "");
 
@@ -288,6 +290,44 @@ await load("referral_tracker", tracker, (t) => [
     del++;
   }
   console.log(`outbound_referrals: ${ins} added, ${upd} updated, ${del} removed, ${kept} left alone (edited in the app)`);
+}
+
+// ─── leads sent to partners (facility_leads, sent_to_facility) ────────────────
+// The Command Center, facility profiles and Representative Performance count
+// "leads sent" from facility_leads, which nothing filled — so reciprocity read 0
+// everywhere. Every outbound referral that actually went out (sheet or app) is
+// mirrored there, keyed on the referral's id, and facility totals recounted.
+{
+  const WENT_OUT = ["Referral Sent", "Facility Confirmed", "Client Scheduled", "Client Attended", "Completed"];
+  const [outs] = await c.query(
+    `SELECT id, clientName, recommendedFacility, assignedAgent, referralSentDate, createdAt, status, clientAttended
+     FROM outbound_referrals WHERE status IN (${WENT_OUT.map(() => "?").join(",")})`, WENT_OUT);
+  const have = new Map((await c.query("SELECT id, externalId FROM facility_leads WHERE externalSource='outbound'"))[0].map((r) => [r.externalId, r.id]));
+  let ins = 0, upd = 0, del = 0, linkedOut = 0;
+  for (const o of outs) {
+    const when = o.referralSentDate ?? o.createdAt;
+    const fid = facId(o.recommendedFacility, "");
+    if (fid) linkedOut++;
+    const row = [fid, when, clamp(o.assignedAgent, 255),
+      text(["Outbound referral", o.clientName, o.status].filter(Boolean).join(" · "))];
+    const id = have.get(String(o.id));
+    have.delete(String(o.id));
+    if (id) {
+      await c.query("UPDATE facility_leads SET facilityId=?, leadDate=?, repName=?, notes=?, createdAt=?, updatedAt=NOW() WHERE id=?", [...row, when, id]);
+      upd++;
+    } else {
+      // createdAt = the referral's own date: notifications alert on recently created leads.
+      await c.query(`INSERT INTO facility_leads (facilityId, leadDate, repName, notes, direction, method, outcome, signedCase, externalId, externalSource, createdAt, updatedAt)
+        VALUES (?,?,?,?, 'sent_to_facility', 'other', 'pending', 0, ?, 'outbound', ?, NOW())`, [...row, String(o.id), when]);
+      ins++;
+    }
+  }
+  for (const id of have.values()) { await c.query("DELETE FROM facility_leads WHERE id=?", [id]); del++; }
+  await c.query(`UPDATE facilities f
+    LEFT JOIN (SELECT facilityId, COUNT(*) n FROM facility_leads WHERE direction='sent_to_facility' AND facilityId IS NOT NULL GROUP BY facilityId) x
+      ON x.facilityId = f.id
+    SET f.totalLeadsSent = COALESCE(x.n, 0)`);
+  console.log(`leads sent to partners: ${outs.length} (${linkedOut} matched to a facility) — ${ins} added, ${upd} updated, ${del} removed; facility totals recounted`);
 }
 
 await load("fr_errands", errands, (e) => [

@@ -5,18 +5,20 @@
  * The wrinkle: lead_intake stores the source as FREE TEXT ("Leonard with
  * Randy's Towing", "Field Rep Jezel / Karina of All Foreign and Domestic Body
  * Shop"), with typeOfFacility and clientLocation never filled in. So facility
- * type and territory are DERIVED by matching that text back to the facilities
- * table in three passes — exact, containment, then distinctive-token overlap.
+ * type and territory come from the referring partner: for Lead Docket leads, the
+ * facility the Lead Docket mirror linked them to; for hand-entered leads, a
+ * match of that text in three passes — exact, containment, then token overlap.
  *
  * Most Lead Docket team leads name no referring partner, so only about a third
  * match. The rest are reported as "N/A" rather than guessed at, and still count
  * for the representative; the response carries the match rate so the page can
  * say how much of the picture is partner-attributed.
  */
-import { and, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { getDb } from "./db";
-import { leadIntake, facilities } from "../drizzle/schema";
+import { leadIntake, facilities, facilityLeads } from "../drizzle/schema";
 import { isCurrentRep } from "@shared/team";
+import { formatInTimeZone } from "date-fns-tz";
 
 // Words that carry no identifying signal when matching a facility name.
 const STOP = new Set([
@@ -81,6 +83,17 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     .select({ id: facilities.id, name: facilities.name, category: facilities.category, territory: facilities.territory })
     .from(facilities);
   const index = facs.map((f) => ({ ...f, n: norm(f.name), toks: new Set(tokens(f.name)) }));
+  const facById = new Map(index.map((f) => [f.id, f]));
+
+  // A Lead Docket lead's referring partner is the one the Lead Docket mirror
+  // linked it to (facility_leads.facilityId) — the same link the Command Center,
+  // facility profiles and the Partner Referral Tracker read, so every page agrees
+  // on who sent a lead. Only leads entered by hand fall back to text matching.
+  const links = await db
+    .select({ externalId: facilityLeads.externalId, facilityId: facilityLeads.facilityId })
+    .from(facilityLeads)
+    .where(eq(facilityLeads.externalSource, "leaddocket"));
+  const linkedTo = new Map(links.map((r) => [String(r.externalId), r.facilityId]));
 
   /** exact → containment → distinctive-token overlap. Null when nothing is confident. */
   const matchFacility = (text: string) => {
@@ -128,7 +141,8 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     const isS = isSigned(l.outcome);
     if (isS) signed++;
     if (l.member) memberCount.set(l.member, (memberCount.get(l.member) ?? 0) + 1);
-    const month = l.leadDate ? new Date(l.leadDate).toISOString().slice(0, 7) : null;
+    // Pacific months, matching the Pacific-day ranges the report is filtered by.
+    const month = l.leadDate ? formatInTimeZone(new Date(l.leadDate), "America/Los_Angeles", "yyyy-MM") : null;
     if (month) monthCount.set(month, (monthCount.get(month) ?? 0) + 1);
 
     if (l.member) {
@@ -150,7 +164,9 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
 
     const text = String(l.facility ?? "").trim();
     if (text) withText++;
-    const hit = text ? matchFacility(text) : null;
+    const hit = l.externalSource === "leaddocket"
+      ? facById.get(linkedTo.get(String(l.externalId)) ?? -1) ?? null
+      : text ? matchFacility(text) : null;
     if (hit) {
       matched++;
       const p = partnerStats.get(hit.id) ?? { facilityId: hit.id, name: hit.name, territory: hit.territory ?? null, leads: 0, signed: 0 };
@@ -226,10 +242,11 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   if (months.length >= 2) {
     const [prev, last] = months.slice(-2);
     const now = new Date();
-    if (last.month === now.toISOString().slice(0, 7)) {
+    if (last.month === formatInTimeZone(now, "America/Los_Angeles", "yyyy-MM")) {
       // A month still in progress would always look like a drop, so compare its pace instead.
-      const day = now.getUTCDate();
-      const days = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+      const day = Number(formatInTimeZone(now, "America/Los_Angeles", "d"));
+      const [yy, mm] = last.month.split("-").map(Number);
+      const days = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
       const pace = Math.round((last.signed / day) * days);
       insights.push(`${monthName(last.month)} so far (${day} of ${days} days): ${last.signed} sign-ups — on pace for about ${pace}, against ${prev.signed} in ${monthName(prev.month)}.`);
     } else {

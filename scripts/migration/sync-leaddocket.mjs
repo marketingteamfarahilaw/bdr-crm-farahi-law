@@ -33,6 +33,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import { creditedRep, outcomeFor, str } from "./leaddocket-rules.mjs";
+import { ldInstant, pacificYmd } from "./dates.mjs";
 
 const BASE = process.env.LEADDOCKET_BASE_URL || "https://farahi.leaddocket.com";
 const KEY = process.env.LEADDOCKET_API_KEY || "";
@@ -40,6 +41,9 @@ if (!KEY) { console.error("LEADDOCKET_API_KEY is not set"); process.exit(1); }
 
 const arg = (n) => { const i = process.argv.indexOf(n); return i > -1 ? process.argv[i + 1] : null; };
 const DRY = process.argv.includes("--dry");
+// --coverage: list every lead and report which the sync has never checked (or
+// checked before its last change), by status and year. Reads no lead details.
+const COVERAGE = process.argv.includes("--coverage");
 const SINCE = arg("--since") ? new Date(arg("--since")) : null;
 const ONLY = arg("--status") ? Number(arg("--status")) : null;
 // --status-names "Signed Up,Referred,Closed,Lost": scan these statuses by name (ids differ per account).
@@ -103,9 +107,9 @@ for (const st of wanted) {
 }
 
 const LIMIT = arg("--limit") ? Number(arg("--limit")) : null;   // for spot-checks
-const changed = SINCE ? rows.filter((r) => new Date(r.LastUpdateDate ?? r.CreatedDate ?? 0) > SINCE) : rows;
+const changed = SINCE ? rows.filter((r) => (ldInstant(r.LastUpdateDate ?? r.CreatedDate) ?? new Date(0)) > SINCE) : rows;
 
-const c = DRY ? null : await mysql.createConnection(process.env.DATABASE_URL);
+const c = DRY && !COVERAGE ? null : await mysql.createConnection(process.env.DATABASE_URL);
 
 // Every lead checked is remembered with the LastUpdateDate it had — ours or not —
 // so a lead is only read again once Lead Docket says it changed. That makes the
@@ -125,6 +129,18 @@ if (c) {
 }
 const stamp = (r) => String(r.LastUpdateDate ?? r.CreatedDate ?? "");
 const unseen = changed.filter((r) => seen.get(String(r.Id)) !== stamp(r));
+
+if (COVERAGE) {
+  const by = new Map();
+  for (const r of unseen) {
+    const k = `${r.StatusName} · ${String(r.CreatedDate ?? "").slice(0, 4) || "no date"} · ${seen.has(String(r.Id)) ? "changed since checked" : "never checked"}`;
+    by.set(k, (by.get(k) ?? 0) + 1);
+  }
+  for (const [k, n] of [...by].sort()) console.log("  " + k + ": " + n);
+  console.log("COVERAGE " + JSON.stringify({ total: rows.length, upToDate: rows.length - unseen.length, notUpToDate: unseen.length }));
+  await c.end();
+  process.exit(0);
+}
 const fresh = LIMIT ? unseen.slice(0, LIMIT) : unseen;
 console.log("\n" + rows.length + " leads total, " + changed.length + " in range" + (SINCE ? " (changed since " + SINCE.toISOString().slice(0, 10) + ")" : "") +
   ", " + (changed.length - unseen.length) + " already checked and unchanged, " + fresh.length + " to read");
@@ -171,7 +187,7 @@ async function store(d) {
     const contact = d.Contact ?? {};
     const when = d.SignedUpDate ?? d.CreatedDate ?? null;
     const vals = {
-      leadDate: when ? new Date(when) : null,
+      leadDate: ldInstant(when),
       role: rep.role,
       member: rep.member.slice(0, 120),
       leadName: ([str(contact.FirstName), str(contact.LastName)].filter(Boolean).join(" ").trim() || ("Lead " + d.Id)).slice(0, 255),
@@ -181,7 +197,7 @@ async function store(d) {
       outcome: outcomeFor(str(d.Status) || str(d.StatusName), d.SignedUpDate).slice(0, 120),
       notes: ("Lead Docket status: " + (str(d.Status) || str(d.StatusName) || "unknown")).slice(0, 4000),
       classification: str(d.PracticeArea || d.CaseType).slice(0, 120) || null,
-      sud: d.SignedUpDate ? String(d.SignedUpDate).slice(0, 10) : null,
+      sud: pacificYmd(ldInstant(d.SignedUpDate)),   // the Pacific day it was signed — see dates.mjs
       disposition: str(d.SubStatus).slice(0, 120) || null,
       facility: str(d.ReferredByName).slice(0, 255) || null,
       clientLocation: str(d.Office).slice(0, 255) || null,

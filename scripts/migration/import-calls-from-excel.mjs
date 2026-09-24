@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
+import { pacific, serialParts } from "./dates.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
 const dry = process.argv.includes("--dry");
@@ -26,20 +27,21 @@ const norm = (s) => String(s ?? "").trim();
 const digits = (s) => norm(s).replace(/\D/g, "");
 const last10 = (s) => { const d = digits(s); return d.length >= 10 ? d.slice(-10) : ""; };
 
-/** Excel serial (days since 1899-12-30, local) + optional day-fraction time. */
+/** Excel serial date + optional day-fraction time, both Pacific wall-clock time
+ *  as RingCentral exported them (they were stored as if UTC, 7–8 hours early). */
 function excelDate(serial, timeFrac) {
   const n = Number(serial);
   if (!isFinite(n) || n < 1000) return null;
-  let ms = Math.round((n - 25569) * 86400 * 1000);          // days -> unix ms (UTC midnight)
-  let frac = 0;
+  const p = serialParts(n);
+  if (!p) return null;
+  let frac = null;
   if (typeof timeFrac === "number" && isFinite(timeFrac)) frac = timeFrac;
   else {
     const t = norm(timeFrac).match(/^(\d{1,2}):(\d{2})$/);   // some rows store "16:14"
     if (t) frac = (Number(t[1]) * 3600 + Number(t[2]) * 60) / 86400;
     else { const f = Number(timeFrac); if (isFinite(f) && f > 0 && f < 1) frac = f; }
   }
-  ms += Math.round(frac * 86400 * 1000);
-  const d = new Date(ms);
+  const d = pacific(p.y, p.m, p.d, frac == null ? null : frac * 86400);
   return isNaN(d.getTime()) ? null : d;
 }
 

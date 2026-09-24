@@ -18,6 +18,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import { creditedRep, outcomeFor, str } from "./leaddocket-rules.mjs";
+import { ldInstant, pacificYmd } from "./dates.mjs";
 
 const BASE = process.env.LEADDOCKET_BASE_URL || "https://farahi.leaddocket.com";
 const KEY = process.env.LEADDOCKET_API_KEY || "";
@@ -76,7 +77,7 @@ else {
 
     const rep = creditedRep(str(d.MarketingSource));
     const wantOutcome = outcomeFor(str(d.Status) || str(d.StatusName), d.SignedUpDate);
-    const wantSud = d.SignedUpDate ? String(d.SignedUpDate).slice(0, 10) : null;
+    const wantSud = pacificYmd(ldInstant(d.SignedUpDate));
     const diffs = [];
     if (!rep) diffs.push(`Lead Docket no longer credits the team (source "${str(d.MarketingSource)}")`);
     else {
