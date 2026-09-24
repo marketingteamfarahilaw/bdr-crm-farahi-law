@@ -8,9 +8,10 @@
  * type and territory are DERIVED by matching that text back to the facilities
  * table in three passes — exact, containment, then distinctive-token overlap.
  *
- * About two thirds of rows match. Everything else is reported honestly as
- * "N/A" rather than guessed at, and the response carries the match rate so the
- * page can show how much of the picture is attributed.
+ * Most Lead Docket team leads name no referring partner, so only about a third
+ * match. The rest are reported as "N/A" rather than guessed at, and still count
+ * for the representative; the response carries the match rate so the page can
+ * say how much of the picture is partner-attributed.
  */
 import { and, gte, lte } from "drizzle-orm";
 import { getDb } from "./db";
@@ -87,8 +88,12 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     if (!ln) return null;
     const exact = index.find((f) => f.n === ln);
     if (exact) return exact;
+    // Whole words only, and nothing shorter than 5 characters: plain substring
+    // matching let a junk facility named "#REF!" ("ref") claim every lead
+    // whose source text said "referral".
+    const within = (hay: string, needle: string) => needle.length >= 5 && ` ${hay} `.includes(` ${needle} `);
     const contained = index
-      .filter((f) => f.n && (ln.includes(f.n) || f.n.includes(ln)))
+      .filter((f) => f.n && (within(ln, f.n) || within(f.n, ln)))
       .sort((a, b) => b.n.length - a.n.length)[0];
     if (contained) return contained;
     const lt = tokens(text);
@@ -183,8 +188,6 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   const total = leads.length;
   const pct = (n: number) => (total ? Math.round((n / total) * 1000) / 10 : 0);
 
-  // Insights are computed from the numbers above, never hard-coded — the page
-  // renders whatever the data actually says for the selected period.
   // ── representatives, months, partners ────────────────────────────────────────
   const conv = (s: number, n: number) => (n ? Math.round((s / n) * 1000) / 10 : 0);
   const reps = Array.from(repStats.values())
@@ -222,8 +225,17 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   if (fr && bdr && signed) insights.push(`FR delivered ${fr.signed} sign-ups (${fr.share}%), BDR ${bdr.signed} (${bdr.share}%).`);
   if (months.length >= 2) {
     const [prev, last] = months.slice(-2);
-    const d = last.signed - prev.signed;
-    insights.push(`${monthName(last.month)}: ${last.signed} sign-ups, ${d === 0 ? "level with" : d > 0 ? `${d} more than` : `${-d} fewer than`} ${monthName(prev.month)}.`);
+    const now = new Date();
+    if (last.month === now.toISOString().slice(0, 7)) {
+      // A month still in progress would always look like a drop, so compare its pace instead.
+      const day = now.getUTCDate();
+      const days = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+      const pace = Math.round((last.signed / day) * days);
+      insights.push(`${monthName(last.month)} so far (${day} of ${days} days): ${last.signed} sign-ups — on pace for about ${pace}, against ${prev.signed} in ${monthName(prev.month)}.`);
+    } else {
+      const d = last.signed - prev.signed;
+      insights.push(`${monthName(last.month)}: ${last.signed} sign-ups, ${d === 0 ? "level with" : d > 0 ? `${d} more than` : `${-d} fewer than`} ${monthName(prev.month)}.`);
+    }
   }
   if (partners[0]) insights.push(`Top referring partner: ${partners[0].name} — ${partners[0].signed} sign-ups from ${partners[0].leads} leads.`);
   // Most leads name no referring partner in Lead Docket; that is normal, not a

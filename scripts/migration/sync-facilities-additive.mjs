@@ -28,7 +28,10 @@ const SHEETS = ["Active partners", "Active Chiropractor", "1.Fcilty Typ", "Raw D
   "Non FR Chiro", "Imaging Center", "Physical Therapy", "ERUC", "Pain Management", "Towing Company",
   "Medical Center", "Insurance Company", "Opthalmologist", "Pharmacy", "Neurologist", "Surgeon"];
 
-const norm = (s) => String(s ?? "").trim();
+// A broken formula in the sheet exports as "#REF!", "#N/A" and so on. Read it as
+// blank — otherwise a row of them becomes a facility called "#REF!".
+const SHEET_ERROR = /^#(REF!|N\/A|VALUE!|NAME\?|DIV\/0!|NUM!|NULL!|ERROR!?|SPILL!|CALC!)$/i;
+const norm = (s) => { const v = String(s ?? "").trim(); return SHEET_ERROR.test(v) ? "" : v; };
 const low = (s) => norm(s).toLowerCase();
 const digits = (s) => norm(s).replace(/\D/g, "");
 const p10 = (s) => { const d = digits(s); return d.length >= 10 ? d.slice(-10) : ""; };
