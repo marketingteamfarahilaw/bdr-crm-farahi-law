@@ -102,7 +102,10 @@ export function creditedRep(marketingSource) {
  */
 export const outcomeFor = (status, signedUpDate) => {
   const t = String(status ?? "").toLowerCase();
-  if (t === "referred") return "Signed Referred Out";
+  // "Referred" means referred out to another firm. Only a lead signed first (it
+  // has a sign-up date) is a sign-up — the team's scorecard counts the rest as
+  // "Referred Out", and so do we. Counting them all added ~100 sign-ups.
+  if (t === "referred") return signedUpDate ? "Signed Referred Out" : "Referred Out";
   if (signedUpDate || t.includes("signed up")) return "Signed";
   return String(status ?? "");
 };

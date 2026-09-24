@@ -15,6 +15,7 @@ import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getDb } from "./db";
 import { contactLogs, facilities, fieldVisits, leadIntake, users } from "../drizzle/schema";
 import { isNonReportingRep } from "@shared/permissions";
+import { MONTHLY_SIGNUP_TARGET } from "@shared/team";
 
 const LA = "America/Los_Angeles";
 const dayKey = (d: Date | string) => formatInTimeZone(new Date(d), LA, "yyyy-MM-dd");
@@ -55,8 +56,8 @@ export const TARGETS = {
   bdrVisitsPerFacility: 2,
   frVisitsPerFacility: 4,
   frCheckinsPerFacility: 2,
-  frMonthlySigned: 10,
-  bdrMonthlySigned: 2,
+  frMonthlySigned: MONTHLY_SIGNUP_TARGET.FR ?? 20,   // the team's scorecard targets (@shared/team)
+  bdrMonthlySigned: MONTHLY_SIGNUP_TARGET.BDR ?? 5,
   dailyHandleSec: 2.5 * 3600,
 } as const;
 

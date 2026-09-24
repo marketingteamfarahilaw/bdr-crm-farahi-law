@@ -17,7 +17,7 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { getDb } from "./db";
 import { leadIntake, facilities, facilityLeads } from "../drizzle/schema";
-import { isCurrentRep, type TeamRole } from "@shared/team";
+import { isCurrentRep, CURRENT_TEAM, MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
 import { formatInTimeZone } from "date-fns-tz";
 
 // Words that carry no identifying signal when matching a facility name.
@@ -57,6 +57,23 @@ const byKeyword = (text: string): string | null => {
 
 const SIGNED = new Set(["signed", "signed referred out", "referral accepted"]);
 const isSigned = (o: unknown) => SIGNED.has(String(o ?? "").toLowerCase().replace(/[_\s]+/g, " ").trim());
+
+/**
+ * Which scorecard column a lead falls in, from its outcome (Lead Docket's status,
+ * or "Signed"/"Signed Referred Out" once it has a sign-up date). As in the team's
+ * sheet, Lost counts with Rejected; Lead Docket has no "not interested" status,
+ * so that column stays 0 unless an outcome says so.
+ */
+type ScoreBucket = "open" | "rejected" | "referredOut" | "notInterested" | "signedReferred" | "signedInHouse";
+const scorecardBucket = (outcome: unknown): ScoreBucket => {
+  const o = String(outcome ?? "").toLowerCase().replace(/[_\s]+/g, " ").trim();
+  if (o === "signed referred out") return "signedReferred";
+  if (o === "signed" || o === "referral accepted") return "signedInHouse";
+  if (o === "referred out" || o === "referred") return "referredOut";
+  if (o.startsWith("rejected") || o === "lost" || o === "closed") return "rejected";
+  if (o.includes("not interested")) return "notInterested";
+  return "open";
+};
 
 export type SignupsDashboard = Awaited<ReturnType<typeof getSignupsDashboard>>;
 
@@ -145,6 +162,10 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     date: string | null; outcome: string; signed: boolean; partner: string | null; partnerId: number | null;
   }[] = [];
   const caseStats = new Map<string, { name: string; leads: number; signed: number }>();
+  // The team's scorecard: each lead lands in exactly one column, so the columns
+  // add up to Total Leads, as in their sheet (see scorecardBucket).
+  type Score = Record<ScoreBucket, number> & { name: string; role: string; leads: number; partners: Set<number> };
+  const scoreStats = new Map<string, Score>();
 
   for (const l of leads) {
     const isS = isSigned(l.outcome);
@@ -211,6 +232,17 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
       partner: hit?.name ?? null,
       partnerId: hit?.id ?? null,
     });
+
+    if (l.member) {
+      const s = scoreStats.get(l.member) ?? {
+        name: l.member, role: l.role ?? "", leads: 0, partners: new Set<number>(),
+        open: 0, rejected: 0, referredOut: 0, notInterested: 0, signedReferred: 0, signedInHouse: 0,
+      };
+      s.leads++;
+      s[scorecardBucket(l.outcome)]++;
+      if (isS && hit) s.partners.add(hit.id);
+      scoreStats.set(l.member, s);
+    }
   }
   leadList.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
   const caseTypes = Array.from(caseStats.values())
@@ -259,6 +291,47 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     .map((p) => ({ ...p, conversion: conv(p.signed, p.leads) }))
     .sort((a, b) => b.signed - a.signed || b.leads - a.leads)
     .slice(0, 15);
+
+  // ── team scorecard (FRs, BDRs, Intake — as the team's sheet lays it out) ──
+  // Targets are per rep per month, so a range covering two months doubles them.
+  const monthsInRange = range?.from && range?.to
+    ? new Set(Array.from({ length: Math.ceil((range.to.getTime() - range.from.getTime()) / 86400000) + 1 }, (_, i) =>
+        formatInTimeZone(new Date(range.from!.getTime() + i * 86400000), "America/Los_Angeles", "yyyy-MM"))).size
+    : Math.max(1, months.length);
+  const pctOf = (a: number, b: number) => (b ? Math.round((a / b) * 10000) / 100 : null);
+  const order = (role: TeamRole, name: string) => {
+    const i = CURRENT_TEAM[role]?.indexOf(name) ?? -1;
+    return i < 0 ? 100 : i;   // current team in the sheet's order, former reps after
+  };
+  const scorecard = {
+    months: monthsInRange,
+    groups: (["FR", "BDR", "Intake"] as const).map((role) => {
+      const perRepTarget = MONTHLY_SIGNUP_TARGET[role];
+      const rows = Array.from(scoreStats.values())
+        .filter((s) => s.role === role)
+        .sort((a, b) => order(role, a.name) - order(role, b.name) || a.name.localeCompare(b.name))
+        .map((s) => {
+          const signedN = s.signedReferred + s.signedInHouse;
+          const target = perRepTarget ? perRepTarget * monthsInRange : null;
+          return {
+            name: s.name, current: isCurrentRep(s.name), leads: s.leads,
+            open: s.open, rejected: s.rejected, referredOut: s.referredOut, notInterested: s.notInterested,
+            signedReferred: s.signedReferred, unique: s.partners.size, signedInHouse: s.signedInHouse, signed: signedN,
+            target, achieved: target ? pctOf(signedN, target) : null, conversion: pctOf(signedN, s.leads),
+          };
+        });
+      const sum = (k: "leads" | "open" | "rejected" | "referredOut" | "notInterested" | "signedReferred" | "unique" | "signedInHouse" | "signed") =>
+        rows.reduce((a, r) => a + r[k], 0);
+      const target = perRepTarget ? rows.reduce((a, r) => a + (r.target ?? 0), 0) : null;
+      const total = {
+        leads: sum("leads"), open: sum("open"), rejected: sum("rejected"), referredOut: sum("referredOut"),
+        notInterested: sum("notInterested"), signedReferred: sum("signedReferred"), unique: sum("unique"),
+        signedInHouse: sum("signedInHouse"), signed: sum("signed"), target,
+        achieved: target ? pctOf(sum("signed"), target) : null, conversion: pctOf(sum("signed"), sum("leads")),
+      };
+      return { role, rows, total };
+    }).filter((g) => g.rows.length),
+  };
 
   // Insights are computed from the numbers above, never hard-coded — the page
   // renders whatever the data actually says for the selected period.
@@ -333,6 +406,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     roles,
     partners,
     caseTypes,
+    scorecard,
     leadList,
     filter: { role: filter.role ?? null, team: filter.team ?? "all" },
     insights,

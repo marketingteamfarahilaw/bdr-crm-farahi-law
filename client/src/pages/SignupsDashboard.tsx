@@ -151,7 +151,7 @@ export default function SignupsDashboard() {
               {[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 270 }} />)}
             </div>
           ) : (
-            <Report data={data} />
+            <Report data={data} from={from} to={to} />
           )}
         </div>
       </div>
@@ -192,7 +192,7 @@ function HeroBottom({ data }: { data: ReportData }) {
   );
 }
 
-function Report({ data }: { data: ReportData }) {
+function Report({ data, from, to }: { data: ReportData; from: string; to: string }) {
   const partnersRef = useRef<HTMLDivElement>(null);
   // Clicking a rep (or one of their monthly numbers) opens the clients behind it.
   const [focus, setFocus] = useState<{ rep: string; role: string; month?: string } | null>(null);
@@ -221,6 +221,8 @@ function Report({ data }: { data: ReportData }) {
 
   return (
     <>
+      <Scorecard sc={data.scorecard} label={rangeLabel(from, to)} onRep={(rep, role) => setFocus({ rep, role })} />
+
       {/* Feature row */}
       <div className="sr-features">
         {top ? (
@@ -574,6 +576,81 @@ function LeadList({ leads }: { leads: ReportData["leadList"] }) {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+/** "September 1–18, 2026", or "Aug 20, 2026 – Sep 18, 2026" across months — as the team's sheet titles it. */
+function rangeLabel(from: string, to: string) {
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  if (fy === ty && fm === tm) {
+    const month = new Date(fy, fm - 1, 1).toLocaleDateString("en-US", { month: "long" });
+    return `${month} ${fd}–${td}, ${fy}`;
+  }
+  const f = (y: number, m: number, d: number) => new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return `${f(fy, fm, fd)} – ${f(ty, tm, td)}`;
+}
+
+const SC_TITLE: Record<string, string> = { FR: "FRS", BDR: "BDRS", Intake: "INTAKE" };
+const pctText = (v: number | null) => (v == null ? "—" : `${v.toFixed(2)}%`);
+
+/**
+ * The team's scorecard, laid out like their sheet so the numbers read the same
+ * way: one table per team, a rep per row, a TOTAL row. Click a rep for the names.
+ */
+function Scorecard({ sc, label, onRep }: { sc: ReportData["scorecard"]; label: string; onRep: (rep: string, role: string) => void }) {
+  if (!sc.groups.length) return null;
+  return (
+    <div className="sr-sc-wrap">
+      {sc.groups.map((g) => (
+        <div key={g.role} className="sr-sc">
+          <div className="sr-sc-title">{label}</div>
+          <div className="sr-sc-band">{SC_TITLE[g.role] ?? g.role}</div>
+          <div className="sr-scroll">
+            <table className="sr-sct">
+              <thead>
+                <tr>
+                  <th className="l">Name</th><th>Total Leads</th><th>Open</th><th>Rejected</th><th>Referred Out</th><th>Not Interested</th>
+                  <th className="cyan">Signed Referred Out</th><th className="green">Sign-up Unique Count</th><th className="yellow">Signed In-House</th>
+                  <th className="tot">Total Signed</th><th>Target</th><th>Achieved</th><th>Lead vs Sign Up Conversion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {g.rows.map((r) => {
+                  const [first, ...rest] = r.name.split(" ");
+                  return (
+                    <tr key={r.name} className="sr-click" title={`See ${r.name}'s clients`} onClick={() => onRep(r.name, g.role)}>
+                      <td className="l"><b>{first}</b> <span className="last">{rest.join(" ")}</span>{!r.current && <span className="former">former</span>}</td>
+                      <td>{r.leads}</td><td>{r.open}</td><td>{r.rejected}</td><td>{r.referredOut}</td><td>{r.notInterested}</td>
+                      <td className="cyan">{r.signedReferred}</td>
+                      <td className="green strong">{r.unique}</td>
+                      <td className="yellow em">{r.signedInHouse}</td>
+                      <td className="tot blue">{r.signed}</td>
+                      <td>{r.target ?? "—"}</td>
+                      <td>{pctText(r.achieved)}</td>
+                      <td>{pctText(r.conversion)}</td>
+                    </tr>
+                  );
+                })}
+                <tr className="total">
+                  <td className="l">TOTAL</td>
+                  <td>{g.total.leads}</td><td>{g.total.open}</td><td>{g.total.rejected}</td><td>{g.total.referredOut}</td><td>{g.total.notInterested}</td>
+                  <td>{g.total.signedReferred}</td><td>{g.total.unique}</td><td>{g.total.signedInHouse}</td>
+                  <td className="big">{g.total.signed}</td><td className="big">{g.total.target ?? "—"}</td>
+                  <td className="big">{pctText(g.total.achieved)}</td><td className="big">{pctText(g.total.conversion)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+      <p className="sr-sub" style={{ margin: "2px 4px 18px" }}>
+        From Lead Docket. Each lead counts once, in the column for where it ended up — so the columns add up to Total Leads.
+        Lost counts as Rejected. Referred Out = referred to another firm without signing; Signed Referred Out = signed first,
+        then referred. Sign-up Unique Count = different referring partners behind the sign-ups. Targets: FR {20 * sc.months},
+        BDR {5 * sc.months} a month per rep{sc.months > 1 ? ` (× ${sc.months} months)` : ""}. Click a rep to see the names.
+      </p>
     </div>
   );
 }

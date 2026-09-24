@@ -199,7 +199,9 @@ async function store(d) {
       classification: str(d.PracticeArea || d.CaseType).slice(0, 120) || null,
       sud: pacificYmd(ldInstant(d.SignedUpDate)),   // the Pacific day it was signed — see dates.mjs
       disposition: str(d.SubStatus).slice(0, 120) || null,
-      facility: str(d.ReferredByName).slice(0, 255) || null,
+      // Intake records the referring partner in "Marketing Source Details"
+      // (FoundUsNotes) far more often than in "Referred By", which is usually empty.
+      facility: (str(d.ReferredByName) || str(d.FoundUsNotes)).trim().slice(0, 255) || null,
       clientLocation: str(d.Office).slice(0, 255) || null,
       externalId: String(d.Id),
       externalSource: "leaddocket",
