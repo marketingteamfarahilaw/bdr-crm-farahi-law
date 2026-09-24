@@ -103,12 +103,13 @@ function matchByWords(referrer) {
   return best && best.score >= 0.7 && best.score - second >= 0.15 ? best.id : null;
 }
 
-// Fourth pass — the partner's name with a word left out. Intake drops words
+// Fourth pass — the partner's name with words left out. Intake drops words
 // ("Caruthers" for Caruthers Towing, "Collision King" for Collision King of
 // Tracy) and misspells them ("Reginos" for Regino), so a partner matches when
-// every word of its name but one is in the text, spelled the same or one letter
-// off. Each guard below is a wrong link the first version of this pass made:
-//   · the word left out is the trade or the partner's town, never part of the
+// the words of its name are in the text, spelled the same or one letter off,
+// with only its trade or town missing. Each guard below is a wrong link the
+// first version of this pass made:
+//   · what's left out is the trade or the partner's town, never part of the
 //     name — "Four Star Collision" is not Gold Star Collision
 //   · at least one matched word is a real name, not a trade ("Colision" counts
 //     as the trade) — "Rudy from Collision Center" names no one
@@ -148,8 +149,11 @@ function oneOff(a, b) {
 }
 
 function matchMissingWord(referrer) {
-  const said = words(referrer);
-  if (!said.length) return null;
+  // The word before "with", "from" or "at" is the contact, not the business:
+  // "Rudy from Collision Center" is not Rudy's Body Shop.
+  const person = new Set([...String(referrer).toLowerCase().matchAll(/([a-z]+)[\s\-–]+(?:with|from|at)\b/g)].map((m) => m[1]));
+  const said = words(referrer).map((w) => (person.has(w) ? null : w));
+  if (!said.some(Boolean)) return null;
   const rk = kinds(referrer);
   const cands = [];
   for (const f of facAll) {
@@ -159,13 +163,14 @@ function matchMissingWord(referrer) {
     const at = f.w.map((w) => {
       const i = said.indexOf(w);
       if (i >= 0) return { i, exact: true };
-      const j = said.findIndex((s) => oneOff(s, w));
+      const j = said.findIndex((s) => s && oneOff(s, w));
       return j >= 0 ? { i: j, exact: false } : null;
     });
     const found = f.w.filter((_, k) => at[k]);
     const missing = f.w.filter((_, k) => !at[k]);
-    if (!found.length || missing.length > 1) continue;
-    if (missing.length && !isTrade(missing[0]) && !f.place.has(missing[0])) continue;
+    // Trade and town words may be left out, several at once ("Luke with First
+    // Health" for First Health Medical Center) — a word of the name itself never.
+    if (!found.length || missing.some((w) => !isTrade(w) && !f.place.has(w))) continue;
     const pos = at.filter(Boolean).map((a) => a.i);
     if (pos.some((p, k) => k > 0 && p <= pos[k - 1])) continue;
     if (found.length === 1) {
@@ -173,12 +178,18 @@ function matchMissingWord(referrer) {
       const sameKind = [...rk].some((k) => fk.has(k));
       if (fk.size ? !sameKind : found[0].length < 6 || (df.get(found[0]) ?? 1) > 1) continue;
     } else if (!found.some((w) => distinctive(w, 4))) continue;
-    cands.push({ id: f.id, found: found.length, missing: missing.length });
+    // The name part of the match, as written in the text ("excellence").
+    const key = f.w.map((w, k) => (at[k] && !isTrade(w) ? said[at[k].i] : null)).filter(Boolean).sort().join(" ");
+    cands.push({ id: f.id, found: found.length, missing: missing.length, key });
   }
   if (!cands.length) return null;
   cands.sort((a, b) => b.found - a.found || a.missing - b.missing);
   const [best, next] = cands;
   if (next && next.found === best.found && next.missing === best.missing) return null;
+  // Two partners going by the same name — "Excellence Auto Repair" could be
+  // Excellence Body Shop or Excellence Auto Collision Center — are for a person
+  // to pick, unless the text holds one of them in full.
+  if (best.missing > 0 && cands.some((c) => c !== best && c.key === best.key)) return null;
   return best.id;
 }
 
