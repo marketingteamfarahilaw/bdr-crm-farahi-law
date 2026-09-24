@@ -90,7 +90,9 @@ for (const sheet of SHEETS) {
   const status = ACTIVE.has(sheet) ? "active_partner" : "prospect";
   for (let r = hi + 1; r < rows.length; r++) {
     const row = rows[r];
-    const name = norm(row[idx.name]);
+    // A leading "*" is a mark someone put on the row in the sheet, not part of the
+    // name — Youssef had it taken off the CRM's names (Sept 2026).
+    const name = norm(row[idx.name]).replace(/^\*+\s*/, "");
     if (!name || /^total$|^leads$|^partner$|^unassigned/i.test(name)) continue;
     const phone = norm(row[idx.cleanPhone] ?? "") || norm(row[idx.phone] ?? "");
     const key = nameKey(name) + "|" + (p10(phone) || "");
