@@ -22,6 +22,14 @@ type Out = inferRouterOutputs<AppRouter>["marketing"];
 type Data = NonNullable<Out["dashboard"]>;
 type Source = Data["sources"][number];
 
+// Rows the server keeps whole in both views: the team, and leads with no source.
+const SPECIAL = new Set(["BD/FR team", "No source recorded"]);
+/** What to ask the server for a row's clients: a channel asks for all its Lead Docket sources. */
+const scopeOf = (row: { name: string; members: string[] }) =>
+  SPECIAL.has(row.name) || !row.members.length ? { source: row.name } : { sources: row.members };
+type Focus = { name: string; members: string[]; month?: string };
+type Group = "channel" | "source";
+
 const usd = (n: number | null | undefined, cents = false) =>
   n == null ? "—" : "$" + n.toLocaleString("en-US", { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0 });
 
@@ -33,8 +41,10 @@ export default function MarketingReport() {
   const [from, setFrom] = useState(iso(new Date(today.getFullYear(), today.getMonth(), 1)));
   const [to, setTo] = useState(iso(today));
   const [team, setTeam] = useState(true);
+  // Channels group Lead Docket's per-contract and per-listing sources ("Walker Advertising Contract 26").
+  const [group, setGroup] = useState<Group>("channel");
   const { data, isLoading, isFetching } = trpc.marketing.dashboard.useQuery(
-    { from, to, team },
+    { from, to, team, group },
     { enabled: allowed, placeholderData: (prev) => prev },
   );
 
@@ -84,6 +94,10 @@ export default function MarketingReport() {
                 <button key={p.label} className={p.label === activePreset ? "on" : ""} onClick={() => { setFrom(p.from); setTo(p.to); }}>{p.label}</button>
               ))}
             </div>
+            <div className="sr-seg" role="group" aria-label="Group by">
+              <button className={group === "channel" ? "on" : ""} onClick={() => setGroup("channel")}>Channels</button>
+              <button className={group === "source" ? "on" : ""} onClick={() => setGroup("source")}>Sources</button>
+            </div>
             <div className="sr-seg" role="group" aria-label="Sources">
               <button className={team ? "on" : ""} onClick={() => setTeam(true)}>All sources</button>
               <button className={team ? "" : "on"} onClick={() => setTeam(false)}>Without BD/FR team</button>
@@ -113,7 +127,7 @@ export default function MarketingReport() {
           {isLoading || !data ? (
             <div className="sr-features">{[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 270 }} />)}</div>
           ) : (
-            <Report data={data} from={from} to={to} team={team} />
+            <Report data={data} from={from} to={to} team={team} group={group} />
           )}
         </div>
       </div>
@@ -173,9 +187,12 @@ function HeroBottom({ data }: { data: Data }) {
   );
 }
 
-function Report({ data, from, to, team }: { data: Data; from: string; to: string; team: boolean }) {
+function Report({ data, from, to, team, group }: { data: Data; from: string; to: string; team: boolean; group: Group }) {
   const spendRef = useRef<HTMLDivElement>(null);
-  const [focus, setFocus] = useState<{ source: string; month?: string } | null>(null);
+  const [focus, setFocus] = useState<Focus | null>(null);
+  const rowOf = (name: string) => data.sources.find((s) => s.name === name) ?? { name, members: [] as string[] };
+  const open = (name: string, month?: string) => setFocus({ name, members: rowOf(name).members, ...(month ? { month } : {}) });
+  const noun = group === "channel" ? "channel" : "source";
   const avg = data.totals.conversion;
   const top = data.sources.find((s) => s.signed > 0);
   const minLeads = data.totals.leads >= 500 ? 25 : 8;
@@ -193,12 +210,12 @@ function Report({ data, from, to, team }: { data: Data; from: string; to: string
 
   return (
     <>
-      <Scorecard data={data} label={rangeLabel(from, to)} onSource={(source) => setFocus({ source })} />
+      <Scorecard data={data} label={rangeLabel(from, to)} group={group} onSource={(name) => open(name)} />
 
       <div className="sr-features">
         {top ? (
           <div className="sr-spot" style={hueStyle(top.name)}>
-            <span className="sr-spot-tag">Top source</span>
+            <span className="sr-spot-tag">Top {noun}</span>
             <div className="sr-spot-ini">{initials(top.name)}</div>
             <div className="sr-spot-foot">
               <div><b>{top.name}</b><i>{top.conversion}% of {fmt(top.leads)} leads signed</i></div>
@@ -206,7 +223,7 @@ function Report({ data, from, to, team }: { data: Data; from: string; to: string
             </div>
           </div>
         ) : (
-          <div className="sr-card"><div className="sr-bh"><h2>Top source</h2></div><p className="sr-nil">No sign-ups in this period.</p></div>
+          <div className="sr-card"><div className="sr-bh"><h2>Top {noun}</h2></div><p className="sr-nil">No sign-ups in this period.</p></div>
         )}
 
         <div className="sr-card">
@@ -259,7 +276,7 @@ function Report({ data, from, to, team }: { data: Data; from: string; to: string
         <div style={{ minWidth: 0 }}>
           {/* Source × month */}
           <div className="sr-panel">
-            <div className="sr-panel-h"><div className="sr-ttl"><h2>Sign-ups by source and month</h2></div></div>
+            <div className="sr-panel-h"><div className="sr-ttl"><h2>Sign-ups by {noun} and month</h2></div></div>
             {gridRows.length === 0 ? <p className="sr-nil">No sign-ups in this period.</p> : (
               <div className="sr-scroll">
                 <table className="sr-grid">
@@ -269,13 +286,13 @@ function Report({ data, from, to, team }: { data: Data; from: string; to: string
                   <tbody>
                     {gridRows.map((r) => (
                       <tr key={r.name}>
-                        <td className="name sr-click" onClick={() => setFocus({ source: r.name })}>{r.name}</td>
+                        <td className="name sr-click" onClick={() => open(r.name)}>{r.name}</td>
                         {r.cells.map((v, i) => (
                           <td key={i} className={`cell ${level(v)} ${v ? "sr-click" : ""}`}
                             title={v ? `${r.name} · ${monthLabel(data.months[i])}: see the ${v} sign-up${v === 1 ? "" : "s"}` : undefined}
-                            onClick={v ? () => setFocus({ source: r.name, month: data.months[i] }) : undefined}>{v || "·"}</td>
+                            onClick={v ? () => open(r.name, data.months[i]) : undefined}>{v || "·"}</td>
                         ))}
-                        <td className="tot sr-click" onClick={() => setFocus({ source: r.name })}>{r.signed}</td>
+                        <td className="tot sr-click" onClick={() => open(r.name)}>{r.signed}</td>
                       </tr>
                     ))}
                     <tr className="foot"><td className="name">Signed</td>{data.monthly.map((m) => <td key={m.month} className="cell">{m.signed}</td>)}<td className="tot">{fmt(data.totals.signed)}</td></tr>
@@ -289,15 +306,15 @@ function Report({ data, from, to, team }: { data: Data; from: string; to: string
 
           {/* Case types by source */}
           <div className="sr-panel">
-            <div className="sr-panel-h"><div className="sr-ttl"><h2>Case types by source</h2></div></div>
-            <p className="sr-sub">Sign-ups of all leads, for the ten biggest sources and six biggest case types. Click a source for its clients.</p>
+            <div className="sr-panel-h"><div className="sr-ttl"><h2>Case types by {noun}</h2></div></div>
+            <p className="sr-sub">Sign-ups of all leads, for the ten biggest {noun}s and six biggest case types. Click a row for its clients.</p>
             {data.caseMatrix.rows.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
               <div className="sr-scroll">
                 <table className="sr-t mk-matrix" style={{ minWidth: 720 }}>
-                  <thead><tr><th>Source</th>{data.caseMatrix.types.map((t) => <th key={t} className="num">{t}</th>)}</tr></thead>
+                  <thead><tr><th>{group === "channel" ? "Channel" : "Source"}</th>{data.caseMatrix.types.map((t) => <th key={t} className="num">{t}</th>)}</tr></thead>
                   <tbody>
                     {data.caseMatrix.rows.map((r) => (
-                      <tr key={r.name} className="sr-click" onClick={() => setFocus({ source: r.name })}>
+                      <tr key={r.name} className="sr-click" onClick={() => open(r.name)}>
                         <td><b style={{ color: "var(--ink)", fontWeight: 600 }}>{r.name}</b></td>
                         {r.cells.map((c, i) => (
                           <td key={i} className="num">{c.leads ? <><b>{c.signed}</b><i> / {c.leads}</i></> : <span className="mk-dot">·</span>}</td>
@@ -313,7 +330,7 @@ function Report({ data, from, to, team }: { data: Data; from: string; to: string
           {/* Case types */}
           <div className="sr-panel">
             <div className="sr-panel-h"><div className="sr-ttl"><h2>Case types</h2><span className="sr-count">{data.caseTypes.length}</span></div></div>
-            <p className="sr-sub">As classified in Lead Docket, with the sources that signed the most of each.</p>
+            <p className="sr-sub">As classified in Lead Docket, with the {noun}s that signed the most of each.</p>
             {data.caseTypes.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
               <div className="sr-scroll">
                 <table className="sr-t" style={{ minWidth: 640 }}>
@@ -401,16 +418,16 @@ function Report({ data, from, to, team }: { data: Data; from: string; to: string
       </div>
 
       <div ref={spendRef} style={{ scrollMarginTop: 16 }}>
-        <SpendEditor months={data.months} sources={data.sources} />
+        <SpendEditor months={data.months} sources={data.sources} group={group} />
       </div>
-      <LeadList from={from} to={to} team={team} sources={data.sources.map((s) => s.name)} />
+      <LeadList from={from} to={to} team={team} rows={data.sources} noun={noun} />
       {focus && <Clients focus={focus} from={from} to={to} team={team} onClose={() => setFocus(null)} />}
     </>
   );
 }
 
 /** The team's scorecard layout, one row per source, plus what each costs. */
-function Scorecard({ data, label, onSource }: { data: Data; label: string; onSource: (source: string) => void }) {
+function Scorecard({ data, label, group, onSource }: { data: Data; label: string; group: Group; onSource: (name: string) => void }) {
   if (!data.sources.length) return null;
   const t = data.totals;
   const sum = (k: keyof Source) => data.sources.reduce((a, s) => a + (Number(s[k]) || 0), 0);
@@ -418,12 +435,12 @@ function Scorecard({ data, label, onSource }: { data: Data; label: string; onSou
     <div className="sr-sc-wrap">
       <div className="sr-sc">
         <div className="sr-sc-title">{label}</div>
-        <div className="sr-sc-band">MARKETING SOURCES</div>
+        <div className="sr-sc-band">{group === "channel" ? "MARKETING CHANNELS" : "MARKETING SOURCES"}</div>
         <div className="sr-scroll">
           <table className="sr-sct">
             <thead>
               <tr>
-                <th className="l">Source</th><th>Total Leads</th><th>Open</th><th>Rejected</th><th>Referred Out</th><th>Not Interested</th>
+                <th className="l">{group === "channel" ? "Channel" : "Source"}</th><th>Total Leads</th><th>Open</th><th>Rejected</th><th>Referred Out</th><th>Not Interested</th>
                 <th className="cyan">Signed Referred Out</th><th className="yellow">Signed In-House</th><th className="tot">Total Signed</th>
                 <th>Conversion</th><th>Spend</th><th>Cost / Lead</th><th>Cost / Sign-up</th>
               </tr>
@@ -433,7 +450,7 @@ function Scorecard({ data, label, onSource }: { data: Data; label: string; onSou
                 const st = standing(s.conversion, t.conversion);
                 return (
                   <tr key={s.name} className="sr-click" title={`See ${s.name}'s clients`} onClick={() => onSource(s.name)}>
-                    <td className="l"><b>{s.name}</b></td>
+                    <td className="l"><b>{s.name}</b>{group === "channel" && s.members.length > 1 && <span className="former">{s.members.length} sources</span>}</td>
                     <td>{fmt(s.leads)}</td><td>{fmt(s.open)}</td><td>{fmt(s.rejected)}</td><td>{fmt(s.referredOut)}</td><td>{fmt(s.notInterested)}</td>
                     <td className="cyan">{fmt(s.signedReferred)}</td>
                     <td className="yellow em">{fmt(s.signedInHouse)}</td>
@@ -456,14 +473,15 @@ function Scorecard({ data, label, onSource }: { data: Data; label: string; onSou
       </div>
       <p className="sr-sub" style={{ margin: "2px 4px 18px" }}>
         From Lead Docket. Each lead counts once, in the column for where it ended up, so the columns add up to Total Leads.
-        Lost counts as Rejected. Cost columns use the spend entered below. Click a source to see its clients.
+        Lost counts as Rejected. Cost columns use the spend entered below. Click a row to see its clients.
+        {group === "channel" && " Channels group Lead Docket's per-contract and per-listing sources; switch to Sources to see each one."}
       </p>
     </div>
   );
 }
 
 /** Monthly spend per source — what turns lead counts into cost per lead and per sign-up. */
-function SpendEditor({ months, sources }: { months: string[]; sources: Source[] }) {
+function SpendEditor({ months, sources, group }: { months: string[]; sources: Source[]; group: Group }) {
   const utils = trpc.useUtils();
   const [month, setMonth] = useState(months[months.length - 1] ?? "");
   useEffect(() => { if (!months.includes(month)) setMonth(months[months.length - 1] ?? ""); }, [months, month]);
@@ -493,7 +511,10 @@ function SpendEditor({ months, sources }: { months: string[]; sources: Source[] 
           {[...months].reverse().map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
         </select>
       </div>
-      <p className="sr-sub">What each source cost in {month ? monthLabel(month) : "the month"}. Saved when you leave the box; clear it to remove.</p>
+      <p className="sr-sub">
+        What each {group === "channel" ? "channel" : "source"} cost in {month ? monthLabel(month) : "the month"}. Saved when you leave the box; clear it to remove.
+        {group === "channel" ? " A channel's cost also includes any spend entered for its individual sources." : ""}
+      </p>
       <div className="mk-spend">
         {names.map((name) => {
           const current = amountOf(name);
@@ -547,15 +568,16 @@ function useDebounced<T>(value: T, ms = 300) {
   return v;
 }
 
-function LeadList({ from, to, team, sources }: { from: string; to: string; team: boolean; sources: string[] }) {
+function LeadList({ from, to, team, rows: groups, noun }: { from: string; to: string; team: boolean; rows: Source[]; noun: string }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "signed" | "open">("all");
   const [source, setSource] = useState("");
   const [limit, setLimit] = useState(50);
   const q = useDebounced(search.trim());
   useEffect(() => setLimit(50), [from, to, team, status, source, q]);
+  const picked = groups.find((g) => g.name === source);
   const { data, isFetching } = trpc.marketing.leads.useQuery(
-    { from, to, team, status, limit, ...(source ? { source } : {}), ...(q ? { search: q } : {}) },
+    { from, to, team, status, limit, ...(picked ? scopeOf(picked) : {}), ...(q ? { search: q } : {}) },
     { placeholderData: (prev) => prev },
   );
   const rows = data?.rows ?? [];
@@ -568,9 +590,9 @@ function LeadList({ from, to, team, sources }: { from: string; to: string; team:
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input className="sr-input" placeholder="Search client, case type, campaign, city…" value={search}
             onChange={(e) => setSearch(e.target.value)} style={{ width: 260 }} aria-label="Search leads" />
-          <select className="sr-input" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Source" style={{ maxWidth: 220 }}>
-            <option value="">All sources</option>
-            {sources.map((s) => <option key={s} value={s}>{s}</option>)}
+          <select className="sr-input" value={source} onChange={(e) => setSource(e.target.value)} aria-label={noun} style={{ maxWidth: 220 }}>
+            <option value="">All {noun}s</option>
+            {groups.map((g) => <option key={g.name} value={g.name}>{g.name}</option>)}
           </select>
           <div className="sr-seg" role="group" aria-label="Outcome">
             {([["all", "All"], ["signed", "Signed"], ["open", "Not signed"]] as const).map(([v, label]) => (
@@ -598,7 +620,7 @@ function LeadList({ from, to, team, sources }: { from: string; to: string; team:
 
 /** The clients behind a source's numbers — opened by clicking the source or one of its months. */
 function Clients({ focus, from, to, team, onClose }: {
-  focus: { source: string; month?: string }; from: string; to: string; team: boolean; onClose: () => void;
+  focus: Focus; from: string; to: string; team: boolean; onClose: () => void;
 }) {
   const [signedOnly, setSignedOnly] = useState(true);
   useEffect(() => {
@@ -606,18 +628,18 @@ function Clients({ focus, from, to, team, onClose }: {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  const base = { from, to, team, source: focus.source, ...(focus.month ? { month: focus.month } : {}), limit: 500 };
+  const base = { from, to, team, ...scopeOf(focus), ...(focus.month ? { month: focus.month } : {}), limit: 500 };
   const signed = trpc.marketing.leads.useQuery({ ...base, status: "signed" });
   const all = trpc.marketing.leads.useQuery({ ...base, status: "all" }, { enabled: !signedOnly });
   const shown = signedOnly ? signed.data : all.data;
 
   return (
     <div className="sr-modal-back" onClick={onClose}>
-      <div className="sr-modal" role="dialog" aria-modal="true" aria-label={`${focus.source} clients`} onClick={(e) => e.stopPropagation()}>
+      <div className="sr-modal" role="dialog" aria-modal="true" aria-label={`${focus.name} clients`} onClick={(e) => e.stopPropagation()}>
         <div className="sr-panel-h" style={{ flexWrap: "wrap", marginBottom: 14 }}>
           <div className="sr-who">
-            <span className="sr-av" style={hueStyle(focus.source)}>{initials(focus.source)}</span>
-            <div><b style={{ fontSize: 17 }}>{focus.source}</b><i>{focus.month ? monthLabel(focus.month) : "the selected period"}</i></div>
+            <span className="sr-av" style={hueStyle(focus.name)}>{initials(focus.name)}</span>
+            <div><b style={{ fontSize: 17 }}>{focus.name}</b><i>{focus.month ? monthLabel(focus.month) : "the selected period"}</i></div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div className="sr-seg" role="group" aria-label="Show">
