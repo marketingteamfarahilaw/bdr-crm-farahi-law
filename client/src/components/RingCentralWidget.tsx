@@ -145,9 +145,11 @@ interface ClickToCallButtonProps {
   facilityName?: string;
   className?: string;
   children?: React.ReactNode;
+  /** False where the row already shows its own phone icon. */
+  icon?: boolean;
 }
 
-export function ClickToCallButton({ phoneNumber, facilityId, className, children }: ClickToCallButtonProps) {
+export function ClickToCallButton({ phoneNumber, facilityId, className, children, icon = true }: ClickToCallButtonProps) {
   const { triggerCall } = useRingCentral();
   if (!phoneNumber) return null;
   return (
@@ -161,7 +163,7 @@ export function ClickToCallButton({ phoneNumber, facilityId, className, children
       className={cn("inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors", className)}
       title={`Call ${phoneNumber}`}
     >
-      <Phone size={12} className="shrink-0" />
+      {icon && <Phone size={12} className="shrink-0" />}
       {children ?? phoneNumber}
     </button>
   );

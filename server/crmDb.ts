@@ -12,6 +12,8 @@ import {
   facilityTasks,
   facilityLeads,
   inboundLeads,
+  leadIntake,
+  outboundReferrals,
   facilityGratitude,
   facilityUpdates,
   fieldVisits,
@@ -279,11 +281,47 @@ export async function getLastContactLog(facilityId: number) {
 export async function listFacilityLeads(facilityId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db
+  const rows = await db
     .select()
     .from(facilityLeads)
     .where(eq(facilityLeads.facilityId, facilityId))
     .orderBy(desc(facilityLeads.leadDate));
+  // Who the referral was. A Lead Docket lead or an outbound referral keeps the
+  // client's name in its own table, not on this row — whose clientArea for Lead
+  // Docket leads is the firm's office ("Farahi Law Firm"), not the client.
+  const idsOf = (source: string) => rows.filter((r) => r.externalSource === source && r.externalId).map((r) => String(r.externalId));
+  const ld = idsOf("leaddocket");
+  const ob = idsOf("outbound").map(Number).filter(Number.isFinite);
+  const [ldRows, obRows] = await Promise.all([
+    ld.length
+      ? db.select({ externalId: leadIntake.externalId, name: leadIntake.leadName, caseType: leadIntake.classification })
+          .from(leadIntake).where(and(eq(leadIntake.externalSource, "leaddocket"), inArray(leadIntake.externalId, ld)))
+      : Promise.resolve([]),
+    ob.length
+      ? db.select({ id: outboundReferrals.id, name: outboundReferrals.clientName })
+          .from(outboundReferrals).where(inArray(outboundReferrals.id, ob))
+      : Promise.resolve([]),
+  ]);
+  const ldBy = new Map(ldRows.map((r) => [String(r.externalId), r]));
+  const obBy = new Map(obRows.map((r) => [String(r.id), r]));
+  return rows.map((r) => {
+    const lead = r.externalSource === "leaddocket" ? ldBy.get(String(r.externalId)) : undefined;
+    const out = r.externalSource === "outbound" ? obBy.get(String(r.externalId)) : undefined;
+    return {
+      ...r,
+      clientName: lead?.name ?? out?.name ?? null,
+      caseType: lead?.caseType?.replace(/\s+/g, " ").trim() || null,
+    };
+  });
+}
+
+/** Referrals received from a partner — the rows its Referrals Received tab lists. */
+export async function getTotalLeadsReceived(facilityId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [r] = await db.select({ total: sql<number>`COUNT(*)` })
+    .from(facilityLeads).where(and(eq(facilityLeads.facilityId, facilityId), eq(facilityLeads.direction, "received_from_facility")));
+  return Number(r?.total ?? 0);
 }
 
 export async function createFacilityLead(data: InsertFacilityLead) {

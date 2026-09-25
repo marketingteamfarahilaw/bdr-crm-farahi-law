@@ -16,20 +16,34 @@ import {
   Plus, CheckCircle2, Circle, Trash2, PhoneCall, Play, Car, MessageSquare,
   Calendar, Clock, Star, Edit, RefreshCw, Building2, Gift, FileText,
   TrendingUp, Flag, ExternalLink, ListChecks, Zap, ChevronDown, ChevronUp,
-  Flame, Snowflake, ThermometerSun, Loader2, Download, ClipboardList
+  Flame, Snowflake, ThermometerSun, Loader2, Download, ClipboardList, Receipt
 } from "lucide-react";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { FacilityLocationMap } from "@/components/FacilityLocationMap";
 import { LeadFormFields } from "@/components/LeadFormFields";
 import { formatDistanceToNow, format } from "@/lib/datetime";
 
+// The Voice Agents look the rest of the app uses (tokens and .premium-card in
+// index.css): glass panels, soft list rows, white icon discs, quiet pills.
+const PANEL = "premium-card p-5";
+const ROW = "group rounded-[18px] bg-white/70 dark:bg-white/[0.04] shadow-[inset_0_0_0_1px_var(--border)] p-4 transition-colors hover:bg-white dark:hover:bg-white/[0.07]";
+const DISC = "w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-white/85 dark:bg-white/10 text-foreground shadow-[inset_0_0_0_1px_var(--edge),0_1px_2px_rgb(0_0_0/0.04)]";
+const TONE = {
+  ok: "bg-[#e3f1e8] text-[#2f7d4f] dark:bg-[#2f7d4f]/25 dark:text-[#7fcf9f]",
+  sun: "bg-sun-soft text-sun-ink",
+  bad: "bg-[#fdebe1] text-[#c2410c] dark:bg-[#e2703f]/20 dark:text-[#e2703f]",
+  mute: "bg-muted text-muted-foreground",
+  ink: "bg-primary text-primary-foreground",
+};
+const PILL = "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold";
+
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  prospect: { label: "Prospect", color: "bg-sky-500/20 text-sky-400 border-sky-500/30" },
-  active_partner: { label: "Active Partner", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-  priority_partner: { label: "Priority Partner", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
-  needs_follow_up: { label: "Needs Follow-Up", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
-  dormant: { label: "Dormant", color: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
-  do_not_use: { label: "Do Not Use", color: "bg-red-900/30 text-red-300 border-red-900/50" },
+  prospect: { label: "Prospect", color: TONE.mute },
+  active_partner: { label: "Active Partner", color: TONE.ok },
+  priority_partner: { label: "Priority Partner", color: TONE.sun },
+  needs_follow_up: { label: "Needs Follow-Up", color: TONE.bad },
+  dormant: { label: "Dormant", color: TONE.mute },
+  do_not_use: { label: "Do Not Use", color: TONE.bad },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -52,17 +66,6 @@ const CASE_VALUE_LABELS: Record<string, { label: string; color: string }> = {
   medium: { label: "Medium", color: "text-amber-400" },
   low: { label: "Low", color: "text-slate-400" },
   na: { label: "N/A", color: "text-muted-foreground" },
-};
-
-// Per-category accent used for the facility identity avatar + header trim.
-const CATEGORY_ACCENT: Record<string, string> = {
-  orthopedic_doctor: "#6366f1",
-  chiropractor: "#0ea5e9",
-  physical_therapist: "#14b8a6",
-  medical_clinic: "#22c55e",
-  imaging_center: "#a855f7",
-  body_shop: "#f97316",
-  other: "#64748b",
 };
 
 type Temp = { key: "hot" | "warm" | "cold"; label: string; reason: string; cls: string; Icon: any };
@@ -100,9 +103,10 @@ function facilityTemperature(facility: any, contactLogs: any[] | undefined, open
     : daysSince === 1 ? "Last contact yesterday"
     : `Last contact ${daysSince}d ago`;
 
-  if (score >= 3) return { key: "hot", label: "Hot", reason, Icon: Flame, cls: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30" };
-  if (score >= 1) return { key: "warm", label: "Warm", reason, Icon: ThermometerSun, cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" };
-  return { key: "cold", label: "Cold", reason, Icon: Snowflake, cls: "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30" };
+  // tier-* are the app's shared hot/warm/cold chips (index.css).
+  if (score >= 3) return { key: "hot", label: "Hot", reason, Icon: Flame, cls: "tier-hot" };
+  if (score >= 1) return { key: "warm", label: "Warm", reason, Icon: ThermometerSun, cls: "tier-warm" };
+  return { key: "cold", label: "Cold", reason, Icon: Snowflake, cls: "tier-cold" };
 }
 
 // Record an FR's in-person visit — logged by the BDR on the partner's behalf.
@@ -585,13 +589,13 @@ function LeadCaptureTab({ facility }: { facility: any }) {
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Captured", value: leads.length, cls: "text-primary" },
-          { label: "Signed", value: signed, cls: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Pending", value: leads.length - signed, cls: "text-amber-600 dark:text-amber-400" },
+          { label: "Captured", value: leads.length },
+          { label: "Signed", value: signed },
+          { label: "Pending", value: leads.length - signed },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className={`text-2xl font-bold ${s.cls}`} style={{ fontFamily: "'Playfair Display', serif" }}>{s.value}</p>
+          <div key={s.label} className={PANEL}>
+            <p className="font-display text-3xl text-foreground leading-none">{s.value}</p>
+            <p className="text-xs text-muted-foreground mt-1.5">{s.label}</p>
           </div>
         ))}
       </div>
@@ -606,7 +610,7 @@ function LeadCaptureTab({ facility }: { facility: any }) {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : leads.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card/50 text-center py-14 text-muted-foreground">
+        <div className="premium-card text-center py-14 text-muted-foreground">
           <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="font-medium text-foreground">No leads captured here yet</p>
           <p className="text-xs mt-1">Click "Add Lead" to log a lead for {facilityName || "this facility"}.</p>
@@ -614,16 +618,16 @@ function LeadCaptureTab({ facility }: { facility: any }) {
       ) : (
         <div className="space-y-2.5">
           {leads.map((l) => (
-            <div key={l.id} className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all">
+            <div key={l.id} className={ROW}>
               <div className="flex items-start gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <div className={DISC}>
                   <ClipboardList className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-foreground">{l.leadName}</span>
-                    {l.outcome && <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${/sign/i.test(l.outcome) ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-secondary text-muted-foreground"}`}>{l.outcome}</span>}
-                    {l.value && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{l.value}</span>}
+                    {l.outcome && <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${/sign/i.test(l.outcome) ? TONE.ok : TONE.mute}`}>{l.outcome}</span>}
+                    {l.value && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${TONE.mute}`}>{l.value}</span>}
                   </div>
                   <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
                     {l.leadDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(l.leadDate).toLocaleDateString()}</span>}
@@ -673,31 +677,32 @@ function GratitudeTab({ facilityId }: { facilityId: number }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <Card className="bg-card border-border"><CardContent className="p-4"><p className="text-xs text-muted-foreground">Total Actions</p><p className="text-2xl font-bold">{(actions as any[]).length}</p></CardContent></Card>
-        <Card className="bg-card border-border"><CardContent className="p-4"><p className="text-xs text-muted-foreground">Total Invested</p><p className="text-2xl font-bold text-yellow-400">${totalSpent.toFixed(2)}</p></CardContent></Card>
+        <div className={PANEL}><p className="font-display text-3xl text-foreground leading-none">{(actions as any[]).length}</p><p className="text-xs text-muted-foreground mt-1.5">Total Actions</p></div>
+        <div className={PANEL}><p className="font-display text-3xl text-foreground leading-none">${totalSpent.toFixed(2)}</p><p className="text-xs text-muted-foreground mt-1.5">Total Invested</p></div>
       </div>
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-muted-foreground">Gratitude & Relationship Actions</h3>
-        <Button size="sm" variant="outline" className="gap-1.5 border-border" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Action</Button>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Action</Button>
       </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : (actions as any[]).length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground"><Gift className="w-10 h-10 mx-auto mb-3 opacity-30"/><p>No gratitude actions recorded yet.</p></div>
+        <div className="premium-card text-center py-14 text-muted-foreground"><Gift className="w-10 h-10 mx-auto mb-3 opacity-30"/><p className="font-medium text-foreground">No gratitude actions recorded yet</p></div>
       ) : (
-        <div className="space-y-2">{(actions as any[]).map((action)=>(
-          <Card key={action.id} className="bg-card border-border"><CardContent className="p-4">
-            <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2.5">{(actions as any[]).map((action)=>(
+          <div key={action.id} className={ROW}>
+            <div className="flex items-start gap-3.5">
+              <div className={DISC}><Gift className="w-4 h-4" /></div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium capitalize">{action.actionType.replace(/_/g," ")}</span>
-                  {action.amount&&<Badge variant="outline" className="text-xs text-yellow-400 border-yellow-500/30">${parseFloat(action.amount).toFixed(2)}</Badge>}
+                  <span className="text-sm font-semibold capitalize text-foreground">{action.actionType.replace(/_/g," ")}</span>
+                  {action.amount&&<span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${TONE.sun}`}>${parseFloat(action.amount).toFixed(2)}</span>}
                   <span className="text-xs text-muted-foreground ml-auto">{action.actionDate?new Date(action.actionDate).toLocaleDateString():""}</span>
                 </div>
-                {action.repName&&<p className="text-xs text-muted-foreground">By: {action.repName}</p>}
-                {action.notes&&<p className="text-sm text-muted-foreground mt-1">{action.notes}</p>}
+                {action.repName&&<p className="text-xs text-muted-foreground mt-0.5">By {action.repName}</p>}
+                {action.notes&&<p className="text-sm text-foreground/80 mt-1.5">{action.notes}</p>}
               </div>
-              <button onClick={()=>deleteAction.mutate({id:action.id})} className="text-muted-foreground hover:text-red-400"><Trash2 className="w-4 h-4"/></button>
+              <button onClick={()=>deleteAction.mutate({id:action.id})} className="text-muted-foreground/40 hover:text-[#c2410c] transition-colors shrink-0"><Trash2 className="w-4 h-4"/></button>
             </div>
-          </CardContent></Card>
+          </div>
         ))}</div>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
@@ -740,27 +745,26 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-muted-foreground">Call Transcripts, Notes & Updates</h3>
-        <Button size="sm" variant="outline" className="gap-1.5 border-border" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Note</Button>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={()=>setOpen(true)}><Plus className="w-3.5 h-3.5"/>Add Note</Button>
       </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : (updates as any[]).length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="premium-card text-center py-14 px-6 text-muted-foreground">
           <Phone className="w-10 h-10 mx-auto mb-3 opacity-30"/>
           <p className="font-medium">No call recaps yet</p>
           <p className="text-xs mt-1 max-w-xs mx-auto">Call this facility from RingCentral (desk phone or app). Within a few minutes the call appears here automatically with a transcript and an AI recap.</p>
         </div>
       ) : (
         <div className="space-y-3">{(updates as any[]).map((upd)=>(
-          <Card key={upd.id} className={`border ${upd.updateType === "transcript" ? "bg-blue-950/20 border-blue-500/20" : "bg-card border-border"}`}>
-            <CardContent className="p-4">
+          <div key={upd.id} className={ROW}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  {upd.updateType === "transcript" ? <Phone className="w-3.5 h-3.5 text-blue-400" /> : <FileText className="w-3.5 h-3.5 text-muted-foreground" />}
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
-                    upd.updateType === "transcript" ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                    : upd.updateType === "sms" ? "bg-green-500/10 text-green-400 border-green-500/30"
-                    : upd.updateType === "visit_note" ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                    : "bg-muted text-muted-foreground border-border"
+                  {upd.updateType === "transcript" ? <Phone className="w-3.5 h-3.5 text-foreground" /> : <FileText className="w-3.5 h-3.5 text-muted-foreground" />}
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    upd.updateType === "transcript" ? TONE.ink
+                    : upd.updateType === "sms" ? TONE.ok
+                    : upd.updateType === "visit_note" ? TONE.sun
+                    : TONE.mute
                   }`}>
                     {upd.updateType === "transcript" ? "Call Transcript" : upd.updateType.replace(/_/g," ")}
                   </span>
@@ -769,23 +773,23 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                 </div>
                 {/* Summary */}
                 {upd.summary && (
-                  <div className={`rounded-lg p-3 mb-2 ${upd.updateType === "transcript" ? "bg-blue-500/10" : "bg-muted/30"}`}>
+                  <div className="rounded-[14px] p-3 mb-2 bg-muted">
                     <p className="text-sm text-foreground leading-relaxed">{upd.summary}</p>
                     {upd.updateType === "transcript" && upd.extractedData && (upd.extractedData.relationshipTone || upd.extractedData.leadsDiscussed || upd.extractedData.contactPerson) && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {upd.extractedData.relationshipTone && (
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${
-                            upd.extractedData.relationshipTone === "warm" ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30"
-                            : upd.extractedData.relationshipTone === "cold" ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
-                            : upd.extractedData.relationshipTone === "hostile" ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30"
-                            : "bg-muted text-muted-foreground border-border"
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                            upd.extractedData.relationshipTone === "warm" ? TONE.ok
+                            : upd.extractedData.relationshipTone === "cold" ? "tier-cold"
+                            : upd.extractedData.relationshipTone === "hostile" ? TONE.bad
+                            : TONE.mute
                           }`}>Tone: {upd.extractedData.relationshipTone}</span>
                         )}
                         {upd.extractedData.leadsDiscussed && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">Leads discussed</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${TONE.sun}`}>Leads discussed</span>
                         )}
                         {upd.extractedData.contactPerson && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-muted text-muted-foreground border-border">Spoke with: {upd.extractedData.contactPerson}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${TONE.mute}`}>Spoke with: {upd.extractedData.contactPerson}</span>
                         )}
                       </div>
                     )}
@@ -800,7 +804,7 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                       <ul className="space-y-1">
                         {points.map((p: string, i: number) => (
                           <li key={i} className="flex items-start gap-2 text-xs text-foreground/90">
-                            <span className="text-blue-600 dark:text-blue-400 mt-1 shrink-0 leading-none">•</span>
+                            <span className="text-sun-ink mt-1 shrink-0 leading-none">•</span>
                             <span className="leading-relaxed">{p}</span>
                           </li>
                         ))}
@@ -816,10 +820,8 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                       <ul className="space-y-1.5">
                         {(upd.extractedData.followUpTasks as Array<{title:string;priority:string;dueInDays:number}>).map((task, i) => (
                           <li key={i} className="flex items-start gap-2 text-xs">
-                            <span className={`shrink-0 mt-0.5 text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                              task.priority === "high" ? "bg-red-500/20 text-red-700 dark:text-red-400"
-                              : task.priority === "medium" ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
-                              : "bg-muted text-muted-foreground"
+                            <span className={`shrink-0 mt-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                              task.priority === "high" ? TONE.bad : task.priority === "medium" ? TONE.sun : TONE.mute
                             }`}>{task.priority.toUpperCase()}</span>
                             <span className="text-foreground flex-1 leading-relaxed">{task.title}</span>
                             <span className="text-muted-foreground shrink-0">due in {task.dueInDays}d</span>
@@ -833,9 +835,9 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                 )}
                 {/* Commitment made */}
                 {upd.updateType === "transcript" && upd.extractedData?.commitmentMade && (
-                  <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-2.5 mb-2 flex items-start gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
-                    <p className="text-xs text-green-800 dark:text-green-300"><span className="font-semibold">Commitment: </span>{upd.extractedData.commitmentMade}</p>
+                  <div className={`rounded-[14px] p-2.5 mb-2 flex items-start gap-2 ${TONE.ok}`}>
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <p className="text-xs"><span className="font-semibold">Commitment: </span>{upd.extractedData.commitmentMade}</p>
                   </div>
                 )}
                 {upd.rawText && upd.rawText.trim() && !upd.rawText.startsWith("[") && (
@@ -843,15 +845,15 @@ function UpdatesTab({ facilityId }: { facilityId: number }) {
                     <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
                       <FileText className="w-3 h-3 inline" /> View full transcript
                     </summary>
-                    <pre className="text-xs text-foreground/70 mt-2 whitespace-pre-wrap font-sans bg-muted/30 rounded p-3 max-h-60 overflow-y-auto leading-relaxed">{upd.rawText}</pre>
+                    <pre className="text-xs text-foreground/70 mt-2 whitespace-pre-wrap font-sans bg-muted rounded-[14px] p-3 max-h-60 overflow-y-auto leading-relaxed">{upd.rawText}</pre>
                   </details>
                 )}
               </div>
               {rcStatus?.canManage && (
-                <button onClick={()=>deleteUpdate.mutate({id:upd.id})} className="text-muted-foreground hover:text-red-400 flex-shrink-0" title="Delete recap (managers only)"><Trash2 className="w-4 h-4"/></button>
+                <button onClick={()=>deleteUpdate.mutate({id:upd.id})} className="text-muted-foreground/40 hover:text-[#c2410c] transition-colors flex-shrink-0" title="Delete recap (managers only)"><Trash2 className="w-4 h-4"/></button>
               )}
             </div>
-          </CardContent></Card>
+          </div>
         ))}</div>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
@@ -884,7 +886,7 @@ function ExpensesTab({ facilityId, facilityName }: { facilityId: number; facilit
   const create = trpc.crm.expenses.create.useMutation({ onSuccess: () => { utils.crm.expenses.byFacility.invalidate({ facilityId }); toast.success("Expense added"); setOpen(false); setForm({ expenseDate: new Date().toISOString().slice(0, 10), store: "", reason: "", amount: "", cardType: "Company", notes: "" }); }, onError: (e) => toast.error(e.message) });
   const setStatus = trpc.crm.expenses.setReimbursement.useMutation({ onSuccess: () => utils.crm.expenses.byFacility.invalidate({ facilityId }), onError: (e) => toast.error(e.message) });
   const total = rows.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const STT: Record<string, string> = { pending: "bg-amber-500/15 text-amber-600 dark:text-amber-400", submitted: "bg-blue-500/15 text-blue-600 dark:text-blue-400", approved: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" };
+  const STT: Record<string, string> = { pending: TONE.sun, submitted: TONE.mute, approved: TONE.ok };
   const exportCsv = () => {
     const out = [["Date", "Kind", "Store", "Reason", "Amount", "Reimbursement", "Representative"], ...rows.map((e: any) => [e.date ? new Date(e.date).toISOString().slice(0, 10) : "", e.kind, e.store, e.reason, e.amount, e.reimbursementStatus, e.agentName])];
     const csv = out.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -908,13 +910,15 @@ function ExpensesTab({ facilityId, facilityName }: { facilityId: number; facilit
           <div className="col-span-2 flex gap-2"><Button size="sm" disabled={create.isPending} onClick={() => create.mutate({ facilityId, facilityName: facilityName ?? undefined, ...form })}>Save</Button><Button size="sm" variant="outline" onClick={() => setOpen(false)}>Cancel</Button></div>
         </CardContent></Card>
       )}
-      {isLoading ? <Skeleton className="h-32 rounded-xl" /> : !rows.length ? <p className="text-sm text-muted-foreground text-center py-6">No expenses logged for this partner.</p> : (
-        <div className="space-y-1.5">
+      {isLoading ? <Skeleton className="h-32 rounded-[22px]" /> : !rows.length ? (
+        <div className="premium-card text-center py-14 text-muted-foreground"><Receipt className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="font-medium text-foreground">No expenses logged for this partner</p></div>
+      ) : (
+        <div className="space-y-2">
           {rows.map((e: any) => (
-            <div key={`${e.kind}-${e.id}`} className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm">
+            <div key={`${e.kind}-${e.id}`} className={`${ROW} !py-3 flex items-center justify-between gap-2 text-sm`}>
               <div className="min-w-0"><p className="font-medium text-foreground">${Number(e.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="font-normal text-muted-foreground">· {e.store || e.reason || "expense"}</span></p><p className="text-[11px] text-muted-foreground">{e.kind} · {e.date ? new Date(e.date).toLocaleDateString() : ""}{e.agentName ? ` · ${e.agentName}` : ""}</p></div>
               <Select value={e.reimbursementStatus} onValueChange={(v) => setStatus.mutate({ kind: e.kind, id: e.id, status: v as any })}>
-                <SelectTrigger className={`h-7 w-32 text-xs ${STT[e.reimbursementStatus] ?? ""}`}><SelectValue /></SelectTrigger>
+                <SelectTrigger className={`h-7 w-32 text-xs rounded-full border-0 ${STT[e.reimbursementStatus] ?? ""}`}><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="pending">Pending</SelectItem><SelectItem value="submitted">Submitted</SelectItem><SelectItem value="approved">Approved</SelectItem></SelectContent>
               </Select>
             </div>
@@ -926,19 +930,55 @@ function ExpensesTab({ facilityId, facilityName }: { facilityId: number; facilit
 }
 
 // ── Referrals Sent / Received tab (facility_leads filtered by direction) ──
-function ReferralsDirectionTab({ facilityId, direction }: { facilityId: number; direction: "sent_to_facility" | "received_from_facility" }) {
+function ReferralsDirectionTab({ facilityId, direction, counted }: {
+  facilityId: number; direction: "sent_to_facility" | "received_from_facility"; counted: number;
+}) {
   const { data: leads = [], isLoading } = trpc.crm.facilityLeads.list.useQuery({ facilityId });
   const rows = (leads as any[]).filter((l) => l.direction === direction);
-  if (isLoading) return <Skeleton className="h-32 rounded-xl mt-4" />;
-  if (!rows.length) return <p className="text-sm text-muted-foreground text-center py-6 mt-4">{direction === "sent_to_facility" ? "No referrals sent to this partner yet." : "No referrals received from this partner yet."} Use the Leads tab to add one.</p>;
+  const sent = direction === "sent_to_facility";
+  if (isLoading) return <Skeleton className="h-32 rounded-[22px] mt-4" />;
+  // "Leads Sent" also counts leads logged only as a monthly number, which have no row here.
+  const monthlyOnly = sent ? Math.max(0, counted - rows.length) : 0;
+  const outcome = (l: any) =>
+    l.signedCase ? { label: "Signed", cls: TONE.ok }
+    : l.outcome === "not_signed" ? { label: "Not signed", cls: TONE.bad }
+    : sent ? { label: "Sent", cls: TONE.mute }
+    : { label: "Open", cls: TONE.sun };
   return (
-    <div className="space-y-1.5 mt-4">
-      {rows.map((l) => (
-        <div key={l.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm">
-          <div className="min-w-0"><p className="font-medium text-foreground truncate">{l.clientArea || l.contactPerson || "Lead"}{l.signedCase ? " · SIGNED" : ""}</p><p className="text-[11px] text-muted-foreground">{l.leadDate ? new Date(l.leadDate).toLocaleDateString() : ""}{l.method ? ` · ${l.method}` : ""}{l.repName ? ` · ${l.repName}` : ""}</p></div>
-          <Badge variant="secondary" className="text-xs shrink-0">{l.outcome ?? "pending"}</Badge>
+    <div className="mt-4 space-y-2.5">
+      <p className="text-sm text-muted-foreground px-1">
+        {rows.length} {sent ? "sent to" : "received from"} this partner
+        {rows.length > 0 && <> · {rows.filter((l) => l.signedCase).length} signed</>}
+        {monthlyOnly > 0 && <> · plus {monthlyOnly} counted in monthly totals only</>}
+      </p>
+      {!rows.length ? (
+        <div className="premium-card text-center py-14 px-6 text-muted-foreground">
+          <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="font-medium text-foreground">{sent ? "No referrals sent to this partner yet" : "No referrals received from this partner yet"}</p>
+          <p className="text-xs mt-1 max-w-sm mx-auto">
+            {sent
+              ? "Referrals the team sends out appear here from the outbound referral sheet."
+              : "Lead Docket leads that name this partner as the source appear here automatically. A lead that names it differently can be linked from the Sign-ups Report."}
+          </p>
         </div>
-      ))}
+      ) : rows.map((l) => {
+        const o = outcome(l);
+        return (
+          <div key={l.id} className={`${ROW} flex items-center gap-3.5`}>
+            <div className={DISC}>{l.signedCase ? <CheckCircle2 className="w-4 h-4" /> : <User className="w-4 h-4" />}</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{l.clientName || l.contactPerson || "Client not recorded"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-2">
+                {l.leadDate && <span>{format(new Date(l.leadDate), "MMM d, yyyy")}</span>}
+                {l.caseType && <span>· {l.caseType}</span>}
+                {l.repName && <span>· {l.repName}</span>}
+                {l.externalSource === "leaddocket" && <span>· Lead Docket</span>}
+              </p>
+            </div>
+            <span className={`${PILL} ${o.cls} shrink-0`}>{o.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1003,13 +1043,12 @@ export default function FacilityProfile() {
   const status = STATUS_LABELS[facility.partnerStatus] ?? STATUS_LABELS.prospect;
   const openTasks = tasks?.filter((t) => t.status === "open") ?? [];
   const completedTasks = tasks?.filter((t) => t.status === "completed") ?? [];
-  const accent = CATEGORY_ACCENT[facility.category] ?? CATEGORY_ACCENT.other;
   const initial = (facility.name?.trim()?.[0] ?? "?").toUpperCase();
   const temp = facilityTemperature(facility, contactLogs, openTasks.length);
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl">
-      {/* Back + Header hero */}
+    <div className="max-w-[1200px] mx-auto p-6 lg:p-8 space-y-6">
+      {/* Back + header */}
       <div className="space-y-3">
         <button
           onClick={() => navigate("/crm/facilities")}
@@ -1017,56 +1056,38 @@ export default function FacilityProfile() {
         >
           <ArrowLeft className="w-4 h-4" /> Back to Facilities
         </button>
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <div
-            className="absolute inset-x-0 top-0 h-1"
-            style={{ background: `linear-gradient(90deg, ${accent}, ${accent}55 45%, transparent)` }}
-          />
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 p-6">
+        <div className="premium-card">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-5 p-6 lg:p-7">
             <div className="flex items-start gap-4 min-w-0">
-              <div
-                className="h-14 w-14 rounded-2xl flex items-center justify-center text-2xl text-white shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
-                  boxShadow: `0 8px 24px ${accent}40`,
-                  fontFamily: "'Playfair Display', serif",
-                  fontWeight: 700,
-                }}
-              >
+              <div className="h-14 w-14 rounded-full flex items-center justify-center shrink-0 bg-primary text-primary-foreground font-display text-2xl !font-normal">
                 {initial}
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-                    {facility.name}
-                  </h1>
-                  <Badge className={`border ${status.color}`}>{status.label}</Badge>
-                  <span
-                    className={`inline-flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-0.5 border ${temp.cls}`}
-                    title={`${temp.label} partner — ${temp.reason}`}
-                  >
+                <h1 className="font-display text-3xl sm:text-4xl text-foreground leading-[1.08]">{facility.name}</h1>
+                <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
+                  <span className={`${PILL} ${status.color}`}>{status.label}</span>
+                  <span className={`${PILL} ${temp.cls}`} title={`${temp.label} partner — ${temp.reason}`}>
                     <temp.Icon className="w-3 h-3" /> {temp.label}
                   </span>
                   {facility.managementFlag === 1 && (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
-                      <AlertTriangle className="w-3 h-3" /> Flagged
-                    </span>
+                    <span className={`${PILL} ${TONE.sun}`}><AlertTriangle className="w-3 h-3" /> Flagged</span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-x-2 gap-y-1 flex-wrap">
-                  <span className="inline-flex items-center gap-1"><Building2 className="w-3.5 h-3.5" />{CATEGORY_LABELS[facility.category] ?? facility.category}</span>
-                  {facility.city && <><span className="text-border">•</span><span className="inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{facility.city}</span></>}
-                  {facility.assignedRepName && <><span className="text-border">•</span><span className="inline-flex items-center gap-1"><User className="w-3.5 h-3.5" />{facility.assignedRepName}</span></>}
+                <p className="text-sm text-muted-foreground mt-2.5 flex items-center gap-x-2.5 gap-y-1 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />{CATEGORY_LABELS[facility.category] ?? facility.category}</span>
+                  {facility.city && <><span className="opacity-40">·</span><span className="inline-flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{facility.city}</span></>}
+                  {facility.assignedRepName && <><span className="opacity-40">·</span><span className="inline-flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{facility.assignedRepName}</span></>}
                 </p>
                 {(facility.phone || facility.website) && (
-                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <div className="flex items-center gap-2 mt-3.5 flex-wrap">
+                    {/* ClickToCallButton draws its own phone icon. */}
                     {facility.phone && (
-                      <ClickToCallButton phoneNumber={facility.phone} facilityId={facilityId} className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 bg-primary/10 border border-primary/20 rounded-lg px-2.5 py-1.5 transition-colors">
-                        <Phone className="w-3.5 h-3.5" /> {facility.phone}
+                      <ClickToCallButton phoneNumber={facility.phone} facilityId={facilityId} className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-xs font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+                        {facility.phone}
                       </ClickToCallButton>
                     )}
                     {facility.website && (
-                      <a href={facility.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 transition-colors">
+                      <a href={facility.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-xs font-medium text-foreground bg-white/85 dark:bg-white/10 shadow-[inset_0_0_0_1px_var(--edge)] hover:bg-white dark:hover:bg-white/15 transition-colors">
                         <Globe className="w-3.5 h-3.5" /> Website <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
@@ -1074,12 +1095,12 @@ export default function FacilityProfile() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 shrink-0 flex-wrap">
               <RecordFrVisitDialog facilityId={facilityId} onSuccess={() => {}} />
-              <Button variant="outline" size="sm" className="gap-1.5 border-border" onClick={() => toggleFlag.mutate({ id: facilityId, managementFlag: facility.managementFlag !== 1 })}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toggleFlag.mutate({ id: facilityId, managementFlag: facility.managementFlag !== 1 })}>
                 <Flag className="w-3.5 h-3.5" /> {facility.managementFlag === 1 ? "Clear Flag" : "Flag"}
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 border-border" onClick={() => navigate(`/crm/facilities/${facilityId}/edit`)}>
+              <Button size="sm" className="gap-1.5" onClick={() => navigate(`/crm/facilities/${facilityId}/edit`)}>
                 <Edit className="w-3.5 h-3.5" /> Edit
               </Button>
             </div>
@@ -1087,93 +1108,90 @@ export default function FacilityProfile() {
         </div>
       </div>
 
-      {/* Stats Row */}
+      {/* Stats — each opens its tab */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {[
-          { label: "Leads Sent", value: facility.totalLeads ?? 0, icon: Star, chip: "bg-primary/10 text-primary" },
-          { label: "Referrals Received", value: facility.totalReferrals ?? 0, icon: Building2, chip: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-          { label: "Open Tasks", value: openTasks.length, icon: ListChecks, chip: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-          { label: "Contact Logs", value: contactLogs?.length ?? 0, icon: PhoneCall, chip: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
-        ].map(({ label, value, icon: Icon, chip }) => (
-          <div key={label} className="rounded-2xl border border-border bg-card p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${chip}`}>
-              <Icon className="w-[18px] h-[18px]" />
-            </div>
-            <div className="mt-3">
-              <div className="text-3xl font-bold text-foreground leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>{value}</div>
-              <div className="text-xs text-muted-foreground mt-1.5 font-medium">{label}</div>
-            </div>
-          </div>
+          { label: "Leads Sent", value: facility.totalLeads ?? 0, icon: Star, tab: "sent" },
+          { label: "Referrals Received", value: facility.totalReferrals ?? 0, icon: Building2, tab: "received" },
+          { label: "Open Tasks", value: openTasks.length, icon: ListChecks, tab: "tasks" },
+          { label: "Contact Logs", value: contactLogs?.length ?? 0, icon: PhoneCall, tab: "contacts" },
+        ].map(({ label, value, icon: Icon, tab }) => (
+          <button key={label} type="button" onClick={() => setActiveTab(tab)}
+            className={`premium-card p-4 lg:p-5 text-left cursor-pointer hover:-translate-y-0.5 ${activeTab === tab ? "outline-2 -outline-offset-2 outline-sun" : ""}`}>
+            <div className={DISC}><Icon className="w-[18px] h-[18px]" /></div>
+            <div className="font-display text-4xl text-foreground leading-none mt-4">{value.toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground mt-1.5">{label}</div>
+          </button>
         ))}
       </div>
 
       {/* Reciprocity nudge — we've sent leads but received none back */}
       {(facility.totalLeads ?? 0) >= 3 && (facility.totalReferrals ?? 0) === 0 && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
-          <span className="text-base leading-none">⚠️</span>
+        <div className="flex items-start gap-3 rounded-[18px] bg-sun-soft px-4 py-3 text-sm">
+          <AlertTriangle className="w-4 h-4 text-sun-ink shrink-0 mt-0.5" />
           <div>
-            <span className="font-medium text-amber-600 dark:text-amber-400">One-sided so far.</span>{" "}
-            <span className="text-muted-foreground">You've sent <strong className="text-foreground">{facility.totalLeads}</strong> leads here but received <strong className="text-foreground">0</strong> referrals back — a good moment to ask for reciprocity on your next touch.</span>
+            <span className="font-semibold text-sun-ink">One-sided so far.</span>{" "}
+            <span className="text-foreground/80">You've sent <strong className="text-foreground">{facility.totalLeads}</strong> leads here but received <strong className="text-foreground">0</strong> referrals back — a good moment to ask for reciprocity on your next touch.</span>
           </div>
         </div>
       )}
 
-      {/* Main Tabs */}
+      {/* Main tabs — one scrolling row of pills rather than a wrapped block */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-muted/60 border border-border rounded-xl p-1 flex-wrap h-auto gap-0.5">
-          <TabsTrigger value="overview" className="rounded-lg">Overview</TabsTrigger>
-          <TabsTrigger value="contacts" className="rounded-lg">
-            Call &amp; Visit Log {contactLogs && contactLogs.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-foreground/10 px-1.5 py-0.5 rounded-full">{contactLogs.length}</span>}
+        <TabsList className="h-11 p-1 max-w-full overflow-x-auto justify-start">
+          <TabsTrigger value="overview" className="flex-none">Overview</TabsTrigger>
+          <TabsTrigger value="contacts" className="flex-none">
+            Call &amp; Visit Log {contactLogs && contactLogs.length > 0 && <span className="text-[10px] font-semibold bg-foreground/10 px-1.5 py-0.5 rounded-full">{contactLogs.length}</span>}
           </TabsTrigger>
-          <TabsTrigger value="expenses" className="rounded-lg">Expenses</TabsTrigger>
-          <TabsTrigger value="tasks" className="rounded-lg">
-            Tasks {openTasks.length > 0 && <span className="ml-1.5 text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full">{openTasks.length}</span>}
+          <TabsTrigger value="expenses" className="flex-none">Expenses</TabsTrigger>
+          <TabsTrigger value="tasks" className="flex-none">
+            Tasks {openTasks.length > 0 && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${TONE.sun}`}>{openTasks.length}</span>}
           </TabsTrigger>
-          <TabsTrigger value="sent" className="rounded-lg">Referrals Sent</TabsTrigger>
-          <TabsTrigger value="received" className="rounded-lg">Referrals Received</TabsTrigger>
-          <TabsTrigger value="leads" className="rounded-lg">Log Lead</TabsTrigger>
-          <TabsTrigger value="gratitude" className="rounded-lg">Gratitude</TabsTrigger>
-          <TabsTrigger value="updates" className="rounded-lg">Call Recaps</TabsTrigger>
+          <TabsTrigger value="sent" className="flex-none">Referrals Sent</TabsTrigger>
+          <TabsTrigger value="received" className="flex-none">Referrals Received</TabsTrigger>
+          <TabsTrigger value="leads" className="flex-none">Log Lead</TabsTrigger>
+          <TabsTrigger value="gratitude" className="flex-none">Gratitude</TabsTrigger>
+          <TabsTrigger value="updates" className="flex-none">Call Recaps</TabsTrigger>
         </TabsList>
 
         <TabsContent value="expenses"><ExpensesTab facilityId={facilityId} facilityName={facility.name} /></TabsContent>
-        <TabsContent value="sent"><ReferralsDirectionTab facilityId={facilityId} direction="sent_to_facility" /></TabsContent>
-        <TabsContent value="received"><ReferralsDirectionTab facilityId={facilityId} direction="received_from_facility" /></TabsContent>
+        <TabsContent value="sent"><ReferralsDirectionTab facilityId={facilityId} direction="sent_to_facility" counted={facility.totalLeads ?? 0} /></TabsContent>
+        <TabsContent value="received"><ReferralsDirectionTab facilityId={facilityId} direction="received_from_facility" counted={facility.totalReferrals ?? 0} /></TabsContent>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4 mt-4">
           <div className="grid md:grid-cols-2 gap-4">
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">Facility Info</CardTitle></CardHeader>
+            <Card>
+              <CardHeader className="pb-1"><CardTitle className="text-base font-medium">Facility Info</CardTitle></CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {facility.address && <div className="flex gap-2"><MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" /><span>{facility.address}{facility.city ? `, ${facility.city}` : ""}</span></div>}
-                {facility.phone && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton phoneNumber={facility.phone} facilityId={facilityId} className="hover:text-[var(--gold)] text-sm">{facility.phone}</ClickToCallButton></div>}
-                {facility.phone2 && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton phoneNumber={facility.phone2} facilityId={facilityId} className="hover:text-[var(--gold)] text-sm">{facility.phone2} <span className="text-muted-foreground text-xs">(alt)</span></ClickToCallButton></div>}
-                {facility.phone3 && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton phoneNumber={facility.phone3} facilityId={facilityId} className="hover:text-[var(--gold)] text-sm">{facility.phone3} <span className="text-muted-foreground text-xs">(alt 2)</span></ClickToCallButton></div>}
+                {facility.phone && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton icon={false} phoneNumber={facility.phone} facilityId={facilityId} className="text-foreground hover:underline text-sm">{facility.phone}</ClickToCallButton></div>}
+                {facility.phone2 && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton icon={false} phoneNumber={facility.phone2} facilityId={facilityId} className="text-foreground hover:underline text-sm">{facility.phone2} <span className="text-muted-foreground text-xs">(alt)</span></ClickToCallButton></div>}
+                {facility.phone3 && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton icon={false} phoneNumber={facility.phone3} facilityId={facilityId} className="text-foreground hover:underline text-sm">{facility.phone3} <span className="text-muted-foreground text-xs">(alt 2)</span></ClickToCallButton></div>}
                 {facility.website && <div className="flex gap-2"><Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={facility.website} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--gold)] truncate">{facility.website}</a></div>}
               </CardContent>
             </Card>
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">Primary Contact</CardTitle></CardHeader>
+            <Card>
+              <CardHeader className="pb-1"><CardTitle className="text-base font-medium">Primary Contact</CardTitle></CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {facility.contactName && <div className="flex gap-2"><User className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>{facility.contactName}{facility.contactTitle ? ` · ${facility.contactTitle}` : ""}</span></div>}
-                {facility.contactPhone && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton phoneNumber={facility.contactPhone} facilityId={facilityId} className="hover:text-[var(--gold)] text-sm">{facility.contactPhone}</ClickToCallButton></div>}
+                {facility.contactPhone && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton icon={false} phoneNumber={facility.contactPhone} facilityId={facilityId} className="text-foreground hover:underline text-sm">{facility.contactPhone}</ClickToCallButton></div>}
                 {facility.contactEmail && <div className="flex gap-2"><Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`mailto:${facility.contactEmail}`} className="hover:text-[var(--gold)]">{facility.contactEmail}</a></div>}
                 {facility.assignedRepName && <div className="flex gap-2 pt-2 border-t border-border"><User className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>BD Rep: <span className="text-foreground font-medium">{facility.assignedRepName}</span></span></div>}
               </CardContent>
             </Card>
           </div>
           {facility.notes && (
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">Notes</CardTitle></CardHeader>
-              <CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{facility.notes}</p></CardContent>
+            <Card>
+              <CardHeader className="pb-1"><CardTitle className="text-base font-medium">Notes</CardTitle></CardHeader>
+              <CardContent><p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">{facility.notes}</p></CardContent>
             </Card>
           )}
           {facility.managementNote && (
-            <Card className="bg-amber-500/10 border-amber-500/30">
-              <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2 text-amber-400"><AlertTriangle className="w-4 h-4" />Management Note</CardTitle></CardHeader>
-              <CardContent><p className="text-sm text-amber-300 whitespace-pre-wrap">{facility.managementNote}</p></CardContent>
-            </Card>
+            <div className="rounded-[22px] bg-sun-soft p-5">
+              <p className="text-sm font-semibold flex items-center gap-2 text-sun-ink"><AlertTriangle className="w-4 h-4" />Management Note</p>
+              <p className="text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed mt-2">{facility.managementNote}</p>
+            </div>
           )}
         </TabsContent>
 
@@ -1186,7 +1204,7 @@ export default function FacilityProfile() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="gap-1.5 border-border"
+                  className="gap-1.5"
                   disabled={syncCalls.isPending}
                   onClick={() => syncCalls.mutate({ facilityId, daysBack: 30 })}
                 >
@@ -1199,23 +1217,24 @@ export default function FacilityProfile() {
             </div>
           </div>
           {contactLogs?.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="premium-card text-center py-14 text-muted-foreground">
               <PhoneCall className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>No contact logs yet. Log your first contact above.</p>
+              <p className="font-medium text-foreground">No contact logs yet</p>
+              <p className="text-xs mt-1">Log your first call or visit above.</p>
             </div>
           ) : (
             <div className="space-y-2.5">
               {contactLogs?.map((log) => (
-                <div key={log.id} className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all">
+                <div key={log.id} className={ROW}>
                   <div className="flex items-start gap-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <div className={DISC}>
                       {CONTACT_TYPE_ICONS[log.contactType]}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold capitalize text-foreground">{log.contactType}</span>
-                        {log.callResult && <span className="text-[10px] font-semibold capitalize px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{log.callResult.replace("_", " ")}</span>}
-                        {log.callType && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{log.callType.replace(/_/g, " ")}</span>}
+                        {log.callResult && <span className={`text-[10px] font-semibold capitalize px-2 py-0.5 rounded-full ${log.callResult === "connected" ? TONE.ok : TONE.mute}`}>{log.callResult.replace("_", " ")}</span>}
+                        {log.callType && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${TONE.mute}`}>{log.callType.replace(/_/g, " ")}</span>}
                         {log.callDuration && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />{log.callDuration}</span>}
                         {(log as any).fromRingCentral === 1 && log.callResult === "connected" && (
                           <button onClick={() => setPlayLog(playLog === log.id ? null : log.id)} className="text-[11px] font-semibold inline-flex items-center gap-1 text-primary hover:text-primary/80">
@@ -1264,7 +1283,7 @@ export default function FacilityProfile() {
             <AddTaskDialog facilityId={facilityId} onSuccess={() => {}} />
           </div>
           {tasks?.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-card/50 text-center py-14 text-muted-foreground">
+            <div className="premium-card text-center py-14 text-muted-foreground">
               <ListChecks className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="font-medium text-foreground">No tasks yet</p>
               <p className="text-xs mt-1">Add a follow-up task to stay on cadence.</p>
@@ -1274,13 +1293,9 @@ export default function FacilityProfile() {
               {tasks?.map((task) => {
                 const isDone = task.status === "completed";
                 const overdue = !isDone && !!task.dueDate && new Date(task.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
-                const prio = task.priority === "high"
-                  ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
-                  : task.priority === "low"
-                  ? "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+                const prio = task.priority === "high" ? TONE.bad : task.priority === "low" ? TONE.mute : TONE.sun;
                 return (
-                  <div key={task.id} className={`group rounded-xl border bg-card p-4 transition-all ${isDone ? "border-border opacity-60" : "border-border hover:border-primary/30 hover:shadow-sm"}`}>
+                  <div key={task.id} className={`${ROW} ${isDone ? "opacity-60" : ""}`}>
                     <div className="flex items-start gap-3.5">
                       <button
                         onClick={() => task.status === "open" ? completeTask.mutate({ id: task.id }) : undefined}
@@ -1288,18 +1303,18 @@ export default function FacilityProfile() {
                         aria-label={isDone ? "Completed" : "Mark complete"}
                       >
                         {isDone
-                          ? <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                          : <Circle className="w-5 h-5 text-muted-foreground hover:text-emerald-500 transition-colors" />}
+                          ? <CheckCircle2 className="w-5 h-5 text-[#2f7d4f] dark:text-[#7fcf9f]" />
+                          : <Circle className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />}
                       </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`text-sm font-semibold ${isDone ? "line-through text-muted-foreground" : "text-foreground"}`}>{task.title}</span>
-                          <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${prio}`}>{task.priority}</span>
-                          {overdue && <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">Overdue</span>}
+                          <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${prio}`}>{task.priority}</span>
+                          {overdue && <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${TONE.bad}`}>Overdue</span>}
                         </div>
                         {task.description && <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{task.description}</p>}
                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                          {task.dueDate && <span className={`flex items-center gap-1 ${overdue ? "text-red-600 dark:text-red-400 font-medium" : ""}`}><Calendar className="w-3 h-3" /> {format(new Date(task.dueDate), "MMM d, yyyy")}</span>}
+                          {task.dueDate && <span className={`flex items-center gap-1 ${overdue ? "text-[#c2410c] dark:text-[#e2703f] font-medium" : ""}`}><Calendar className="w-3 h-3" /> {format(new Date(task.dueDate), "MMM d, yyyy")}</span>}
                           {task.assignedToName && <span className="flex items-center gap-1"><User className="w-3 h-3" /> {task.assignedToName}</span>}
                         </div>
                       </div>
@@ -1330,9 +1345,9 @@ export default function FacilityProfile() {
               {referrals?.map((ref) => {
                 const cv = CASE_VALUE_LABELS[ref.caseValue] ?? CASE_VALUE_LABELS.medium;
                 return (
-                  <div key={ref.id} className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all">
+                  <div key={ref.id} className={ROW}>
                     <div className="flex items-start gap-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <div className={DISC}>
                         <Star className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1364,9 +1379,9 @@ export default function FacilityProfile() {
           ? `${facility.latitude},${facility.longitude}`
           : [facility.address, facility.city].filter(Boolean).join(", ");
         return (
-          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-border">
-              <MapPin className="w-4 h-4 text-primary shrink-0" />
+          <div className="premium-card overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border">
+              <MapPin className="w-4 h-4 text-foreground shrink-0" />
               <span className="text-sm font-semibold text-foreground">Location</span>
               {(facility.address || facility.city) && (
                 <span className="text-xs text-muted-foreground truncate">{[facility.address, facility.city].filter(Boolean).join(", ")}</span>

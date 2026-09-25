@@ -48,6 +48,7 @@ import {
   getLastContactLog,
   getRingcentralToken,
   getTotalLeadsSent,
+  getTotalLeadsReceived,
   getTotalReferrals,
   listContactLogs,
   listFacilities,
@@ -431,14 +432,17 @@ export const crmRouter = router({
         await assertFacilityAccess(ctx.user, input.id, true);
         const facility = await getFacilityById(input.id);
         if (!facility) throw new TRPCError({ code: "NOT_FOUND", message: "Facility not found" });
-        const [contactHistory, tasks, leadsSent, totalLeads, referrals] = await Promise.all([
+        const [contactHistory, tasks, leadsSent, totalLeads, referrals, totalReferrals] = await Promise.all([
           listContactLogs(input.id),
           listTasksByFacility(input.id),
           listLeadsSent(input.id),
           getTotalLeadsSent(input.id),
           listReferrals(input.id),
+          // Referrals received = the leads this partner sent us (its Referrals
+          // Received tab). The legacy facility_referrals table this used to count
+          // is empty, so every partner showed 0.
+          getTotalLeadsReceived(input.id),
         ]);
-        const totalReferrals = referrals.length;
         return { ...facility, contactHistory, tasks, leadsSent, totalLeads, referrals, totalReferrals };
       }),
 
