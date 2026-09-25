@@ -174,11 +174,14 @@ if (COVERAGE) {
   await c.end();
   process.exit(0);
 }
-// The team's own leads first: they are what the reports show, so a long backlog
-// of other leads never holds them up. Then newest first, so the Marketing
-// Report's recent months fill in within the first hour of a long backfill.
+// The team's changed leads first: they are what the Sign-ups Report shows, so a
+// long backlog never holds them up. A team lead that is only missing from
+// leaddocket_leads isn't urgent — the team's numbers already have it — so it
+// waits its turn with the rest, newest first, and the Marketing Report's recent
+// months fill in first.
+const urgent = (r) => wasOurs.has(String(r.Id)) && seen.get(String(r.Id)) !== stamp(r);
 const queue = (OURS_ONLY ? unseen.filter((r) => wasOurs.has(String(r.Id))) : unseen)
-  .sort((a, b) => Number(wasOurs.has(String(b.Id))) - Number(wasOurs.has(String(a.Id))) || Number(b.Id) - Number(a.Id));
+  .sort((a, b) => Number(urgent(b)) - Number(urgent(a)) || Number(b.Id) - Number(a.Id));
 const fresh = LIMIT ? queue.slice(0, LIMIT) : queue;
 console.log("\n" + rows.length + " leads total, " + changed.length + " in range" + (SINCE ? " (changed since " + SINCE.toISOString().slice(0, 10) + ")" : "") +
   ", " + (changed.length - unseen.length) + " already checked and unchanged, " + fresh.length + " to read");
