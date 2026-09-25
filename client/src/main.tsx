@@ -68,15 +68,50 @@ createRoot(document.getElementById("root")!).render(
 // clientsClaim), but the page already open is still the old build — so people
 // kept seeing the previous version until a second refresh. Reload once when a
 // new worker takes control, and look for one whenever the tab comes back.
+//
+// Except around a presentation (Sign-ups Report → Present, which marks <html>
+// with sr-presenting while it is up): a reload would end it in front of the CEO.
+// It also waits a few minutes after one ends, because stepping out is often
+// brief (Esc by mistake, a look at Lead Docket) and the page remembers the slide
+// to pick up from; a reload would put the report back on "This month" instead.
+const AFTER_PRESENTING_MS = 5 * 60_000;
 if ("serviceWorker" in navigator) {
   const hadController = !!navigator.serviceWorker.controller;
-  let reloading = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (!hadController || reloading) return;   // first install: nothing stale to replace
+  const html = document.documentElement;
+  const presenting = () => html.classList.contains("sr-presenting");
+  let pending = false, reloading = false, timer = 0, presentedUntil = 0;
+  const reloadWhenFree = () => {
+    if (!pending || reloading) return;
+    window.clearTimeout(timer);
+    if (presenting()) return;   // the class watcher below calls again when it ends
+    const wait = presentedUntil + AFTER_PRESENTING_MS - Date.now();
+    if (wait > 0) {
+      timer = window.setTimeout(reloadWhenFree, wait);
+      return;
+    }
     reloading = true;
     window.location.reload();
+  };
+  let wasPresenting = presenting();
+  new MutationObserver(() => {
+    const now = presenting();
+    if (wasPresenting && !now) {
+      presentedUntil = Date.now();
+      reloadWhenFree();
+    }
+    wasPresenting = now;
+  }).observe(html, { attributes: true, attributeFilter: ["class"] });
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController) return;   // first install: nothing stale to replace
+    pending = true;
+    reloadWhenFree();
   });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => {});
+    // Not mid-presentation: the new worker would take over the old build's page
+    // mid-meeting, only to queue the reload above until it ends.
+    if (document.visibilityState === "visible" && !presenting()) {
+      navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => {});
+    }
   });
 }

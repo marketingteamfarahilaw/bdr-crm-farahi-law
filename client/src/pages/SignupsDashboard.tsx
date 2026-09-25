@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -8,12 +8,47 @@ import { trpc } from "@/lib/trpc";
 import { LeadDocketSyncButton } from "@/components/DataSyncPanel";
 import {
   Inbox, CheckCircle2, User, Download, ArrowUpRight, Loader2,
-  Trophy, Percent, Users, TrendingUp, Handshake, Info, X, Link2, Pencil,
+  Trophy, Percent, Users, TrendingUp, Handshake, Info, X, Link2, Pencil, Presentation,
 } from "lucide-react";
 import { CURRENT_TEAM } from "@shared/team";
+import { enterFullscreen, exitFullscreenSoon } from "./signups/fullscreen";
+import type { DeckPlace, PresentationProps } from "./signups/Presentation";
 import "./SignupsDashboard.css";
 
 // The look lives in SignupsDashboard.css (the Voice Agents board style).
+
+// The CEO presentation (signups/Presentation.tsx). Most visits never open it, so
+// it loads on demand; that also keeps the page and the deck, which reuses this
+// file's helpers, from importing each other statically. A deploy since this tab
+// opened deletes the old file, so a failed load says so and hands the page back
+// instead of letting the app's error screen take over mid-meeting.
+const loadPresentation = () => import("./signups/Presentation");
+const DECK_GONE = "The CRM was updated since this page opened. Reload the page, then press Present again.";
+// lazy() keeps the fallback below for the rest of the visit, so once the load has
+// failed, Present just says so: going full screen first would leave the bare
+// report stuck in full screen with nothing to take it out again.
+let deckFailed = false;
+const SignupsPresentation = lazy<ComponentType<PresentationProps>>(
+  () => loadPresentation().catch(() => {
+    deckFailed = true;
+    return { default: PresentationUnavailable };
+  }),
+);
+
+function PresentationUnavailable({ onExit }: { onExit: () => void }) {
+  // Once, on mount: it unmounts as soon as onExit ends presenting.
+  useEffect(() => {
+    // "Soon": the Present click's fullscreen request may land a frame after this.
+    exitFullscreenSoon();
+    toast.error(DECK_GONE);
+    onExit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return null;
+}
+
+// Presenting the same filters again within this long picks up on the same slide.
+const RESUME_MS = 30 * 60_000;
 
 // English formatting regardless of the browser's language, to match the rest of the CRM.
 export const fmt = (n: number) => n.toLocaleString("en-US");
@@ -35,11 +70,11 @@ const hue = (s: string) => {
 };
 export const initials = (s: string) => s.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 export const hueStyle = (name: string) => ({ "--h": hue(name) }) as React.CSSProperties;
-const roleName = (role: string) => (role === "FR" ? "Field Representative" : role === "BDR" ? "Business Development Rep." : role);
+export const roleName = (role: string) => (role === "FR" ? "Field Representative" : role === "BDR" ? "Business Development Rep." : role);
 
 type Role = "all" | "BDR" | "FR" | "Intake";
 type Team = "all" | "current";
-type ReportData = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["signupsDashboard"]>;
+export type ReportData = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["signupsDashboard"]>;
 
 /** Common reporting windows, so nobody has to type dates for the usual questions. */
 export function presets(today: Date) {
@@ -60,11 +95,41 @@ export default function SignupsDashboard() {
   const [to, setTo] = useState(iso(today));
   const [role, setRole] = useState<Role>("all");
   const [team, setTeam] = useState<Team>("all");
-  const { data, isLoading, isFetching } = trpc.teamReports.signupsDashboard.useQuery(
+  const { data, isLoading, isFetching, isPlaceholderData } = trpc.teamReports.signupsDashboard.useQuery(
     { from, to, ...(role !== "all" ? { role } : {}), team },
     // Keep the last report on screen while a new filter loads, instead of flashing skeletons.
     { placeholderData: (prev) => prev },
   );
+  const [presenting, setPresenting] = useState(false);
+  const presentBtn = useRef<HTMLButtonElement>(null);
+  // Where the deck is, for these filters. Leaving full screen ends the deck (Esc
+  // by mistake, a clicker's second slideshow press, a look at Lead Docket in
+  // another tab), so Present on the same filters picks up on the same slide, with
+  // the same clock, instead of back on the cover. A ref: turning a slide needn't
+  // re-render the report behind the deck.
+  const deckKey = [from, to, role, team].join("|");
+  const place = useRef<(DeckPlace & { key: string; at: number }) | null>(null);
+  const [resume, setResume] = useState<DeckPlace>();
+  const notePlace = (p: DeckPlace) => { place.current = { ...p, key: deckKey, at: Date.now() }; };
+  // Fullscreen must be asked for inside the click itself; the deck may not have loaded yet.
+  const present = () => {
+    if (deckFailed) {
+      toast.error(DECK_GONE);
+      return;
+    }
+    const last = place.current;
+    setResume(last && last.key === deckKey && Date.now() - last.at < RESUME_MS ? { slide: last.slide, startedAt: last.startedAt } : undefined);
+    enterFullscreen();
+    setPresenting(true);
+  };
+  const endPresenting = () => {
+    if (place.current) place.current.at = Date.now();
+    setPresenting(false);
+    // Once the deck is gone and the page is live again. preventScroll leaves the
+    // report scrolled where it was.
+    requestAnimationFrame(() => presentBtn.current?.focus({ preventScroll: true }));
+  };
+  const prefetchPresentation = () => { loadPresentation().catch(() => {}); };
 
   const periods = presets(today);
   const activePreset = periods.find((p) => p.from === from && p.to === to)?.label;
@@ -144,6 +209,12 @@ export default function SignupsDashboard() {
                 <p className="sr-lead">BD / FR leads and sign-ups from Lead Docket · {period}</p>
               </div>
               <div className="sr-actions">
+                {/* Disabled while a new filter loads, so it never presents the old filter's numbers under the new label. */}
+                <button ref={presentBtn} className="sr-btn2" onClick={present} disabled={!data || isPlaceholderData}
+                  onPointerEnter={prefetchPresentation} onFocus={prefetchPresentation}
+                  title="Show this report full screen, one slide at a time">
+                  <Presentation /> Present
+                </button>
                 <button className="sr-btn2" onClick={exportCsv} disabled={!data}><Download /> Export CSV</button>
                 <LeadDocketSyncButton className="sr-btn1" hintClassName="sr-hint" />
               </div>
@@ -160,6 +231,13 @@ export default function SignupsDashboard() {
           )}
         </div>
       </div>
+      {presenting && data && (
+        // The fallback is styled inline: the deck's own CSS arrives with its code.
+        <Suspense fallback={<div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--canvas)" }} />}>
+          <SignupsPresentation data={data} from={from} to={to} role={role} team={team} preset={activePreset}
+            resume={resume} onPlace={notePlace} onExit={endPresenting} />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -599,8 +677,63 @@ export function rangeLabel(from: string, to: string) {
   return `${f(fy, fm, fd)} – ${f(ty, tm, td)}`;
 }
 
-const SC_TITLE: Record<string, string> = { FR: "FRS", BDR: "BDRS", Intake: "INTAKE" };
-const pctText = (v: number | null) => (v == null ? "—" : `${v.toFixed(2)}%`);
+export const SC_TITLE: Record<string, string> = { FR: "FRS", BDR: "BDRS", Intake: "INTAKE" };
+export const pctText = (v: number | null) => (v == null ? "—" : `${v.toFixed(2)}%`);
+
+type ScorecardGroup = ReportData["scorecard"]["groups"][number];
+
+/**
+ * One team's sheet: the columns the team knows, in their order. Shared with the
+ * presentation deck, so a column change reaches both. Rows open a rep's clients
+ * only when onRep is given (never in the deck); TOTAL shows only when given, so
+ * the deck can page a long team and total it once, on the last page.
+ */
+export function ScorecardTable({ role, rows, total, onRep, pct = pctText, targets = true }: {
+  role: string; rows: ScorecardGroup["rows"]; total?: ScorecardGroup["total"]; onRep?: (rep: string, role: string) => void;
+  /** How Achieved and Conversion read. The deck shows fewer decimals, so its larger numbers fit their columns. */
+  pct?: (v: number | null, of: "achieved" | "conversion") => string;
+  /** False leaves out Target and Achieved (the deck does, for All time). */
+  targets?: boolean;
+}) {
+  return (
+    <table className="sr-sct">
+      <thead>
+        <tr>
+          <th className="l">Name</th><th>Total Leads</th><th>Open</th><th>Rejected</th><th>Referred Out</th><th>Not Interested</th>
+          <th className="cyan">Signed Referred Out</th><th className="green">Sign-up Unique Count</th><th className="yellow">Signed In-House</th>
+          <th className="tot">Total Signed</th>{targets && <><th>Target</th><th>Achieved</th></>}<th>Lead vs Sign Up Conversion</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => {
+          const [first, ...rest] = r.name.split(" ");
+          return (
+            <tr key={r.name} {...(onRep ? { className: "sr-click", title: `See ${r.name}'s clients`, onClick: () => onRep(r.name, role) } : {})}>
+              <td className="l"><b>{first}</b> <span className="last">{rest.join(" ")}</span>{!r.current && <span className="former">former</span>}</td>
+              <td>{r.leads}</td><td>{r.open}</td><td>{r.rejected}</td><td>{r.referredOut}</td><td>{r.notInterested}</td>
+              <td className="cyan">{r.signedReferred}</td>
+              <td className="green strong">{r.unique}</td>
+              <td className="yellow em">{r.signedInHouse}</td>
+              <td className="tot blue">{r.signed}</td>
+              {targets && <><td>{r.target ?? "—"}</td><td>{pct(r.achieved, "achieved")}</td></>}
+              <td>{pct(r.conversion, "conversion")}</td>
+            </tr>
+          );
+        })}
+        {total && (
+          <tr className="total">
+            <td className="l">TOTAL</td>
+            <td>{total.leads}</td><td>{total.open}</td><td>{total.rejected}</td><td>{total.referredOut}</td><td>{total.notInterested}</td>
+            <td>{total.signedReferred}</td><td>{total.unique}</td><td>{total.signedInHouse}</td>
+            <td className="big">{total.signed}</td>
+            {targets && <><td className="big">{total.target ?? "—"}</td><td className="big">{pct(total.achieved, "achieved")}</td></>}
+            <td className="big">{pct(total.conversion, "conversion")}</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
+}
 
 /**
  * The team's scorecard, laid out like their sheet so the numbers read the same
@@ -615,40 +748,7 @@ function Scorecard({ sc, label, onRep }: { sc: ReportData["scorecard"]; label: s
           <div className="sr-sc-title">{label}</div>
           <div className="sr-sc-band">{SC_TITLE[g.role] ?? g.role}</div>
           <div className="sr-scroll">
-            <table className="sr-sct">
-              <thead>
-                <tr>
-                  <th className="l">Name</th><th>Total Leads</th><th>Open</th><th>Rejected</th><th>Referred Out</th><th>Not Interested</th>
-                  <th className="cyan">Signed Referred Out</th><th className="green">Sign-up Unique Count</th><th className="yellow">Signed In-House</th>
-                  <th className="tot">Total Signed</th><th>Target</th><th>Achieved</th><th>Lead vs Sign Up Conversion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {g.rows.map((r) => {
-                  const [first, ...rest] = r.name.split(" ");
-                  return (
-                    <tr key={r.name} className="sr-click" title={`See ${r.name}'s clients`} onClick={() => onRep(r.name, g.role)}>
-                      <td className="l"><b>{first}</b> <span className="last">{rest.join(" ")}</span>{!r.current && <span className="former">former</span>}</td>
-                      <td>{r.leads}</td><td>{r.open}</td><td>{r.rejected}</td><td>{r.referredOut}</td><td>{r.notInterested}</td>
-                      <td className="cyan">{r.signedReferred}</td>
-                      <td className="green strong">{r.unique}</td>
-                      <td className="yellow em">{r.signedInHouse}</td>
-                      <td className="tot blue">{r.signed}</td>
-                      <td>{r.target ?? "—"}</td>
-                      <td>{pctText(r.achieved)}</td>
-                      <td>{pctText(r.conversion)}</td>
-                    </tr>
-                  );
-                })}
-                <tr className="total">
-                  <td className="l">TOTAL</td>
-                  <td>{g.total.leads}</td><td>{g.total.open}</td><td>{g.total.rejected}</td><td>{g.total.referredOut}</td><td>{g.total.notInterested}</td>
-                  <td>{g.total.signedReferred}</td><td>{g.total.unique}</td><td>{g.total.signedInHouse}</td>
-                  <td className="big">{g.total.signed}</td><td className="big">{g.total.target ?? "—"}</td>
-                  <td className="big">{pctText(g.total.achieved)}</td><td className="big">{pctText(g.total.conversion)}</td>
-                </tr>
-              </tbody>
-            </table>
+            <ScorecardTable role={g.role} rows={g.rows} total={g.total} onRep={onRep} />
           </div>
         </div>
       ))}

@@ -72,7 +72,9 @@ select.sr-input { padding-right: 30px; cursor: pointer; }
 .sr .sr-btn1 { border: 0; background: var(--char); color: #fff; box-shadow: 0 10px 22px -12px rgba(0, 0, 0, .6); }
 .sr .sr-btn1:hover { background: var(--char-h); color: #fff; box-shadow: 0 14px 26px -12px rgba(0, 0, 0, .7); }
 .sr .sr-btn2 { border: 0; background: var(--glass-hi); color: var(--ink); box-shadow: inset 0 0 0 1px var(--edge), var(--lift); }
-.sr .sr-btn2:hover { background: #fff; }
+.sr .sr-btn2:hover:not(:disabled) { background: #fff; }
+/* the palette's ink is light in dark mode, so a white hover would swallow the label */
+.dark .sr .sr-btn2:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
 .sr .sr-btn1:disabled, .sr .sr-btn2:disabled { opacity: .55; cursor: default; }
 .sr .sr-btn1 svg, .sr .sr-btn2 svg { width: 16px; height: 16px; }
 .sr .sr-hint { font: 12px var(--ui); color: var(--mute); }
@@ -305,7 +307,8 @@ table.sr-grid td.name.sr-click:hover, table.sr-grid td.tot.sr-click:hover { text
 .sr-sc { background: var(--glass); border: 1px solid var(--edge); border-radius: var(--rad); box-shadow: var(--lift); overflow: hidden; margin: 0 0 14px; }
 .sr-sc-title { background: var(--char); color: #fff; text-align: center; font: 600 17px/1 var(--ui); padding: 12px; letter-spacing: -.01em; }
 .dark .sr .sr-sc-title { color: #161613; }
-.sr-sc-band { background: var(--sun); color: var(--ink); font: 700 14px/1 var(--ui); padding: 9px 16px; letter-spacing: .04em; }
+/* dark ink on sun in both themes: var(--ink) turns near-white in dark mode (1.25:1 on the yellow) */
+.sr-sc-band { background: var(--sun); color: #1c1c1c; font: 700 14px/1 var(--ui); padding: 9px 16px; letter-spacing: .04em; }
 table.sr-sct { width: 100%; min-width: 1100px; border-collapse: collapse; font: 13px var(--ui); color: var(--ink2); }
 table.sr-sct th { font: 600 12px/1.25 var(--ui); color: var(--ink); background: rgba(28, 28, 28, .06); padding: 9px 8px; text-align: center; vertical-align: middle; border-bottom: 1px solid var(--line); }
 table.sr-sct td { padding: 8px; text-align: center; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
