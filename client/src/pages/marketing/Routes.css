@@ -1,0 +1,32 @@
+/*
+ * How leads reached us (marketing/Routes.tsx): the .sr-hb bars, plus a
+ * conversion column. The rows are buttons (each opens its clients), so they
+ * shed the button look and keep .sr-hb-row's; dark mode reuses .sr-hb-row's.
+ */
+.sr .mk-rt-row {
+  grid-template-columns: minmax(110px, 34%) minmax(0, 1fr) auto minmax(76px, auto);
+  grid-template-areas: "name bar n conv";
+}
+.sr .mk-rt-row > b { grid-area: name; min-width: 0; }
+.sr .mk-rt-row > .sr-hb-t { grid-area: bar; }
+.sr .mk-rt-row > .sr-hb-v { grid-area: n; }
+.sr .mk-rt-row > .mk-rt-conv { grid-area: conv; }
+.sr button.mk-rt-row { width: 100%; margin: 0; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.sr .mk-rt-conv { display: flex; justify-content: flex-end; }
+/* too few leads for a fair rate */
+.sr .mk-rt-na { font: 500 13px var(--ui); color: var(--mute2); padding-right: 12px; }
+.sr .mk-rt-acc { margin-top: 6px; border-top: 1px solid var(--line); }
+.sr .mk-rt-acc .sr-hb { margin: 0 0 10px; }
+.sr .mk-rt-other b { color: var(--ink); font-weight: 600; }
+/* .sr-hb-row's light hover is white; the rows here are clickable, so dark mode needs its own */
+.dark .sr .mk-rt-row.sr-click:hover { background: rgba(255, 255, 255, .09); }
+
+/* phone: name, count and rate on the first line, the bar full width under them */
+@media (max-width: 560px) {
+  .sr .mk-rt-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "name n conv" "bar bar bar";
+    gap: 8px 10px;
+  }
+  .sr .mk-rt-row > .sr-hb-v { min-width: 0; }
+}

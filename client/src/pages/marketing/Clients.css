@@ -1,0 +1,58 @@
+/*
+ * The clients modal, lead table and lead list (marketing/Clients.tsx). Builds on
+ * .sr-modal and .sr-leads in SignupsDashboard.css; the phone sheet is keyed to
+ * mk-cl classes so the Sign-ups Report's own modal is untouched.
+ */
+
+/* ---- header: who, the toggle (or the column it is fixed to), export, close */
+.sr .mk-cl-modal:focus { outline: none; }
+.sr .mk-cl-head { display: flex; align-items: center; gap: 10px 12px; margin: 0 0 14px; }
+.sr .mk-cl-who { flex: 1; min-width: 0; }
+.sr .mk-cl-who > div { min-width: 0; }
+.sr .mk-cl-who b, .sr .mk-cl-who i { overflow: hidden; text-overflow: ellipsis; }
+.sr .mk-cl-who .sr-av { flex: none; }
+.sr .mk-cl-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sr .mk-cl-fixed { height: 34px; padding: 0 14px; }
+.sr .mk-cl-x { flex: none; }
+.sr .mk-cl-note { margin: -6px 0 12px; }
+.sr .mk-cl-more { margin-top: 8px; }
+
+/* ---- why they didn't sign: HBar rows with the reason's family under it */
+.sr .mk-cl-why { margin: 0 0 14px; }
+.sr .mk-cl-why h3 { margin: 0 2px 4px; font: 600 11px var(--ui); color: var(--mute); text-transform: uppercase; letter-spacing: .06em; }
+.sr .sr-hb-row.mk-cl-why-row { grid-template-columns: minmax(150px, 40%) minmax(0, 1fr) auto; padding: 6px 12px; }
+.sr .mk-cl-why-l { display: flex; flex-direction: column; min-width: 0; }
+.sr .mk-cl-why-l i { font: 11.5px/1.3 var(--ui); font-style: normal; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- the table: the reason sits under the outcome */
+.sr .mk-cl-reason { display: block; max-width: 240px; margin: 5px 0 0 2px; font: 12px/1.35 var(--ui); color: var(--mute); white-space: normal; }
+
+/* ---- the lead list's filters */
+.sr .mk-cl-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.sr .mk-cl-search { width: 260px; }
+.sr .mk-cl-pick { max-width: 220px; }
+
+/* ---- two-line blocks, shown instead of the table on a phone */
+.sr .mk-cl-list { display: none; list-style: none; margin: 0; padding: 0; }
+.sr .mk-cl-list li { margin: 0 0 6px; padding: 10px 12px; border-radius: var(--rad-s); background: rgba(255, 255, 255, .58); }
+.dark .sr .mk-cl-list li { background: rgba(255, 255, 255, .04); }
+.sr .mk-cl-l1 { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.sr .mk-cl-l1 b { min-width: 0; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr .mk-cl-l1 .sr-badge { flex: none; max-width: 55%; height: 24px; padding: 0 10px; gap: 5px; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; }
+.sr .mk-cl-l1 .sr-badge::before { flex: none; width: 5px; height: 5px; }
+.sr .mk-cl-l2 { margin: 4px 0 0; font: 12px/1.45 var(--ui); color: var(--mute); overflow-wrap: anywhere; }
+
+@media (max-width: 560px) {
+  .sr .mk-cl-table { display: none; }
+  .sr .mk-cl-list { display: block; }
+  /* The modal becomes a sheet from the bottom, with a sliver of backdrop to tap closed. */
+  .sr .sr-modal-back.mk-cl-back { padding: 0; place-items: end stretch; }
+  .sr .sr-modal.mk-cl-modal {
+    width: 100%; height: 94vh; height: 94dvh; max-height: 100dvh; padding: 18px 14px 14px;
+    border-radius: var(--rad) var(--rad) 0 0; border-bottom: 0;
+  }
+  .sr .mk-cl-head { flex-wrap: wrap; }
+  .sr .mk-cl-tools { order: 3; width: 100%; }
+  .sr .sr-hb-row.mk-cl-why-row { grid-template-columns: minmax(0, 1fr) 56px auto; gap: 10px; }
+  .sr .mk-cl-filters, .sr .mk-cl-search, .sr .mk-cl-pick { width: 100%; max-width: none; }
+}

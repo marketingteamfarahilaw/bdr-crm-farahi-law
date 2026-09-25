@@ -7,12 +7,11 @@ dist/
 build/
 *.dist
 
-# Environment variables
+# Environment variables. Any .env variant, including hand-made backups like
+# .env.before-db-migration.<ts>, holds production secrets; only the template ships.
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # IDE and editor files
 .vscode/
@@ -97,9 +96,10 @@ jspm_packages/
 .out
 .storybook-out
 
-# Temporary folders
+# Temporary folders, and scratch scripts (these usually connect to production)
 tmp/
 temp/
+*.tmp.mjs
 
 # Database
 *.db

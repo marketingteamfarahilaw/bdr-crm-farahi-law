@@ -95,7 +95,7 @@ import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing }
 import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS } from "./dataSync";
 import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
-import { fromZonedTime } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 /** Interpret a "YYYY-MM-DDTHH:mm:ss" report-range boundary as California
  *  (Pacific) local time, returning the matching UTC instant for DB comparison. */
@@ -107,7 +107,10 @@ const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
-import { getMarketingDashboard, getMarketingLeads, listMarketingSpend, setMarketingSpend } from "./marketingReport";
+import { getMarketingDashboard, listMarketingSpend } from "./marketingReport";
+import { REASON_KEYS, TZ as MARKETING_TZ } from "./marketing/common";
+import { getMarketingLeads, exportMarketingLeads } from "./marketing/leadFilter";
+import { listSourceNames, setSpendOne, setSpendMany, copySpend } from "./marketing/spend";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -807,24 +810,57 @@ export const appRouter = router({
     const month = z.string().regex(/^\d{4}-\d{2}$/);
     const range = z.object({ from: day, to: day });
     const toRange = (i: { from: string; to: string }) => ({ from: laDate(`${i.from}T00:00:00`), to: laDate(`${i.to}T23:59:59.999`) });
+    // Which leads a clicked number stands for (DrillScope); '' in a list means NULL or empty.
+    const leadScope = range.extend({
+      source: z.string().max(255).optional(),
+      sources: z.array(z.string().max(255)).max(500).optional(),
+      contactSources: z.array(z.string().max(255)).max(200).optional(),
+      month: month.optional(),
+      bucket: z.enum(["open", "rejected", "referredOut", "notInterested", "signedReferred", "signedInHouse"]).optional(),
+      reasons: z.array(z.enum(REASON_KEYS)).max(9).optional(),
+      subStatus: z.string().max(200).optional(),
+      caseTypes: z.array(z.string().max(120)).max(50).optional(),
+      notCaseTypes: z.array(z.string().max(120)).max(50).optional(),
+      campaigns: z.array(z.string().max(255)).max(50).optional(),
+      status: z.enum(["all", "signed", "open"]).default("all"),
+      search: z.string().max(100).optional(),
+    });
+    // Who changed the spend, as setSpend has always recorded it.
+    const byOf = (u: { name?: string | null; email?: string | null; id: unknown }) => String(u.name || u.email || `user ${u.id}`);
     return router({
       dashboard: marketingProcedure
-        .input(range.extend({ group: z.enum(["channel", "source"]).default("channel") }))
-        .query(({ input }) => getMarketingDashboard(toRange(input), { group: input.group })),
-      leads: marketingProcedure
         .input(range.extend({
-          source: z.string().max(255).optional(),
-          sources: z.array(z.string().max(255)).max(500).optional(),
-          month: month.optional(),
-          status: z.enum(["all", "signed", "open"]).default("all"),
-          search: z.string().max(100).optional(),
-          limit: z.number().int().min(1).max(500).default(50),
+          group: z.enum(["channel", "source"]).default("channel"),
+          compare: z.enum(["prev", "yoy", "off"]).default("prev"),
         }))
-        .query(({ input }) => getMarketingLeads({ ...toRange(input), source: input.source, sources: input.sources, month: input.month, status: input.status, search: input.search, limit: input.limit })),
+        // "today" is the server's Pacific date: pace and "still in progress" are judged against it.
+        .query(({ input }) => getMarketingDashboard(toRange(input), {
+          group: input.group, from: input.from, to: input.to, compare: input.compare,
+          today: formatInTimeZone(new Date(), MARKETING_TZ, "yyyy-MM-dd"),
+        })),
+      leads: marketingProcedure
+        .input(leadScope.extend({
+          limit: z.number().int().min(1).max(500).default(50),
+          withWhy: z.boolean().optional(),
+        }))
+        .query(({ input }) => getMarketingLeads({ ...input, ...toRange(input) })),
+      exportLeads: marketingProcedure
+        .input(leadScope)
+        .query(({ input }) => exportMarketingLeads({ ...input, ...toRange(input) })),
       spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
+      sourceNames: marketingProcedure.query(() => listSourceNames()),
       setSpend: marketingProcedure
         .input(z.object({ month, source: z.string().min(1).max(255), amount: z.number().min(0).max(10_000_000).nullable() }))
-        .mutation(({ ctx, input }) => setMarketingSpend(input.month, input.source, input.amount, String(ctx.user.name || ctx.user.email || `user ${ctx.user.id}`))),
+        .mutation(({ ctx, input }) => setSpendOne(input.month, input.source, input.amount, byOf(ctx.user))),
+      setSpendMany: marketingProcedure
+        .input(z.object({
+          month,
+          rows: z.array(z.object({ source: z.string().min(1).max(255), amount: z.number().min(0).max(10_000_000).nullable() })).max(300),
+        }))
+        .mutation(({ ctx, input }) => setSpendMany(input.month, input.rows, byOf(ctx.user))),
+      copySpend: marketingProcedure
+        .input(z.object({ from: month, to: month, overwrite: z.boolean().default(false) }))
+        .mutation(({ ctx, input }) => copySpend(input.from, input.to, input.overwrite, byOf(ctx.user))),
     });
   })(),
 

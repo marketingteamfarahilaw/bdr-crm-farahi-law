@@ -1,0 +1,78 @@
+/*
+ * SpendEditor.tsx: the .mk-spend grid from SignupsDashboard.css, plus the copy
+ * button, last month's figure, the name badges and the paste preview. Each row
+ * reserves the 'same' slot even when empty, so the inputs line up down a column.
+ */
+/* Scrolled to from the scorecard and "Needs attention"; a little air above it once there. */
+.sr .mk-sp { scroll-margin-top: 16px; }
+.sr .mk-sp-head { flex-wrap: wrap; }
+.sr .mk-sp-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* The month select's height, so the header stays one line. */
+.sr .mk-sp .mk-sp-copy { height: 36px; padding: 0 16px; font-size: 13px; gap: 7px; }
+.sr .mk-sp .mk-sp-copy svg { width: 14px; height: 14px; }
+
+.sr .mk-sp .mk-spend { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px 18px; }
+.sr .mk-sp .mk-sp-row { grid-template-columns: minmax(0, 1fr) auto; min-height: 36px; }
+.sr .mk-sp-name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+.sr .mk-sp-name > span:first-child {
+  max-width: 100%; font: 500 13px var(--ui); color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sr .mk-sp-amt { display: grid; grid-template-columns: 44px 120px; align-items: center; justify-items: end; gap: 6px; }
+.sr .mk-sp-amt .sr-input { width: 100%; min-width: 0; }
+.sr .mk-sp-gap { display: block; width: 1px; height: 1px; }
+.sr .mk-sp .mk-sp-same:disabled { opacity: .55; cursor: default; }
+/* The add row spans the grid (SignupsDashboard's :last-child rule); its amount column holds the 'same' slot too. */
+.sr .mk-sp .mk-spend-row.mk-sp-new { grid-template-columns: minmax(0, 360px) auto; }
+.sr .mk-sp-new > .sr-input { width: 100%; min-width: 0; }
+
+/* A compact badge, so a name and two badges fit on a row. */
+.sr .mk-sp-badge { height: 22px; padding: 0 9px; gap: 5px; font-size: 11.5px; cursor: default; }
+.sr .mk-sp-badge::before { width: 5px; height: 5px; }
+
+.sr .mk-sp-foot { margin: 14px 2px 4px; }
+.sr .mk-sp-foot b { color: var(--ink); font-weight: 600; }
+.sr .mk-sp-warn { margin: 8px 2px 0; color: var(--sun-d); }
+
+/* paste from a spreadsheet */
+.sr .mk-sp-paste { margin-top: 8px; border-top: 1px solid var(--line); }
+.sr .mk-sp-ta {
+  display: block; width: 100%; min-height: 112px; resize: vertical; margin: 0 0 10px; padding: 10px 14px;
+  border-radius: var(--rad-s); border: 1px solid rgba(28, 28, 28, .1); background: var(--glass-hi); color: var(--ink);
+  font: 13px/1.5 var(--ui); tab-size: 4;
+}
+.sr .mk-sp-ta::placeholder { color: var(--mute2); }
+.sr .mk-sp-ta:focus { outline: none; border-color: var(--char); box-shadow: 0 0 0 4px rgba(246, 207, 75, .45); }
+.sr table.sr-t.mk-sp-prev { border-spacing: 0 4px; }
+.sr table.sr-t.mk-sp-prev td { padding: 7px 12px; font-size: 13px; }
+.sr table.sr-t.mk-sp-prev td.mk-sp-pname { color: var(--ink); font-weight: 500; min-width: 160px; }
+.sr .mk-sp-flags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.sr .mk-sp-bad { list-style: none; margin: 6px 2px 10px; padding: 0; font: 12.5px/1.5 var(--ui); color: var(--bad); }
+.sr .mk-sp-toomany { color: var(--bad); }
+.sr .mk-sp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+
+@media (max-width: 560px) {
+  .sr .mk-sp .mk-spend { grid-template-columns: minmax(0, 1fr); }
+  .sr .mk-sp-amt { grid-template-columns: 40px 110px; }
+  /* The name column is ~140px here, narrower than the longest badge, so badges wrap instead of spilling. */
+  .sr .mk-sp-badge { height: auto; min-height: 22px; padding-top: 3px; padding-bottom: 3px; white-space: normal; line-height: 1.25; }
+  .sr .mk-sp .mk-spend-row.mk-sp-new { grid-template-columns: minmax(0, 1fr) auto; }
+  .sr .mk-sp-tools { width: 100%; }
+  .sr .mk-sp-tools select.sr-input { flex: 1 1 auto; min-width: 0; }
+  .sr .mk-sp-ta { width: 100%; }
+  .sr table.sr-t.mk-sp-prev td.mk-sp-pname { min-width: 120px; }
+}
+
+/* dark: the tokens swap on their own; these are the fills and borders that were hard-coded for light. */
+.dark .sr .mk-sp .mk-sp-copy:hover, .dark .sr .mk-sp .mk-sp-actions .sr-btn2:hover { background: rgba(255, 255, 255, .14); }
+.dark .sr .mk-sp-badge.sr-b-grey { background: rgba(255, 255, 255, .1); color: var(--ink2); }
+.dark .sr .mk-sp-ta { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .14); color: var(--ink); }
+.dark .sr .mk-sp-ta:focus { border-color: var(--char); }
+.dark .sr table.sr-t.mk-sp-prev tr:hover td { background: rgba(255, 255, 255, .08); }
+.dark .sr .mk-sp-paste { border-top-color: var(--line); }
+.dark .sr .mk-sp-name > span:first-child, .dark .sr .mk-sp-foot b, .dark .sr table.sr-t.mk-sp-prev td.mk-sp-pname { color: var(--ink); }
+.dark .sr .mk-sp-warn { color: var(--sun-d); }
+.dark .sr .mk-sp-bad, .dark .sr .mk-sp-toomany { color: var(--bad); }
+/* Native pieces (the month list, the name suggestions, scrollbars) follow dark mode too. */
+.dark .sr .mk-sp, .dark .sr .mk-sp-head, .dark .sr .mk-sp-tools, .dark .sr .mk-sp-row, .dark .sr .mk-sp-new, .dark .sr .mk-sp-amt,
+.dark .sr .mk-sp-gap, .dark .sr .mk-sp-same, .dark .sr .mk-sp-badge, .dark .sr .mk-sp-flags, .dark .sr .mk-sp-actions { color-scheme: dark; }

@@ -1,0 +1,60 @@
+/*
+ * Comparison pieces of the Marketing Report (marketing/Compare.tsx): the vs
+ * control, the change pills under the hero numbers, the pace ghost and
+ * last-year rings on the months card, and the biggest-mover spotlight.
+ * Scoped under .sr like SignupsDashboard.css, whose tokens it uses.
+ */
+
+/* ---- vs control: a third segmented control in the top bar */
+.sr .mk-cmp-vs { align-items: center; }
+.sr .mk-cmp-vs-l { padding: 0 6px 0 10px; font: 500 12px/1 var(--ui); color: var(--mute); }
+.sr .mk-cmp-vs button:disabled { opacity: .45; cursor: default; }
+.sr .mk-cmp-vs button:disabled:hover { background: none; color: var(--ink2); }
+
+/* ---- a hero number with its change pill under it */
+.sr .mk-cmp-big { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; border-radius: 14px; }
+.sr .mk-cmp-big.sr-click:hover .sr-big .n { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 8px; }
+.sr .mk-delta { height: 22px; padding: 0 9px; gap: 5px; font-size: 11.5px; max-width: 100%; }
+.sr .mk-delta::before { width: 5px; height: 5px; flex: none; }
+/* Pills make the numbers wider than the row on a phone, so the row may wrap;
+   numbers line up at the top whether or not they carry a pill. Two rules, so a
+   browser without :has() still applies the class version. */
+.sr .sr-bigs.mk-cmp-bigs { flex-wrap: wrap; align-items: flex-start; row-gap: 16px; }
+.sr .sr-bigs:has(> .mk-cmp-big) { flex-wrap: wrap; align-items: flex-start; row-gap: 16px; }
+
+/* ---- months card: pace ghost, last year's rings, months still loading */
+.sr .sr-stick i.ghost {
+  position: absolute; bottom: 0; left: 50%; width: 8px; margin-left: -4px;
+  border: 1px dashed var(--mute2); background: transparent;
+}
+.sr .sr-stick i.ghost::after { content: none; }
+.sr .sr-col.hot .sr-stick i.ghost { background: transparent; }
+.sr .sr-tipp.mk-cmp-tipp { left: auto; right: -4px; transform: translateY(-100%); }
+.sr .mk-cmp-ring {
+  position: absolute; left: 50%; z-index: 1; width: 8px; height: 8px; border-radius: 50%;
+  border: 2px solid var(--mute); background: transparent; transform: translate(-50%, 50%);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85);
+}
+.sr .sr-col.mk-cmp-thin .sr-stick i:not(.ghost) { opacity: .45; }
+.sr .mk-cmp-legend { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; font: 11px var(--ui); color: var(--mute); }
+.sr .mk-cmp-legend i { width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--mute); flex: none; }
+
+/* ---- biggest mover: the spotlight card, clickable unless the row has no leads this period */
+.sr .mk-cmp-mover.sr-click { cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+.sr .mk-cmp-mover.sr-click:hover { transform: translateY(-2px); box-shadow: 0 22px 40px -20px rgba(0, 0, 0, .55); }
+.sr .mk-cmp-mover .sr-spot-tag { max-width: calc(100% - 32px); }
+.sr .mk-cmp-mover .sr-spot-tag > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr .mk-cmp-mover .sr-spot-foot > div { min-width: 0; }
+
+@media (max-width: 720px) {
+  .sr .mk-cmp-mover { min-height: 210px; }
+  /* A long pill ('Aug 1–24 not fully loaded') wraps rather than widening the page. */
+  .sr .mk-cmp-big .mk-delta { height: auto; min-height: 22px; padding: 4px 9px; line-height: 1.25; white-space: normal; }
+}
+
+/* ---- dark mode */
+.dark .sr .mk-cmp-vs button:disabled:hover { color: var(--ink2); }
+.dark .sr .sr-stick i.ghost { border-color: rgba(255, 255, 255, .5); }
+.dark .sr .mk-cmp-ring { border-color: #d6d3c9; box-shadow: 0 0 0 1.5px #1c1c19; }
+.dark .sr .mk-cmp-legend i { border-color: #d6d3c9; }
+.dark .sr .sr-b-grey.mk-delta { background: rgba(255, 255, 255, .1); color: var(--ink2); }
