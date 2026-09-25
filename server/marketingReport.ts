@@ -39,9 +39,9 @@ const sourceOf = (l: { teamRep: string | null; marketingSource: string | null })
  */
 const CHANNEL_RULES: [RegExp, string][] = [
   [/^walker advertising\b/i, "Walker Advertising"],
-  [/^gmb\b/i, "Google Business Profile (GMB)"],
+  [/^(gmb\b|google my business)/i, "Google Business Profile (GMB)"],   // Google's old name for it
   [/^intaker\b/i, "Intaker"],
-  [/^justin for justice\b/i, "Justin For Justice"],
+  [/^justin\s*for\s*justice/i, "Justin For Justice"],   // also "JustinforJustice Website"
 ];
 export const channelOfSource = (source: string) => {
   for (const [re, name] of CHANNEL_RULES) if (re.test(source)) return name;
@@ -185,12 +185,13 @@ export async function getMarketingDashboard(range: { from: Date; to: Date }, opt
     }))
     .sort((a, b) => b.signed - a.signed || b.leads - a.leads);
 
-  // Sources × case types, for the biggest of each; the rest fold into "Other".
+  // Sources × case types, for the biggest of each; the rest fold into "All other"
+  // (not "Other" — Lead Docket has a case type of that name).
   const mSources = [...sourceList].sort((a, b) => b.leads - a.leads).slice(0, 10).map((s) => s.name);
   const mTypes = [...caseTypeList].sort((a, b) => b.leads - a.leads).slice(0, 6).map((c) => c.name);
   const mTypeKeys = new Set(mTypes.map(keyOf));
   const caseMatrix = {
-    types: [...mTypes, "Other"],
+    types: [...mTypes, "All other"],
     rows: mSources.map((name) => {
       const cells = matrix.get(name) ?? new Map<string, { leads: number; signed: number }>();
       const other = { leads: 0, signed: 0 };

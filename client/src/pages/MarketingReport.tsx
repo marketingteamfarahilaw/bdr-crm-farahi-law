@@ -262,7 +262,7 @@ function Report({ data, from, to, team, group }: { data: Data; from: string; to:
             <h2>Spend</h2>
             <button className="sr-arr" aria-label="Enter spend" onClick={() => spendRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}><ArrowUpRight /></button>
           </div>
-          <div className="sr-kv"><span className="n">{usd(data.totals.spend)}</span><span className="u">entered for<br />these months</span></div>
+          <div className="sr-kv"><span className="n">{usd(data.totals.spend ?? 0)}</span><span className="u">entered for<br />these months</span></div>
           {data.totals.spend ? (
             <div className="mk-costs">
               <div><b>{usd(data.totals.costPerLead, true)}</b><i>per lead</i></div>
