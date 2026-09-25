@@ -1,0 +1,71 @@
+/*
+ * MonthGrid.tsx: the channel × month grid with its metric switch. It keeps
+ * table.sr-grid from SignupsDashboard.css; the selectors here add .mk-mg so
+ * they win over it whichever stylesheet loads first.
+ */
+.sr .mk-mg-h { flex-wrap: wrap; }
+.sr .mk-mg-sel { display: none; }
+
+/* The name column is sticky, so it must be opaque, or scrolled cells show through it on a phone. */
+.sr table.sr-grid.mk-mg td.name { background: #fdfcf9; z-index: 2; }
+.sr table.sr-grid.mk-mg tr.foot td.name { background: var(--char); color: #fff; }
+.sr table.sr-grid.mk-mg tr.soft td.name { background: #faf9f5; }
+.sr .mk-mg-nm { display: block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+
+/* Clickable cells hold a .mk-sc-n button (Scorecard.css) for the keyboard. A button
+   is inline-block, so the base sheet's hover underline on the td can't reach its text. */
+.sr table.sr-grid.mk-mg td.name.sr-click:hover .mk-sc-n,
+.sr table.sr-grid.mk-mg td.tot.sr-click:hover .mk-sc-n { text-decoration: underline; }
+
+/* Money needs a little more room than a count. */
+.sr table.sr-grid.mk-mg-money td.cell { min-width: 54px; padding: 0 7px; white-space: nowrap; }
+
+/* Spend with no sign-ups to show for it. */
+.sr table.sr-grid.mk-mg td.mk-none {
+  background: var(--bad-t); color: var(--bad); font-size: 11px; font-weight: 500;
+  white-space: nowrap; padding: 0 8px; border-radius: 12px;
+}
+/* Too few sign-ups to call, or a month still loading: shown, but not heated. */
+.sr table.sr-grid.mk-mg td.cell.mk-mg-thin { background: rgba(28, 28, 28, .035); color: var(--mute); font-weight: 400; }
+
+/* Month headers: not fully loaded (dotted), or not loaded at all (muted). */
+.sr table.sr-grid.mk-mg th.mk-part {
+  text-decoration: underline dotted var(--amber); text-decoration-thickness: 1.5px; text-underline-offset: 4px; cursor: help;
+}
+.sr table.sr-grid.mk-mg th.mk-mg-off { color: var(--mute2); cursor: help; }
+
+/* Legend ramps, in the grid's own heat colours. */
+.sr .mk-mg-legend { align-items: center; gap: 8px 10px; }
+.sr .mk-mg-ramp { display: inline-flex; gap: 3px; }
+.sr .mk-mg-legend i { box-shadow: inset 0 0 0 1px var(--line); }
+.sr .mk-mg-ramp i.l1 { background: rgba(28, 28, 28, .07); }
+.sr .mk-mg-ramp i.l2 { background: var(--sun-t); }
+.sr .mk-mg-ramp i.l3 { background: var(--sun); }
+.sr .mk-mg-ramp i.l4 { background: var(--char); }
+.sr .mk-mg-key { margin-left: 8px; }
+.sr .mk-mg-legend i.mk-mg-sw-thin { background: rgba(28, 28, 28, .035); }
+.sr .mk-mg-note { margin: 10px 0 0; }
+
+/* Dark: the base sheet flattens every grid cell to one tint, so the heat is restated here. */
+.dark .sr table.sr-grid.mk-mg td.name { background: #2a2a27; }
+.dark .sr table.sr-grid.mk-mg tr.soft td.name { background: #262623; }
+.dark .sr table.sr-grid.mk-mg tr.foot td.name { background: var(--char); color: #161613; }
+.dark .sr table.sr-grid.mk-mg tr.foot td.cell:not(.mk-none):not(.mk-mg-thin) { background: rgba(255, 255, 255, .09); }
+.dark .sr table.sr-grid.mk-mg td.cell.l1 { background: rgba(255, 255, 255, .1); color: var(--ink2); }
+.dark .sr table.sr-grid.mk-mg td.cell.l2 { background: rgb(246 207 75 / .16); color: var(--sun); }
+.dark .sr table.sr-grid.mk-mg td.cell.l3 { background: rgb(246 207 75 / .42); color: #fff; }
+.dark .sr table.sr-grid.mk-mg td.cell.l4 { background: var(--sun); color: #161613; }
+.dark .sr table.sr-grid.mk-mg td.cell.mk-mg-thin { background: rgba(255, 255, 255, .03); color: var(--mute); }
+.dark .sr table.sr-grid.mk-mg td.mk-none { background: var(--bad-t); color: var(--bad); }
+.dark .sr table.sr-grid.mk-mg th.mk-part { text-decoration-color: var(--sun); }
+.dark .sr .mk-mg-ramp i.l1 { background: rgba(255, 255, 255, .1); }
+.dark .sr .mk-mg-ramp i.l2 { background: rgb(246 207 75 / .16); }
+.dark .sr .mk-mg-ramp i.l3 { background: rgb(246 207 75 / .42); }
+.dark .sr .mk-mg-ramp i.l4 { background: var(--sun); }
+.dark .sr .mk-mg-legend i.mk-mg-sw-thin { background: rgba(255, 255, 255, .03); }
+
+@media (max-width: 560px) {
+  .sr .mk-mg-seg { display: none; }
+  .sr .mk-mg-sel { display: inline-block; }
+  .sr .mk-mg-nm { max-width: 120px; }
+}

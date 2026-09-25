@@ -1,0 +1,46 @@
+/*
+ * The page-level pieces of the Marketing Report that live in MarketingReport.tsx
+ * itself: the case-type matrix's 'All channels' row and clickable numbers, the
+ * case-type accordion, the campaigns' 'Show all' and the hero's segment labels
+ * on a phone. Scoped under .sr like
+ * SignupsDashboard.css, whose tokens it uses.
+ */
+
+/* A number or heading that opens its clients: looks like text, works from the keyboard. */
+.sr .mk-rp-btn {
+  border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: inherit;
+  cursor: pointer; border-radius: 6px;
+}
+.sr .mk-rp-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+.sr .mk-rp-btn:focus-visible { outline: 2px solid var(--char); outline-offset: 2px; }
+.sr table.mk-matrix th .mk-rp-btn { color: var(--mute); font-weight: 500; }
+.sr table.mk-matrix th .mk-rp-btn:hover { color: var(--ink); }
+
+/* 'All channels': the whole report per case type, styled like the month grid's totals row. */
+.sr table.sr-t.mk-matrix tr.mk-all td { background: rgba(255, 255, 255, .78); font-weight: 600; }
+.sr table.sr-t.mk-matrix tr.mk-all td.mk-all-name { background: var(--char); color: #fff; font-weight: 600; white-space: nowrap; }
+.sr table.sr-t.mk-matrix tr.mk-all:hover td { background: #fff; }
+.sr table.sr-t.mk-matrix tr.mk-all:hover td.mk-all-name { background: var(--char); }
+.sr table.sr-t.mk-matrix tr.mk-all .mk-rp-btn:focus-visible { outline-color: var(--sun); }
+
+.sr .mk-rp-acc { margin-top: 8px; border-bottom: 0; }
+.sr .mk-rp-acc .sr-scroll { margin-top: 2px; }
+.sr .mk-rp-more { display: flex; justify-content: center; margin-top: 10px; }
+
+/* --char turns light in dark mode, so the name cell's text turns dark, as .sr-sc-title does. */
+.dark .sr table.sr-t.mk-matrix tr.mk-all td { background: rgba(255, 255, 255, .09); }
+.dark .sr table.sr-t.mk-matrix tr.mk-all td.mk-all-name { background: var(--char); color: #161613; }
+.dark .sr table.sr-t.mk-matrix tr.mk-all:hover td { background: rgba(255, 255, 255, .12); }
+.dark .sr table.sr-t.mk-matrix tr.mk-all:hover td.mk-all-name { background: var(--char); }
+.dark .sr .mk-rp-btn:focus-visible { outline-color: var(--sun); }
+
+/* The hero's segment labels name the top two rows ('Walker Advertising Contract 26 signed'). In the phone's
+   two-column bar they can't fit and would push the page sideways, so they end in an ellipsis; the segment's
+   hover title has the whole name. Scoped to this page's hero: the Sign-ups Report shares .sr-sl. */
+@media (max-width: 720px) {
+  .sr .mk-hero .sr-sl { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+}
+
+@media (max-width: 560px) {
+  .sr table.sr-t.mk-matrix tr.mk-all td.mk-all-name { white-space: normal; }
+}

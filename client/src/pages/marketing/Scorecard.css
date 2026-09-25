@@ -1,0 +1,102 @@
+/*
+ * Marketing scorecard (marketing/Scorecard.tsx): clickable numbers, a name
+ * column that stays put while the table scrolls sideways, the change column,
+ * and a card layout on a phone. Builds on .sr-sct in SignupsDashboard.css; every
+ * rule is keyed to an mk-sc class so the Sign-ups Report's scorecard, which
+ * shares .sr-sct, is untouched.
+ */
+
+/* ---- sticky name column. The cell has to be opaque or the numbers show through
+   as they scroll under it, so the glass is laid over the app canvas. */
+.sr table.sr-sct.mk-sc .l {
+  position: sticky; left: 0; z-index: 1;
+  background: linear-gradient(var(--glass-hi), var(--glass-hi)), var(--background, #ecebe6);
+  box-shadow: inset -1px 0 0 var(--line);
+}
+.sr table.sr-sct.mk-sc th.l {
+  background: linear-gradient(rgba(28, 28, 28, .06), rgba(28, 28, 28, .06)), linear-gradient(var(--glass-hi), var(--glass-hi)), var(--background, #ecebe6);
+}
+.sr table.sr-sct.mk-sc tr.total td.l { background: var(--char); box-shadow: none; }
+.dark .sr table.sr-sct.mk-sc .l { background: linear-gradient(var(--glass-hi), var(--glass-hi)), var(--background, #161613); }
+.dark .sr table.sr-sct.mk-sc th.l { background: linear-gradient(rgba(255, 255, 255, .06), rgba(255, 255, 255, .06)), linear-gradient(var(--glass-hi), var(--glass-hi)), var(--background, #161613); }
+.dark .sr table.sr-sct.mk-sc tr.total td.l { background: var(--char); }
+.sr table.sr-sct.mk-sc.mk-sc-cmp { min-width: 1170px; }
+
+/* ---- every number is a link to its clients */
+.sr .mk-sc-n { border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+.sr table.sr-sct.mk-sc td.sr-click:hover { outline: 2px solid var(--char); outline-offset: -2px; }
+.sr table.sr-sct.mk-sc td.l.sr-click:hover { outline: 0; }
+.sr table.sr-sct.mk-sc td.l.sr-click:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.sr table.sr-sct.mk-sc tr.total td.sr-click:hover { outline-color: var(--sun); }
+.sr table.sr-sct.mk-sc tr.total .mk-sc-n:focus-visible { outline-color: var(--sun); }
+
+/* ---- change against the comparison */
+.sr table.sr-sct.mk-sc th.mk-sc-chg { white-space: nowrap; font-size: 11.5px; }
+.sr table.sr-sct.mk-sc td.mk-sc-chg { width: 64px; white-space: nowrap; font-weight: 600; font-size: 12.5px; }
+.sr .mk-sc-ok { color: var(--ok); }
+.sr .mk-sc-bad { color: var(--bad); }
+.sr .mk-sc-grey { color: var(--mute); }
+
+/* ---- rows that had leads in the earlier period and none now. The sticky cell
+   keeps its background opaque, so only its contents fade. */
+.sr table.sr-sct.mk-sc tr.mk-sc-gone td:not(.l) { opacity: .6; }
+.sr table.sr-sct.mk-sc tr.mk-sc-gone td.l > * { opacity: .6; }
+
+/* ---- spend entered for sources with no leads in the period */
+.sr table.sr-sct tr.mk-unmatched td { color: var(--mute); font-style: italic; }
+.sr table.sr-sct.mk-sc tr.mk-unmatched:hover td { background: rgba(255, 255, 255, .8); }
+.dark .sr table.sr-sct.mk-sc tr.mk-unmatched:hover td { background: rgba(255, 255, 255, .06); }
+
+.sr .mk-sc-subs { margin: 2px 4px 18px; }
+.sr .mk-sc-subs .sr-sub { margin: 0 0 4px; }
+
+/* ---- phone: a card per row instead of the 13-column table */
+.sr .mk-sc-cards { display: none; }
+@media (max-width: 720px) {
+  .sr .sr-sc.mk-sc-wrap .sr-scroll.mk-sc-scroll { display: none; }
+  .sr .mk-sc-cards { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+}
+.sr .mk-sc-card { border-radius: var(--rad-m); background: var(--glass-hi); box-shadow: inset 0 0 0 1px var(--edge); min-width: 0; }
+.sr .mk-sc-main {
+  display: block; width: 100%; text-align: left; border: 0; background: none; padding: 12px 14px 10px;
+  font: inherit; color: inherit; cursor: pointer; border-radius: var(--rad-m);
+}
+.sr .mk-sc-l1 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
+.sr .mk-sc-l1 b { font: 600 14.5px/1.3 var(--ui); color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr .mk-sc-big { flex: none; font: 300 28px/1 var(--disp); letter-spacing: -.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.sr .mk-sc-l2 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; font: 12.5px/1.3 var(--ui); color: var(--mute); }
+.sr .mk-sc-l2 .sr-badge { height: 22px; padding: 0 9px; gap: 5px; font-size: 11.5px; }
+.sr .mk-sc-l2 .sr-badge::before { width: 5px; height: 5px; }
+.sr .mk-sc-acc { border: 0; padding: 0 14px; }
+.sr .mk-sc-acc summary { padding: 9px 2px; border-top: 1px solid var(--line); font: 500 12.5px var(--ui); color: var(--ink2); }
+.sr .mk-sc-pills { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 0 0 12px; }
+.sr .sr-m.mk-sc-pill { height: 34px; width: 100%; min-width: 0; padding: 0 12px; border: 0; font-size: 13.5px; cursor: pointer; }
+.sr .sr-m.mk-sc-pill i { min-width: 0; text-align: left; }
+.sr .sr-m.mk-sc-pill:disabled { opacity: .5; cursor: default; }
+
+/* TOTAL: the charcoal card, sign-ups in sun yellow */
+.sr .mk-sc-total { background: var(--char); box-shadow: none; }
+.sr .mk-sc-total .mk-sc-l1 b { color: #fff; }
+.sr .mk-sc-total .mk-sc-big { color: var(--sun); }
+.sr .mk-sc-total .mk-sc-l2 { color: rgba(255, 255, 255, .72); }
+.sr .mk-sc-total .mk-sc-acc summary { color: #fff; border-top-color: rgba(255, 255, 255, .12); }
+.sr .mk-sc-total .sr-m.mk-sc-pill { background: rgba(255, 255, 255, .12); color: #fff; }
+/* The grey change pill is dark ink on a faint dark wash, which vanishes on charcoal.
+   Same specificity as the .dark badge rule below, which must stay after this one. */
+.sr .mk-sc-total .sr-badge.sr-b-grey { background: rgba(255, 255, 255, .14); color: #fff; }
+.sr .mk-sc-total :focus-visible { outline-color: var(--sun); }
+
+.sr .mk-sc-unm {
+  display: block; width: 100%; text-align: left; border: 0; border-radius: var(--rad-m); padding: 11px 14px;
+  background: var(--glass); box-shadow: inset 0 0 0 1px var(--edge); font: italic 13px var(--ui); color: var(--mute); cursor: pointer;
+}
+.sr .mk-sc-gone-line { margin: 2px 4px 0; font: 12.5px/1.45 var(--ui); color: var(--mute); }
+
+/* ---- dark mode: char is light, so the TOTAL card reads dark on light like .sr-sc-title */
+.dark .sr .mk-sc-total .mk-sc-l1 b, .dark .sr .mk-sc-total .mk-sc-acc summary { color: #161613; }
+.dark .sr .mk-sc-total .mk-sc-big { color: #7a5a00; }
+.dark .sr .mk-sc-total .mk-sc-l2 { color: rgba(22, 22, 19, .7); }
+.dark .sr .mk-sc-total .mk-sc-acc summary { border-top-color: rgba(0, 0, 0, .1); }
+.dark .sr .mk-sc-total .sr-m.mk-sc-pill { background: rgba(0, 0, 0, .08); color: #161613; }
+.dark .sr .mk-sc-total .sr-badge { background: rgba(0, 0, 0, .08); color: #161613; }
+.dark .sr .mk-sc-total :focus-visible { outline-color: #161613; }

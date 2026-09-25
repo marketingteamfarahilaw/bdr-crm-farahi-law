@@ -148,14 +148,22 @@ const unseen = changed.filter((r) => seen.get(String(r.Id)) !== stamp(r) || !sto
 
 // How much of Lead Docket the Marketing Report can see, for the page to say so.
 // A --backfill run (the chunked history job) also records how many leads are
-// left to read, which is what tells the scheduler to start the next chunk.
+// left to read, which is what tells the scheduler to start the next chunk, and
+// at the end of each chunk how far down the ids it is complete (cursorId).
 const BACKFILL = process.argv.includes("--backfill");
-async function saveCoverage(remaining = null) {
+async function saveCoverage(remaining = null, cursorId = null) {
   if (!c || DRY) return;
   const [[cur]] = await c.query("SELECT settingValue v FROM app_settings WHERE settingKey='leaddocket_marketing_coverage'");
   let prev = {};
   try { prev = cur?.v ? JSON.parse(cur.v) : {}; } catch { /* rewritten below */ }
-  const value = JSON.stringify({ ...prev, total: rows.length, stored: stored.size, at: new Date().toISOString(), ...(remaining != null ? { remaining } : {}) });
+  // The cursor only ever moves down, so the report's 'complete back to' date
+  // never jumps later between chunks.
+  const cursor = cursorId == null ? null : Math.min(Number.isFinite(prev.cursorId) ? prev.cursorId : Infinity, cursorId);
+  const value = JSON.stringify({
+    ...prev, total: rows.length, stored: stored.size, at: new Date().toISOString(),
+    ...(remaining != null ? { remaining } : {}),
+    ...(cursor != null ? { cursorId: cursor } : {}),
+  });
   await c.query("INSERT INTO app_settings (settingKey, settingValue) VALUES ('leaddocket_marketing_coverage', ?) ON DUPLICATE KEY UPDATE settingValue=VALUES(settingValue)", [value]);
 }
 await saveCoverage();
@@ -332,7 +340,24 @@ if (retry.length) {
   if (still.length) console.log("STILL UNREADABLE (" + still.length + "): " + still.slice(0, 30).join(", ") + (still.length > 30 ? " …" : ""));
 }
 
-await saveCoverage(left());
+// Where a backfill chunk leaves leaddocket_leads complete: the lowest id at and
+// above which every lead Lead Docket listed is stored. The queue is read newest
+// id first, so that is where the chunk stopped (or just above a lead that is
+// still unreadable). It is checked against what is actually stored rather than
+// inferred from the queue, so a failed or skipped lead can never count as
+// loaded. Only here, at the end of a chunk: one cut short by a deploy writes no
+// cursor, and the report keeps estimating. A run limited to some statuses hasn't
+// listed every lead, so it can't vouch for any id.
+let cursorId = null;
+if (BACKFILL && !ONLY && !NAMES) {
+  const ids = [...new Set(rows.map((r) => Number(r.Id)))].filter(Number.isFinite).sort((a, b) => b - a);
+  for (const id of ids) {
+    if (!stored.has(String(id))) break;
+    cursorId = id;
+  }
+  console.log("\nMarketing Report complete from lead " + (cursorId ?? "— (none yet)") + " up");
+}
+await saveCoverage(left(), cursorId);
 console.log("\nBD/FR leads found : " + ours);
 console.log("not the team's    : " + skipped + (failed ? "  |  STILL UNREADABLE: " + failed : ""));
 console.log("\nby representative:");
