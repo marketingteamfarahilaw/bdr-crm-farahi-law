@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Scale, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
-import { useBrand } from "@/hooks/useBranding";
+import { useBrand, DEFAULT_LOGO } from "@/hooks/useBranding";
 
 export default function Login() {
   const utils = trpc.useUtils();
@@ -14,12 +14,37 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [googleEnabled, setGoogleEnabled] = useState(false);
   const { logo, slogan } = useBrand();
+  const [logoSrc, setLogoSrc] = useState(logo);
+  const [logoTry, setLogoTry] = useState(0);
+  useEffect(() => { setLogoSrc(logo); setLogoTry(0); }, [logo]);
 
+  // Keep asking until the server answers. A deploy restarts it for a few seconds,
+  // and a page opened in that window (served from the browser's saved copy) used
+  // to give up on the first failure and hide "Sign in with Google" for good.
   useEffect(() => {
-    fetch("/api/auth/google/status")
-      .then((r) => r.json())
-      .then((d) => setGoogleEnabled(!!d?.enabled))
-      .catch(() => {});
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempt = 0;
+    const check = () => {
+      clearTimeout(timer);
+      fetch("/api/auth/google/status", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((d) => { if (!stopped) setGoogleEnabled(!!d?.enabled); })
+        .catch(() => {
+          if (stopped) return;
+          attempt++;
+          timer = setTimeout(check, Math.min(2000 * attempt, 15000));
+        });
+    };
+    check();
+    window.addEventListener("focus", check);
+    window.addEventListener("online", check);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      window.removeEventListener("focus", check);
+      window.removeEventListener("online", check);
+    };
   }, []);
 
   const login = trpc.auth.login.useMutation({
@@ -47,8 +72,14 @@ export default function Login() {
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
           <img
-            src={logo}
+            src={logoTry ? `${logoSrc}${logoSrc.includes("?") ? "&" : "?"}r=${logoTry}` : logoSrc}
             alt="Farahi Law Firm"
+            onError={() => {
+              // Uploaded logo broken → the built-in one; built-in one unreachable
+              // (server restarting) → try again shortly.
+              if (logoSrc !== DEFAULT_LOGO) setLogoSrc(DEFAULT_LOGO);
+              else if (logoTry < 8) setTimeout(() => setLogoTry((n) => n + 1), Math.min(2000 * (logoTry + 1), 15000));
+            }}
             className="max-h-32 w-auto max-w-[85%] object-contain mb-4 rounded-3xl shadow-[var(--lift)]"
           />
           <p className="text-base font-medium text-foreground/90 text-center">{slogan}</p>

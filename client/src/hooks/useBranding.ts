@@ -14,6 +14,10 @@ export function useBrand(): { logo: string; slogan: string } {
   const { data } = trpc.settings.getBranding.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    // Outlast a deploy's restart rather than settling on the fallback after
+    // the default three quick tries.
+    retry: 8,
+    retryDelay: (n) => Math.min(1000 * 2 ** n, 15000),
   });
   const preferred = theme === "dark" ? data?.logoDark : data?.logoLight;
   const logo = preferred || data?.logoDark || data?.logoLight || DEFAULT_LOGO;
