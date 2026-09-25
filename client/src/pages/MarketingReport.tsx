@@ -394,8 +394,9 @@ function Report({ data, from, to, group }: { data: Data; from: string; to: strin
               <summary><span>Where leads come from</span></summary>
               <p>
                 Every lead the firm takes in Lead Docket, read by the same sync as the Sign-ups Report. A lead's source is its
-                Marketing Source. Leads credited to a BD/FR representative are left out — they are counted in the Sign-ups
-                Report. "No source recorded" means intake left Marketing Source empty.
+                Marketing Source. Leads credited to a BDR or FR representative are left out — they are counted in the Sign-ups
+                Report — so every Lead Docket lead is in exactly one of the two. Malvin Rosales (Intake) isn't BD/FR, so his
+                leads are here. "No source recorded" means intake left Marketing Source empty.
               </p>
             </details>
             <details className="sr-acc">

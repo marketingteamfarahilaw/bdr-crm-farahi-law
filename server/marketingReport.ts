@@ -31,6 +31,14 @@ const keyOf = (s: string) => s.toLowerCase();
 const sourceOf = (l: { marketingSource: string | null }) => clean(l.marketingSource) || NO_SOURCE;
 
 /**
+ * Not a BD/FR lead. Those are the Sign-ups Report's and never counted here.
+ * Malvin Rosales (Intake) is credited like a rep but isn't BD/FR, and the
+ * Sign-ups Report leaves him out — so his leads are counted here, and every
+ * Lead Docket lead lands in exactly one of the two reports.
+ */
+const notBdFr = sql`(${leaddocketLeads.teamRep} IS NULL OR ${leaddocketLeads.teamRole} NOT IN ('BDR', 'FR'))`;
+
+/**
  * Lead Docket names a source per contract or listing — "Walker Advertising
  * Contract 26", "GMB 525 W Main St Visalia" — so the channel view groups those
  * into the vendor or channel they belong to.
@@ -94,7 +102,7 @@ export async function getMarketingDashboard(range: { from: Date; to: Date }, opt
   const db = await getDb();
   if (!db) return null;
   const conds = [gte(leaddocketLeads.leadDate, range.from), lte(leaddocketLeads.leadDate, range.to)];
-  conds.push(isNull(leaddocketLeads.teamRep));   // never the BD/FR team's leads
+  conds.push(notBdFr);
   const rows = await db.select({
     leadDate: leaddocketLeads.leadDate, outcome: leaddocketLeads.outcome, caseType: leaddocketLeads.caseType,
     marketingSource: leaddocketLeads.marketingSource, campaign: leaddocketLeads.campaign,
@@ -254,7 +262,7 @@ export async function getMarketingLeads(q: {
   if (!db) return { rows: [], total: 0 };
   const L = leaddocketLeads;
   const conds = [gte(L.leadDate, q.from), lte(L.leadDate, q.to)];
-  conds.push(isNull(L.teamRep));   // never the BD/FR team's leads
+  conds.push(notBdFr);
   if (q.source === NO_SOURCE) conds.push(or(isNull(L.marketingSource), eq(L.marketingSource, ""))!);
   // A channel row passes the Lead Docket sources it groups.
   else if (q.sources?.length) conds.push(inArray(L.marketingSource, q.sources));
