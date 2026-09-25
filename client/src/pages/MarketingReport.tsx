@@ -1,7 +1,8 @@
 /**
  * Marketing Report — every lead the firm takes in Lead Docket, by the marketing
  * source that brought it, laid out like the Sign-ups Report (same styles, same
- * counting). Private: only canSeeMarketing opens it; the server enforces the same.
+ * counting). The BD/FR team's leads are not in it — they belong to the Sign-ups
+ * Report. Private: only canSeeMarketing opens it; the server enforces the same.
  */
 import { useEffect, useRef, useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -22,8 +23,8 @@ type Out = inferRouterOutputs<AppRouter>["marketing"];
 type Data = NonNullable<Out["dashboard"]>;
 type Source = Data["sources"][number];
 
-// Rows the server keeps whole in both views: the team, and leads with no source.
-const SPECIAL = new Set(["BD/FR team", "No source recorded"]);
+// The row the server keeps whole in both views: leads with no source.
+const SPECIAL = new Set(["No source recorded"]);
 /** What to ask the server for a row's clients: a channel asks for all its Lead Docket sources. */
 const scopeOf = (row: { name: string; members: string[] }) =>
   SPECIAL.has(row.name) || !row.members.length ? { source: row.name } : { sources: row.members };
@@ -40,11 +41,10 @@ export default function MarketingReport() {
   // Opens on the current month, like the Sign-ups Report.
   const [from, setFrom] = useState(iso(new Date(today.getFullYear(), today.getMonth(), 1)));
   const [to, setTo] = useState(iso(today));
-  const [team, setTeam] = useState(true);
   // Channels group Lead Docket's per-contract and per-listing sources ("Walker Advertising Contract 26").
   const [group, setGroup] = useState<Group>("channel");
   const { data, isLoading, isFetching } = trpc.marketing.dashboard.useQuery(
-    { from, to, team, group },
+    { from, to, group },
     { enabled: allowed, placeholderData: (prev) => prev },
   );
 
@@ -63,7 +63,7 @@ export default function MarketingReport() {
     if (!data) return;
     const q = (s: unknown) => `"${String(s ?? "").replace(/"/g, '""')}"`;
     const lines = [
-      `Marketing report,${from} to ${to},${team ? "including the BD/FR team" : "marketing sources only"}`, "",
+      `Marketing report,${from} to ${to},marketing sources (BD/FR team leads are in the Sign-ups Report)`, "",
       "Summary,Value",
       `Leads,${data.totals.leads}`, `Signed,${data.totals.signed}`, `Conversion,${data.totals.conversion}%`,
       `Spend,${data.totals.spend ?? ""}`, `Cost per lead,${data.totals.costPerLead ?? ""}`, `Cost per sign-up,${data.totals.costPerSignup ?? ""}`, "",
@@ -98,10 +98,6 @@ export default function MarketingReport() {
               <button className={group === "channel" ? "on" : ""} onClick={() => setGroup("channel")}>Channels</button>
               <button className={group === "source" ? "on" : ""} onClick={() => setGroup("source")}>Sources</button>
             </div>
-            <div className="sr-seg" role="group" aria-label="Sources">
-              <button className={team ? "on" : ""} onClick={() => setTeam(true)}>All sources</button>
-              <button className={team ? "" : "on"} onClick={() => setTeam(false)}>Without BD/FR team</button>
-            </div>
             <span className="sr-dates">
               <DateInput value={from} onChange={setFrom} label="From" />
               –
@@ -114,7 +110,7 @@ export default function MarketingReport() {
             <div className="sr-hero-top">
               <div>
                 <h1>Marketing report</h1>
-                <p className="sr-lead">Every Lead Docket lead by marketing source · {rangeLabel(from, to)}</p>
+                <p className="sr-lead">Lead Docket leads by marketing source, BD/FR team excluded · {rangeLabel(from, to)}</p>
               </div>
               <div className="sr-actions">
                 <button className="sr-btn2" onClick={exportCsv} disabled={!data}><Download /> Export CSV</button>
@@ -127,7 +123,7 @@ export default function MarketingReport() {
           {isLoading || !data ? (
             <div className="sr-features">{[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 270 }} />)}</div>
           ) : (
-            <Report data={data} from={from} to={to} team={team} group={group} />
+            <Report data={data} from={from} to={to} group={group} />
           )}
         </div>
       </div>
@@ -145,7 +141,7 @@ function Coverage({ c }: { c: Data["coverage"] }) {
         <b>Loading Lead Docket history — {fmt(c.stored)} of {fmt(c.total)} leads ({share}%).</b>
         <span>
           {c.completeFrom ? `Complete back to ${new Date(c.completeFrom).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}; older months are still filling in, newest first.` : "Newest months fill in first."}
-          {" "}It reads about 3,000 leads an hour, between the team's regular syncs.
+          {" "}It reads about 3,000 leads an hour, between the regular Lead Docket syncs.
         </span>
       </div>
       <div className="mk-cov-bar"><i style={{ width: `${share}%` }} /></div>
@@ -187,7 +183,7 @@ function HeroBottom({ data }: { data: Data }) {
   );
 }
 
-function Report({ data, from, to, team, group }: { data: Data; from: string; to: string; team: boolean; group: Group }) {
+function Report({ data, from, to, group }: { data: Data; from: string; to: string; group: Group }) {
   const spendRef = useRef<HTMLDivElement>(null);
   const [focus, setFocus] = useState<Focus | null>(null);
   const rowOf = (name: string) => data.sources.find((s) => s.name === name) ?? { name, members: [] as string[] };
@@ -398,8 +394,8 @@ function Report({ data, from, to, team, group }: { data: Data; from: string; to:
               <summary><span>Where leads come from</span></summary>
               <p>
                 Every lead the firm takes in Lead Docket, read by the same sync as the Sign-ups Report. A lead's source is its
-                Marketing Source. Leads credited to a BD/FR representative are one source, "BD/FR team" — the Sign-ups Report
-                breaks them down by rep. "No source recorded" means intake left Marketing Source empty.
+                Marketing Source. Leads credited to a BD/FR representative are left out — they are counted in the Sign-ups
+                Report. "No source recorded" means intake left Marketing Source empty.
               </p>
             </details>
             <details className="sr-acc">
@@ -420,8 +416,8 @@ function Report({ data, from, to, team, group }: { data: Data; from: string; to:
       <div ref={spendRef} style={{ scrollMarginTop: 16 }}>
         <SpendEditor months={data.months} sources={data.sources} group={group} />
       </div>
-      <LeadList from={from} to={to} team={team} rows={data.sources} noun={noun} />
-      {focus && <Clients focus={focus} from={from} to={to} team={team} onClose={() => setFocus(null)} />}
+      <LeadList from={from} to={to} rows={data.sources} noun={noun} />
+      {focus && <Clients focus={focus} from={from} to={to} onClose={() => setFocus(null)} />}
     </>
   );
 }
@@ -543,7 +539,7 @@ function LeadTable({ rows }: { rows: Out["leads"]["rows"] }) {
   return (
     <div className="sr-scroll">
       <table className="sr-t sr-leads" style={{ minWidth: 820 }}>
-        <thead><tr><th>Client</th><th>Case type</th><th>Source</th><th>Campaign / rep</th><th>Date</th><th>Outcome</th><th>City</th></tr></thead>
+        <thead><tr><th>Client</th><th>Case type</th><th>Source</th><th>Campaign</th><th>Date</th><th>Outcome</th><th>City</th></tr></thead>
         <tbody>
           {rows.map((l) => (
             <tr key={l.id}>
@@ -568,16 +564,16 @@ function useDebounced<T>(value: T, ms = 300) {
   return v;
 }
 
-function LeadList({ from, to, team, rows: groups, noun }: { from: string; to: string; team: boolean; rows: Source[]; noun: string }) {
+function LeadList({ from, to, rows: groups, noun }: { from: string; to: string; rows: Source[]; noun: string }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "signed" | "open">("all");
   const [source, setSource] = useState("");
   const [limit, setLimit] = useState(50);
   const q = useDebounced(search.trim());
-  useEffect(() => setLimit(50), [from, to, team, status, source, q]);
+  useEffect(() => setLimit(50), [from, to, status, source, q]);
   const picked = groups.find((g) => g.name === source);
   const { data, isFetching } = trpc.marketing.leads.useQuery(
-    { from, to, team, status, limit, ...(picked ? scopeOf(picked) : {}), ...(q ? { search: q } : {}) },
+    { from, to, status, limit, ...(picked ? scopeOf(picked) : {}), ...(q ? { search: q } : {}) },
     { placeholderData: (prev) => prev },
   );
   const rows = data?.rows ?? [];
@@ -619,8 +615,8 @@ function LeadList({ from, to, team, rows: groups, noun }: { from: string; to: st
 }
 
 /** The clients behind a source's numbers — opened by clicking the source or one of its months. */
-function Clients({ focus, from, to, team, onClose }: {
-  focus: Focus; from: string; to: string; team: boolean; onClose: () => void;
+function Clients({ focus, from, to, onClose }: {
+  focus: Focus; from: string; to: string; onClose: () => void;
 }) {
   const [signedOnly, setSignedOnly] = useState(true);
   useEffect(() => {
@@ -628,7 +624,7 @@ function Clients({ focus, from, to, team, onClose }: {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  const base = { from, to, team, ...scopeOf(focus), ...(focus.month ? { month: focus.month } : {}), limit: 500 };
+  const base = { from, to, ...scopeOf(focus), ...(focus.month ? { month: focus.month } : {}), limit: 500 };
   const signed = trpc.marketing.leads.useQuery({ ...base, status: "signed" });
   const all = trpc.marketing.leads.useQuery({ ...base, status: "all" }, { enabled: !signedOnly });
   const shown = signedOnly ? signed.data : all.data;

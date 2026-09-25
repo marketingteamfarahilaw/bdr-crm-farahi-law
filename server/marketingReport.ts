@@ -8,19 +8,18 @@
  * reads. It counts the way the Sign-ups Report does, so the two agree: a signed
  * lead in the month it signed, any other lead in the month it came in, and each
  * lead in exactly one scorecard column (scorecardBucket). Leads credited to a
- * BD/FR representative are one channel, "BD/FR team" — the Sign-ups Report
- * breaks them down rep by rep.
+ * BD/FR representative are left out entirely — they are the Sign-ups Report's,
+ * and Youssef wants the two kept apart (Sept 2026).
  *
  * It names every client the firm spoke to, so only canSeeMarketing may call it.
  */
-import { and, desc, eq, gte, inArray, isNotNull, isNull, like, lt, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, like, lt, lte, or, sql } from "drizzle-orm";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getDb, getSetting } from "./db";
 import { leaddocketLeads, marketingSpend } from "../drizzle/schema";
 import { isSigned, scorecardBucket, type ScoreBucket } from "./signupsReport";
 
 const TZ = "America/Los_Angeles";
-export const TEAM_CHANNEL = "BD/FR team";
 export const NO_SOURCE = "No source recorded";
 
 const monthOf = (d: Date) => formatInTimeZone(d, TZ, "yyyy-MM");
@@ -28,9 +27,8 @@ const pct = (a: number, b: number) => (b ? Math.round((a / b) * 1000) / 10 : 0);
 const clean = (s: unknown) => String(s ?? "").replace(/\s+/g, " ").trim();
 const keyOf = (s: string) => s.toLowerCase();
 
-/** The source a lead is reported under: its Marketing Source, or the team for a rep's lead. */
-const sourceOf = (l: { teamRep: string | null; marketingSource: string | null }) =>
-  l.teamRep ? TEAM_CHANNEL : clean(l.marketingSource) || NO_SOURCE;
+/** The source a lead is reported under: its Marketing Source. */
+const sourceOf = (l: { marketingSource: string | null }) => clean(l.marketingSource) || NO_SOURCE;
 
 /**
  * Lead Docket names a source per contract or listing — "Walker Advertising
@@ -92,14 +90,14 @@ async function getCoverage() {
   return { ...stored, complete, completeFrom };
 }
 
-export async function getMarketingDashboard(range: { from: Date; to: Date }, opts: { team: boolean; group: Grouping }) {
+export async function getMarketingDashboard(range: { from: Date; to: Date }, opts: { group: Grouping }) {
   const db = await getDb();
   if (!db) return null;
   const conds = [gte(leaddocketLeads.leadDate, range.from), lte(leaddocketLeads.leadDate, range.to)];
-  if (!opts.team) conds.push(isNull(leaddocketLeads.teamRep));
+  conds.push(isNull(leaddocketLeads.teamRep));   // never the BD/FR team's leads
   const rows = await db.select({
     leadDate: leaddocketLeads.leadDate, outcome: leaddocketLeads.outcome, caseType: leaddocketLeads.caseType,
-    marketingSource: leaddocketLeads.marketingSource, campaign: leaddocketLeads.campaign, teamRep: leaddocketLeads.teamRep,
+    marketingSource: leaddocketLeads.marketingSource, campaign: leaddocketLeads.campaign,
   }).from(leaddocketLeads).where(and(...conds));
 
   const months = monthsBetween(range.from, range.to);
@@ -115,8 +113,8 @@ export async function getMarketingDashboard(range: { from: Date; to: Date }, opt
   for (const l of rows) {
     if (!l.leadDate) continue;
     const source = sourceOf(l);
-    // Team and "no source" are their own rows either way; the rest group by channel on request.
-    const channel = opts.group === "channel" && !l.teamRep && source !== NO_SOURCE ? channelOfSource(source) : source;
+    // "No source" is its own row either way; the rest group by channel on request.
+    const channel = opts.group === "channel" && source !== NO_SOURCE ? channelOfSource(source) : source;
     const signed = isSigned(l.outcome);
     const bucket = scorecardBucket(l.outcome);
     const i = monthIdx.get(monthOf(new Date(l.leadDate)));
@@ -126,7 +124,7 @@ export async function getMarketingDashboard(range: { from: Date; to: Date }, opt
 
     const s = sources.get(channel) ?? { ...emptyCounts(), name: channel, cells: months.map(() => 0), members: new Set<string>() };
     s.leads++; s[bucket]++;
-    if (!l.teamRep && source !== NO_SOURCE) s.members.add(source);
+    if (source !== NO_SOURCE) s.members.add(source);
     if (signed) { s.signed++; if (i !== undefined) s.cells[i]++; }
     sources.set(channel, s);
 
@@ -212,8 +210,6 @@ export async function getMarketingDashboard(range: { from: Date; to: Date }, opt
   const minLeads = totals.leads >= 500 ? 25 : 8;
   const best = sourceList.filter((s) => s.leads >= minLeads).sort((a, b) => b.conversion - a.conversion)[0];
   if (best) insights.push(`${best.name} converts best: ${best.conversion}% of its ${best.leads} leads signed (firm average ${pct(totals.signed, totals.leads)}%).`);
-  const team = sources.get(TEAM_CHANNEL);
-  if (team && totals.signed) insights.push(`The BD/FR team brought ${team.signed} sign-ups — ${pct(team.signed, totals.signed)}% of the firm's.`);
   const costed = sourceList.filter((s) => s.costPerSignup != null).sort((a, b) => (a.costPerSignup ?? 0) - (b.costPerSignup ?? 0));
   if (costed.length >= 2) {
     const [cheap, dear] = [costed[0], costed[costed.length - 1]];
@@ -251,19 +247,18 @@ export async function getMarketingDashboard(range: { from: Date; to: Date }, opt
 
 /** The clients behind the numbers: filtered, newest first, a page at a time. */
 export async function getMarketingLeads(q: {
-  from: Date; to: Date; team: boolean; source?: string; sources?: string[]; month?: string;
+  from: Date; to: Date; source?: string; sources?: string[]; month?: string;
   status?: "all" | "signed" | "open"; search?: string; limit: number;
 }) {
   const db = await getDb();
   if (!db) return { rows: [], total: 0 };
   const L = leaddocketLeads;
   const conds = [gte(L.leadDate, q.from), lte(L.leadDate, q.to)];
-  if (!q.team) conds.push(isNull(L.teamRep));
-  if (q.source === TEAM_CHANNEL) conds.push(isNotNull(L.teamRep));
-  else if (q.source === NO_SOURCE) conds.push(isNull(L.teamRep), or(isNull(L.marketingSource), eq(L.marketingSource, ""))!);
+  conds.push(isNull(L.teamRep));   // never the BD/FR team's leads
+  if (q.source === NO_SOURCE) conds.push(or(isNull(L.marketingSource), eq(L.marketingSource, ""))!);
   // A channel row passes the Lead Docket sources it groups.
-  else if (q.sources?.length) conds.push(isNull(L.teamRep), inArray(L.marketingSource, q.sources));
-  else if (q.source) conds.push(isNull(L.teamRep), eq(L.marketingSource, q.source));
+  else if (q.sources?.length) conds.push(inArray(L.marketingSource, q.sources));
+  else if (q.source) conds.push(eq(L.marketingSource, q.source));
   if (q.month) {
     const { start, end } = monthBounds(q.month);
     conds.push(gte(L.leadDate, start), lt(L.leadDate, end));
@@ -275,14 +270,14 @@ export async function getMarketingLeads(q: {
   const term = clean(q.search);
   if (term) {
     const p = `%${term}%`;
-    conds.push(or(like(L.clientName, p), like(L.caseType, p), like(L.campaign, p), like(L.marketingSource, p), like(L.teamRep, p), like(L.city, p))!);
+    conds.push(or(like(L.clientName, p), like(L.caseType, p), like(L.campaign, p), like(L.marketingSource, p), like(L.city, p))!);
   }
   const where = and(...conds);
   const [[count], rows] = await Promise.all([
     db.select({ n: sql<number>`COUNT(*)` }).from(L).where(where),
     db.select({
-      id: L.leadId, name: L.clientName, caseType: L.caseType, marketingSource: L.marketingSource, teamRep: L.teamRep,
-      teamRole: L.teamRole, campaign: L.campaign, leadDate: L.leadDate, outcome: L.outcome, city: L.city, intakeBy: L.intakeBy,
+      id: L.leadId, name: L.clientName, caseType: L.caseType, marketingSource: L.marketingSource,
+      campaign: L.campaign, leadDate: L.leadDate, outcome: L.outcome, city: L.city, intakeBy: L.intakeBy,
     }).from(L).where(where).orderBy(desc(L.leadDate)).limit(q.limit),
   ]);
   return {
@@ -292,7 +287,7 @@ export async function getMarketingLeads(q: {
       name: clean(r.name) || `Lead ${r.id}`,
       caseType: clean(r.caseType) || "Not recorded",
       source: sourceOf(r),
-      detail: r.teamRep ? `${r.teamRole ? r.teamRole + " " : ""}${r.teamRep}` : clean(r.campaign) || null,
+      detail: clean(r.campaign) || null,
       date: r.leadDate ? new Date(r.leadDate).toISOString() : null,
       outcome: clean(r.outcome),
       signed: isSigned(r.outcome),

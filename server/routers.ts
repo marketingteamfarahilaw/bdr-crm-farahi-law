@@ -805,12 +805,12 @@ export const appRouter = router({
     });
     const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
     const month = z.string().regex(/^\d{4}-\d{2}$/);
-    const range = z.object({ from: day, to: day, team: z.boolean().default(true) });
+    const range = z.object({ from: day, to: day });
     const toRange = (i: { from: string; to: string }) => ({ from: laDate(`${i.from}T00:00:00`), to: laDate(`${i.to}T23:59:59.999`) });
     return router({
       dashboard: marketingProcedure
         .input(range.extend({ group: z.enum(["channel", "source"]).default("channel") }))
-        .query(({ input }) => getMarketingDashboard(toRange(input), { team: input.team, group: input.group })),
+        .query(({ input }) => getMarketingDashboard(toRange(input), { group: input.group })),
       leads: marketingProcedure
         .input(range.extend({
           source: z.string().max(255).optional(),
@@ -820,7 +820,7 @@ export const appRouter = router({
           search: z.string().max(100).optional(),
           limit: z.number().int().min(1).max(500).default(50),
         }))
-        .query(({ input }) => getMarketingLeads({ ...toRange(input), team: input.team, source: input.source, sources: input.sources, month: input.month, status: input.status, search: input.search, limit: input.limit })),
+        .query(({ input }) => getMarketingLeads({ ...toRange(input), source: input.source, sources: input.sources, month: input.month, status: input.status, search: input.search, limit: input.limit })),
       spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
       setSpend: marketingProcedure
         .input(z.object({ month, source: z.string().min(1).max(255), amount: z.number().min(0).max(10_000_000).nullable() }))
