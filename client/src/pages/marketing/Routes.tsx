@@ -14,6 +14,7 @@ export type RoutesProps = {
   avg: number;               // the firm's conversion, in percent
   loadingMonths: string[];   // labels of months in range that aren't fully loaded
   onDrill: (d: DrillLink) => void;
+  caseFacts?: boolean;       // false: no "not viable" / "chose another firm" shares (intake case facts, not sent)
 };
 
 type Row = RoutesData["rows"][number];
@@ -35,12 +36,12 @@ function spanOf(labels: string[]) {
   return a > 0 && b > 0 && first.slice(a) === last.slice(b) ? `${first.slice(0, a)}–${last}` : `${first}–${last}`;
 }
 
-function RouteRow({ r, max, lead, avg, onDrill }: { r: Row; max: number; lead: boolean; avg: number; onDrill: (d: DrillLink) => void }) {
+function RouteRow({ r, max, lead, avg, onDrill, caseFacts = true }: { r: Row; max: number; lead: boolean; avg: number; onDrill: (d: DrillLink) => void; caseFacts?: boolean }) {
   const canDrill = r.members.length > 0 && r.members.length <= MAX_MEMBERS;
   const title = [
     `${r.name}: ${fmt(r.signed)} signed of ${fmt(r.leads)} leads (${r.conversion}%)`,
-    `${share(r.notViable, r.leads)}% not a viable case`,
-    r.lostThem ? `${share(r.lostThem, r.leads)}% chose another firm or went quiet` : "",
+    caseFacts ? `${share(r.notViable, r.leads)}% not a viable case` : "",
+    caseFacts && r.lostThem ? `${share(r.lostThem, r.leads)}% chose another firm or went quiet` : "",
   ].filter(Boolean).join(" · ")
     + (canDrill ? "" : ` — ${fmt(r.members.length)} Contact Source values are too many to open at once; narrow the dates.`);
   const body = (
@@ -65,14 +66,14 @@ function RouteRow({ r, max, lead, avg, onDrill }: { r: Row; max: number; lead: b
   );
 }
 
-export function Routes({ routes, avg, loadingMonths, onDrill }: RoutesProps) {
+export function Routes({ routes, avg, loadingMonths, onDrill, caseFacts = true }: RoutesProps) {
   const { rows, otherMembers, sameAsSource } = routes;
   const max = Math.max(1, ...rows.map((r) => r.leads));
   const top = rows.slice(0, TOP);
   const rest = rows.slice(TOP);
   const others = otherMembers.slice(0, OTHER_SHOWN).map((o) => `${o.value} ${fmt(o.leads)}`).join(", ");
   const moreOthers = otherMembers.length - OTHER_SHOWN;
-  const row = (r: Row, n: number) => <RouteRow key={r.name} r={r} max={max} lead={n === 0} avg={avg} onDrill={onDrill} />;
+  const row = (r: Row, n: number) => <RouteRow key={r.name} r={r} max={max} lead={n === 0} avg={avg} onDrill={onDrill} caseFacts={caseFacts} />;
 
   return (
     <div className="sr-panel mk-rt">

@@ -91,7 +91,7 @@ import {
   setSetting,
   setUserPhoto,
 } from "./db";
-import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing } from "@shared/permissions";
+import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing, marketingCaseFacts } from "@shared/permissions";
 import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS } from "./dataSync";
 import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
@@ -799,11 +799,12 @@ export const appRouter = router({
   // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
   intake: intakeRouter,
 
-  // Marketing Report — every Lead Docket lead by marketing source. Open to named
-  // people only (canSeeMarketing): it lists every client the firm spoke to.
+  // Marketing Report — every Lead Docket lead by marketing source. Managers and
+  // super admins (canSeeMarketing); why leads didn't sign is an intake case fact,
+  // so it goes only to marketingCaseFacts (the super admin) — the hard wall.
   marketing: (() => {
     const marketingProcedure = protectedProcedure.use(({ ctx, next }) => {
-      if (!canSeeMarketing(ctx.user.email)) throw new TRPCError({ code: "FORBIDDEN", message: "The Marketing Report is private." });
+      if (!canSeeMarketing(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "The Marketing Report is for managers." });
       return next();
     });
     const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -834,19 +835,20 @@ export const appRouter = router({
           compare: z.enum(["prev", "yoy", "off"]).default("prev"),
         }))
         // "today" is the server's Pacific date: pace and "still in progress" are judged against it.
-        .query(({ input }) => getMarketingDashboard(toRange(input), {
+        .query(({ ctx, input }) => getMarketingDashboard(toRange(input), {
           group: input.group, from: input.from, to: input.to, compare: input.compare,
           today: formatInTimeZone(new Date(), MARKETING_TZ, "yyyy-MM-dd"),
+          caseFacts: marketingCaseFacts(ctx.user.role),
         })),
       leads: marketingProcedure
         .input(leadScope.extend({
           limit: z.number().int().min(1).max(500).default(50),
           withWhy: z.boolean().optional(),
         }))
-        .query(({ input }) => getMarketingLeads({ ...input, ...toRange(input) })),
+        .query(({ ctx, input }) => getMarketingLeads({ ...input, ...toRange(input), caseFacts: marketingCaseFacts(ctx.user.role) })),
       exportLeads: marketingProcedure
         .input(leadScope)
-        .query(({ input }) => exportMarketingLeads({ ...input, ...toRange(input) })),
+        .query(({ ctx, input }) => exportMarketingLeads({ ...input, ...toRange(input), caseFacts: marketingCaseFacts(ctx.user.role) })),
       spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
       sourceNames: marketingProcedure.query(() => listSourceNames()),
       setSpend: marketingProcedure

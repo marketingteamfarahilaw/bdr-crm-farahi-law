@@ -130,7 +130,7 @@ function canShow(level: NavLevel, role?: string | null, email?: string | null) {
     // (incl. super admin) per request. Intake pages remain reachable by URL.
     case "intake": return isIntakeOnly(role);
     // Named people, not a role: the report lists every client the firm spoke to.
-    case "marketing": return canSeeMarketing(email);
+    case "marketing": return canSeeMarketing(role);
     default: return false;
   }
 }

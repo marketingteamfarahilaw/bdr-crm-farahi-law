@@ -20,6 +20,7 @@ export type MonthGridProps = {
   loadedLabel: string | null;
   group: Group;
   avg: number;   // the firm's conversion, in percent
+  caseFacts?: boolean;   // false: no "Not viable" metric (an intake case fact, not sent)
   onDrill: (d: DrillLink) => void;
 };
 
@@ -56,14 +57,16 @@ const level = (v: number, max: number) => (!v ? "" : v / max <= 0.25 ? "l1" : v 
 const hasSpend = (r: Row) => r.spendCells.some((v) => v != null);
 const spentBy = (r: Row) => r.spendCells.reduce<number>((a, v) => a + (v ?? 0), 0);
 
-export function MonthGrid({ grid, months, monthStates, loadedLabel, group, avg, onDrill }: MonthGridProps) {
-  const [metric, setMetricState] = useState<Metric>(readMetric);
+export function MonthGrid({ grid, months, monthStates, loadedLabel, group, avg, onDrill, caseFacts = true }: MonthGridProps) {
+  const metrics = caseFacts ? METRICS : METRICS.filter((m) => m.key !== "nv");
+  const [stored, setMetricState] = useState<Metric>(readMetric);
+  const metric: Metric = metrics.some((m) => m.key === stored) ? stored : "signed";
   const setMetric = (m: Metric) => {
     setMetricState(m);
     try { window.localStorage.setItem(STORE, m); } catch { /* switched, just not remembered */ }
   };
   const noun = group === "channel" ? "channel" : "source";
-  const title = METRICS.find((m) => m.key === metric)!.title;
+  const title = metrics.find((m) => m.key === metric)!.title;
   const stateOf = (i: number): MonthState => monthStates[i] ?? "full";
   const loadedFrom = loadedLabel ? `Lead Docket history is complete from ${loadedLabel}` : "Lead Docket history is still loading";
   const mon = (i: number) => grid.monthly[i] ?? { month: months[i], leads: 0, signed: 0, notViable: 0, spend: null, costPerSignup: null, costPerLead: null };
@@ -258,12 +261,12 @@ export function MonthGrid({ grid, months, monthStates, loadedLabel, group, avg, 
       <div className="sr-panel-h mk-mg-h">
         <div className="sr-ttl"><h2>{title} by {noun} and month</h2></div>
         <div className="sr-seg mk-mg-seg" role="group" aria-label="Show">
-          {METRICS.map((m) => (
+          {metrics.map((m) => (
             <button key={m.key} className={metric === m.key ? "on" : ""} aria-pressed={metric === m.key} onClick={() => setMetric(m.key)}>{m.label}</button>
           ))}
         </div>
         <select className="sr-input mk-mg-sel" value={metric} onChange={(e) => setMetric(e.target.value as Metric)} aria-label="Show">
-          {METRICS.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
+          {metrics.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
         </select>
       </div>
       {(sub || (metric === "cost" && rows.length > 0 && unpaid > 0)) && (

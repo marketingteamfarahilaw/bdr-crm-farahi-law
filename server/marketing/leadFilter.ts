@@ -1,4 +1,5 @@
-// Guard: rows carry subStatus (an intake case fact); only canSeeMarketing (Youssef) may call this — if that ever widens to BD/FR, also require canSeeIntake.
+// Guard: subStatus is an intake case fact (CLAUDE.md's hard wall). Callers pass caseFacts =
+// marketingCaseFacts(role); when false, reasons are never filtered on, searched, returned or exported.
 /**
  * The clients behind any number on the Marketing Report, and their export.
  *
@@ -28,6 +29,7 @@ export type LeadQuery = DrillScope & {
   from: Date; to: Date;
   status: "all" | "signed" | "open";   // 'open' keeps its current meaning: not signed
   search?: string; limit: number; withWhy?: boolean;
+  caseFacts?: boolean;   // false: nothing that reveals a lead's rejection reason
 };
 
 export type LeadListRow = {
@@ -166,7 +168,7 @@ function notInList(col: Column, values: string[]): SQL | undefined {
  * The dashboard's own WHERE (the range) plus the scope, the month and the
  * search. Every scope field narrows; an empty list narrows nothing.
  */
-export function scopeWhere(q: DrillScope & { from: Date; to: Date; search?: string }): SQL {
+export function scopeWhere(q: DrillScope & { from: Date; to: Date; search?: string; caseFacts?: boolean }): SQL {
   const conds: (SQL | undefined)[] = [gte(L.leadDate, q.from), lte(L.leadDate, q.to)];
   // A lead's row is its cleaned Marketing Source, so match trimmed; "No source" is NULL or blank.
   // A BDR or FR rep's lead is the "BD/FR team" row, whatever its Marketing Source says —
@@ -187,7 +189,8 @@ export function scopeWhere(q: DrillScope & { from: Date; to: Date; search?: stri
   const term = clean(q.search).toLowerCase();
   if (term) {
     const p = `%${term.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
-    const cols = [L.clientName, L.caseType, L.campaign, L.marketingSource, L.contactSource, L.subStatus, L.city];
+    // Searching the reason would reveal it, so it is searched only for those who may see it.
+    const cols = [L.clientName, L.caseType, L.campaign, L.marketingSource, L.contactSource, ...(q.caseFacts === false ? [] : [L.subStatus]), L.city];
     conds.push(sql`(${sql.join(cols.map((c) => sql`LOWER(${c}) LIKE ${p}`), sql` OR `)})`);
   }
   return and(...conds)!;
@@ -251,7 +254,8 @@ export const repOf = (r: { teamRole: string | null; teamRep: string | null }) =>
   isBdFr(r.teamRole) ? `${r.teamRole} ${clean(r.teamRep)}`.trim() : null;
 
 /** The clients behind a number: filtered, newest first, a page at a time. */
-export async function getMarketingLeads(q: LeadQuery): Promise<{ total: number; rows: LeadListRow[]; why: WhyRow[] | null }> {
+export async function getMarketingLeads(query: LeadQuery): Promise<{ total: number; rows: LeadListRow[]; why: WhyRow[] | null }> {
+  const q = withoutCaseFacts(query);
   const db = await getDb();
   if (!db) return { total: 0, rows: [], why: q.withWhy ? [] : null };
   const where = scopeWhere(q);
@@ -261,14 +265,27 @@ export async function getMarketingLeads(q: LeadQuery): Promise<{ total: number; 
   if (!hasOutcomeFilter(q)) {
     const [groups, rows] = await Promise.all([groupsOf(db, where), list(where)]);
     const { total, why } = classifyTriples(groups, q, !!q.withWhy);
-    return { total, rows: rows.map(toListRow), why };
+    return { total, rows: rows.map(listRowFor(q)), why };
   }
   const groups = await groupsOf(db, where);
   const { kept, total, why } = classifyTriples(groups, q, !!q.withWhy);
   if (!kept.length) return { total: 0, rows: [], why };
   const rows = await list(and(where, tripleWhere(kept, groups))!);
-  return { total, rows: rows.map(toListRow), why };
+  return { total, rows: rows.map(listRowFor(q)), why };
 }
+
+/**
+ * For someone who may not see intake case facts: no filtering by reason (the
+ * count would reveal it), no reasons breakdown. Their rows lose the reason in listRowFor.
+ */
+function withoutCaseFacts<T extends { caseFacts?: boolean; reasons?: ReasonKey[]; subStatus?: string; withWhy?: boolean }>(q: T): T {
+  if (q.caseFacts !== false) return q;
+  return { ...q, reasons: undefined, subStatus: undefined, withWhy: false };
+}
+const listRowFor = (q: { caseFacts?: boolean }) => (r: Parameters<typeof toListRow>[0]): LeadListRow => {
+  const row = toListRow(r);
+  return q.caseFacts === false ? { ...row, reason: null } : row;
+};
 
 // ── export ──
 
@@ -331,13 +348,14 @@ export function exportCells(r: ExportRow): (string | number)[] {
 }
 
 /** The file: a UTF-8 BOM so Excel keeps accents, a header, CRLF lines. */
-export function toCsv(rows: ExportRow[]): string {
-  const lines = [EXPORT_HEAD, ...rows.map(exportCells)].map((cells) => cells.map(csvCell).join(","));
+export function toCsv(rows: ExportRow[], caseFacts = true): string {
+  const lines = [EXPORT_HEAD, ...rows.map((r) => exportCells(caseFacts ? r : { ...r, subStatus: null }))].map((cells) => cells.map(csvCell).join(","));
   return "﻿" + lines.join("\r\n") + "\r\n";
 }
 
 /** Every client behind a number, as CSV — the same WHERE and groups as the list, up to EXPORT_CAP. */
-export async function exportMarketingLeads(q: Omit<LeadQuery, "limit" | "withWhy">): Promise<{ csv: string; rows: number; capped: boolean }> {
+export async function exportMarketingLeads(query: Omit<LeadQuery, "limit" | "withWhy">): Promise<{ csv: string; rows: number; capped: boolean }> {
+  const q = withoutCaseFacts(query);
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const where = scopeWhere(q);
@@ -349,11 +367,11 @@ export async function exportMarketingLeads(q: Omit<LeadQuery, "limit" | "withWhy
     const rows = await select(where, EXPORT_CAP + 1);
     const capped = rows.length > EXPORT_CAP;
     const out = capped ? rows.slice(0, EXPORT_CAP) : rows;
-    return { csv: toCsv(out), rows: out.length, capped };
+    return { csv: toCsv(out, q.caseFacts !== false), rows: out.length, capped };
   }
   const groups = await groupsOf(db, where);
   const { kept, total } = classifyTriples(groups, q);
-  if (!kept.length) return { csv: toCsv([]), rows: 0, capped: false };
+  if (!kept.length) return { csv: toCsv([], q.caseFacts !== false), rows: 0, capped: false };
   const rows = await select(and(where, tripleWhere(kept, groups))!, EXPORT_CAP);
-  return { csv: toCsv(rows), rows: rows.length, capped: total > EXPORT_CAP };
+  return { csv: toCsv(rows, q.caseFacts !== false), rows: rows.length, capped: total > EXPORT_CAP };
 }

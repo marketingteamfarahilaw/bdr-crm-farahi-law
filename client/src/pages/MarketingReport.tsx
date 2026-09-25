@@ -62,7 +62,7 @@ type OpenDrill = { link: DrillLink; from: string; to: string };
 
 export default function MarketingReport() {
   const { user } = useAuth();
-  const allowed = canSeeMarketing(user?.email);
+  const allowed = canSeeMarketing(user?.role);
   const today = new Date();
   // Opens on the current month, like the Sign-ups Report.
   const [from, setFrom] = useState(iso(new Date(today.getFullYear(), today.getMonth(), 1)));
@@ -211,10 +211,12 @@ function exportSummary(data: Data, from: string, to: string) {
     "",
     ["Sign-ups by month", ...data.months.map(monthShort), "Total"].map(q).join(","),
     ...data.sources.filter((s) => s.signed).map((s) => [q(s.name), ...s.cells, s.signed].join(",")), "",
-    ["Why leads didn't sign", "Leads", ...REASON_KEYS.map((k) => REASON_LABEL[k])].map(q).join(","),
-    ...data.why.rows.map((r) => [q(r.name), r.leads, ...REASON_KEYS.map((k) => r.by[k])].join(",")), "",
-    "Contact route,Leads,Signed,Conversion %,Not viable,Chose another firm or went quiet",
-    ...data.routes.rows.map((r) => [q(r.name), r.leads, r.signed, r.conversion, r.notViable, r.lostThem].join(",")),
+    ...(data.why ? [
+      ["Why leads didn't sign", "Leads", ...REASON_KEYS.map((k) => REASON_LABEL[k])].map(q).join(","),
+      ...data.why.rows.map((r) => [q(r.name), r.leads, ...REASON_KEYS.map((k) => r.by[k])].join(",")), "",
+    ] : []),
+    data.caseFacts ? "Contact route,Leads,Signed,Conversion %,Not viable,Chose another firm or went quiet" : "Contact route,Leads,Signed,Conversion %",
+    ...data.routes.rows.map((r) => [q(r.name), r.leads, r.signed, r.conversion, ...(data.caseFacts ? [r.notViable, r.lostThem] : [])].join(",")),
     `Contact Source same as Marketing Source,${data.routes.sameAsSource}%`, "",
     "Case type,Leads,Signed,Conversion %",
     ...data.caseTypes.map((ct) => [q(ct.name), ct.leads, ct.signed, ct.conversion].join(",")), "",
@@ -345,9 +347,10 @@ function Report({ data, from, to, group, onDrill }: {
       <div className="sr-board">
         <div style={{ minWidth: 0 }}>
           <MonthGrid grid={data.grid} months={data.months} monthStates={data.coverage.months} loadedLabel={loadedLabel(data.coverage)}
-            group={group} avg={avg} onDrill={onDrill} />
-          <WhyNotSigned why={data.why} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} />
-          <Routes routes={data.routes} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} />
+            group={group} avg={avg} onDrill={onDrill} caseFacts={data.caseFacts} />
+          {/* Why leads didn't sign is an intake case fact: the server sends it only to those who may see it. */}
+          {data.why && <WhyNotSigned why={data.why} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} />}
+          <Routes routes={data.routes} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} caseFacts={data.caseFacts} />
           <CaseTypes data={data} group={group} onDrill={onDrill} />
           <Campaigns data={data} onDrill={onDrill} />
         </div>
@@ -378,7 +381,7 @@ function Report({ data, from, to, group, onDrill }: {
               <p>When it has a sign-up date, even if the case later closed. Signed leads count in the month they signed; the rest in the month they came in — the same as the Sign-ups Report.</p>
             </details>
             <SpendAccordion />
-            <WhyAccordion why={data.why} />
+            {data.why && <WhyAccordion why={data.why} />}
             <CompareAccordion />
             <AlertsAccordion />
           </div>

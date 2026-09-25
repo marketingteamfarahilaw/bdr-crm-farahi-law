@@ -1,4 +1,5 @@
-// Guard: subStatus is an intake case fact. It is shown only because canSeeMarketing is Youssef-only; if MARKETING_VIEWERS ever includes a BD/FR person, also require canSeeIntake (CLAUDE.md: hard wall between BD/FR and Intake).
+// Guard: subStatus is an intake case fact (CLAUDE.md: hard wall between BD/FR and Intake). The
+// dashboard drops this module's output for anyone without marketingCaseFacts (see getMarketingDashboard).
 /**
  * Why leads didn't sign: every lead in exactly one reason family, from Lead
  * Docket's status and sub-status.

@@ -242,4 +242,23 @@ describe("getMarketingDashboard", () => {
     }
     expect(d.pace?.month).toBe("2026-09");
   });
+
+  it("sends no rejection reasons to someone who may not see intake case facts", async () => {
+    const range = rangeOf("2026-09-01", "2026-09-24");
+    state.rows = ALL.filter((l) => l.leadDate && l.leadDate >= range.from && l.leadDate <= range.to);
+    state.all = ALL;
+    state.spend = SPEND;
+    const full = await load("2026-09-01", "2026-09-24", "channel", "prev");
+    const d = (await getMarketingDashboard(range, { group: "channel", from: "2026-09-01", to: "2026-09-24", compare: "prev", today: "2026-09-24", caseFacts: false }))!;
+    expect(full.caseFacts).toBe(true);
+    expect(d.caseFacts).toBe(false);
+    expect(d.why).toBeNull();
+    expect(d.grid.rows.every((r) => r.notViableCells.every((v) => v === 0))).toBe(true);
+    expect(d.grid.monthly.every((m) => m.notViable === 0)).toBe(true);
+    expect(d.routes.rows.every((r) => r.notViable === 0 && r.lostThem === 0)).toBe(true);
+    // Everything else is the same report.
+    expect(d.totals).toEqual(full.totals);
+    expect(d.sources).toEqual(full.sources);
+    for (const line of full.why?.insights ?? []) expect(d.insights).not.toContain(line);
+  });
 });

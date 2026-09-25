@@ -53,8 +53,10 @@ const rawOf = (v: string | null) => String(v ?? "").trim();
 
 export async function getMarketingDashboard(
   range: { from: Date; to: Date },
-  opts: { group: Grouping; from: string; to: string; compare: CompareChoice; today: string },
+  opts: { group: Grouping; from: string; to: string; compare: CompareChoice; today: string; caseFacts?: boolean },
 ) {
+  // Why leads didn't sign is an intake case fact: only marketingCaseFacts sees it.
+  const caseFacts = opts.caseFacts !== false;
   const db = await getDb();
   if (!db) return null;
   const group = opts.group;
@@ -240,7 +242,7 @@ export async function getMarketingDashboard(
     ?? (top ? `${top.name} brought the most sign-ups: ${top.signed} of ${totals.signed} (${pct(top.signed, totals.signed)}%).` : null);
   if (headline) insights.push(headline);
   if (pace?.text) insights.push(pace.text);
-  insights.push(...why.insights);
+  if (caseFacts) insights.push(...why.insights);
   const best = sourceList.filter((s) => s.leads >= minLeads).sort((a, b) => b.conversion - a.conversion)[0];
   if (best) insights.push(`${best.name} converts best: ${best.conversion}% of its ${best.leads} leads signed (firm average ${pct(totals.signed, totals.leads)}%).`);
   const costed = sourceList.filter((s) => s.costPerSignup != null).sort((a, b) => (a.costPerSignup ?? 0) - (b.costPerSignup ?? 0));
@@ -285,9 +287,16 @@ export async function getMarketingDashboard(
     spendUnmatched: spend.unmatched,
     partialMonths: partial,
     partialNote,
-    why,
-    grid,
-    routes,
+    // Checked above on the full data; left out of the response for anyone who
+    // may not see intake case facts.
+    caseFacts,
+    why: caseFacts ? why : null,
+    grid: caseFacts ? grid : {
+      ...grid,
+      rows: grid.rows.map((r) => ({ ...r, notViableCells: r.notViableCells.map(() => 0) })),
+      monthly: grid.monthly.map((m) => ({ ...m, notViable: 0 })),
+    },
+    routes: caseFacts ? routes : { ...routes, rows: routes.rows.map((r) => ({ ...r, notViable: 0, lostThem: 0 })) },
     compare,
     pace,
     alerts,

@@ -98,11 +98,15 @@ export const canManageIntake = (r?: string | null) =>
 export const NON_REPORTING_REPS = new Set(["youssef", "malvin"]);
 
 /**
- * The Marketing Report reads every lead the firm takes — client names included —
- * so it opens to named people, not to a role (Youssef, Sept 2026).
+ * The Marketing Report lists every lead the firm takes, client names included.
+ * Youssef opened it to managers and super admins (2026-09-25; it was his alone
+ * before) — today that is everyone. Why each lead didn't sign is an intake case
+ * fact, so only canSeeIntake (the super admin) gets that part: see
+ * marketingCaseFacts, applied on the server.
  */
-export const MARKETING_VIEWERS = new Set(["youssef@farahilaw.com"]);
-export const canSeeMarketing = (email?: string | null) => MARKETING_VIEWERS.has(String(email ?? "").trim().toLowerCase());
+export const canSeeMarketing = (r?: string | null) => isManager(r);
+/** The Marketing Report's intake case facts (rejection reasons) — the hard wall in CLAUDE.md. */
+export const marketingCaseFacts = (r?: string | null) => canSeeIntake(r);
 
 /** True when this rep's activity should be hidden from team reporting. */
 export const isNonReportingRep = (name?: string | null) => {
