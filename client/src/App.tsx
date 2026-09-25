@@ -15,6 +15,7 @@ import FacilitiesPage from "./pages/crm/Facilities";
 import PipelinePage from "./pages/crm/Pipeline";
 import UberEatsPage from "./pages/crm/UberEats";
 import FacilityProfilePage from "./pages/crm/FacilityProfile";
+import MarketingReportPage from "./pages/MarketingReport";
 import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
 import TeamRolesPage from "./pages/crm/TeamRoles";
@@ -157,6 +158,7 @@ function Router() {
 
         {/* Executive sign-ups dashboard */}
         <Route path="/signups-report" component={SignupsDashboardPage} />
+        <Route path="/marketing-report" component={MarketingReportPage} />
 
         {/* FileVine Note Generator */}
         <Route path="/filevine-note" component={FileVineNotePage} />

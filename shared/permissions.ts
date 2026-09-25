@@ -97,6 +97,13 @@ export const canManageIntake = (r?: string | null) =>
 // the leads he brings in, but he is not BD/FR, so reports leave him out.
 export const NON_REPORTING_REPS = new Set(["youssef", "malvin"]);
 
+/**
+ * The Marketing Report reads every lead the firm takes — client names included —
+ * so it opens to named people, not to a role (Youssef, Sept 2026).
+ */
+export const MARKETING_VIEWERS = new Set(["youssef@farahilaw.com"]);
+export const canSeeMarketing = (email?: string | null) => MARKETING_VIEWERS.has(String(email ?? "").trim().toLowerCase());
+
 /** True when this rep's activity should be hidden from team reporting. */
 export const isNonReportingRep = (name?: string | null) => {
   const first = String(name ?? "").trim().toLowerCase().split(/\s+/)[0];

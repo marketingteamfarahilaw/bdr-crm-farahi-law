@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import Login from "@/pages/Login";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation, Handshake, Target, CalendarClock, GraduationCap, Trophy, CalendarDays, Car, ListChecks, FileText } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation, Handshake, Target, CalendarClock, GraduationCap, Trophy, CalendarDays, Car, ListChecks, FileText, Megaphone } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -30,9 +30,9 @@ import { QuickAdd } from "./QuickAdd";
 import { NotificationBell } from "./NotificationBell";
 import { useBrand } from "@/hooks/useBranding";
 import { useTheme } from "@/contexts/ThemeContext";
-import { canSeeBDR, canSeeFR, canManage, canAssignRoles, canSeeIntake, isIntakeOnly } from "@shared/permissions";
+import { canSeeBDR, canSeeFR, canManage, canAssignRoles, canSeeIntake, isIntakeOnly, canSeeMarketing } from "@shared/permissions";
 
-type NavLevel = "all" | "bdr" | "fr" | "manage" | "super" | "intake";
+type NavLevel = "all" | "bdr" | "fr" | "manage" | "super" | "intake" | "marketing";
 
 const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: string; level: NavLevel }[] }[] = [
   // Intake — a separate world. Intake roles see ONLY this section (plus their
@@ -54,6 +54,9 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   //   { icon: Bookmark, label: "Saved Leads", path: "/saved-leads", level: "bdr" },
   //   { icon: History, label: "Saved Searches", path: "/saved-searches", level: "bdr" },
   // ] },
+  { title: "Marketing", items: [
+    { icon: Megaphone, label: "Marketing Report", path: "/marketing-report", level: "marketing" },
+  ] },
   { title: "Facility Partner CRM", items: [
     // { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
     { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr" },
@@ -116,7 +119,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
 
 const ALL_NAV = NAV_SECTIONS.flatMap((s) => s.items);
 
-function canShow(level: NavLevel, role?: string | null) {
+function canShow(level: NavLevel, role?: string | null, email?: string | null) {
   switch (level) {
     case "all": return !isIntakeOnly(role); // BD/FR shared tools — hidden from the intake team
     case "bdr": return canSeeBDR(role) && !isIntakeOnly(role);
@@ -126,6 +129,8 @@ function canShow(level: NavLevel, role?: string | null) {
     // Intake nav shows ONLY for the intake team — hidden from the BD CRM view
     // (incl. super admin) per request. Intake pages remain reachable by URL.
     case "intake": return isIntakeOnly(role);
+    // Named people, not a role: the report lists every client the firm spoke to.
+    case "marketing": return canSeeMarketing(email);
     default: return false;
   }
 }
@@ -306,7 +311,7 @@ function DashboardLayoutContent({
             </div>
 
             {NAV_SECTIONS.map((section) => {
-              const items = section.items.filter((it) => canShow(it.level, user?.role));
+              const items = section.items.filter((it) => canShow(it.level, user?.role, user?.email));
               if (items.length === 0) return null;
               return (
                 <div key={section.title}>

@@ -58,7 +58,7 @@ const byKeyword = (text: string): string | null => {
 };
 
 const SIGNED = new Set(["signed", "signed referred out", "referral accepted"]);
-const isSigned = (o: unknown) => SIGNED.has(String(o ?? "").toLowerCase().replace(/[_\s]+/g, " ").trim());
+export const isSigned = (o: unknown) => SIGNED.has(String(o ?? "").toLowerCase().replace(/[_\s]+/g, " ").trim());
 
 /**
  * Which scorecard column a lead falls in, from its outcome (Lead Docket's status,
@@ -66,8 +66,8 @@ const isSigned = (o: unknown) => SIGNED.has(String(o ?? "").toLowerCase().replac
  * sheet, Lost counts with Rejected; Lead Docket has no "not interested" status,
  * so that column stays 0 unless an outcome says so.
  */
-type ScoreBucket = "open" | "rejected" | "referredOut" | "notInterested" | "signedReferred" | "signedInHouse";
-const scorecardBucket = (outcome: unknown): ScoreBucket => {
+export type ScoreBucket = "open" | "rejected" | "referredOut" | "notInterested" | "signedReferred" | "signedInHouse";
+export const scorecardBucket = (outcome: unknown): ScoreBucket => {
   const o = String(outcome ?? "").toLowerCase().replace(/[_\s]+/g, " ").trim();
   if (o === "signed referred out") return "signedReferred";
   if (o === "signed" || o === "referral accepted") return "signedInHouse";

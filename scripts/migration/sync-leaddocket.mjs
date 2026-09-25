@@ -18,6 +18,9 @@
  * prints the top skipped sources so miscredited work is visible rather than
  * silently lost.
  *
+ * Every lead read — the team's or not — is also kept, with its marketing fields,
+ * in leaddocket_leads for the Marketing Report (see storeMarketing).
+ *
  * Lead Docket ignores every filter parameter it documents (they all return the
  * full set), so the list is paged for ids and each lead read once. --since
  * limits that to leads changed recently, which is what a scheduled run uses.
@@ -132,13 +135,38 @@ if (c) {
   const [s] = await c.query("SELECT leadId, lastUpdate, isOurs FROM leaddocket_seen");
   for (const r of s) { seen.set(String(r.leadId), r.lastUpdate); if (r.isOurs) wasOurs.add(String(r.leadId)); }
 }
+// Leads already in leaddocket_leads, the Marketing Report's copy of every lead.
+// A lead checked before that table existed was read and let go (not the team's),
+// so it counts as unread until it is stored — the history run fills the table.
+const stored = new Set();
+if (c) {
+  const [m] = await c.query("SELECT leadId FROM leaddocket_leads");
+  for (const r of m) stored.add(String(r.leadId));
+}
 const stamp = (r) => String(r.LastUpdateDate ?? r.CreatedDate ?? "");
-const unseen = changed.filter((r) => seen.get(String(r.Id)) !== stamp(r));
+const unseen = changed.filter((r) => seen.get(String(r.Id)) !== stamp(r) || !stored.has(String(r.Id)));
+
+// How much of Lead Docket the Marketing Report can see, for the page to say so.
+// A --backfill run (the chunked history job) also records how many leads are
+// left to read, which is what tells the scheduler to start the next chunk.
+const BACKFILL = process.argv.includes("--backfill");
+async function saveCoverage(remaining = null) {
+  if (!c || DRY) return;
+  const [[cur]] = await c.query("SELECT settingValue v FROM app_settings WHERE settingKey='leaddocket_marketing_coverage'");
+  let prev = {};
+  try { prev = cur?.v ? JSON.parse(cur.v) : {}; } catch { /* rewritten below */ }
+  const value = JSON.stringify({ ...prev, total: rows.length, stored: stored.size, at: new Date().toISOString(), ...(remaining != null ? { remaining } : {}) });
+  await c.query("INSERT INTO app_settings (settingKey, settingValue) VALUES ('leaddocket_marketing_coverage', ?) ON DUPLICATE KEY UPDATE settingValue=VALUES(settingValue)", [value]);
+}
+await saveCoverage();
 
 if (COVERAGE) {
   const by = new Map();
   for (const r of unseen) {
-    const k = `${r.StatusName} · ${String(r.CreatedDate ?? "").slice(0, 4) || "no date"} · ${seen.has(String(r.Id)) ? "changed since checked" : "never checked"}`;
+    const why = !seen.has(String(r.Id)) ? "never checked"
+      : seen.get(String(r.Id)) !== stamp(r) ? "changed since checked"
+      : "not yet stored for the Marketing Report";
+    const k = `${r.StatusName} · ${String(r.CreatedDate ?? "").slice(0, 4) || "no date"} · ${why}`;
     by.set(k, (by.get(k) ?? 0) + 1);
   }
   for (const [k, n] of [...by].sort()) console.log("  " + k + ": " + n);
@@ -147,9 +175,10 @@ if (COVERAGE) {
   process.exit(0);
 }
 // The team's own leads first: they are what the reports show, so a long backlog
-// of other leads never holds them up.
+// of other leads never holds them up. Then newest first, so the Marketing
+// Report's recent months fill in within the first hour of a long backfill.
 const queue = (OURS_ONLY ? unseen.filter((r) => wasOurs.has(String(r.Id))) : unseen)
-  .sort((a, b) => Number(wasOurs.has(String(b.Id))) - Number(wasOurs.has(String(a.Id))));
+  .sort((a, b) => Number(wasOurs.has(String(b.Id))) - Number(wasOurs.has(String(a.Id))) || Number(b.Id) - Number(a.Id));
 const fresh = LIMIT ? queue.slice(0, LIMIT) : queue;
 console.log("\n" + rows.length + " leads total, " + changed.length + " in range" + (SINCE ? " (changed since " + SINCE.toISOString().slice(0, 10) + ")" : "") +
   ", " + (changed.length - unseen.length) + " already checked and unchanged, " + fresh.length + " to read");
@@ -170,6 +199,7 @@ async function processLead(row) {
   if (!d) return "failed";
   lastWasOurs = false;
   await store(d);
+  await storeMarketing(d, row);
   if (c) {
     await c.query(
       "INSERT INTO leaddocket_seen (leadId, lastUpdate, isOurs) VALUES (?,?,?) ON DUPLICATE KEY UPDATE lastUpdate=VALUES(lastUpdate), isOurs=VALUES(isOurs)",
@@ -229,10 +259,60 @@ async function store(d) {
     }
 }
 
+// Every lead, the team's or not, with its marketing fields: the Marketing
+// Report's copy of Lead Docket (leaddocket_leads).
+async function storeMarketing(d, row) {
+  if (DRY || !c) return;
+  const cut = (v, n) => str(v).replace(/\s+/g, " ").trim().slice(0, n) || null;
+  const contact = d.Contact ?? {};
+  const intake = d.Intake ?? {};
+  const source = str(d.MarketingSource);
+  const rep = creditedRep(source);
+  const status = str(d.Status) || str(d.StatusName) || str(row.StatusName);
+  const created = ldInstant(d.CreatedDate);
+  const signedUp = ldInstant(d.SignedUpDate);
+  const vals = {
+    createdDate: created,
+    signedUpDate: signedUp,
+    leadDate: signedUp ?? created,
+    status: cut(status, 80),
+    subStatus: cut(d.SubStatus, 200),
+    outcome: outcomeFor(status, d.SignedUpDate).slice(0, 60),
+    caseType: cut(d.PracticeArea || d.CaseType, 120),
+    marketingSource: cut(source, 255),
+    contactSource: cut(d.ContactSource, 255),
+    campaign: cut(d.Campaign, 255),
+    sourceDetails: cut(d.FoundUsNotes, 500),
+    referredBy: cut(d.ReferredByName, 255),
+    utm: cut(d.UTM, 500),
+    keywords: cut(d.Keywords, 255),
+    referringUrl: cut(d.ReferringUrl, 500),
+    office: cut(d.Office, 120),
+    clientName: cut([str(contact.FirstName), str(contact.LastName)].filter(Boolean).join(" "), 255),
+    city: cut(contact.City, 120),
+    county: cut(contact.County, 120),
+    state: cut(contact.State, 40),
+    intakeBy: cut([str(intake.FirstName), str(intake.LastName)].filter(Boolean).join(" "), 120),
+    teamRep: rep ? rep.member.slice(0, 120) : null,
+    teamRole: rep ? rep.role : null,
+    lastUpdate: stamp(row).slice(0, 40),
+  };
+  const cols = Object.keys(vals);
+  await c.query(
+    `INSERT INTO leaddocket_leads (leadId, ${cols.map((k) => "`" + k + "`").join(", ")}) VALUES (?, ${cols.map(() => "?").join(", ")})
+     ON DUPLICATE KEY UPDATE ${cols.map((k) => "`" + k + "`=VALUES(`" + k + "`)").join(", ")}`,
+    [d.Id, ...Object.values(vals)],
+  );
+  stored.add(String(d.Id));
+}
+
 const started = Date.now();
+let done = 0;
+const left = () => (BACKFILL ? Math.max(0, queue.length - done) : null);
 for (let i = 0; i < fresh.length; i++) {
-  if ((await processLead(fresh[i])) === "failed") retry.push(fresh[i]);
+  if ((await processLead(fresh[i])) === "failed") retry.push(fresh[i]); else done++;
   if (i % 200 === 0 || i === fresh.length - 1) {
+    await saveCoverage(left());
     const mins = ((Date.now() - started) / 60000).toFixed(1);
     console.log("  …" + (i + 1) + "/" + fresh.length + " read in " + mins + " min — " + ours + " ours, " + skipped + " not ours, " + retry.length + " to retry");
   }
@@ -244,11 +324,12 @@ if (retry.length) {
   console.log("\nretrying " + retry.length + " leads that could not be read the first time…");
   await sleep(60000);                          // let the per-minute window fully reset
   const still = [];
-  for (const row of retry) if ((await processLead(row)) === "failed") still.push(row.Id);
+  for (const row of retry) if ((await processLead(row)) === "failed") still.push(row.Id); else done++;
   failed = still.length;
   if (still.length) console.log("STILL UNREADABLE (" + still.length + "): " + still.slice(0, 30).join(", ") + (still.length > 30 ? " …" : ""));
 }
 
+await saveCoverage(left());
 console.log("\nBD/FR leads found : " + ours);
 console.log("not the team's    : " + skipped + (failed ? "  |  STILL UNREADABLE: " + failed : ""));
 console.log("\nby representative:");

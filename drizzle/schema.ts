@@ -1143,3 +1143,51 @@ export const leaddocketSeen = mysqlTable("leaddocket_seen", {
   isOurs: int("isOurs").default(0).notNull(),
   checkedAt: timestamp("checkedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+/**
+ * Every lead the firm takes in Lead Docket — not just the BD/FR team's, which
+ * are in lead_intake — with its marketing fields, for the Marketing Report.
+ * sync-leaddocket.mjs writes a row for each lead it reads. It names every
+ * client the firm spoke to, so only canSeeMarketing (shared/permissions) reads it.
+ */
+export const leaddocketLeads = mysqlTable("leaddocket_leads", {
+  leadId: bigint("leadId", { mode: "number" }).primaryKey(),
+  createdDate: timestamp("createdDate"),
+  signedUpDate: timestamp("signedUpDate"),
+  // The sign-up date for a signed lead, otherwise the day it came in — the date
+  // the Sign-ups Report counts by, so both reports put a lead in the same month.
+  leadDate: timestamp("leadDate"),
+  status: varchar("status", { length: 80 }),
+  subStatus: varchar("subStatus", { length: 200 }),
+  outcome: varchar("outcome", { length: 60 }),
+  caseType: varchar("caseType", { length: 120 }),
+  marketingSource: varchar("marketingSource", { length: 255 }),
+  contactSource: varchar("contactSource", { length: 255 }),
+  campaign: varchar("campaign", { length: 255 }),
+  sourceDetails: varchar("sourceDetails", { length: 500 }),   // "Marketing Source Details" (FoundUsNotes)
+  referredBy: varchar("referredBy", { length: 255 }),
+  utm: varchar("utm", { length: 500 }),
+  keywords: varchar("keywords", { length: 255 }),
+  referringUrl: varchar("referringUrl", { length: 500 }),
+  office: varchar("office", { length: 120 }),
+  clientName: varchar("clientName", { length: 255 }),
+  city: varchar("city", { length: 120 }),
+  county: varchar("county", { length: 120 }),
+  state: varchar("state", { length: 40 }),
+  intakeBy: varchar("intakeBy", { length: 120 }),
+  // Set when the lead is credited to a BD/FR representative (leaddocket-rules.mjs).
+  teamRep: varchar("teamRep", { length: 120 }),
+  teamRole: varchar("teamRole", { length: 20 }),
+  lastUpdate: varchar("lastUpdate", { length: 40 }),
+  syncedAt: timestamp("syncedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/** Monthly spend per Lead Docket Marketing Source, entered in the Marketing Report. */
+export const marketingSpend = mysqlTable("marketing_spend", {
+  id: int("id").autoincrement().primaryKey(),
+  month: varchar("month", { length: 7 }).notNull(),       // "2026-09"
+  source: varchar("source", { length: 255 }).notNull(),   // as Lead Docket names it
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  updatedBy: varchar("updatedBy", { length: 255 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});

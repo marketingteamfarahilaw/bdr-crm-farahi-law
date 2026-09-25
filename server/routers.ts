@@ -91,7 +91,7 @@ import {
   setSetting,
   setUserPhoto,
 } from "./db";
-import { canManage, canAssignRoles, seesAllData, isIntakeOnly } from "@shared/permissions";
+import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing } from "@shared/permissions";
 import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS } from "./dataSync";
 import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
@@ -107,6 +107,7 @@ const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
+import { getMarketingDashboard, getMarketingLeads, listMarketingSpend, setMarketingSpend } from "./marketingReport";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
 
@@ -794,6 +795,35 @@ export const appRouter = router({
 
   // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
   intake: intakeRouter,
+
+  // Marketing Report — every Lead Docket lead by marketing source. Open to named
+  // people only (canSeeMarketing): it lists every client the firm spoke to.
+  marketing: (() => {
+    const marketingProcedure = protectedProcedure.use(({ ctx, next }) => {
+      if (!canSeeMarketing(ctx.user.email)) throw new TRPCError({ code: "FORBIDDEN", message: "The Marketing Report is private." });
+      return next();
+    });
+    const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+    const month = z.string().regex(/^\d{4}-\d{2}$/);
+    const range = z.object({ from: day, to: day, team: z.boolean().default(true) });
+    const toRange = (i: { from: string; to: string }) => ({ from: laDate(`${i.from}T00:00:00`), to: laDate(`${i.to}T23:59:59.999`) });
+    return router({
+      dashboard: marketingProcedure.input(range).query(({ input }) => getMarketingDashboard(toRange(input), { team: input.team })),
+      leads: marketingProcedure
+        .input(range.extend({
+          source: z.string().max(255).optional(),
+          month: month.optional(),
+          status: z.enum(["all", "signed", "open"]).default("all"),
+          search: z.string().max(100).optional(),
+          limit: z.number().int().min(1).max(500).default(50),
+        }))
+        .query(({ input }) => getMarketingLeads({ ...toRange(input), team: input.team, source: input.source, month: input.month, status: input.status, search: input.search, limit: input.limit })),
+      spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
+      setSpend: marketingProcedure
+        .input(z.object({ month, source: z.string().min(1).max(255), amount: z.number().min(0).max(10_000_000).nullable() }))
+        .mutation(({ ctx, input }) => setMarketingSpend(input.month, input.source, input.amount, String(ctx.user.name || ctx.user.email || `user ${ctx.user.id}`))),
+    });
+  })(),
 
   // Team Reports — live replacements for the BDR/FR Excel report workbooks.
   teamReports: (() => {

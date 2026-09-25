@@ -24,9 +24,14 @@ import { downloadWorkbook } from "./googleSheets";
  * status. It first covered only the sign-up statuses, which left ~29,000 older
  * leads — mostly Rejected — never read, so pre-2026 lead counts were short and
  * conversion too high (`sync-leaddocket.mjs --coverage` shows any such gap).
- * Leads already checked are skipped, so it reads only what is missing. Manual
- * only, never scheduled. It shares Lead Docket's 50-reads-a-minute budget with
- * the regular sync, so the two never run at the same time.
+ * Leads already checked are skipped, so it reads only what is missing. It shares
+ * Lead Docket's 50-reads-a-minute budget with the regular sync, so the two never
+ * run at the same time.
+ *
+ * It also fills leaddocket_leads, the Marketing Report's copy of every lead the
+ * firm takes — about 50,000, or 18 hours of reading. So it reads in chunks of
+ * HISTORY_CHUNK (about an hour each), and runDueJobs starts the next chunk
+ * whenever the regular sync isn't due, until the sync reports none remaining.
  */
 export type JobName = "leaddocket" | "leaddocket_history" | "sheets";
 
@@ -98,9 +103,24 @@ async function runLeadDocket(): Promise<{ ok: boolean; partial?: boolean; summar
   return runLeadDocketScript(["--since", since.toISOString()], "changed leads");
 }
 
-/** Every lead since Lead Docket began (2020). Leads already checked are skipped. */
+/** Leads per history run — about an hour at Lead Docket's pace. */
+const HISTORY_CHUNK = 3000;
+
+/** The next chunk of every lead since Lead Docket began (2020). Leads already checked are skipped. */
 async function runLeadDocketHistory() {
-  return runLeadDocketScript(["--since", "2020-01-01"], "historical leads");
+  return runLeadDocketScript(["--since", "2020-01-01", "--backfill", "--limit", String(HISTORY_CHUNK)], "historical leads");
+}
+
+/** Leads the backfill still has to read, from the sync's last report; null before it has run. */
+async function backfillRemaining(): Promise<number | null> {
+  const raw = await getSetting("leaddocket_marketing_coverage");
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw);
+    return typeof v.remaining === "number" ? v.remaining : null;
+  } catch {
+    return null;
+  }
 }
 
 async function runLeadDocketScript(args: string[], what: string): Promise<{ ok: boolean; partial?: boolean; summary: string }> {
@@ -202,6 +222,13 @@ export async function runDueJobs() {
     if (Date.now() - last >= SYNC_INTERVAL_MS && !running.has(job)) {
       await startJob(job, "schedule");
     }
+  }
+  // Between regular syncs, the next chunk of the history backfill (see
+  // HISTORY_CHUNK). startJob refuses while the regular sync runs, so the team's
+  // own leads never wait behind it for more than a chunk.
+  if (process.env.LEADDOCKET_API_KEY && !running.has("leaddocket") && !running.has("leaddocket_history")) {
+    const remaining = await backfillRemaining();
+    if (remaining === null || remaining > 0) await startJob("leaddocket_history", "schedule");
   }
 }
 

@@ -16,16 +16,16 @@ import "./SignupsDashboard.css";
 // The look lives in SignupsDashboard.css (the Voice Agents board style).
 
 // English formatting regardless of the browser's language, to match the rest of the CRM.
-const fmt = (n: number) => n.toLocaleString("en-US");
+export const fmt = (n: number) => n.toLocaleString("en-US");
 // The local calendar date as YYYY-MM-DD (toISOString is UTC: after 5pm Pacific it gave tomorrow).
-const iso = (d: Date) => d.toLocaleDateString("en-CA");
+export const iso = (d: Date) => d.toLocaleDateString("en-CA");
 const dateOf = (m: string) => {
   const [y, mo] = m.split("-");
   return new Date(Number(y), Number(mo) - 1, 1);
 };
-const monthLabel = (m: string) => dateOf(m).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-const monthAbbr = (m: string) => dateOf(m).toLocaleDateString("en-US", { month: "short" });
-const monthShort = (m: string) => monthAbbr(m) + " '" + m.slice(2, 4);
+export const monthLabel = (m: string) => dateOf(m).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+export const monthAbbr = (m: string) => dateOf(m).toLocaleDateString("en-US", { month: "short" });
+export const monthShort = (m: string) => monthAbbr(m) + " '" + m.slice(2, 4);
 
 /** A stable colour per name, for avatars and the spotlight card. */
 const hue = (s: string) => {
@@ -33,8 +33,8 @@ const hue = (s: string) => {
   for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360;
   return h;
 };
-const initials = (s: string) => s.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-const hueStyle = (name: string) => ({ "--h": hue(name) }) as React.CSSProperties;
+export const initials = (s: string) => s.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+export const hueStyle = (name: string) => ({ "--h": hue(name) }) as React.CSSProperties;
 const roleName = (role: string) => (role === "FR" ? "Field Representative" : role === "BDR" ? "Business Development Rep." : role);
 
 type Role = "all" | "BDR" | "FR" | "Intake";
@@ -42,7 +42,7 @@ type Team = "all" | "current";
 type ReportData = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["signupsDashboard"]>;
 
 /** Common reporting windows, so nobody has to type dates for the usual questions. */
-function presets(today: Date) {
+export function presets(today: Date) {
   const y = today.getFullYear(), m = today.getMonth();
   return [
     { label: "This month", from: iso(new Date(y, m, 1)), to: iso(today) },
@@ -542,9 +542,9 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
   );
 }
 
-const leadDay = (iso: string | null) =>
+export const leadDay = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/Los_Angeles" }) : "—";
-const outcomeBadge = (o: string, signed: boolean) =>
+export const outcomeBadge = (o: string, signed: boolean) =>
   signed ? "sr-b-ok" : /^(lost|rejected)/i.test(o) ? "sr-b-bad" : "sr-b-sun";
 
 /** Every lead in the period by name — searchable, newest first. */
@@ -588,7 +588,7 @@ function LeadList({ leads }: { leads: ReportData["leadList"] }) {
 }
 
 /** "September 1–18, 2026", or "Aug 20, 2026 – Sep 18, 2026" across months — as the team's sheet titles it. */
-function rangeLabel(from: string, to: string) {
+export function rangeLabel(from: string, to: string) {
   const [fy, fm, fd] = from.split("-").map(Number);
   const [ty, tm, td] = to.split("-").map(Number);
   if (fy === ty && fm === tm) {
@@ -857,13 +857,13 @@ function RepClients({ focus, leads, onClose }: {
 }
 
 /** Green at or above the team's conversion, amber within 10 points, red below that. */
-function standing(conv: number, avg: number) {
+export function standing(conv: number, avg: number) {
   if (conv >= avg) return { label: "Above average", badge: "sr-b-ok", score: "" };
   if (conv >= avg - 10) return { label: "Near average", badge: "sr-b-sun", score: "mid" };
   return { label: "Below average", badge: "sr-b-bad", score: "low" };
 }
 
-function Big({ n, label, icon }: { n: string; label: string; icon: React.ReactNode }) {
+export function Big({ n, label, icon }: { n: string; label: string; icon: React.ReactNode }) {
   return (
     <div className="sr-big">
       <span className="n">{n}</span>
@@ -872,7 +872,7 @@ function Big({ n, label, icon }: { n: string; label: string; icon: React.ReactNo
   );
 }
 
-function HBar({ label, value, max, lead }: { label: string; value: number; max: number; lead?: boolean }) {
+export function HBar({ label, value, max, lead }: { label: string; value: number; max: number; lead?: boolean }) {
   return (
     <div className={`sr-hb-row ${lead ? "lead" : ""}`}>
       <b title={label}>{label}</b>
@@ -882,7 +882,7 @@ function HBar({ label, value, max, lead }: { label: string; value: number; max: 
   );
 }
 
-function DateInput({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+export function DateInput({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   return (
     <input
       type="date"
