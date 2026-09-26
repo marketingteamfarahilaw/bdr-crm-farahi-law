@@ -107,6 +107,7 @@ const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
+import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
 import { getRepPhotos } from "./repPhotos";
 import { getFacilityLogos } from "./facilityLogos";
 import { getMarketingDashboard, listMarketingSpend } from "./marketingReport";
@@ -901,6 +902,58 @@ export const appRouter = router({
           mgrOnly(ctx);
           return linkLeadToPartner(input.leadId, input.facilityId, String(ctx.user.name || ctx.user.email || `user ${ctx.user.id}`));
         }),
+    });
+  })(),
+
+  // Data Check (server/dataCheck.ts): the team's Lead Docket leads that need an
+  // answer — a partner, "none", or a second look. Managers see and answer for
+  // everyone; a rep for their own leads, and for words their own leads say.
+  dataCheck: (() => {
+    const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+    const byOf = (u: { name?: string | null; email?: string | null; id: number }) => String(u.name || u.email || `user ${u.id}`);
+    const whoOf = async (u: { role: any; name?: string | null; agentName?: string | null }) =>
+      ({ manager: canManage(u.role), rep: await repNameFor([u.name, u.agentName]) });
+    const key = z.string().min(1).max(255);
+    return router({
+      get: bdProcedure
+        .input(z.object({ from: day, to: day, rep: z.string().max(120).optional(), team: z.enum(["all", "current"]).optional() }))
+        .query(async ({ ctx, input }) => {
+          const who = await whoOf(ctx.user);
+          // A rep sees their own leads only; someone Lead Docket credits with none sees nothing.
+          const rep = who.manager ? input.rep || null : who.rep ?? "\u0000none";
+          const data = await getDataCheck({ from: laDate(`${input.from}T00:00:00`), to: laDate(`${input.to}T23:59:59.999`) }, { rep, team: input.team });
+          return data && { ...data, me: who };
+        }),
+      // Who is looking: a manager, and the rep Lead Docket credits them as (their own leads open first).
+      me: bdProcedure.query(({ ctx }) => whoOf(ctx.user)),
+      partners: bdProcedure.query(() => getPartnerOptions()),
+      linkLead: bdProcedure
+        .input(z.object({ leadId: z.number().int(), facilityId: z.number().int().nullable() }))
+        .mutation(async ({ ctx, input }) => {
+          const who = await whoOf(ctx.user);
+          if (!who.manager && (!who.rep || (await repOfLead(input.leadId)) !== who.rep)) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Only a manager or the lead's rep can change its partner." });
+          }
+          return linkLeadToPartner(input.leadId, input.facilityId, byOf(ctx.user));
+        }),
+      answerWords: bdProcedure
+        .input(z.object({ key, facilityId: z.number().int().nullable() }))
+        .mutation(async ({ ctx, input }) => answerWords(input.key, input.facilityId, byOf(ctx.user), await whoOf(ctx.user))),
+      addPartner: bdProcedure
+        .input(z.object({
+          key,
+          name: z.string().trim().min(2).max(255),
+          category: z.enum(["body_shop", "chiropractor", "physical_therapist", "medical_clinic", "orthopedic_doctor", "imaging_center", "other"]),
+          city: z.string().trim().max(120).optional(),
+        }))
+        .mutation(async ({ ctx, input }) =>
+          addPartnerForWords(input.key, { name: input.name, category: input.category, city: input.city }, { id: ctx.user.id, name: byOf(ctx.user) }, await whoOf(ctx.user))),
+      forgetWords: bdProcedure
+        .input(z.object({ key }))
+        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await forgetWords(input.key); return { ok: true }; }),
+      dismissDuplicate: bdProcedure
+        .input(z.object({ key }))
+        .mutation(async ({ ctx, input }) => { await dismissDuplicate(input.key, byOf(ctx.user)); return { ok: true }; }),
     });
   })(),
 

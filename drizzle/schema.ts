@@ -11,6 +11,7 @@ import {
   json,
   boolean,
   decimal,
+  uniqueIndex,
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
 
@@ -366,6 +367,11 @@ export const facilityLeads = mysqlTable("facility_leads", {
   // otherwise its text matching would undo the correction on the next sync.
   facilityLinkedBy: varchar("facilityLinkedBy", { length: 255 }),
   facilityLinkedAt: timestamp("facilityLinkedAt"),
+  // A Lead Docket lead's referral words reduced to a key by the mirror
+  // (scripts/migration/partner-key.mjs): "" when they name no partner (empty,
+  // or only people), null until the mirror has seen the lead. Leads with the
+  // same key get the same partner (partner_aliases).
+  partnerKey: varchar("partnerKey", { length: 255 }),
   // Lead Docket lead id, so re-mirroring updates rows in place. Null for leads
   // entered in the app.
   externalId: varchar("externalId", { length: 64 }),
@@ -1212,6 +1218,35 @@ export const repPhotos = mysqlTable("rep_photos", {
  * city) and its site's own icon saved here. image is null when no logo was found;
  * checkedAt says when, so the lookup is retried a month later rather than daily.
  */
+/**
+ * A partner picked for some referral words, applied to every Lead Docket lead
+ * that says the same — "Valentz Auto Body Shop" is Valenz Autobody — past and
+ * future (the mirror reads this before guessing from the text). Written when
+ * someone links a lead in the Sign-ups Report or a group of words on the Data
+ * Check page. facilityId null: those words name no partner (a person, a friend).
+ */
+export const partnerAliases = mysqlTable("partner_aliases", {
+  aliasKey: varchar("aliasKey", { length: 255 }).primaryKey(),   // facility_leads.partnerKey
+  text: varchar("text", { length: 500 }).notNull(),              // as intake wrote it, for display
+  facilityId: int("facilityId"),
+  createdBy: varchar("createdBy", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * Data Check items someone looked at and cleared — "these two leads are not the
+ * same client". itemKey names the exact leads, so a new lead for the same
+ * client makes the group show again.
+ */
+export const dataCheckDismissals = mysqlTable("data_check_dismissals", {
+  id: int("id").autoincrement().primaryKey(),
+  kind: varchar("kind", { length: 40 }).notNull(),        // "duplicate"
+  itemKey: varchar("itemKey", { length: 255 }).notNull(),
+  createdBy: varchar("createdBy", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({ kindItem: uniqueIndex("data_check_kind_item").on(t.kind, t.itemKey) }));
+
 export const facilityLogos = mysqlTable("facility_logos", {
   facilityId: int("facilityId").primaryKey(),
   website: varchar("website", { length: 500 }),

@@ -11,8 +11,12 @@
  *   · facilityId           — the referring partner, when Lead Docket's
  *                            "Referred by" names one that matches safely;
  *                            otherwise null, and the lead still counts for the rep.
- *                            A partner someone picked by hand in the Sign-ups
- *                            Report (facilityLinkedBy set) is never overwritten
+ *                            A partner someone picked by hand for this lead
+ *                            (facilityLinkedBy set) is never overwritten; one
+ *                            picked for the same words on another lead
+ *                            (partner_aliases, by partnerKey) comes before any
+ *                            guessing
+ *   · partnerKey           — those words reduced to a key (partner-key.mjs)
  *   · signedCase / signedDate / outcome — from the sign-up date, so a client
  *                            whose case later closed still counts as signed
  *   · createdAt = the lead's own date, NOT now — notifications alert on recently
@@ -29,13 +33,11 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
-import { TEAM } from "./leaddocket-rules.mjs";
+import { nk, partnerPart, partnerKey } from "./partner-key.mjs";
 
 const DRY = process.argv.includes("--dry");
 const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
 const q = async (sql, p = []) => (await c.query(sql, p))[0];
-
-const nk = (s) => String(s ?? "").toLowerCase().replace(/&/g, " and ").replace(/\band\b/g, " ").replace(/[^a-z0-9]/g, "");
 
 // ── facility matcher ─────────────────────────────────────────────────────────
 // Exact normalised name first. Containment only when the facility name is long
@@ -193,16 +195,8 @@ function matchMissingWord(referrer) {
   return best.id;
 }
 
-// Intake often puts the rep first: "Field Representative Genysys Sanchez / Reginos
-// Auto Body". The rep is not the partner — that text once matched Sanchez Auto
-// Body — so the parts naming a team member or a role are dropped before matching.
-// So are former clients and employees who referred someone: they are people,
-// not partners ("Former Client Ignacio Hernandez", "Employee Referral Diana Lopez").
-const ROLE_WORDS = /\b(field rep(resentative)?|bdr|intake|(former|existing|current|past|previous) client|employee referral)\b/i;
-const teamKeys = TEAM.map(([full]) => nk(full));
-const partnerPart = (referrer) => String(referrer ?? "").split("/")
-  .filter((part) => !ROLE_WORDS.test(part) && !teamKeys.some((t) => nk(part).includes(t)))
-  .join(" / ").trim();
+// The rep's name and people who referred ("Former Client …") are dropped before
+// matching: partnerPart() in partner-key.mjs.
 
 const EXPLAIN = process.argv.includes("--explain");
 function matchFacility(text) {
@@ -230,6 +224,12 @@ const leads = await q(`SELECT externalId, leadName, member, facility, outcome, c
   FROM lead_intake WHERE externalSource='leaddocket'`);
 const existing = new Map((await q("SELECT id, externalId, facilityId, facilityLinkedBy FROM facility_leads WHERE externalSource='leaddocket'")).map((r) => [r.externalId, r]));
 const facName = new Map(facs.map((f) => [f.id, f.name]));
+// Words someone has already answered for — "Valentz Auto Body Shop" is Valenz
+// Autobody — from the Sign-ups Report or the Data Check page. null means "not a
+// partner". An answer naming a partner since deleted is dropped: matching resumes.
+const remembered = new Map((await q("SELECT aliasKey, facilityId FROM partner_aliases"))
+  .filter((a) => a.facilityId == null || facName.has(a.facilityId))
+  .map((a) => [a.aliasKey, a.facilityId]));
 const inbound = [];   // partner-referred leads, for the Partner Referral Tracker
 
 let inserted = 0, updated = 0, linked = 0, signed = 0;
@@ -237,8 +237,12 @@ for (const l of leads) {
   const isSigned = l.outcome === "Signed" || l.outcome === "Signed Referred Out";
   const lostish = /^(lost|rejected|closed)/i.test(String(l.notes ?? "").replace(/^Lead Docket status:\s*/i, ""));
   const prior = existing.get(String(l.externalId));
-  // Linked (or unlinked) by hand in the app: that choice stands.
-  const facilityId = prior?.facilityLinkedBy ? prior.facilityId : l.facility ? matchFacility(l.facility) : null;
+  const key = l.facility ? partnerKey(l.facility) : "";
+  // Linked (or unlinked) by hand for this lead: that choice stands. Then the answer
+  // given for the same words on another lead; only then a guess from the text.
+  const facilityId = prior?.facilityLinkedBy ? prior.facilityId
+    : key && remembered.has(key) ? remembered.get(key)
+    : l.facility ? matchFacility(l.facility) : null;
   if (facilityId) linked++;
   if (isSigned) signed++;
   const when = l.leadDate ? new Date(l.leadDate) : new Date();
@@ -272,6 +276,7 @@ for (const l of leads) {
       .filter(Boolean).join(" · ").slice(0, 4000),
     repId: userId(l.member),
     repName: String(l.member ?? "").slice(0, 255),
+    partnerKey: key,
     externalId: String(l.externalId),
     externalSource: "leaddocket",
   };

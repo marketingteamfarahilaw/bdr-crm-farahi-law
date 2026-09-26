@@ -32,6 +32,7 @@ import PdTrackerPage from "./pages/PdTracker";
 import TaskBoardPage from "./pages/TaskBoard";
 import TerritoriesPage from "./pages/Territories";
 import SignupsDashboardPage from "./pages/SignupsDashboard";
+import DataCheckPage from "./pages/DataCheck";
 import CheckinReportPage from "./pages/CheckinReport";
 import FileVineNotePage from "./pages/FileVineNote";
 import AgentDashboardPage from "./pages/AgentDashboard";
@@ -157,6 +158,7 @@ function Router() {
 
         {/* Executive sign-ups dashboard */}
         <Route path="/signups-report" component={SignupsDashboardPage} />
+        <Route path="/data-check" component={DataCheckPage} />
         <Route path="/marketing-report" component={MarketingReportPage} />
 
         {/* FileVine Note Generator */}

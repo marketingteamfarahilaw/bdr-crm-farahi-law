@@ -395,3 +395,52 @@ table.mk-matrix td.num i { color: var(--mute); font-style: normal; font-size: 12
 .mk-spend-row .sr-input { width: 100%; min-width: 0; }
 .mk-spend-row:last-child { grid-column: 1 / -1; grid-template-columns: minmax(0, 360px) 120px; }
 @media (max-width: 560px) { .mk-spend-row:last-child { grid-template-columns: minmax(0, 1fr) 100px; } }
+
+/* ---- Data Check page (DataCheck.tsx) */
+.dc-meter { height: 14px; border-radius: 99px; background: rgba(28, 28, 28, .08); overflow: hidden; }
+.dc-meter i { display: block; height: 100%; border-radius: 99px; background: var(--char); transition: width .3s ease; }
+.dc-meter i.ok { background: var(--ok); }
+.dc-meter i.mid { background: var(--sun); }
+.dc-meter i.low { background: var(--bad); }
+.dc-meter.sm { height: 8px; flex: 1; min-width: 90px; }
+.dark .sr .dc-meter { background: rgba(255, 255, 255, .1); }
+.dc-clean { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.dc-clean b { font: 500 15px var(--disp); color: var(--ink); font-variant-numeric: tabular-nums; min-width: 48px; text-align: right; }
+.sr .dc-count {
+  display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; cursor: pointer; padding: 2px 4px;
+  font: 500 15px var(--disp); color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.sr .dc-count em { font: 500 11px var(--ui); font-style: normal; color: var(--ok); }
+.sr .dc-count svg { width: 14px; height: 14px; color: var(--mute); transition: transform .15s ease; }
+.sr .dc-count svg.up { transform: rotate(180deg); }
+table.sr-t td.dc-acts { white-space: nowrap; text-align: right; }
+table.sr-t td.dc-acts > * + * { margin-left: 6px; }
+.sr .dc-mini {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border: 0; border-radius: 99px; cursor: pointer;
+  background: rgba(28, 28, 28, .07); color: var(--ink2); font: 600 11.5px/1 var(--ui); white-space: nowrap;
+}
+.sr .dc-mini:hover:not(:disabled) { background: var(--char); color: #fff; }
+.dark .sr .dc-mini { background: rgba(255, 255, 255, .08); }
+.dark .sr .dc-mini:hover:not(:disabled) { color: #161613; }
+.sr .dc-mini:disabled, .sr .sr-link-btn:disabled { opacity: .55; cursor: default; }
+.sr .dc-ld { display: inline-flex; align-items: center; gap: 4px; font: 500 12px var(--ui); color: var(--mute); text-decoration: none; white-space: nowrap; }
+.sr .dc-ld:hover { color: var(--ink); text-decoration: underline; }
+.sr .dc-ld svg { width: 12px; height: 12px; }
+table.sr-t tr.dc-sub td { background: transparent; padding: 0 14px 8px 28px; }
+table.sr-t tr.dc-sub:hover td { background: transparent; }
+.dc-sub ul, .dc-dup ul, .dc-plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dc-sub li, .dc-dup li, .dc-plain li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font: 13px var(--ui); color: var(--ink2); }
+.dc-sub li b, .dc-dup li b, .dc-plain li b { color: var(--ink); font-weight: 600; }
+.dc-sub .sr-badge, .dc-dup .sr-badge { height: 22px; font-size: 11.5px; }
+.dc-dups { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .dc-dups { grid-template-columns: minmax(0, 1fr); } }
+.dc-dup { padding: 12px 14px; border-radius: var(--rad-s); background: rgba(255, 255, 255, .58); display: flex; flex-direction: column; gap: 10px; }
+.dark .sr .dc-dup { background: rgba(255, 255, 255, .04); }
+.dc-dup-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* the partner picker: adding a partner the CRM doesn't have yet */
+.sr .sr-pick-list button.sr-pick-new { align-items: center; box-shadow: inset 0 0 0 1px var(--line); background: var(--sun-t); }
+.sr .sr-pick-list button.sr-pick-new svg { width: 14px; height: 14px; flex: none; }
+.sr-add { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.sr-add label { display: flex; flex-direction: column; gap: 6px; font: 600 12px var(--ui); color: var(--ink2); }
+.sr-add label i { font-weight: 400; font-style: normal; color: var(--mute); }
+.sr-add .sr-input { width: 100%; }

@@ -4,7 +4,7 @@ import {
   CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem,
 } from "@/components/ui/command";
 import { trpc } from "@/lib/trpc";
-import { Building2, Search, LayoutDashboard, Map, BarChart3, Users, Phone, MapPin } from "lucide-react";
+import { Building2, Search, LayoutDashboard, Map, BarChart3, Users, Phone, MapPin, ListChecks } from "lucide-react";
 
 const PAGES = [
   { label: "Command Center", path: "/", icon: LayoutDashboard },
@@ -13,6 +13,7 @@ const PAGES = [
   // { label: "Lead Search", path: "/search", icon: Search },
   // { label: "Lead Map", path: "/map", icon: Map },
   { label: "BDR Reports", path: "/crm/reports", icon: BarChart3 },
+  { label: "Data Check", path: "/data-check", icon: ListChecks },
   { label: "Representatives", path: "/agents", icon: Users },
   { label: "RingCentral Settings", path: "/crm/ringcentral", icon: Phone },
 ];

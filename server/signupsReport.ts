@@ -17,7 +17,8 @@
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { leadIntake, facilities, facilityLeads, inboundLeads } from "../drizzle/schema";
+import { leadIntake, facilities, facilityLeads } from "../drizzle/schema";
+import { rememberPartner, setLeadsPartner } from "./partnerLinks";
 import { isCurrentRep, CURRENT_TEAM, MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
 import { isNonReportingRep } from "@shared/permissions";
 import { formatInTimeZone } from "date-fns-tz";
@@ -465,15 +466,15 @@ export async function getPartnerOptions() {
 }
 
 /**
- * Pick a Lead Docket lead's referring partner by hand, from the report's lead
- * lists. Intake writes partners the way people say them ("Luke with First
- * Health Medical"), so the mirror's text matching misses some and can get a few
- * wrong; the BDR who owns the relationship knows. The choice goes everywhere a
- * partner's leads are read — facility_leads (facility profile, Command Center,
- * this report), the facility's totals, and inbound_leads (Partner Referral
- * Tracker) — the same writes mirror-leads-to-facilities.mjs makes for an
- * automatic link. facilityLinkedBy tells that script to keep it from then on.
- * facilityId null records "no partner", which also sticks.
+ * Pick a Lead Docket lead's referring partner by hand — from the report's lead
+ * lists or the Data Check page. Intake writes partners the way people say them
+ * ("Luke with First Health Medical"), so the mirror's text matching misses some
+ * and can get a few wrong; the BDR who owns the relationship knows. The choice
+ * goes everywhere a partner's leads are read (server/partnerLinks.ts) and sticks
+ * for this lead. A partner picked is also remembered for the lead's words: every
+ * other lead saying the same thing gets it too, now and when later ones arrive
+ * (Youssef, 2026-09-25). facilityId null records "no partner" for this lead only
+ * — a lead from a friend says nothing about the next one with those words.
  */
 export async function linkLeadToPartner(leadId: number, facilityId: number | null, by: string) {
   const db = await getDb();
@@ -484,64 +485,17 @@ export async function linkLeadToPartner(leadId: number, facilityId: number | nul
     throw new TRPCError({ code: "BAD_REQUEST", message: "Only Lead Docket leads can be linked to a partner here." });
   }
   const externalId = String(lead.externalId);
-  const [row] = await db.select({ id: facilityLeads.id, facilityId: facilityLeads.facilityId })
+  const [row] = await db.select({ id: facilityLeads.id, partnerKey: facilityLeads.partnerKey })
     .from(facilityLeads)
     .where(and(eq(facilityLeads.externalSource, "leaddocket"), eq(facilityLeads.externalId, externalId)))
     .limit(1);
   if (!row) {
     throw new TRPCError({ code: "PRECONDITION_FAILED", message: "This lead only just arrived from Lead Docket — try again after the next sync." });
   }
-  let partner: { id: number; name: string } | undefined;
-  if (facilityId != null) {
-    [partner] = await db.select({ id: facilities.id, name: facilities.name }).from(facilities).where(eq(facilities.id, facilityId)).limit(1);
-    if (!partner) throw new TRPCError({ code: "NOT_FOUND", message: "That partner no longer exists." });
-  }
 
-  await db.update(facilityLeads)
-    .set({ facilityId, facilityLinkedBy: by.slice(0, 255), facilityLinkedAt: new Date() })
-    .where(eq(facilityLeads.id, row.id));
-
-  // Both the partner that lost the lead and the one that gained it.
-  for (const id of Array.from(new Set([row.facilityId, facilityId].filter((x): x is number => x != null)))) {
-    await db.execute(sql`UPDATE facilities f SET
-      f.totalLeadsReceived = (SELECT COUNT(*) FROM facility_leads WHERE facilityId = ${id} AND direction = 'received_from_facility'),
-      f.totalLeadsSent = (SELECT COUNT(*) FROM facility_leads WHERE facilityId = ${id} AND direction = 'sent_to_facility')
-                       + (SELECT COALESCE(SUM(count), 0) FROM facility_leads_sent WHERE facilityId = ${id}),
-      f.totalSignedCases = (SELECT COUNT(*) FROM facility_leads WHERE facilityId = ${id} AND signedCase = 1),
-      f.lastSignedCaseDate = (SELECT MAX(COALESCE(signedDate, leadDate)) FROM facility_leads WHERE facilityId = ${id} AND signedCase = 1)
-      WHERE f.id = ${id}`);
-  }
-
-  const inboundKey = and(eq(inboundLeads.externalSource, "leaddocket"), eq(inboundLeads.externalId, externalId));
-  if (!partner) {
-    await db.delete(inboundLeads).where(inboundKey);
-    return { partner: null };
-  }
-  const signed = isSigned(lead.outcome);
-  const when = lead.leadDate ?? new Date();
-  const owned = {
-    leadName: (lead.leadName || "(no name)").slice(0, 255),
-    dateReceived: when,
-    referringFacility: partner.name.slice(0, 255),
-    facilityContact: String(lead.facility ?? "").slice(0, 255) || null,
-    assignedAgent: String(lead.member ?? "").slice(0, 100) || null,
-    caseType: String(lead.classification ?? "").trim().slice(0, 100) || null,
-    signed,
-    signedDate: signed ? when : null,
-    notSignedReason: !signed && /^(lost|rejected)/i.test(String(lead.outcome ?? "")) ? String(lead.outcome) : null,
-  };
-  const [have] = await db.select({ id: inboundLeads.id }).from(inboundLeads).where(inboundKey).limit(1);
-  if (have) {
-    await db.update(inboundLeads).set(owned).where(eq(inboundLeads.id, have.id));
-  } else {
-    await db.insert(inboundLeads).values({
-      ...owned,
-      notes: `Lead Docket #${externalId} · linked by ${by}`,
-      countsTowardPartnerActivity: true,
-      externalId,
-      externalSource: "leaddocket",
-      createdAt: when,
-    });
-  }
-  return { partner: partner.name };
+  await setLeadsPartner([externalId], facilityId, { by, byHand: true });
+  if (facilityId == null) return { partner: null, also: 0 };
+  const [partner] = await db.select({ name: facilities.name }).from(facilities).where(eq(facilities.id, facilityId)).limit(1);
+  const also = row.partnerKey ? await rememberPartner(row.partnerKey, String(lead.facility ?? ""), facilityId, by) : 0;
+  return { partner: partner?.name ?? null, also };
 }

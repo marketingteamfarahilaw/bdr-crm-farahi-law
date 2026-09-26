@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
-import { createPortal } from "react-dom";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -10,11 +9,11 @@ import {
   Inbox, CheckCircle2, User, Download, ArrowUpRight, Loader2,
   Trophy, Percent, Users, TrendingUp, Handshake, Info, X, Link2, Pencil, Presentation,
 } from "lucide-react";
-import { CURRENT_TEAM } from "@shared/team";
 import { enterFullscreen, exitFullscreenSoon } from "./signups/fullscreen";
 import type { DeckPlace, PresentationProps } from "./signups/Presentation";
 import "./SignupsDashboard.css";
 import { RepFace, PartnerLogo } from "@/components/RepFace";
+import { PartnerPicker } from "./signups/PartnerPicker";
 
 // The look lives in SignupsDashboard.css (the Voice Agents board style).
 
@@ -843,103 +842,32 @@ function ReferredBy({ lead, onPick }: { lead: LeadRow; onPick: () => void }) {
   );
 }
 
-const TEAM_NAMES = Object.values(CURRENT_TEAM).flat().map((n) => n.toLowerCase());
-const GENERIC = new Set(["the", "and", "with", "from", "for", "auto", "body", "shop", "collision", "center", "centre", "repair",
-  "towing", "tow", "medical", "health", "clinic", "care", "insurance", "services", "service", "group", "inc", "llc",
-  "chiropractic", "chiro", "wellness", "urgent", "paint"]);
-const nameWords = (s: string) => s.toLowerCase().replace(/['’]s\b/g, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
-
-/** Partners sharing a distinctive word with what Lead Docket says ("Luke with First Health Medical"). */
-function suggestPartners(options: { id: number; name: string; territory: string | null }[], referredBy: string | null) {
-  // Intake often starts with the rep ("Field Representative Lupe Campos / …"); that part names no partner.
-  const text = String(referredBy ?? "").split("/")
-    .filter((part) => !/field rep|\bbdr\b|intake/i.test(part) && !TEAM_NAMES.some((n) => part.toLowerCase().includes(n)))
-    .join(" ");
-  const said = new Set(nameWords(text));
-  if (!said.size) return [];
-  return options
-    .map((o) => {
-      let score = 0;
-      for (const w of Array.from(new Set(nameWords(o.name)))) if (said.has(w)) score += GENERIC.has(w) ? 0.2 : 1;
-      return { o, score };
-    })
-    .filter((x) => x.score >= 1)
-    .sort((a, b) => b.score - a.score || a.o.name.localeCompare(b.o.name))
-    .slice(0, 6)
-    .map((x) => x.o);
-}
-
 /** Pick the lead's referring partner by hand; it then counts on that partner everywhere. */
 function LinkPartner({ lead, onClose }: { lead: LeadRow; onClose: () => void }) {
   const utils = trpc.useUtils();
-  const options = trpc.teamReports.partnerOptions.useQuery(undefined, { staleTime: 5 * 60_000 });
-  const [search, setSearch] = useState("");
   const link = trpc.teamReports.linkLeadPartner.useMutation({
     onSuccess: (r) => {
-      toast.success(r.partner ? `${lead.name} now counts under ${r.partner}` : `${lead.name} is no longer linked to a partner`);
+      toast.success(r.partner
+        ? `${lead.name} now counts under ${r.partner}` + (r.also ? ` — and ${r.also} other lead${r.also === 1 ? "" : "s"} with the same words` : "")
+        : `${lead.name} is no longer linked to a partner`);
       utils.teamReports.signupsDashboard.invalidate();
+      utils.dataCheck.get.invalidate();
       onClose();
     },
     onError: (e) => toast.error(e.message),
   });
-  // Capture phase: Esc closes this picker only, not the client window underneath.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
-
-  const all = options.data ?? [];
-  const words = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const found = words.length
-    ? all.filter((o) => words.every((w) => `${o.name} ${o.territory ?? ""}`.toLowerCase().includes(w)))
-    : suggestPartners(all, lead.referredBy);
-  const shown = found.slice(0, 40);
-
-  // Portalled so it isn't clipped by, or stacked under, the client window it opens from.
-  return createPortal(
-    <div className="sr sr-layer">
-      <div className="sr-modal-back sr-modal-top" onClick={onClose}>
-        <div className="sr-modal sr-pick" role="dialog" aria-modal="true" aria-label={`Link ${lead.name} to a partner`} onClick={(e) => e.stopPropagation()}>
-          <div className="sr-panel-h" style={{ marginBottom: 6 }}>
-            <div className="sr-ttl"><h2>Link to a partner</h2></div>
-            <button className="sr-arr" aria-label="Close" onClick={onClose}><X /></button>
-          </div>
-          <p className="sr-sub">
-            <b style={{ color: "var(--ink)" }}>{lead.name}</b> · {lead.member}
-            {lead.referredBy && <><br />Lead Docket says: “{lead.referredBy}”</>}
-          </p>
-          <input autoFocus className="sr-input" style={{ width: "100%", margin: "8px 0 12px" }} value={search}
-            onChange={(e) => setSearch(e.target.value)} placeholder="Search partners by name or territory…" aria-label="Search partners" />
-          {options.isLoading ? (
-            <p className="sr-nil"><Loader2 size={13} className="sr-spin" /> Loading partners…</p>
-          ) : (
-            <>
-              {!words.length && <p className="sr-pick-h">{shown.length ? "Suggested from what Lead Docket says" : "Type a partner's name to find it"}</p>}
-              <div className="sr-pick-list">
-                {shown.map((o) => (
-                  <button key={o.id} className={o.id === lead.partnerId ? "on" : ""} disabled={link.isPending}
-                    onClick={() => link.mutate({ leadId: lead.id, facilityId: o.id })}>
-                    <b>{o.name}</b>{o.territory && <i>{o.territory}</i>}{o.id === lead.partnerId && <em>current</em>}
-                  </button>
-                ))}
-                {words.length > 0 && found.length === 0 && (
-                  <p className="sr-nil">No partner by that name. Add it under <Link href="/crm/facilities/new">Facilities</Link> first, then link it here.</p>
-                )}
-              </div>
-              {found.length > shown.length && <p className="sr-sub" style={{ marginTop: 8 }}>{found.length - shown.length} more — keep typing to narrow it down.</p>}
-            </>
-          )}
-          <div className="sr-pick-foot">
-            <span className="sr-hint">The lead then counts on the partner's page and in the Partner Referral Tracker. Lead Docket syncs keep this choice.</span>
-            {lead.partnerId && (
-              <button className="sr-btn2" disabled={link.isPending} onClick={() => link.mutate({ leadId: lead.id, facilityId: null })}>Not from a partner</button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body,
+  return (
+    <PartnerPicker
+      title={`Link ${lead.name} to a partner`}
+      who={<><b style={{ color: "var(--ink)" }}>{lead.name}</b> · {lead.member}</>}
+      said={lead.referredBy}
+      currentId={lead.partnerId}
+      pending={link.isPending}
+      onPick={(id) => link.mutate({ leadId: lead.id, facilityId: id })}
+      none={lead.partnerId ? { label: "Not from a partner", run: () => link.mutate({ leadId: lead.id, facilityId: null }) } : undefined}
+      hint="The lead then counts on the partner's page and in the Partner Referral Tracker — and so does every other lead with the same words, now and later."
+      onClose={onClose}
+    />
   );
 }
 
