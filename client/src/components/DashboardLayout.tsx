@@ -29,13 +29,14 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { CommandPalette } from "./CommandPalette";
 import { QuickAdd } from "./QuickAdd";
 import { NotificationBell } from "./NotificationBell";
-import { useBrand } from "@/hooks/useBranding";
+import { useBrand, DEFAULT_LOGO, DEFAULT_MARK } from "@/hooks/useBranding";
 import { useTheme } from "@/contexts/ThemeContext";
 import { canSeeBDR, canSeeFR, canManage, canAssignRoles, canSeeIntake, isIntakeOnly, canSeeMarketing } from "@shared/permissions";
 
 type NavLevel = "all" | "bdr" | "fr" | "manage" | "super" | "intake" | "marketing";
 
-const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: string; level: NavLevel }[] }[] = [
+// `also`: pages that now live inside this item as a tab, so it stays highlighted there.
+const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: string; level: NavLevel; also?: string[] }[] }[] = [
   // Intake — a separate world. Intake roles see ONLY this section (plus their
   // profile); BD/FR roles never see it. The super admin sees both sides.
   { title: "Intake — AI Case Desk", items: [
@@ -62,8 +63,8 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     // { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
     { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr" },
     { icon: Map, label: "Territories", path: "/territories", level: "manage" },
-    { icon: Phone, label: "RingCentral", path: "/crm/ringcentral", level: "bdr" },
-    { icon: UtensilsCrossed, label: "Uber Eats", path: "/crm/uber-eats", level: "all" },
+    // RingCentral is a tab in Settings and Uber Eats one in Expenses (per request,
+    // Sept 2026); their old addresses open those tabs.
     // { icon: Car, label: "PD Car Tracker", path: "/pd-tracker", level: "bdr" },
     { icon: PhoneCall, label: "Check-In Report", path: "/checkin-report", level: "bdr" },
     { icon: FileBarChart2, label: "Sign-ups Report", path: "/signups-report", level: "manage" },
@@ -84,7 +85,8 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     // Daily Work, Task Board and FileVine Note hidden (per request, Sept 2026).
     // Pages/routes still exist; uncomment to restore.
     // { icon: LayoutDashboard, label: "Daily Work", path: "/daily-work", level: "all" },
-    { icon: CalendarDays, label: "Daily Activity Log", path: "/daily-log", level: "all" },
+    // Daily Activity Log hidden too (per request, Sept 2026); /daily-log still works.
+    // { icon: CalendarDays, label: "Daily Activity Log", path: "/daily-log", level: "all" },
     // { icon: ListChecks, label: "Task Board", path: "/tasks", level: "all" },
     // { icon: FileText, label: "FileVine Note", path: "/filevine-note", level: "all" },
     { icon: BarChart3, label: "Reports", path: "/reports", level: "all" },
@@ -97,7 +99,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     // exist; uncomment to restore.
     // { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
     // { icon: Navigation, label: "Field Mode (Mobile)", path: "/field", level: "fr" },
-    { icon: Receipt, label: "Expenses", path: "/bdr/expenses", level: "all" },
+    { icon: Receipt, label: "Expenses", path: "/bdr/expenses", level: "all", also: ["/crm/uber-eats"] },
     { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards", level: "bdr" },
     // { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },
     { icon: Network, label: "Referral-Friendly List", path: "/bdr/referral-tracker", level: "bdr" },
@@ -114,11 +116,15 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     // exist and the Filevine sync keeps running — uncomment to restore.
     // { icon: UserRound, label: "PI Clients", path: "/pi-clients", level: "manage" },
     // { icon: Link2, label: "Filevine", path: "/filevine", level: "manage" },
-    { icon: Settings, label: "Settings", path: "/settings", level: "manage" },
+    // Open to BDRs as well: their RingCentral connection is here now.
+    { icon: Settings, label: "Settings", path: "/settings", level: "bdr", also: ["/crm/ringcentral"] },
   ] },
 ];
 
 const ALL_NAV = NAV_SECTIONS.flatMap((s) => s.items);
+
+const isAt = (item: { path: string; also?: string[] }, location: string) =>
+  [item.path, ...(item.also ?? [])].some((p) => location === p || (p !== "/" && location.startsWith(p)));
 
 function canShow(level: NavLevel, role?: string | null, email?: string | null) {
   switch (level) {
@@ -192,7 +198,7 @@ function DashboardLayoutContent({
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { logo, slogan } = useBrand();
+  const { logo } = useBrand();
   const photoOf = useRepPhotos();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
@@ -200,7 +206,7 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const allMenuItems = ALL_NAV;
-  const activeMenuItem = allMenuItems.find(item => item.path === location || (item.path !== "/" && location.startsWith(item.path)));
+  const activeMenuItem = allMenuItems.find(item => isAt(item, location));
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -263,12 +269,13 @@ function DashboardLayoutContent({
                 <PanelLeft className="h-4 w-4 text-muted-foreground" />
               </button>
               {!isCollapsed ? (
-                <div className="flex flex-col min-w-0">
-                  <img src={logo} alt="Farahi Law Firm" className="self-start h-14 w-auto max-w-[190px] object-contain rounded-2xl shadow-[var(--lift)]" />
-                  <span className="text-xs font-medium text-muted-foreground mt-2 px-1 leading-snug">{slogan}</span>
-                </div>
+                <span className="brand-badge">
+                  <img src={logo} alt="Farahi Law Firm" className="h-10 w-auto max-w-[170px] object-contain" />
+                </span>
               ) : (
-                <img src={logo} alt="Farahi Law Firm" className="h-9 w-9 object-contain" />
+                <span className="brand-badge brand-badge-sm">
+                  <img src={logo === DEFAULT_LOGO ? DEFAULT_MARK : logo} alt="Farahi Law Firm" className="h-7 w-7 object-contain" />
+                </span>
               )}
             </div>
           </SidebarHeader>
@@ -324,7 +331,7 @@ function DashboardLayoutContent({
                     )}
                     <SidebarMenu>
                       {items.map((item) => {
-                        const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+                        const isActive = isAt(item, location);
                         return (
                           <SidebarMenuItem key={item.path}>
                             <SidebarMenuButton

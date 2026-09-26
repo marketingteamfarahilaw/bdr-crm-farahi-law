@@ -1,7 +1,10 @@
 import { trpc } from "@/lib/trpc";
 import { useTheme } from "@/contexts/ThemeContext";
 
-export const DEFAULT_LOGO = "/farahi-logo-darkmode.jpg";
+// Navy on transparent (Youssef, 2026-09-25): shown on a white badge so it reads
+// in both themes. The mark alone is for the collapsed sidebar.
+export const DEFAULT_LOGO = "/farahi-logo.png";
+export const DEFAULT_MARK = "/farahi-mark.png";
 export const DEFAULT_SLOGAN = "BD Partner CRM";
 
 /**

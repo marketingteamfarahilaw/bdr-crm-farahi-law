@@ -70,6 +70,13 @@
   background: var(--glass-hi); box-shadow: inset 0 0 0 1px var(--edge); font: 500 22px/1 var(--ui); color: var(--ink);
 }
 .sr-deck .sr-deck-pill.sun { background: var(--sun); color: #1c1c1c; box-shadow: none; }
+/* The trophy for each team's top rep (FR and BDR). */
+.sr-deck .sr-award {
+  display: inline-flex; align-items: center; gap: 8px; height: 38px; margin-left: 16px; padding: 0 16px 0 12px; vertical-align: middle;
+  border-radius: 99px; background: var(--sun); color: #1c1c1c; font: 600 21px/1 var(--ui);
+}
+.sr-deck .sr-award svg { width: 22px; height: 22px; stroke-width: 2.2; }
+.sr-deck .sr-ld.dense .sr-award { height: 34px; font-size: 19px; }
 .sr-deck .sr-deck-former {
   display: inline-flex; align-items: center; height: 32px; margin-left: 14px; padding: 0 12px; vertical-align: middle;
   border-radius: 99px; border: 1px solid var(--rule); font: 500 20px/1 var(--ui); color: var(--ink2);

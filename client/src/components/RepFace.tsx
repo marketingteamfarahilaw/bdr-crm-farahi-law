@@ -29,3 +29,22 @@ export function RepFace({ name, fallback, className = "" }: { name: string; fall
   if (!photo) return <>{fallback}</>;
   return <img src={photo} alt="" className={`rep-face ${className}`.trim()} draggable={false} />;
 }
+
+/** The top partners' logos (server/facilityLogos.ts), by facility id. One query for the app. */
+export function useFacilityLogos(): (facilityId: number | null | undefined) => string | null {
+  const { user } = useAuth();
+  const { data } = trpc.facilityLogos.useQuery(undefined, {
+    enabled: !!user && !isIntakeOnly(user.role),
+    staleTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+  return (id) => (id != null && data ? (data as Record<number, string>)[id] ?? null : null);
+}
+
+/** A partner's logo inside an existing avatar circle, or the fallback (its initials). */
+export function PartnerLogo({ facilityId, fallback }: { facilityId: number | null | undefined; fallback: ReactNode }) {
+  const logo = useFacilityLogos()(facilityId);
+  if (!logo) return <>{fallback}</>;
+  return <img src={logo} alt="" className="rep-face partner-logo" draggable={false} />;
+}

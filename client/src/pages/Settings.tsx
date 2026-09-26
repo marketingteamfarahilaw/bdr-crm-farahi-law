@@ -1,13 +1,41 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { canManage } from "@shared/permissions";
 import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock } from "lucide-react";
 import { DEFAULT_LOGO } from "@/hooks/useBranding";
 import { DataSyncPanel } from "@/components/DataSyncPanel";
+import { PageTabs } from "@/components/PageTabs";
+import RingCentralSettings from "./crm/RingCentralSettings";
+
+const RC_PATH = "/crm/ringcentral";
+
+/**
+ * Settings: branding and the data sync (managers), and each rep's RingCentral
+ * connection — its own menu item until Sept 2026; /crm/ringcentral opens that
+ * tab (the RingCentral sign-in returns there). BDRs see only RingCentral.
+ */
+export default function SettingsPage() {
+  const { user } = useAuth();
+  const [location, navigate] = useLocation();
+  const isManager = canManage(user?.role);
+  const tab = !isManager || location.startsWith(RC_PATH) ? "rc" : "brand";
+  return (
+    <div className="relative">
+      {isManager && (
+        <PageTabs
+          tabs={[["brand", "Branding & data"], ["rc", "RingCentral"]] as const}
+          active={tab}
+          onChange={(k) => navigate(k === "rc" ? RC_PATH : "/settings")}
+        />
+      )}
+      {tab === "rc" ? <RingCentralSettings /> : <BrandingSettings />}
+    </div>
+  );
+}
 
 const MAX_DIM = 512; // a wide logo renders up to 190px across in the sidebar; 512 keeps it crisp on retina and still small
 
@@ -112,7 +140,7 @@ function LogoField({
   );
 }
 
-export default function SettingsPage() {
+function BrandingSettings() {
   const { user } = useAuth();
   const isManager = canManage(user?.role);
   const utils = trpc.useUtils();
@@ -170,7 +198,7 @@ export default function SettingsPage() {
         </h1>
       </div>
       <p className="text-sm text-muted-foreground ml-12 mb-8">
-        Brand your CRM. Upload a logo for dark and light mode — it appears on the sign-in screen and the sidebar.
+        Brand your CRM. Upload a logo for dark and light mode — it appears on the sign-in screen and the sidebar, on a white badge.
       </p>
 
       {isManager && <DataSyncPanel />}
@@ -182,21 +210,8 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Slogan / tagline */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-4">
-        <label htmlFor="slogan" className="text-sm font-semibold text-foreground">Slogan / Tagline</label>
-        <p className="text-xs text-muted-foreground mt-0.5 mb-3">Shown beside the logo on the sign-in screen and in the sidebar.</p>
-        <Input
-          id="slogan"
-          value={slogan}
-          disabled={!isManager}
-          maxLength={200}
-          onChange={(e) => { setSlogan(e.target.value); setDirty(true); }}
-          placeholder="e.g. Business Development · Partner CRM"
-          className="bg-card border-border max-w-lg"
-        />
-      </div>
-
+      {/* No slogan field: the logo stands alone (Youssef, 2026-09-25). A saved
+          slogan is kept as is so saving the logos doesn't wipe it. */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <LogoField
           title="Logo — Dark mode"

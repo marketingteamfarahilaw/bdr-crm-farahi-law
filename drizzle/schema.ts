@@ -1205,3 +1205,18 @@ export const repPhotos = mysqlTable("rep_photos", {
   image: longtext("image").notNull(),   // a small JPEG/PNG data URL (RingCentral's 195×195)
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+/**
+ * Logos for the top referring partners (server/facilityLogos.ts). The CRM has no
+ * website for most partners, so each is looked up once on Google Places (name and
+ * city) and its site's own icon saved here. image is null when no logo was found;
+ * checkedAt says when, so the lookup is retried a month later rather than daily.
+ */
+export const facilityLogos = mysqlTable("facility_logos", {
+  facilityId: int("facilityId").primaryKey(),
+  website: varchar("website", { length: 500 }),
+  placeId: varchar("placeId", { length: 255 }),
+  image: longtext("image"),   // a data URL
+  source: varchar("source", { length: 500 }),
+  checkedAt: timestamp("checkedAt").defaultNow().onUpdateNow().notNull(),
+});

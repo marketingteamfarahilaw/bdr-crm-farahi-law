@@ -11,11 +11,11 @@
  * deck scales evenly to the screen.
  */
 import type { ReactNode } from "react";
-import { RepFace } from "@/components/RepFace";
+import { RepFace, PartnerLogo } from "@/components/RepFace";
 import { CheckCircle2, Handshake, Info, Percent, TrendingUp, Trophy, Users } from "lucide-react";
 import { MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
 import {
-  SC_TITLE, ScorecardTable, fmt, hueStyle, initials, iso, monthAbbr, monthLabel, rangeLabel, roleName,
+  SC_TITLE, ScorecardTable, fmt, hueStyle, initials, iso, monthAbbr, monthLabel, rangeLabel, roleName, teamTops,
   type ReportData,
 } from "../SignupsDashboard";
 
@@ -81,6 +81,8 @@ type Meta = {
   targets: boolean;
   /** Months the targets cover (per rep per month). */
   months: number;
+  /** A range from mid-month (Last week): its days and their share of a month's target. */
+  prorated: { days: number; share: number } | null;
   /** The period's last month while it is still running: its targets are for the whole month. */
   progress: { month: string; name: string; day: number; days: number } | null;
 };
@@ -107,6 +109,7 @@ function metaOf(data: ReportData, ctx: DeckContext): Meta {
     allTime,
     targets: !allTime,
     months: data.scorecard.months,
+    prorated: data.scorecard.prorated ?? null,
     progress: ctx.to >= today && d < days
       ? { month: today.slice(0, 7), name: new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long" }), day: d, days }
       : null,
@@ -359,7 +362,9 @@ function ScorecardSlide({ group, rows, band, last, meta, pos }: {
     ? ""
     : !meta.targets
       ? "Targets are left out for All time; pick a shorter period to see them. "
-      : `Targets: ${perRep} sign-ups a month per ${group.role}${meta.months > 1 ? ` × ${meta.months} months = ${fmt(perRep * meta.months)} each` : ""}. `;
+      : meta.prorated
+        ? `Targets: ${perRep} sign-ups a month per ${group.role}, prorated to these ${meta.prorated.days} days = ${fmt(Math.round(perRep * meta.prorated.share * 10) / 10)} each. `
+        : `Targets: ${perRep} sign-ups a month per ${group.role}${meta.months > 1 ? ` × ${meta.months} months = ${fmt(perRep * meta.months)} each` : ""}. `;
   return (
     // No slide title: the team's own sheet gets the room.
     <Frame meta={meta} pos={pos} className="sr-dsc-slide">
@@ -421,6 +426,7 @@ function Leaders({ reps, page, part, meta, pos }: {
 }) {
   const top = page;
   const max = reps[0].signed;
+  const tops = teamTops(reps);
   const tied = reps.filter((r) => r.signed === max);
   const each = count(max, "sign-up");
   const title = tied.length === 1
@@ -439,7 +445,11 @@ function Leaders({ reps, page, part, meta, pos }: {
               <span className="sr-ld-rank">{rank}</span>
               <span className="sr-deck-av" style={hueStyle(r.name)}><RepFace name={r.name} fallback={initials(r.name)} /></span>
               <div className="sr-ld-who">
-                <b>{r.name}{!r.current && <span className="sr-deck-former">former</span>}</b>
+                <b>
+                  {r.name}
+                  {tops.has(r.name) && <span className="sr-award"><Trophy /> Top {r.role}</span>}
+                  {!r.current && <span className="sr-deck-former">former</span>}
+                </b>
                 <i>{roleName(r.role)} · {count(r.leads, "lead")} · {r.conversion}% conversion</i>
               </div>
               <div className="sr-deck-bar-t"><i style={{ width: `${(r.signed / max) * 100}%` }} /></div>
@@ -458,7 +468,9 @@ function Targets({ columns, all, kicker = "Against target", meta, pos }: {
   const everyone = all.flatMap((g) => g.rows);
   const met = everyone.filter((r) => (r.achieved ?? 0) >= 100).length;
   const per = all.map((g) => `${g.role} ${MONTHLY_SIGNUP_TARGET[g.role as TeamRole] ?? "—"}`).join(", ");
-  const sub = `Target: ${per} sign-ups a month per rep${meta.months > 1 ? ` × ${meta.months} months` : ""}` +
+  const sub = (meta.prorated
+    ? `Target: ${per} sign-ups a month per rep, prorated to these ${meta.prorated.days} days`
+    : `Target: ${per} sign-ups a month per rep${meta.months > 1 ? ` × ${meta.months} months` : ""}`) +
     (meta.progress ? ` · ${meta.progress.name} in progress: ${meta.progress.day} of ${meta.progress.days} days` : "");
   const most = Math.max(...columns.map((c) => c.rows.length));
   const layout = columns.length === 1 ? (most <= 7 ? " single roomy" : " single") : "";
@@ -521,7 +533,7 @@ function Partners({ data, meta, pos }: { data: ReportData; meta: Meta; pos: Pos 
       <div className="sr-pt">
         {top.map((p, i) => (
           <div key={p.facilityId} className={`sr-pt-row${i === 0 && p.signed ? " first" : ""}`}>
-            <span className="sr-deck-av" style={hueStyle(p.name)}>{initials(p.name)}</span>
+            <span className="sr-deck-av" style={hueStyle(p.name)}><PartnerLogo facilityId={p.facilityId} fallback={initials(p.name)} /></span>
             <div className="sr-pt-who"><b>{p.name}</b><i>{p.territory || "No territory"}</i></div>
             <div className="sr-deck-bar-t"><i style={{ width: `${(p.signed / max) * 100}%` }} /></div>
             <div className="sr-pt-n"><b>{fmt(p.signed)}</b><span>of {count(p.leads, "lead")} · {p.conversion}%</span></div>

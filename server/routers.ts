@@ -108,6 +108,7 @@ import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgen
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
 import { getRepPhotos } from "./repPhotos";
+import { getFacilityLogos } from "./facilityLogos";
 import { getMarketingDashboard, listMarketingSpend } from "./marketingReport";
 import { REASON_KEYS, TZ as MARKETING_TZ } from "./marketing/common";
 import { getMarketingLeads, exportMarketingLeads } from "./marketing/leadFilter";
@@ -802,6 +803,8 @@ export const appRouter = router({
 
   // Reps' RingCentral profile pictures by name key (server/repPhotos.ts), for avatars.
   repPhotos: bdProcedure.query(() => getRepPhotos()),
+  // The top partners' logos by facility id (server/facilityLogos.ts).
+  facilityLogos: bdProcedure.query(() => getFacilityLogos()),
 
   // Marketing Report — every Lead Docket lead by marketing source. Managers and
   // super admins (canSeeMarketing); why leads didn't sign is an intake case fact,

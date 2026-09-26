@@ -294,3 +294,20 @@
 .sr-spot-ini > .rep-face.sr-spot-photo {
   width: 132px; height: 132px; border-radius: 50%; box-shadow: 0 0 0 4px rgb(255 255 255 / .55), 0 18px 40px -18px rgb(0 0 0 / .5);
 }
+/* A partner's logo: shown whole (not cropped) on white, since logos aren't photos. */
+/* The firm's logo (navy on transparent) on a white pill, in both themes. */
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  box-shadow: var(--lift);
+}
+.brand-badge-sm { padding: 5px; }
+.brand-badge-lg { align-self: center; padding: 14px 32px; max-width: 100%; }
+
+.rep-face.partner-logo { object-fit: contain; background: #fff; padding: 14%; }

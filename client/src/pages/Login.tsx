@@ -13,7 +13,7 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [googleEnabled, setGoogleEnabled] = useState(false);
-  const { logo, slogan } = useBrand();
+  const { logo } = useBrand();
   const [logoSrc, setLogoSrc] = useState(logo);
   const [logoTry, setLogoTry] = useState(0);
   useEffect(() => { setLogoSrc(logo); setLogoTry(0); }, [logo]);
@@ -71,6 +71,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
+          <span className="brand-badge brand-badge-lg">
           <img
             src={logoTry ? `${logoSrc}${logoSrc.includes("?") ? "&" : "?"}r=${logoTry}` : logoSrc}
             alt="Farahi Law Firm"
@@ -80,9 +81,9 @@ export default function Login() {
               if (logoSrc !== DEFAULT_LOGO) setLogoSrc(DEFAULT_LOGO);
               else if (logoTry < 8) setTimeout(() => setLogoTry((n) => n + 1), Math.min(2000 * (logoTry + 1), 15000));
             }}
-            className="max-h-32 w-auto max-w-[85%] object-contain mb-4 rounded-3xl shadow-[var(--lift)]"
+            className="h-20 w-auto max-w-full object-contain"
           />
-          <p className="text-base font-medium text-foreground/90 text-center">{slogan}</p>
+          </span>
         </div>
 
         {/* Card */}

@@ -14,7 +14,7 @@ import { CURRENT_TEAM } from "@shared/team";
 import { enterFullscreen, exitFullscreenSoon } from "./signups/fullscreen";
 import type { DeckPlace, PresentationProps } from "./signups/Presentation";
 import "./SignupsDashboard.css";
-import { RepFace } from "@/components/RepFace";
+import { RepFace, PartnerLogo } from "@/components/RepFace";
 
 // The look lives in SignupsDashboard.css (the Voice Agents board style).
 
@@ -72,6 +72,17 @@ const hue = (s: string) => {
 };
 export const initials = (s: string) => s.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 export const hueStyle = (name: string) => ({ "--h": hue(name) }) as React.CSSProperties;
+/**
+ * The rep with the most sign-ups on each team (FR, BDR) — ties share it — who
+ * gets the trophy: the team presents FR and BDR side by side, so each team's
+ * best is called out, not only the overall leader (Youssef, 2026-09-25).
+ */
+export function teamTops(reps: { name: string; role: string; signed: number }[]): Set<string> {
+  const best = new Map<string, number>();
+  for (const r of reps) best.set(r.role, Math.max(best.get(r.role) ?? 0, r.signed));
+  return new Set(reps.filter((r) => r.signed > 0 && r.signed === best.get(r.role)).map((r) => r.name));
+}
+
 export const roleName = (role: string) => (role === "FR" ? "Field Representative" : role === "BDR" ? "Business Development Rep." : role);
 
 type Role = "all" | "BDR" | "FR" | "Intake";
@@ -81,8 +92,11 @@ export type ReportData = NonNullable<inferRouterOutputs<AppRouter>["teamReports"
 /** Common reporting windows, so nobody has to type dates for the usual questions. */
 export function presets(today: Date) {
   const y = today.getFullYear(), m = today.getMonth();
+  // Monday to Sunday of the week before this one — the team presents weekly.
+  const monday = new Date(y, m, today.getDate() - ((today.getDay() + 6) % 7));
   return [
     { label: "This month", from: iso(new Date(y, m, 1)), to: iso(today) },
+    { label: "Last week", from: iso(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 7)), to: iso(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 1)) },
     { label: "Last month", from: iso(new Date(y, m - 1, 1)), to: iso(new Date(y, m, 0)) },
     { label: "Year to date", from: `${y}-01-01`, to: iso(today) },
     { label: "12 months", from: iso(new Date(y, m - 11, 1)), to: iso(today) },
@@ -282,6 +296,7 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
   // Clicking a rep (or one of their monthly numbers) opens the clients behind it.
   const [focus, setFocus] = useState<{ rep: string; role: string; month?: string } | null>(null);
   const avg = data.totals.signedPct;
+  const tops = teamTops(data.reps);
   const top = data.reps[0];
   const converter = data.reps.filter((r) => r.leads >= 10).sort((a, b) => b.conversion - a.conversion)[0];
 
@@ -399,6 +414,7 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
                   <tbody>
                     {data.reps.map((r) => {
                       const s = standing(r.conversion, avg);
+                      const isTop = tops.has(r.name);
                       const latest = data.repMonths.rows.find((x) => x.name === r.name)?.cells.at(-1) ?? 0;
                       return (
                         <tr key={r.name} className={`sr-click ${r.current ? "" : "former"}`} title={`See ${r.name}'s clients`}
@@ -406,7 +422,10 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
                           <td>
                             <div className="sr-who">
                               <span className="sr-av" style={hueStyle(r.name)}><RepFace name={r.name} fallback={initials(r.name)} /></span>
-                              <div><b>{r.name}</b><i>{roleName(r.role)}{r.current ? "" : " · former"}</i></div>
+                              <div>
+                                <b>{r.name}{isTop && <span className="sr-award" title={`Most sign-ups among the ${r.role}s`}><Trophy /> Top {r.role}</span>}</b>
+                                <i>{roleName(r.role)}{r.current ? "" : " · former"}</i>
+                              </div>
                             </div>
                           </td>
                           <td className="num">{fmt(r.leads)}</td>
@@ -500,7 +519,7 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
                       <tr key={p.facilityId}>
                         <td>
                           <div className="sr-who">
-                            <span className="sr-av" style={hueStyle(p.name)}>{initials(p.name)}</span>
+                            <span className="sr-av" style={hueStyle(p.name)}><PartnerLogo facilityId={p.facilityId} fallback={initials(p.name)} /></span>
                             <div><Link href={`/crm/facilities/${p.facilityId}`}><b>{p.name}</b></Link><i>{p.territory ?? "No territory"}</i></div>
                           </div>
                         </td>
@@ -757,8 +776,11 @@ function Scorecard({ sc, label, onRep }: { sc: ReportData["scorecard"]; label: s
       <p className="sr-sub" style={{ margin: "2px 4px 18px" }}>
         From Lead Docket. Each lead counts once, in the column for where it ended up — so the columns add up to Total Leads.
         Lost counts as Rejected. Referred Out = referred to another firm without signing; Signed Referred Out = signed first,
-        then referred. Sign-up Unique Count = different referring partners behind the sign-ups. Targets: FR {20 * sc.months},
-        BDR {5 * sc.months} a month per rep{sc.months > 1 ? ` (× ${sc.months} months)` : ""}. Click a rep to see the names.
+        then referred. Sign-up Unique Count = different referring partners behind the sign-ups.{" "}
+        {sc.prorated
+          ? `Targets: FR 20, BDR 5 a month per rep, prorated to these ${sc.prorated.days} days (FR ${Math.round(20 * sc.prorated.share * 10) / 10}, BDR ${Math.round(5 * sc.prorated.share * 10) / 10} each).`
+          : `Targets: FR ${20 * sc.months}, BDR ${5 * sc.months} a month per rep${sc.months > 1 ? ` (× ${sc.months} months)` : ""}.`}
+        {" "}Click a rep to see the names.
       </p>
     </div>
   );

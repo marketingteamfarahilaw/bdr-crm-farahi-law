@@ -309,6 +309,19 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     ? new Set(Array.from({ length: Math.ceil((range.to.getTime() - range.from.getTime()) / 86400000) + 1 }, (_, i) =>
         formatInTimeZone(new Date(range.from!.getTime() + i * 86400000), "America/Los_Angeles", "yyyy-MM"))).size
     : Math.max(1, months.length);
+  // A range that starts mid-month (Last week, custom dates) gets its share of the
+  // monthly target — each day counts 1/(days in its month) — so a week is measured
+  // against about a quarter of a month, not all of it (Youssef, 2026-09-25: the
+  // team presents weekly). A range from the 1st keeps whole months, as the team's
+  // sheet does for month-to-date.
+  const days = range?.from && range?.to
+    ? Array.from({ length: Math.round((range.to.getTime() - range.from.getTime()) / 86400000) + 1 }, (_, i) =>
+        formatInTimeZone(new Date(range.from!.getTime() + i * 86400000), "America/Los_Angeles", "yyyy-MM-dd"))
+        .filter((d) => d <= formatInTimeZone(range.to!, "America/Los_Angeles", "yyyy-MM-dd"))
+    : [];
+  const prorated = days.length > 0 && !days[0].endsWith("-01");
+  const daysIn = (d: string) => new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate();
+  const targetMonths = prorated ? days.reduce((a, d) => a + 1 / daysIn(d), 0) : monthsInRange;
   const pctOf = (a: number, b: number) => (b ? Math.round((a / b) * 10000) / 100 : null);
   const order = (role: TeamRole, name: string) => {
     const i = CURRENT_TEAM[role]?.indexOf(name) ?? -1;
@@ -316,6 +329,8 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   };
   const scorecard = {
     months: monthsInRange,
+    // When the range starts mid-month: its days, and the share of a month's target they carry.
+    prorated: prorated ? { days: days.length, share: Math.round(targetMonths * 1000) / 1000 } : null,
     groups: (["FR", "BDR", "Intake"] as const).map((role) => {
       const perRepTarget = MONTHLY_SIGNUP_TARGET[role];
       const rows = Array.from(scoreStats.values())
@@ -323,7 +338,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
         .sort((a, b) => order(role, a.name) - order(role, b.name) || a.name.localeCompare(b.name))
         .map((s) => {
           const signedN = s.signedReferred + s.signedInHouse;
-          const target = perRepTarget ? perRepTarget * monthsInRange : null;
+          const target = perRepTarget ? Math.round(perRepTarget * targetMonths * 10) / 10 : null;
           return {
             name: s.name, current: isCurrentRep(s.name), leads: s.leads,
             open: s.open, rejected: s.rejected, referredOut: s.referredOut, notInterested: s.notInterested,
@@ -333,7 +348,8 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
         });
       const sum = (k: "leads" | "open" | "rejected" | "referredOut" | "notInterested" | "signedReferred" | "unique" | "signedInHouse" | "signed") =>
         rows.reduce((a, r) => a + r[k], 0);
-      const target = perRepTarget ? rows.reduce((a, r) => a + (r.target ?? 0), 0) : null;
+      // Rounded: prorated targets are tenths, and a sum of tenths picks up float noise (14.100000000000001).
+      const target = perRepTarget ? Math.round(rows.reduce((a, r) => a + (r.target ?? 0), 0) * 10) / 10 : null;
       const total = {
         leads: sum("leads"), open: sum("open"), rejected: sum("rejected"), referredOut: sum("referredOut"),
         notInterested: sum("notInterested"), signedReferred: sum("signedReferred"), unique: sum("unique"),

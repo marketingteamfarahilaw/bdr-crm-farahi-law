@@ -13,13 +13,11 @@ import SavedLeadsPage from "./pages/SavedLeads";
 import SavedSearchesPage from "./pages/SavedSearches";
 import FacilitiesPage from "./pages/crm/Facilities";
 import PipelinePage from "./pages/crm/Pipeline";
-import UberEatsPage from "./pages/crm/UberEats";
 import FacilityProfilePage from "./pages/crm/FacilityProfile";
 import MarketingReportPage from "./pages/MarketingReport";
 import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
 import TeamRolesPage from "./pages/crm/TeamRoles";
-import RingCentralSettingsPage from "./pages/crm/RingCentralSettings";
 import BdrReportsPage from "./pages/crm/BdrReports";
 import PartnershipPodsPage from "./pages/partnership/Pods";
 import PartnershipQuotaPage from "./pages/partnership/Quota";
@@ -133,8 +131,9 @@ function Router() {
         <Route path="/crm/facilities/:id" component={FacilityProfilePage} />
         <Route path="/crm/dashboard" component={ManagementDashboardPage} />
         <Route path="/team" component={TeamRolesPage} />
-        <Route path="/crm/ringcentral" component={RingCentralSettingsPage} />
-        <Route path="/crm/uber-eats" component={UberEatsPage} />
+        {/* Tabs of Settings and Expenses now (Sept 2026). */}
+        <Route path="/crm/ringcentral" component={SettingsPage} />
+        <Route path="/crm/uber-eats" component={ExpensesPage} />
         <Route path="/crm/leads" component={LeadCapturePage} />
         <Route path="/crm/reports" component={BdrReportsPage} />
 

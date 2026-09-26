@@ -23,6 +23,7 @@ import { getSetting } from "../db";
 import { isIntakeOnly } from "@shared/permissions";
 import { runDueJobs } from "../dataSync";
 import { syncRepPhotosIfDue } from "../repPhotos";
+import { syncFacilityLogosIfDue } from "../facilityLogos";
 // Note: RingCentral auto-connect via JWT has been removed.
 // Agents now log in to RingCentral directly through the embedded widget UI.
 // The server still stores tokens when agents connect via OAuth through the widget.
@@ -114,6 +115,8 @@ function startDataSyncSchedule() {
     runDueJobs().catch((e) => console.warn("[dataSync] schedule check failed:", e?.message ?? e));
     // Reps' RingCentral pictures, once a day (it never throws).
     void syncRepPhotosIfDue();
+    // The top partners' logos, once a day for newcomers (it never throws).
+    void syncFacilityLogosIfDue();
   };
   setTimeout(tick, 2 * 60 * 1000);      // shortly after boot, once the server has settled
   setInterval(tick, CHECK_MS);
