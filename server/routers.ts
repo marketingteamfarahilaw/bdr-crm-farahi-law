@@ -9,7 +9,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { searchGooglePlaces } from "./googleMaps";
 import { calculateScore } from "./scoring";
-import { crmRouter } from "./crmRouter";
+import { crmRouter, ownerNameCandidates } from "./crmRouter";
 import { partnershipRouter } from "./partnershipRouter";
 import { dailyLogRouter } from "./dailyLogRouter";
 import { dailyWorkRouter } from "./dailyWorkRouter";
@@ -18,7 +18,7 @@ import { territoriesRouter } from "./territoriesRouter";
 import { triviaRouter } from "./triviaRouter";
 import axios from "axios";
 import { transcribeAudio } from "./_core/voiceTranscription";
-import { getRingcentralToken } from "./crmDb";
+import { getRingcentralToken, listFacilities } from "./crmDb";
 import {
   getSavedLeads,
   getSavedLeadByPlaceId,
@@ -926,7 +926,14 @@ export const appRouter = router({
         }),
       // Who is looking: a manager, and the rep Lead Docket credits them as (their own leads open first).
       me: bdProcedure.query(({ ctx }) => whoOf(ctx.user)),
-      partners: bdProcedure.query(() => getPartnerOptions()),
+      partners: bdProcedure.query(async ({ ctx }) => {
+        if (seesAllData(ctx.user.role)) return getPartnerOptions();
+        // A rep picks from their own partners, as the Facilities page shows them.
+        const own = await listFacilities({ assignedRepId: ctx.user.id, assignedRepNames: ownerNameCandidates(ctx.user) });
+        type Option = { id: number; name: string; territory: string | null };
+        return (own as Option[]).map((f): Option => ({ id: f.id, name: f.name, territory: f.territory }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }),
       linkLead: bdProcedure
         .input(z.object({ leadId: z.number().int(), facilityId: z.number().int().nullable() }))
         .mutation(async ({ ctx, input }) => {
@@ -952,8 +959,8 @@ export const appRouter = router({
         .input(z.object({ key }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await forgetWords(input.key); return { ok: true }; }),
       dismissDuplicate: bdProcedure
-        .input(z.object({ key }))
-        .mutation(async ({ ctx, input }) => { await dismissDuplicate(input.key, byOf(ctx.user)); return { ok: true }; }),
+        .input(z.object({ lds: z.array(z.string().min(1).max(64)).min(2).max(30) }))
+        .mutation(async ({ ctx, input }) => { await dismissDuplicate(input.lds, byOf(ctx.user), await whoOf(ctx.user)); return { ok: true }; }),
     });
   })(),
 

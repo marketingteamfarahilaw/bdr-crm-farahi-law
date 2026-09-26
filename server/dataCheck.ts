@@ -15,8 +15,7 @@
  * clean leads. Same leads as the Sign-ups Report: by its date (the sign-up date
  * for signed leads), without the non-reporting reps.
  */
-import { createHash } from "node:crypto";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
 import { dataCheckDismissals, facilities, facilityLeads, leadIntake, partnerAliases } from "../drizzle/schema";
@@ -42,11 +41,15 @@ export type CheckLead = {
   partner: string | null;
 };
 
+type Who = { rep: string | null; manager: boolean };
+
 const SIGNED = new Set(["signed", "signed referred out", "referral accepted"]);
 const isSigned = (o: unknown) => SIGNED.has(String(o ?? "").toLowerCase().replace(/[_\s]+/g, " ").trim());
 // "Jezel Mercado BC - Sacramento": the rep's own business card, not a partner.
-const isBusinessCard = (source: string | null) => /\bBC\b/.test(String(source ?? ""));
+const isBusinessCard = (s: string | null) => /\bBC\b/.test(String(s ?? ""));
 const isTest = (caseType: string | null) => /^test\b/i.test(String(caseType ?? "").trim());
+// Intake's ways of leaving the referral blank (as partner-key.mjs reads them).
+const BLANK = /^(n\/?a|none|no|unknown|nothing|x|-+|\?+)$/i;
 // Placeholder names say nothing about who the client is.
 const PLACEHOLDER = /^(unknown|test|n ?a|none|no name|john doe|jane doe|ld|lead)$/;
 const nameKey = (s: string) => {
@@ -57,15 +60,12 @@ const phoneKey = (s: string | null) => {
   const d = String(s ?? "").replace(/\D/g, "").slice(-10);
   return d.length === 10 && !/^(\d)\1+$/.test(d) ? d : "";
 };
-const groupKey = (ids: string[]) => {
-  const k = [...ids].sort().join(",");
-  return k.length <= 255 ? k : createHash("sha1").update(k).digest("hex");
-};
+/** Two leads, in either order: what "not a duplicate" is stored against. */
+const pairKey = (a: string, b: string) => (a < b ? `${a},${b}` : `${b},${a}`);
 
 /**
  * The name Lead Docket credits this user under, if any ("Miguel Flores"): their
- * full name as written there, else a first name that fits exactly one rep —
- * users.agentName holds short forms ("Gracel", "Queenie").
+ * full name as written there, else a first name that is exactly one rep's.
  */
 export async function repNameFor(names: (string | null | undefined)[]): Promise<string | null> {
   const db = await getDb();
@@ -77,10 +77,10 @@ export async function repNameFor(names: (string | null | undefined)[]): Promise<
     const hit = members.find((m) => repNameKey(m) === repNameKey(n));
     if (hit) return hit;
   }
+  // Exactly the same first name only: a prefix would make "Angel" Angelica.
+  const firstOf = (s: string) => s.toLowerCase().split(/\s+/)[0];
   for (const n of given) {
-    const first = n.toLowerCase().split(/\s+/)[0];
-    if (first.length < 3) continue;
-    const hits = members.filter((m) => { const f = m.toLowerCase().split(/\s+/)[0]; return f.startsWith(first) || first.startsWith(f); });
+    const hits = members.filter((m) => firstOf(m) === firstOf(n));
     if (hits.length === 1) return hits[0];
   }
   return null;
@@ -89,26 +89,31 @@ export async function repNameFor(names: (string | null | undefined)[]): Promise<
 type Row = {
   id: number; ld: string; name: string; rep: string; role: string; date: Date | null; outcome: string;
   text: string | null; source: string | null; caseType: string | null; phone: string | null;
-  partnerId: number | null; partner: string | null; byHand: string | null; key: string | null;
+  placed: boolean; partnerId: number | null; partner: string | null; byHand: string | null; key: string | null;
 };
 
-async function teamLeads(from: Date, to: Date): Promise<Row[]> {
+/** Every BD/FR lead from Lead Docket — a few thousand rows; duplicates need them all. */
+async function teamLeads(): Promise<Row[]> {
   const db = await getDb();
   if (!db) return [];
   const rows = await db.select({
     id: leadIntake.id, ld: leadIntake.externalId, name: leadIntake.leadName, rep: leadIntake.member, role: leadIntake.role,
     date: leadIntake.leadDate, outcome: leadIntake.outcome, text: leadIntake.facility, source: leadIntake.marketingSource,
     caseType: leadIntake.classification, phone: leadIntake.phone,
-    partnerId: facilityLeads.facilityId, partner: facilities.name, byHand: facilityLeads.facilityLinkedBy, key: facilityLeads.partnerKey,
+    placedId: facilityLeads.id, partnerId: facilityLeads.facilityId, partner: facilities.name, byHand: facilityLeads.facilityLinkedBy,
+    key: facilityLeads.partnerKey,
   })
     .from(leadIntake)
-    // Only leads the mirror has placed: the Link button needs their facility_leads row.
-    .innerJoin(facilityLeads, and(eq(facilityLeads.externalSource, "leaddocket"), eq(facilityLeads.externalId, leadIntake.externalId)))
+    // The mirror places each lead in facility_leads right after the sync; one it
+    // hasn't placed yet is "waiting", and can't be linked until it is.
+    .leftJoin(facilityLeads, and(eq(facilityLeads.externalSource, "leaddocket"), eq(facilityLeads.externalId, leadIntake.externalId)))
     .leftJoin(facilities, eq(facilities.id, facilityLeads.facilityId))
-    .where(and(eq(leadIntake.externalSource, "leaddocket"), gte(leadIntake.leadDate, from), lte(leadIntake.leadDate, to)));
+    .where(eq(leadIntake.externalSource, "leaddocket"));
   return rows
     .filter((r) => r.rep && !isNonReportingRep(r.rep))
-    .map((r) => ({ ...r, ld: String(r.ld), name: r.name || "(no name)", rep: r.rep!, role: r.role ?? "", outcome: r.outcome ?? "" }));
+    .map(({ placedId, ...r }) => ({
+      ...r, placed: placedId != null, ld: String(r.ld), name: r.name || "(no name)", rep: r.rep!, role: r.role ?? "", outcome: r.outcome ?? "",
+    }));
 }
 
 const brief = (r: Row): CheckLead => ({
@@ -119,74 +124,75 @@ const brief = (r: Row): CheckLead => ({
 export async function getDataCheck(range: { from: Date; to: Date }, opts: { rep?: string | null; team?: "all" | "current" }) {
   const db = await getDb();
   if (!db) return null;
-  // Wide enough to see a duplicate that sits just outside the period.
-  const wide = await teamLeads(new Date(range.from.getTime() - DUP_DAYS * DAY), new Date(range.to.getTime() + DUP_DAYS * DAY));
+  const all = await teamLeads();
   const inScope = (r: Row) => (!opts.rep || r.rep === opts.rep) && (opts.team !== "current" || isCurrentRep(r.rep));
   const inRange = (r: Row) => !!r.date && r.date >= range.from && r.date <= range.to;
-  const leads = wide.filter((r) => inRange(r) && inScope(r));
+  const leads = all.filter((r) => inRange(r) && inScope(r));
 
   const aliases = await db.select({
     key: partnerAliases.aliasKey, text: partnerAliases.text, partnerId: partnerAliases.facilityId, partner: facilities.name,
     by: partnerAliases.createdBy, at: partnerAliases.updatedAt,
   }).from(partnerAliases).leftJoin(facilities, eq(facilities.id, partnerAliases.facilityId)).orderBy(desc(partnerAliases.updatedAt));
-  const answered = new Map(aliases.map((a) => [a.key, a]));
+  // An answer naming a partner since deleted answers nothing: the mirror drops it too.
+  const answered = new Map(aliases.filter((a) => a.partnerId == null || a.partner != null).map((a) => [a.key, a]));
   const dismissed = new Set((await db.select({ k: dataCheckDismissals.itemKey }).from(dataCheckDismissals)
     .where(eq(dataCheckDismissals.kind, "duplicate"))).map((d) => d.k));
 
-  // ── duplicates: same client name or phone within 60 days, among the team's leads
+  // ── duplicates: the same client name within 60 days, among all the team's
+  // leads — so a group is the same whichever period is on screen. By name only:
+  // a shared phone alone is usually a family (passengers of one accident are
+  // separate clients on one number); the phone just confirms it. A pair someone
+  // marked "not a duplicate" no longer joins a group.
   const parent = new Map<string, string>();
   const find = (x: string): string => { const p = parent.get(x) ?? x; if (p === x) return x; const r = find(p); parent.set(x, r); return r; };
   const paired = new Set<string>();
-  const union = (a: string, b: string) => {
-    paired.add(a); paired.add(b);
-    const ra = find(a), rb = find(b);
-    if (ra !== rb) parent.set(ra, rb);
-  };
-  // By name only: a shared phone alone is usually a family — passengers of one
-  // accident are separate clients on one number. The phone just confirms it.
   const samePhone = new Set<string>();
   const buckets = new Map<string, Row[]>();
-  for (const r of wide) { const k = nameKey(r.name); if (k && r.date) buckets.set(k, [...(buckets.get(k) ?? []), r]); }
+  for (const r of all) { const k = nameKey(r.name); if (k && r.date) buckets.set(k, [...(buckets.get(k) ?? []), r]); }
   for (const list of Array.from(buckets.values())) {
     if (list.length < 2) continue;
     list.sort((a, b) => a.date!.getTime() - b.date!.getTime());
     for (let i = 1; i < list.length; i++) {
       const [a, b] = [list[i - 1], list[i]];
-      if (b.date!.getTime() - a.date!.getTime() > DUP_DAYS * DAY) continue;
-      union(a.ld, b.ld);
+      if (b.date!.getTime() - a.date!.getTime() > DUP_DAYS * DAY || dismissed.has(pairKey(a.ld, b.ld))) continue;
+      paired.add(a.ld); paired.add(b.ld);
+      const ra = find(a.ld), rb = find(b.ld);
+      if (ra !== rb) parent.set(ra, rb);
       if (phoneKey(a.phone) && phoneKey(a.phone) === phoneKey(b.phone)) { samePhone.add(a.ld); samePhone.add(b.ld); }
     }
   }
   const groups = new Map<string, Row[]>();
-  for (const r of wide) if (paired.has(r.ld)) {
+  for (const r of all) if (paired.has(r.ld)) {
     const root = find(r.ld);
     groups.set(root, [...(groups.get(root) ?? []), r]);
   }
   const duplicates = Array.from(groups.values())
     .filter((g) => g.length > 1 && g.some((r) => inRange(r) && inScope(r)))
-    .map((g) => ({ key: groupKey(g.map((r) => r.ld)), rows: g }))
-    .filter((g) => !dismissed.has(g.key))
-    .map((g) => ({
-      key: g.key,
-      why: g.rows.some((r) => samePhone.has(r.ld)) ? "Same name and phone" : "Same name",
-      leads: g.rows.sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0)).map(brief),
-    }))
+    .map((g) => {
+      const rows = g.sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0));
+      return {
+        key: rows.map((r) => r.ld).join(","),
+        why: rows.some((r) => samePhone.has(r.ld)) ? "Same name and phone" : "Same name",
+        leads: rows.map(brief),
+      };
+    })
     .sort((a, b) => (b.leads.at(-1)?.date ?? "").localeCompare(a.leads.at(-1)?.date ?? ""));
   const inDuplicate = new Set(duplicates.flatMap((d) => d.leads.map((l) => l.ld)));
 
   // ── each lead's standing
   type Standing = "linked" | "none" | "card" | "person" | "unmatched" | "nothing" | "waiting";
   const standing = (r: Row): Standing => {
-    if (r.partnerId) return "linked";
-    if (r.byHand) return "none";                                   // "not from a partner", for this lead
-    if (r.key == null) return "waiting";                           // the mirror hasn't placed it yet
+    if (!r.placed) return "waiting";                               // the mirror hasn't placed it yet
+    if (r.partnerId != null && r.partner != null) return "linked";
+    if (r.byHand && r.partnerId == null) return "none";            // "not from a partner", for this lead
     if (r.key) {
       const a = answered.get(r.key);
-      if (a && a.partnerId == null) return "none";                 // those words name no partner
-      return a ? "linked" : "unmatched";                           // answered: applied at the next sync at worst
+      if (a) return a.partnerId == null ? "none" : "linked";       // answered: applied now, at worst at the next sync
+      return "unmatched";
     }
-    if (r.text?.trim()) return "person";                           // only people: "Former Client …", the rep
-    return isBusinessCard(r.source) ? "card" : "nothing";
+    const t = r.text?.trim() ?? "";
+    if (!t || BLANK.test(t)) return isBusinessCard(r.source) ? "card" : "nothing";
+    return isBusinessCard(r.source) || isBusinessCard(t) ? "card" : "person";   // only people: "Former Client …", the rep
   };
   const problemsOf = (r: Row) => {
     const s = standing(r);
@@ -240,7 +246,7 @@ export async function getDataCheck(range: { from: Date; to: Date }, opts: { rep?
       key: a.key, text: a.text, partnerId: a.partnerId, partner: a.partner, by: a.by, at: a.at ? a.at.toISOString() : null,
     })),
     // For the rep picker: everyone with leads in the period, whichever rep is picked.
-    repOptions: Array.from(new Set(wide.filter((r) => inRange(r) && (opts.team !== "current" || isCurrentRep(r.rep))).map((r) => r.rep))).sort(),
+    repOptions: Array.from(new Set(all.filter((r) => inRange(r) && (opts.team !== "current" || isCurrentRep(r.rep))).map((r) => r.rep))).sort(),
   };
 }
 
@@ -257,23 +263,34 @@ async function wordsFor(key: string) {
   if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "No lead says that any more — refresh the page." });
   const n = new Map<string, number>();
   for (const r of rows) { const t = String(r.text ?? "").trim(); if (t) n.set(t, (n.get(t) ?? 0) + 1); }
+  const [alias] = await db.select({ facilityId: partnerAliases.facilityId, partner: facilities.name })
+    .from(partnerAliases).leftJoin(facilities, eq(facilities.id, partnerAliases.facilityId))
+    .where(eq(partnerAliases.aliasKey, key)).limit(1);
   return {
     text: Array.from(n.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? key,
     reps: new Set(rows.map((r) => String(r.rep ?? ""))),
+    // An answer already given, unless it named a partner since deleted.
+    answered: !!alias && (alias.facilityId == null || alias.partner != null),
   };
 }
 
-/** A rep may answer for words their own leads say; managers for any. */
-async function mayAnswer(key: string, who: { rep: string | null; manager: boolean }) {
+/**
+ * A rep may answer for words their own leads say, if nobody has yet; a manager
+ * for any words, and may change an answer.
+ */
+async function mayAnswer(key: string, who: Who) {
   const words = await wordsFor(key);
   if (!who.manager && !(who.rep && words.reps.has(who.rep))) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Only a manager or the rep whose leads say this can answer for it." });
+  }
+  if (!who.manager && words.answered) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "These words already have an answer — ask a manager to change it." });
   }
   return words;
 }
 
 /** These words are this partner (or none): every lead saying them follows, now and later. */
-export async function answerWords(key: string, facilityId: number | null, by: string, who: { rep: string | null; manager: boolean }) {
+export async function answerWords(key: string, facilityId: number | null, by: string, who: Who) {
   const { text } = await mayAnswer(key, who);
   const leads = await rememberPartner(key, text, facilityId, by);
   return { text, leads };
@@ -284,7 +301,7 @@ export async function addPartnerForWords(
   key: string,
   partner: { name: string; category: string; city?: string | null },
   by: { id: number; name: string },
-  who: { rep: string | null; manager: boolean },
+  who: Who,
 ) {
   const { text } = await mayAnswer(key, who);
   const db = await getDb();
@@ -311,12 +328,26 @@ export async function forgetWords(key: string) {
   await forgetPartner(key);
 }
 
-/** "These leads are not the same client" — the group stays hidden until another lead joins it. */
-export async function dismissDuplicate(key: string, by: string) {
+/**
+ * "These leads are not the same client". Stored per pair, so it holds in every
+ * period's view; a new lead for the same name forms a new pair and shows again.
+ * A manager may clear any group; a rep only one made of their own leads.
+ */
+export async function dismissDuplicate(lds: string[], by: string, who: Who) {
   const db = await getDb();
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
-  await db.insert(dataCheckDismissals).values({ kind: "duplicate", itemKey: key.slice(0, 255), createdBy: by.slice(0, 255) })
-    .onDuplicateKeyUpdate({ set: { createdBy: by.slice(0, 255) } });
+  const ids = Array.from(new Set(lds.map(String)));
+  const rows = await db.select({ ld: leadIntake.externalId, rep: leadIntake.member }).from(leadIntake)
+    .where(and(eq(leadIntake.externalSource, "leaddocket"), inArray(leadIntake.externalId, ids)));
+  if (rows.length !== ids.length) throw new TRPCError({ code: "NOT_FOUND", message: "Some of these leads are gone — refresh the page." });
+  if (!who.manager && !rows.every((r) => who.rep && r.rep === who.rep)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Only a manager can clear a group with another rep's leads." });
+  }
+  const pairs: { kind: string; itemKey: string; createdBy: string }[] = [];
+  for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+    pairs.push({ kind: "duplicate", itemKey: pairKey(ids[i], ids[j]), createdBy: by.slice(0, 255) });
+  }
+  if (pairs.length) await db.insert(dataCheckDismissals).values(pairs).onDuplicateKeyUpdate({ set: { createdBy: by.slice(0, 255) } });
 }
 
 /** The lead's rep, so a rep can only answer for their own leads. */

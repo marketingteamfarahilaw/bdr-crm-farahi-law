@@ -21,7 +21,8 @@ import "./SignupsDashboard.css";
 type Data = NonNullable<inferRouterOutputs<AppRouter>["dataCheck"]["get"]>;
 type Lead = Data["nothing"][number];
 type Words = Data["unmatched"][number];
-type Picking = { kind: "words"; words: Words } | { kind: "lead"; lead: Lead };
+type Remembered = Data["remembered"][number];
+type Picking = { kind: "words"; words: Words } | { kind: "lead"; lead: Lead } | { kind: "answer"; answer: Remembered };
 
 /** Lead Docket's page for a lead; it asks for a sign-in first when needed. */
 const ldUrl = (id: string) => `https://farahi.leaddocket.com/Leads/Edit/${encodeURIComponent(id)}`;
@@ -69,7 +70,7 @@ export default function DataCheck() {
             {manager && (
               <select className="sr-input" value={rep ?? ""} onChange={(e) => setRep(e.target.value || null)} aria-label="Representative">
                 <option value="">Everyone</option>
-                {data!.repOptions.map((r) => <option key={r} value={r}>{r}</option>)}
+                {Array.from(new Set([...data!.repOptions, ...(rep ? [rep] : [])])).sort().map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             )}
             <select className="sr-input" value={team} onChange={(e) => setTeam(e.target.value as "all" | "current")} aria-label="Representatives">
@@ -189,9 +190,9 @@ function Checks({ data, rep, onRep }: { data: Data; rep: string | null; onRep?: 
       <Nothing leads={data.nothing} pending={pending}
         onLink={(lead) => setPicking({ kind: "lead", lead })}
         onNone={(lead) => linkLead.mutate({ leadId: lead.id, facilityId: null })} />
-      <Duplicates groups={data.duplicates} />
+      <Duplicates groups={data.duplicates} me={data.me} />
       {data.tests.length > 0 && <Tests leads={data.tests} />}
-      <Remembered rows={data.remembered} manager={!!data.me.manager} />
+      <RememberedAnswers rows={data.remembered} manager={!!data.me.manager} onChange={(answer) => setPicking({ kind: "answer", answer })} />
 
       {picking?.kind === "words" && (
         <PartnerPicker
@@ -203,6 +204,20 @@ function Checks({ data, rep, onRep }: { data: Data; rep: string | null; onRep?: 
           none={{ label: "Not a partner", run: () => answer.mutate({ key: picking.words.key, facilityId: null }) }}
           onCreate={(p: NewPartner) => addPartner.mutate({ key: picking.words.key, name: p.name, category: p.category, city: p.city || undefined })}
           hint="Every lead that says this — these and any that come in later — counts under the partner you pick."
+          onClose={() => setPicking(null)}
+        />
+      )}
+      {picking?.kind === "answer" && (
+        <PartnerPicker
+          title={`Change what “${picking.answer.text}” means`}
+          who={<>Now: <b style={{ color: "var(--ink)" }}>{picking.answer.partnerId ? picking.answer.partner ?? "a deleted partner" : "not a partner"}</b></>}
+          said={picking.answer.text}
+          currentId={picking.answer.partnerId}
+          pending={pending}
+          onPick={(facilityId) => answer.mutate({ key: picking.answer.key, facilityId })}
+          none={picking.answer.partnerId ? { label: "Not a partner", run: () => answer.mutate({ key: picking.answer.key, facilityId: null }) } : undefined}
+          onCreate={(p: NewPartner) => addPartner.mutate({ key: picking.answer.key, name: p.name, category: p.category, city: p.city || undefined })}
+          hint="Every lead with these words — past and future — moves to what you pick, except leads someone linked one by one."
           onClose={() => setPicking(null)}
         />
       )}
@@ -383,7 +398,7 @@ function Nothing({ leads, pending, onLink, onNone }: {
   );
 }
 
-function Duplicates({ groups }: { groups: Data["duplicates"] }) {
+function Duplicates({ groups, me }: { groups: Data["duplicates"]; me: Data["me"] }) {
   const utils = trpc.useUtils();
   const dismiss = trpc.dataCheck.dismissDuplicate.useMutation({
     onSuccess: () => { toast.success("Marked as different clients"); utils.dataCheck.get.invalidate(); },
@@ -404,7 +419,9 @@ function Duplicates({ groups }: { groups: Data["duplicates"] }) {
             <div key={g.key} className="dc-dup">
               <div className="dc-dup-h">
                 <span className={`sr-badge ${g.why === "Same name and phone" ? "sr-b-bad" : "sr-b-sun"}`}>{g.why}</span>
-                <button className="dc-mini" disabled={dismiss.isPending} onClick={() => dismiss.mutate({ key: g.key })}>Not a duplicate</button>
+                {(me.manager || g.leads.every((l) => me.rep && l.rep === me.rep)) && (
+                  <button className="dc-mini" disabled={dismiss.isPending} onClick={() => dismiss.mutate({ lds: g.leads.map((l) => l.ld) })}>Not a duplicate</button>
+                )}
               </div>
               <ul>
                 {g.leads.map((l) => (
@@ -439,7 +456,7 @@ function Tests({ leads }: { leads: Lead[] }) {
   );
 }
 
-function Remembered({ rows, manager }: { rows: Data["remembered"]; manager: boolean }) {
+function RememberedAnswers({ rows, manager, onChange }: { rows: Remembered[]; manager: boolean; onChange: (r: Remembered) => void }) {
   const utils = trpc.useUtils();
   const [open, setOpen] = useState(false);
   const forget = trpc.dataCheck.forgetWords.useMutation({
@@ -465,7 +482,10 @@ function Remembered({ rows, manager }: { rows: Data["remembered"]; manager: bool
                   <td>{r.partnerId ? <Link href={`/crm/facilities/${r.partnerId}`}>{r.partner ?? "a deleted partner"}</Link> : <i style={{ color: "var(--mute)" }}>Not a partner</i>}</td>
                   <td className="nowrap">{r.by ?? "—"}{r.at && <span className="role"> · {leadDay(r.at)}</span>}</td>
                   {manager && (
-                    <td className="num"><button className="dc-mini" disabled={forget.isPending} onClick={() => forget.mutate({ key: r.key })}>Forget</button></td>
+                    <td className="dc-acts">
+                      <button className="dc-mini" onClick={() => onChange(r)}>Change</button>
+                      <button className="dc-mini" disabled={forget.isPending} onClick={() => forget.mutate({ key: r.key })}>Forget</button>
+                    </td>
                   )}
                 </tr>
               ))}

@@ -125,6 +125,11 @@ export async function setLeadsPartner(externalIds: string[], facilityId: number 
 export async function rememberPartner(key: string, text: string, facilityId: number | null, by: string): Promise<number> {
   if (!key) throw new TRPCError({ code: "BAD_REQUEST", message: "Those words name no partner to remember." });
   const db = await dbOrThrow();
+  // Before saving: an answer naming a partner that's gone would unlink every lead saying the words.
+  if (facilityId != null) {
+    const [partner] = await db.select({ id: facilities.id }).from(facilities).where(eq(facilities.id, facilityId)).limit(1);
+    if (!partner) throw new TRPCError({ code: "NOT_FOUND", message: "That partner no longer exists." });
+  }
   const row = { text: text.slice(0, 500), facilityId, createdBy: by.slice(0, 255) };
   await db.insert(partnerAliases).values({ aliasKey: key, ...row }).onDuplicateKeyUpdate({ set: row });
   const leads = await db.select({ externalId: facilityLeads.externalId }).from(facilityLeads)

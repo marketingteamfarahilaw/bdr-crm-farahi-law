@@ -17,7 +17,7 @@
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { leadIntake, facilities, facilityLeads } from "../drizzle/schema";
+import { leadIntake, facilities, facilityLeads, partnerAliases } from "../drizzle/schema";
 import { rememberPartner, setLeadsPartner } from "./partnerLinks";
 import { isCurrentRep, CURRENT_TEAM, MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
 import { isNonReportingRep } from "@shared/permissions";
@@ -473,8 +473,9 @@ export async function getPartnerOptions() {
  * goes everywhere a partner's leads are read (server/partnerLinks.ts) and sticks
  * for this lead. A partner picked is also remembered for the lead's words: every
  * other lead saying the same thing gets it too, now and when later ones arrive
- * (Youssef, 2026-09-25). facilityId null records "no partner" for this lead only
- * — a lead from a friend says nothing about the next one with those words.
+ * (Youssef, 2026-09-25) — unless those words already have a different answer,
+ * which stands. facilityId null records "no partner" for this lead only — a lead
+ * from a friend says nothing about the next one with those words.
  */
 export async function linkLeadToPartner(leadId: number, facilityId: number | null, by: string) {
   const db = await getDb();
@@ -496,6 +497,15 @@ export async function linkLeadToPartner(leadId: number, facilityId: number | nul
   await setLeadsPartner([externalId], facilityId, { by, byHand: true });
   if (facilityId == null) return { partner: null, also: 0 };
   const [partner] = await db.select({ name: facilities.name }).from(facilities).where(eq(facilities.id, facilityId)).limit(1);
-  const also = row.partnerKey ? await rememberPartner(row.partnerKey, String(lead.facility ?? ""), facilityId, by) : 0;
+  let also = 0;
+  if (row.partnerKey) {
+    // A different answer already given for these words stands — changing it is
+    // the Data Check page's (a manager's) call. Then only this lead changes.
+    const [alias] = await db.select({ facilityId: partnerAliases.facilityId, partner: facilities.name })
+      .from(partnerAliases).leftJoin(facilities, eq(facilities.id, partnerAliases.facilityId))
+      .where(eq(partnerAliases.aliasKey, row.partnerKey)).limit(1);
+    const answered = !!alias && (alias.facilityId == null || alias.partner != null);
+    if (!answered || alias!.facilityId === facilityId) also = await rememberPartner(row.partnerKey, String(lead.facility ?? ""), facilityId, by);
+  }
   return { partner: partner?.name ?? null, also };
 }

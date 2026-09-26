@@ -28,7 +28,7 @@ const p10 = (s) => { const d = String(s ?? "").replace(/\D/g, ""); return d.leng
 const nk = (s) => String(s ?? "").toLowerCase().replace(/&/g, " and ").replace(/\band\b/g, " ").replace(/[^a-z0-9]/g, "");
 const city = (s) => String(s ?? "").toLowerCase().replace(/[^a-z]/g, "");
 
-const CHILD = ["contact_logs", "facility_updates", "facility_tasks", "facility_referrals", "facility_leads",
+const CHILD = ["contact_logs", "facility_updates", "facility_tasks", "facility_referrals", "facility_leads", "partner_aliases",
   "facility_leads_sent", "facility_gratitude", "fr_expenses", "bdr_expenses", "referral_rewards",
   "referral_tracker", "pd_referrals", "pod_appointments", "qa_reviews", "uber_receipts"];
 const FILL = ["address", "city", "phone", "phone2", "phone3", "contactName", "contactTitle", "contactPhone",

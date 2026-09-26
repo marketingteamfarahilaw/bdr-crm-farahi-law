@@ -81,7 +81,7 @@ const userFor = (raw) => {
     const k = nkey(f.name) + "|" + p;
     groups.set(k, [...(groups.get(k) || []), f]);
   }
-  const CHILD = ["contact_logs", "facility_updates", "facility_tasks", "facility_referrals", "facility_leads", "facility_leads_sent", "facility_gratitude", "fr_expenses", "bdr_expenses", "referral_rewards", "referral_tracker", "pd_referrals", "pod_appointments", "qa_reviews", "uber_receipts"];
+  const CHILD = ["contact_logs", "facility_updates", "facility_tasks", "facility_referrals", "facility_leads", "partner_aliases", "facility_leads_sent", "facility_gratitude", "fr_expenses", "bdr_expenses", "referral_rewards", "referral_tracker", "pd_referrals", "pod_appointments", "qa_reviews", "uber_receipts"];
   const FILL = ["address", "city", "phone2", "phone3", "contactName", "contactTitle", "contactPhone", "contactEmail", "website", "notes", "assignedRepName", "assignedRepId", "latitude", "longitude", "zipCode", "territory"];
   let merged = 0;
   for (const g of groups.values()) {

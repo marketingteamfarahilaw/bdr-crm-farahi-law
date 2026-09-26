@@ -284,7 +284,7 @@ function assertRcRedirectUri(redirectUri: string): void {
 
 /** Name candidates a facility might be assigned under for an agent — their agent
  *  name, full name, and first names — used for owner-by-name facility scoping. */
-function ownerNameCandidates(user: { name?: string | null; agentName?: string | null }): string[] {
+export function ownerNameCandidates(user: { name?: string | null; agentName?: string | null }): string[] {
   const out = new Set<string>();
   const add = (s?: string | null) => {
     if (!s) return;

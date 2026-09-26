@@ -12,6 +12,7 @@ import {
   facilityTasks,
   facilityLeads,
   inboundLeads,
+  partnerAliases,
   leadIntake,
   outboundReferrals,
   facilityGratitude,
@@ -172,6 +173,13 @@ export async function updateFacility(id: number, data: Partial<InsertFacility>) 
 export async function deleteFacility(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
+  // Lead Docket words remembered as this partner, and its Lead Docket leads,
+  // go back to being matched from the text at the next sync — an answer or a
+  // link naming a partner that's gone would leave them pointing nowhere.
+  await db.delete(partnerAliases).where(eq(partnerAliases.facilityId, id));
+  await db.update(facilityLeads)
+    .set({ facilityId: null, facilityLinkedBy: null, facilityLinkedAt: null })
+    .where(and(eq(facilityLeads.facilityId, id), eq(facilityLeads.externalSource, "leaddocket")));
   await db.delete(facilities).where(eq(facilities.id, id));
 }
 

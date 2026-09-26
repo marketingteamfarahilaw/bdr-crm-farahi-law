@@ -28,7 +28,8 @@
  * inbound_leads for the Partner Referral Tracker. Idempotent; runs after every
  * Lead Docket sync.
  *
- *   node scripts/migration/mirror-leads-to-facilities.mjs [--dry] [--explain]   (--explain lists word-pass links)
+ *   node scripts/migration/mirror-leads-to-facilities.mjs [--dry] [--explain]
+ *     --dry lists every lead whose partner would change; --explain lists word-pass links
  */
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
@@ -233,6 +234,7 @@ const remembered = new Map((await q("SELECT aliasKey, facilityId FROM partner_al
 const inbound = [];   // partner-referred leads, for the Partner Referral Tracker
 
 let inserted = 0, updated = 0, linked = 0, signed = 0;
+const changes = [];   // --dry: leads whose partner this run would change
 for (const l of leads) {
   const isSigned = l.outcome === "Signed" || l.outcome === "Signed Referred Out";
   const lostish = /^(lost|rejected|closed)/i.test(String(l.notes ?? "").replace(/^Lead Docket status:\s*/i, ""));
@@ -280,11 +282,19 @@ for (const l of leads) {
     externalId: String(l.externalId),
     externalSource: "leaddocket",
   };
-  if (DRY) continue;
+  if (DRY) {
+    if (prior && (prior.facilityId ?? null) !== (facilityId ?? null)) changes.push({ ld: l.externalId, text: l.facility, from: prior.facilityId, to: facilityId });
+    continue;
+  }
 
   const id = prior?.id;
   if (id) {
-    const sets = Object.keys(row).map((k) => `\`${k}\`=?`).join(", ");
+    // facilityId only where nobody linked it by hand since this run began: a
+    // link made while the run was going must not be overwritten with the
+    // partner read before it (the hand mark would then protect the wrong one).
+    const sets = Object.keys(row)
+      .map((k) => (k === "facilityId" ? "`facilityId`=IF(`facilityLinkedBy` IS NULL, ?, `facilityId`)" : `\`${k}\`=?`))
+      .join(", ");
     await c.query(`UPDATE facility_leads SET ${sets}, createdAt=?, updatedAt=NOW() WHERE id=?`, [...Object.values(row), when, id]);
     updated++;
   } else {
@@ -340,7 +350,12 @@ if (!DRY) {
 }
 
 console.log(`team leads: ${leads.length} · signed: ${signed} · linked to a partner facility: ${linked}`);
-console.log(DRY ? "[DRY RUN] nothing written." : `✅ facility_leads: ${inserted} inserted, ${updated} updated. Facility totals recomputed.`);
+if (DRY) {
+  console.log(`[DRY RUN] nothing written. ${changes.length} lead(s) would change partner:`);
+  for (const ch of changes.slice(0, 120)) {
+    console.log(`  LD#${ch.ld} "${ch.text ?? ""}": ${facName.get(ch.from) ?? "none"} → ${facName.get(ch.to) ?? "none"}`);
+  }
+} else console.log(`✅ facility_leads: ${inserted} inserted, ${updated} updated. Facility totals recomputed.`);
 if (!DRY) console.log(`✅ inbound_leads: ${inbIns} added, ${inbUpd} updated, ${inbDel} removed.`);
 console.log("MIRROR_RESULT " + JSON.stringify({ leads: leads.length, signed, linked, inserted, updated, inbound: inbound.length }));
 await c.end();
