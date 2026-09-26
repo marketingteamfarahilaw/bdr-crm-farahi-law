@@ -155,7 +155,7 @@ export default function AgentPerformance() {
                   </div>
                 )}
 
-                <p className="text-[11px] text-muted-foreground pt-1">Generated from {rev.basedOnRecaps} analyzed call recap{rev.basedOnRecaps === 1 ? "" : "s"}. AI-written — sanity-check before sharing.</p>
+                <p className="text-[11px] text-muted-foreground pt-1">Generated from {rev.basedOnRecaps} analyzed call recap{rev.basedOnRecaps === 1 ? "" : "s"}{rev.writtenBy ? ` by ${rev.writtenBy}` : ""}. AI-written — sanity-check before sharing.</p>
               </div>
             )}
           </div>

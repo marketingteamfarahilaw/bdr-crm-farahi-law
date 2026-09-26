@@ -3,9 +3,10 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { canManage } from "@shared/permissions";
-import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock } from "lucide-react";
+import { canAssignRoles, canManage } from "@shared/permissions";
+import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock, Sparkles, CheckCircle2 } from "lucide-react";
 import { DEFAULT_LOGO } from "@/hooks/useBranding";
 import { DataSyncPanel } from "@/components/DataSyncPanel";
 import { PageTabs } from "@/components/PageTabs";
@@ -140,6 +141,88 @@ function LogoField({
   );
 }
 
+/**
+ * Claude (Anthropic) writes the AI performance review once a key is connected
+ * (server/_core/claude.ts). A super admin pastes the key here: the server checks
+ * it with Anthropic, stores it encrypted and only ever shows its last four characters.
+ */
+function ClaudeCard() {
+  const utils = trpc.useUtils();
+  const status = trpc.settings.claudeStatus.useQuery();
+  const [key, setKey] = useState("");
+  const save = trpc.settings.saveClaudeKey.useMutation({
+    onSuccess: (r, v) => {
+      if (!r.ok) return void toast.error(r.error);
+      toast.success(v.key ? "Claude is connected — AI reviews are now written by Claude." : "Key removed — AI reviews use ChatGPT again.");
+      setKey("");
+      utils.settings.claudeStatus.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const test = trpc.settings.testClaude.useMutation({
+    onSuccess: (r) => (r.ok ? toast.success("Claude answered — the key works.") : toast.error(r.error)),
+    onError: (e) => toast.error(e.message),
+  });
+  const s = status.data;
+  const busy = save.isPending || test.isPending;
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+          <Sparkles className="w-4 h-4" />
+        </span>
+        <div className="text-sm font-semibold text-foreground">AI — Claude by Anthropic</div>
+        {s?.connected && (
+          <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Connected{s.tail ? ` · key ending ${s.tail}` : ""}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        The AI Performance Review (Representative Performance) is written by {s?.model ?? "Claude"} when a key is connected;
+        without one it uses ChatGPT. Create a key at console.anthropic.com → API keys and paste it here — it's checked with
+        Anthropic, stored encrypted, and never shown again.
+      </p>
+      {s?.unreadable && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">The saved key can't be read any more (the server's secret changed). Paste it again.</p>
+      )}
+      {s?.source === "server" ? (
+        <p className="text-sm text-muted-foreground">Using the key set on the server.</p>
+      ) : (
+        <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (key.trim()) save.mutate({ key: key.trim() }); }}>
+          <Input
+            type="password"
+            autoComplete="new-password"
+            spellCheck={false}
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder={s?.connected ? "Paste a new key to replace it" : "sk-ant-…"}
+            aria-label="Anthropic API key"
+            className="bg-card border-border max-w-sm"
+          />
+          <Button type="submit" size="sm" className="gap-1.5" disabled={!key.trim() || busy}>
+            {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {s?.connected ? "Replace key" : "Connect"}
+          </Button>
+        </form>
+      )}
+      {s?.connected && (
+        <div className="flex items-center gap-2 mt-3">
+          <Button size="sm" variant="outline" className="border-border" disabled={busy} onClick={() => test.mutate()}>
+            {test.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Test
+          </Button>
+          {s.source === "settings" && (
+            <Button size="sm" variant="outline" className="gap-1.5 border-border" disabled={busy} onClick={() => save.mutate({ key: null })}>
+              <Trash2 className="w-3.5 h-3.5" /> Remove
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BrandingSettings() {
   const { user } = useAuth();
   const isManager = canManage(user?.role);
@@ -202,6 +285,7 @@ function BrandingSettings() {
       </p>
 
       {isManager && <DataSyncPanel />}
+      {canAssignRoles(user?.role) && <ClaudeCard />}
 
       {!isManager && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm mb-6">

@@ -107,6 +107,7 @@ const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
+import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
 import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
 import { getRepPhotos } from "./repPhotos";
 import { getFacilityLogos } from "./facilityLogos";
@@ -133,6 +134,10 @@ function scopeAgentFilter<T extends { agent?: string }>(
 /** Managers only — used to gate BDR/FR financial row edits/deletes. */
 function mgrOnly(ctx: { user: { role: any } }): void {
   if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Managers only." });
+}
+
+function superOnly(ctx: { user: { role: any } }): void {
+  if (!canAssignRoles(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Super admins only." });
 }
 
 /** BD/FR-side procedure — the Intake team is walled off from the lead scraper,
@@ -263,6 +268,13 @@ export const appRouter = router({
         if (input.slogan !== undefined) await setSetting("brand_slogan", input.slogan);
         return { success: true };
       }),
+    // Claude (Anthropic) writes the AI performance review once a key is connected
+    // (server/_core/claude.ts). Super admins only; the key never comes back out.
+    claudeStatus: protectedProcedure.query(({ ctx }) => { superOnly(ctx); return claudeStatus(); }),
+    saveClaudeKey: protectedProcedure
+      .input(z.object({ key: z.string().max(400).nullable() }))
+      .mutation(({ ctx, input }) => { superOnly(ctx); return saveClaudeKey(input.key); }),
+    testClaude: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return testClaude(); }),
   }),
 
   leads: router({
