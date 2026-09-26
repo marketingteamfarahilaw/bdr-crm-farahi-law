@@ -81,7 +81,7 @@ type Meta = {
   targets: boolean;
   /** Months the targets cover (per rep per month). */
   months: number;
-  /** A range from mid-month (Last week): its days and their share of a month's target. */
+  /** A range that isn't whole months (This week, Last week): its days and their share of a month's target. */
   prorated: { days: number; share: number } | null;
   /** The period's last month while it is still running: its targets are for the whole month. */
   progress: { month: string; name: string; day: number; days: number } | null;
@@ -110,7 +110,8 @@ function metaOf(data: ReportData, ctx: DeckContext): Meta {
     targets: !allTime,
     months: data.scorecard.months,
     prorated: data.scorecard.prorated ?? null,
-    progress: ctx.to >= today && d < days
+    // A prorated range is measured against its own days, not the whole month.
+    progress: !data.scorecard.prorated && ctx.to >= today && d < days
       ? { month: today.slice(0, 7), name: new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long" }), day: d, days }
       : null,
   };

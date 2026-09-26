@@ -92,10 +92,12 @@ export type ReportData = NonNullable<inferRouterOutputs<AppRouter>["teamReports"
 /** Common reporting windows, so nobody has to type dates for the usual questions. */
 export function presets(today: Date) {
   const y = today.getFullYear(), m = today.getMonth();
-  // Monday to Sunday of the week before this one — the team presents weekly.
+  // Weeks run Monday to Sunday — the team presents weekly. This week is Monday to
+  // today (the rest hasn't happened); last week is the whole week before it.
   const monday = new Date(y, m, today.getDate() - ((today.getDay() + 6) % 7));
   return [
     { label: "This month", from: iso(new Date(y, m, 1)), to: iso(today) },
+    { label: "This week", from: iso(monday), to: iso(today) },
     { label: "Last week", from: iso(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 7)), to: iso(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 1)) },
     { label: "Last month", from: iso(new Date(y, m - 1, 1)), to: iso(new Date(y, m, 0)) },
     { label: "Year to date", from: `${y}-01-01`, to: iso(today) },

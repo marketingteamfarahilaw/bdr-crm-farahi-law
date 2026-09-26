@@ -304,23 +304,35 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     .slice(0, 15);
 
   // ── team scorecard (FRs, BDRs, Intake — as the team's sheet lays it out) ──
+  // A range that isn't whole months (This week, Last week, custom dates) gets its
+  // share of the monthly target — each day counts 1/(days in its month) — so a
+  // week is measured against about a quarter of a month, not all of it (Youssef,
+  // 2026-09-25: the team presents weekly). Whole months — from the 1st to a
+  // month's end, or to today (month-to-date, as the team's sheet does) — keep
+  // whole targets. A week that happens to start on the 1st is still a week.
+  const pacificDay = (d: Date) => formatInTimeZone(d, "America/Los_Angeles", "yyyy-MM-dd");
+  const days: string[] = [];
+  if (range?.from && range?.to) {
+    // Calendar days, counted on the calendar: stepping 24 hours at a time repeats
+    // or skips a day where daylight saving changes.
+    const [fy, fm, fd] = pacificDay(range.from).split("-").map(Number);
+    const last = pacificDay(range.to);
+    for (let i = 0; i < 20000; i++) {
+      const d = new Date(Date.UTC(fy, fm - 1, fd + i)).toISOString().slice(0, 10);
+      if (d > last) break;
+      days.push(d);
+    }
+  }
   // Targets are per rep per month, so a range covering two months doubles them.
-  const monthsInRange = range?.from && range?.to
-    ? new Set(Array.from({ length: Math.ceil((range.to.getTime() - range.from.getTime()) / 86400000) + 1 }, (_, i) =>
-        formatInTimeZone(new Date(range.from!.getTime() + i * 86400000), "America/Los_Angeles", "yyyy-MM"))).size
-    : Math.max(1, months.length);
-  // A range that starts mid-month (Last week, custom dates) gets its share of the
-  // monthly target — each day counts 1/(days in its month) — so a week is measured
-  // against about a quarter of a month, not all of it (Youssef, 2026-09-25: the
-  // team presents weekly). A range from the 1st keeps whole months, as the team's
-  // sheet does for month-to-date.
-  const days = range?.from && range?.to
-    ? Array.from({ length: Math.round((range.to.getTime() - range.from.getTime()) / 86400000) + 1 }, (_, i) =>
-        formatInTimeZone(new Date(range.from!.getTime() + i * 86400000), "America/Los_Angeles", "yyyy-MM-dd"))
-        .filter((d) => d <= formatInTimeZone(range.to!, "America/Los_Angeles", "yyyy-MM-dd"))
-    : [];
-  const prorated = days.length > 0 && !days[0].endsWith("-01");
+  // Counted from the calendar days: stepping 24 hours from a range's start ran
+  // one step past a month's last day, so Last month counted two months.
+  const monthsInRange = days.length ? new Set(days.map((d) => d.slice(0, 7))).size : Math.max(1, months.length);
   const daysIn = (d: string) => new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate();
+  const lastDay = days[days.length - 1];
+  // "To today" allows for a browser ahead of California (the Philippines), whose today is our tomorrow.
+  const wholeMonths = days.length > 0 && days[0].endsWith("-01")
+    && (Number(lastDay.slice(8)) === daysIn(lastDay) || lastDay >= pacificDay(new Date()));
+  const prorated = days.length > 0 && !wholeMonths;
   const targetMonths = prorated ? days.reduce((a, d) => a + 1 / daysIn(d), 0) : monthsInRange;
   const pctOf = (a: number, b: number) => (b ? Math.round((a / b) * 10000) / 100 : null);
   const order = (role: TeamRole, name: string) => {
