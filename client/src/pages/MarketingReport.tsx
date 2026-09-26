@@ -7,24 +7,29 @@
  *
  * This file is the page's order and state; each panel lives in ./marketing/.
  * Every clickable number hands a DrillLink to openDrill, and the one clients
- * window below shows the leads behind it.
+ * window below shows the leads behind it. Present opens the report as a deck
+ * (./marketing/Presentation), as the Sign-ups Report's Present does.
  */
-import { useState, type ReactNode } from "react";
+import { lazy, Suspense, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
-  Inbox, CheckCircle2, DollarSign, Download, Loader2, Trophy, Percent, TrendingUp, Info, Megaphone, ArrowUpRight, Users,
+  Inbox, CheckCircle2, DollarSign, Download, Loader2, Trophy, Percent, TrendingUp, Info, Megaphone, ArrowUpRight, Users, Presentation,
 } from "lucide-react";
 import { canSeeMarketing } from "@shared/permissions";
 import { REASON_KEYS, REASON_LABEL } from "@shared/marketing";
 import type { DrillLink, RowRef } from "../../../server/marketing/common";
 import {
-  Big, DateInput, fmt, hueStyle, initials, iso, monthLabel, monthShort, presets, rangeLabel,
+  Big, DECK_GONE, DateInput, PresentationUnavailable, RESUME_MS, fmt, hueStyle, initials, iso, monthLabel, monthShort, presets, rangeLabel,
 } from "./SignupsDashboard";
+import { enterFullscreen } from "./signups/fullscreen";
+import type { DeckPlace } from "./signups/Presentation";
+import type { MarketingPresentationProps } from "./marketing/Presentation";
 import "./SignupsDashboard.css";
-import { scopeOf, usd, type Group } from "./marketing/shared";
+import { REJECTED_FRESH_MS, rejectedQuery, scopeOf, usd, type Group } from "./marketing/shared";
 import { CoverageBanner, FreshnessLine, loadedLabel, whenLabel } from "./marketing/Freshness";
 import {
   BigWithDelta, CompareAccordion, MonthsCard, MoverCard, VsControl, compareDefault, conversionNote, type CompareChoice,
@@ -36,10 +41,25 @@ import { WhyAccordion, WhyNotSigned } from "./marketing/WhyNotSigned";
 import { Routes } from "./marketing/Routes";
 import { SPEND_EDITOR_ID, SpendAccordion, SpendEditor } from "./marketing/SpendEditor";
 import { Clients, LeadList, LoadFailed } from "./marketing/Clients";
+import { Rejected } from "./marketing/Rejected";
 import "./marketing/MarketingReport.css";
 
 type Out = inferRouterOutputs<AppRouter>["marketing"];
 type Data = NonNullable<Out["dashboard"]>;
+
+// The presentation (marketing/Presentation.tsx), loaded on demand exactly as the
+// Sign-ups Report's is: most visits never open it, and a deploy since this tab
+// opened hands the page back with a message instead of the app's error screen.
+const loadPresentation = () => import("./marketing/Presentation");
+// lazy() keeps the fallback for the rest of the visit, so once the load has failed
+// Present just says so, rather than leave the bare report stuck in full screen.
+let deckFailed = false;
+const MarketingPresentation = lazy<ComponentType<MarketingPresentationProps>>(
+  () => loadPresentation().catch(() => {
+    deckFailed = true;
+    return { default: PresentationUnavailable };
+  }),
+);
 
 const FLOOR = "2020-01-01";   // "All time" starts here; nothing earlier to compare with
 // The router caps a drill's case-type and campaign lists at 50 spellings.
@@ -88,6 +108,41 @@ export default function MarketingReport() {
   if (data && !isPlaceholderData && !sameInput(settled, input)) setSettled(input);
   const view = data && isPlaceholderData ? settled : input;
   const openDrill = (link: DrillLink) => setDrill({ link, from: view.from, to: view.to });
+
+  // ---- Present, as on the Sign-ups Report. Leaving full screen ends the deck, so
+  // presenting the same filters again picks up on the same slide, with the same
+  // clock; a ref, so turning a slide doesn't re-render the report behind the deck.
+  const [presenting, setPresenting] = useState(false);
+  const presentBtn = useRef<HTMLButtonElement>(null);
+  const deckKey = [from, to, group, compare].join("|");
+  const place = useRef<(DeckPlace & { key: string; at: number }) | null>(null);
+  const [resume, setResume] = useState<DeckPlace>();
+  const notePlace = (p: DeckPlace) => { place.current = { ...p, key: deckKey, at: Date.now() }; };
+  // Fullscreen must be asked for inside the click itself; the deck may not have loaded yet.
+  const present = () => {
+    if (deckFailed) {
+      toast.error(DECK_GONE);
+      return;
+    }
+    const last = place.current;
+    setResume(last && last.key === deckKey && Date.now() - last.at < RESUME_MS ? { slide: last.slide, startedAt: last.startedAt } : undefined);
+    enterFullscreen();
+    setPresenting(true);
+  };
+  const endPresenting = () => {
+    if (place.current) place.current.at = Date.now();
+    setPresenting(false);
+    // Once the deck is gone and the page is live again; the report stays scrolled where it was.
+    requestAnimationFrame(() => presentBtn.current?.focus({ preventScroll: true }));
+  };
+  const utils = trpc.useUtils();
+  const prefetchPresentation = () => {
+    loadPresentation().catch(() => {});
+    // The appendix's rejected cases too (the deck's one fetch), so the deck opens without waiting.
+    if (data?.caseFacts && data.totals.rejected > 0 && !isPlaceholderData) {
+      void utils.marketing.leads.prefetch(rejectedQuery(from, to), { staleTime: REJECTED_FRESH_MS });
+    }
+  };
 
   if (!allowed) {
     return (
@@ -143,6 +198,12 @@ export default function MarketingReport() {
                 </p>
               </div>
               <div className="sr-actions">
+                {/* Disabled while a new filter loads, so it never presents the old filter's numbers under the new label. */}
+                <button ref={presentBtn} className="sr-btn2" onClick={present} disabled={!data || isPlaceholderData}
+                  onPointerEnter={prefetchPresentation} onFocus={prefetchPresentation}
+                  title="Show this report full screen, one slide at a time">
+                  <Presentation /> Present
+                </button>
                 <button className="sr-btn2" onClick={() => data && exportSummary(data, view.from, view.to)} disabled={!data}><Download /> Export summary</button>
               </div>
             </div>
@@ -164,6 +225,13 @@ export default function MarketingReport() {
           )}
         </div>
       </div>
+      {presenting && data && (
+        // The fallback is styled inline: the deck's own CSS arrives with its code.
+        <Suspense fallback={<div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--canvas)" }} />}>
+          <MarketingPresentation data={data} from={from} to={to} group={group} preset={activePreset}
+            resume={resume} onPlace={notePlace} onExit={endPresenting} />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -350,6 +418,8 @@ function Report({ data, from, to, group, onDrill }: {
             group={group} avg={avg} onDrill={onDrill} caseFacts={data.caseFacts} />
           {/* Why leads didn't sign is an intake case fact: the server sends it only to those who may see it. */}
           {data.why && <WhyNotSigned why={data.why} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} />}
+          {/* The rejected cases by name, with the reason: an intake case fact too. */}
+          {data.caseFacts && <Rejected from={from} to={to} group={group} count={data.totals.rejected} />}
           <Routes routes={data.routes} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} caseFacts={data.caseFacts} />
           <CaseTypes data={data} group={group} onDrill={onDrill} />
           <Campaigns data={data} onDrill={onDrill} />

@@ -1,0 +1,119 @@
+/*
+ * Marketing Report presentation mode (Presentation.tsx, deckSlides.tsx): only
+ * what the Sign-ups deck's classes (../signups/Presentation.css: sr-slide,
+ * sr-deck, sr-cv, sr-pt, sr-ct, sr-tr, sr-bf…) don't already cover.
+ *
+ * Same rules as there: sizes are design pixels on the 1920×1080 stage, nothing
+ * under 20px, thin weights only from 96px up, and colours come from the deck's
+ * tokens so `.dark .sr` flips them. Everything is scoped under .sr-deck.
+ */
+
+/* ---- preparing: the deck's canvas while the rejected cases load */
+.sr.sr-deck.mk-dk-prep { display: grid; place-items: center; }
+.sr-deck .mk-dk-prep-t { display: inline-flex; align-items: center; gap: 10px; margin: 0; font: 500 16px/1.4 var(--ui); color: var(--ink2); }
+.sr-deck .mk-dk-prep-t svg { width: 18px; height: 18px; }
+
+/* shared bits */
+.sr-deck .mk-dk-note { flex: none; margin: 20px 4px 0; font: 400 22px/1.4 var(--ui); color: var(--ink2); }
+.sr-deck .mk-dk-na { justify-self: end; font: 500 26px/1 var(--ui); color: var(--ink2); }
+/* a change's tone, as the page's pills colour it (shared.ts delta) */
+.sr-deck .mk-dk-ok { color: var(--ok); }
+.sr-deck .mk-dk-bad { color: var(--bad); }
+.sr-deck .mk-dk-grey { color: var(--ink); }
+
+/* ---- cover: three numbers under the big one need a step down to fit beside the side column */
+.sr-deck .mk-dk-cv3 .sr-cv-stats > div { padding: 0 48px; }
+.sr-deck .mk-dk-cv3 .sr-cv-stats > div:first-child { padding-left: 0; }
+.sr-deck .mk-dk-cv3 .sr-cv-stats b { font-size: 88px; }
+
+/* the cover's side with a comparison: how the period moved */
+.sr-deck .mk-dk-vs {
+  align-self: stretch; display: flex; flex-direction: column; padding: 44px 48px; border-radius: var(--rad);
+  background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
+}
+.sr-deck .mk-dk-vs-h { font: 600 26px/1.2 var(--ui); color: var(--ink2); }
+.sr-deck .mk-dk-vs-n { margin-top: 18px; font: 300 150px/.95 var(--disp); letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+.sr-deck .mk-dk-vs-s { margin-top: 12px; font: 400 28px/1.3 var(--ui); color: var(--ink2); font-variant-numeric: tabular-nums; }
+.sr-deck .mk-dk-vs-l { display: flex; flex-direction: column; gap: 14px; margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.sr-deck .mk-dk-vs-l > div { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
+.sr-deck .mk-dk-vs-l span { font: 500 26px/1.2 var(--ui); color: var(--ink2); }
+.sr-deck .mk-dk-vs-l b { font: 500 30px/1.2 var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---- where sign-ups came from: the partners rows, a notch denser for seven or eight */
+.sr-deck .mk-dk-pt.dense { gap: 8px; }
+.sr-deck .mk-dk-pt.dense .sr-pt-row { height: 76px; grid-template-columns: 56px minmax(0, 1fr) 400px 280px; }
+.sr-deck .mk-dk-pt.dense .sr-deck-av { width: 56px; height: 56px; font-size: 22px; }
+.sr-deck .mk-dk-pt.dense .sr-pt-who b { font-size: 28px; }
+.sr-deck .mk-dk-pt.dense .sr-pt-who i { margin-top: 2px; font-size: 20px; }
+.sr-deck .mk-dk-pt.dense .sr-pt-n b { font-size: 44px; }
+.sr-deck .mk-dk-pt.dense .sr-pt-n span { margin-top: 2px; font-size: 20px; }
+
+/* ---- scorecard: channel names are longer than a rep's first name, and the numbers need less than the sheet gives them */
+.sr-deck .mk-dk-sc table.sr-sct th.l { width: 520px; }
+.sr-deck .mk-dk-sc.money table.sr-sct th.l { width: 440px; }
+
+/* ---- biggest changes: gainers and losers side by side */
+.sr-deck .mk-dk-chg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 80px; }
+.sr-deck .mk-dk-chg.solo { grid-template-columns: minmax(0, 1100px); }
+.sr-deck .mk-dk-chg-h { height: 48px; display: flex; align-items: center; font: 600 26px/1.2 var(--ui); color: var(--ink2); }
+.sr-deck .mk-dk-chg-row {
+  height: 100px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 28px; margin-top: 12px;
+  padding: 0 36px; border-radius: var(--rad); background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
+}
+.sr-deck .mk-dk-chg-who { min-width: 0; }
+.sr-deck .mk-dk-chg-who b { display: block; font: 600 32px/1.15 var(--ui); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-deck .mk-dk-chg-who i { display: block; margin-top: 6px; font: 400 22px/1.2 var(--ui); font-style: normal; color: var(--ink2); }
+.sr-deck .mk-dk-chg-d { font: 400 60px/1 var(--disp); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+
+/* ---- why leads didn't sign: one bar per family, in the page's swatches (WhyNotSigned.css) */
+.sr-deck .mk-dk-why { display: flex; flex-direction: column; gap: 8px; }
+.sr-deck .mk-dk-why-row {
+  height: 64px; display: grid; grid-template-columns: 28px 620px minmax(0, 1fr) 140px 130px; align-items: center; gap: 24px;
+  padding: 0 28px; border-radius: 20px; background: var(--glass); border: 1px solid var(--edge);
+}
+.sr-deck .mk-dk-why-sw { width: 28px; height: 28px; border-radius: 8px; }
+.sr-deck .mk-dk-why-l { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+.sr-deck .mk-dk-why-l b { min-width: 0; font: 600 28px/1.2 var(--ui); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-deck .mk-dk-why-l em { flex: none; font: 500 20px/1 var(--ui); font-style: normal; color: var(--ink2); }
+.sr-deck .mk-dk-why-t { height: 20px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.sr-deck .mk-dk-why-t i { display: block; height: 100%; border-radius: 99px; }
+.sr-deck .mk-dk-why-n { text-align: right; font: 400 40px/1 var(--disp); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.sr-deck .mk-dk-why-p { text-align: right; font: 500 24px/1 var(--ui); color: var(--ink2); font-variant-numeric: tabular-nums; }
+
+/* ---- routes and case types: the Sign-ups case-type rows, a little shorter so seven fit under a
+   subtitle, and wider names ("Motor Vehicle Accident - Rideshare…", "After-hours answering service") */
+.sr-deck .mk-dk-ct .sr-ct-row { height: 80px; grid-template-columns: 620px minmax(0, 1fr) 300px 150px; }
+
+/* ---- appendix: the reasons */
+.sr-deck .mk-dk-rs { display: flex; flex-direction: column; gap: 8px; }
+.sr-deck .mk-dk-rs-row {
+  height: 70px; display: grid; grid-template-columns: minmax(0, 900px) minmax(0, 1fr) 140px; align-items: center; gap: 32px;
+  padding: 0 32px; border-radius: 20px; background: var(--glass); border: 1px solid var(--edge);
+}
+/* the reason, with its family under it, so a long sub-status keeps the width */
+.sr-deck .mk-dk-rs-l { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sr-deck .mk-dk-rs-l b { min-width: 0; font: 600 28px/1.2 var(--ui); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-deck .mk-dk-rs-l i { font: 400 20px/1.2 var(--ui); font-style: normal; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-deck .mk-dk-rs-n { text-align: right; font: 400 44px/1 var(--disp); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ---- appendix: the cases, twelve to a slide */
+.sr-deck table.mk-dk-cases { width: 100%; table-layout: fixed; border-collapse: collapse; font: 400 24px/1.15 var(--ui); color: var(--ink2); }
+.sr-deck table.mk-dk-cases th {
+  height: 52px; padding: 0 16px; text-align: left; font: 600 20px/1.2 var(--ui); color: var(--ink2);
+  border-bottom: 2px solid var(--rule);
+}
+.sr-deck table.mk-dk-cases th.c { width: 400px; }
+.sr-deck table.mk-dk-cases th.t { width: 320px; }
+.sr-deck table.mk-dk-cases th.s { width: 320px; }
+.sr-deck table.mk-dk-cases th.d { width: 190px; }
+.sr-deck table.mk-dk-cases td {
+  height: 60px; padding: 0 16px; border-bottom: 1px solid var(--rule); vertical-align: middle;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums;
+}
+.sr-deck table.mk-dk-cases tr.grp td { border-top: 2px solid var(--rule); }
+.sr-deck table.mk-dk-cases b { font-weight: 600; color: var(--ink); }
+.sr-deck table.mk-dk-cases em { font-style: normal; color: var(--foot); }
+.sr-deck table.mk-dk-cases td.r { font-size: 22px; }
+/* Long names, case types and reasons get two lines, not an ellipsis, while the row keeps its height. */
+.sr-deck table.mk-dk-cases td.c, .sr-deck table.mk-dk-cases td.t, .sr-deck table.mk-dk-cases td.s, .sr-deck table.mk-dk-cases td.r { white-space: normal; }
+.sr-deck .mk-dk-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }

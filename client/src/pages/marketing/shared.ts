@@ -2,7 +2,7 @@
  * Small helpers every Marketing Report panel shares: money formats, the row →
  * drill scope rule, and the change pill's wording and colour.
  */
-import { NO_SOURCE, TEAM_CHANNEL } from "@shared/marketing";
+import { NO_SOURCE, TEAM_CHANNEL, channelOfSource } from "@shared/marketing";
 import type { DrillScope, RowRef } from "../../../../server/marketing/common";
 
 export type Group = "channel" | "source";
@@ -30,9 +30,24 @@ export const prevMonth = (m: string) => {
 // The row the server keeps whole in both views: leads with no source.
 export const SPECIAL = new Set([NO_SOURCE, TEAM_CHANNEL]);
 
+/** The scorecard row a lead's source counts in, as the server's rowNameOf: the two special rows stay whole. */
+export const rowNameOf = (source: string, group: Group) =>
+  group === "channel" && !SPECIAL.has(source) ? channelOfSource(source) : source;
+
 /** What to ask the server for a row's clients: a channel asks for all its Lead Docket sources. */
 export const scopeOf = (row: RowRef): DrillScope =>
   SPECIAL.has(row.name) || !row.members.length ? { source: row.name } : { sources: row.members };
+
+/**
+ * Every rejected case in a range, with why: the scorecard's Rejected column
+ * (rejected, lost or closed), newest first, up to the 500 the endpoint allows.
+ * The Rejected panel and the presentation's appendix ask with exactly this, so
+ * they share one cached answer and the deck opens without waiting for it.
+ */
+export const rejectedQuery = (from: string, to: string) =>
+  ({ from, to, bucket: "rejected", status: "all", limit: 500, withWhy: true }) as const;
+/** How old that answer may be when the deck opens; older, and the deck fetches it again first. */
+export const REJECTED_FRESH_MS = 60_000;
 
 export type Delta = { text: string; tone: "ok" | "bad" | "grey" };
 

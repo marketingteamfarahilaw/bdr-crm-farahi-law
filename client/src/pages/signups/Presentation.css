@@ -211,6 +211,13 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .sr-deck .sr-ld-n { text-align: right; font: 400 64px/1 var(--disp); letter-spacing: -.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
+/* 7–8 reps: tighter rows so all of them fit on the slide */
+.sr-deck .sr-ld.dense { gap: 10px; }
+.sr-deck .sr-ld.dense .sr-ld-row { height: 86px; }
+.sr-deck .sr-ld.dense .sr-ld-rank { width: 50px; height: 50px; font-size: 24px; }
+.sr-deck .sr-ld.dense .sr-ld-who b { font-size: 32px; }
+.sr-deck .sr-ld.dense .sr-ld-who i { margin-top: 4px; font-size: 22px; }
+.sr-deck .sr-ld.dense .sr-ld-n { font-size: 54px; }
 
 /* ---- representatives vs target: bullet bars */
 .sr-deck .sr-tg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 80px; }

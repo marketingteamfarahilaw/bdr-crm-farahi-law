@@ -23,7 +23,8 @@ import "./SignupsDashboard.css";
 // opened deletes the old file, so a failed load says so and hands the page back
 // instead of letting the app's error screen take over mid-meeting.
 const loadPresentation = () => import("./signups/Presentation");
-const DECK_GONE = "The CRM was updated since this page opened. Reload the page, then press Present again.";
+// The Marketing Report loads its deck the same way, with the same message and fallback.
+export const DECK_GONE = "The CRM was updated since this page opened. Reload the page, then press Present again.";
 // lazy() keeps the fallback below for the rest of the visit, so once the load has
 // failed, Present just says so: going full screen first would leave the bare
 // report stuck in full screen with nothing to take it out again.
@@ -35,7 +36,7 @@ const SignupsPresentation = lazy<ComponentType<PresentationProps>>(
   }),
 );
 
-function PresentationUnavailable({ onExit }: { onExit: () => void }) {
+export function PresentationUnavailable({ onExit }: { onExit: () => void }) {
   // Once, on mount: it unmounts as soon as onExit ends presenting.
   useEffect(() => {
     // "Soon": the Present click's fullscreen request may land a frame after this.
@@ -48,7 +49,7 @@ function PresentationUnavailable({ onExit }: { onExit: () => void }) {
 }
 
 // Presenting the same filters again within this long picks up on the same slide.
-const RESUME_MS = 30 * 60_000;
+export const RESUME_MS = 30 * 60_000;
 
 // English formatting regardless of the browser's language, to match the rest of the CRM.
 export const fmt = (n: number) => n.toLocaleString("en-US");

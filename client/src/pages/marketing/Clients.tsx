@@ -105,7 +105,7 @@ const TABBABLE = 'a[href], button:not([disabled]), input:not([disabled]), select
 const GUARD = { position: "fixed", opacity: 0, pointerEvents: "none", outline: "none" } as const;
 
 /** 'Export 312 clients': the same query as the list, as a CSV with every column. */
-function ExportButton({ input, name, total }: { input: ExportInput; name: string; total: number | undefined }) {
+export function ExportButton({ input, name, total }: { input: ExportInput; name: string; total: number | undefined }) {
   const utils = trpc.useUtils();
   const [busy, setBusy] = useState(false);
   const run = async () => {
@@ -289,7 +289,7 @@ export function LeadTable({ rows }: { rows: LeadListRow[] }) {
   );
 }
 
-function useDebounced<T>(value: T, ms = 300) {
+export function useDebounced<T>(value: T, ms = 300) {
   const [v, setV] = useState(value);
   useEffect(() => { const t = setTimeout(() => setV(value), ms); return () => clearTimeout(t); }, [value, ms]);
   return v;

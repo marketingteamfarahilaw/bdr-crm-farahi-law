@@ -9,7 +9,7 @@ import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, 
 import { DEFAULT_LOGO } from "@/hooks/useBranding";
 import { DataSyncPanel } from "@/components/DataSyncPanel";
 
-const MAX_DIM = 256; // logos render <=112px; 256 keeps them crisp on retina while tiny in storage
+const MAX_DIM = 512; // a wide logo renders up to 190px across in the sidebar; 512 keeps it crisp on retina and still small
 
 /** Read an image file, downscale to MAX_DIM on the longest edge, return a PNG data URL. */
 async function fileToResizedDataUrl(file: File): Promise<string> {

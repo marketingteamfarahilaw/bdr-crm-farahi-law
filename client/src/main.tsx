@@ -69,8 +69,8 @@ createRoot(document.getElementById("root")!).render(
 // kept seeing the previous version until a second refresh. Reload once when a
 // new worker takes control, and look for one whenever the tab comes back.
 //
-// Except around a presentation (Sign-ups Report → Present, which marks <html>
-// with sr-presenting while it is up): a reload would end it in front of the CEO.
+// Except around a presentation (Present on the Sign-ups or Marketing Report, which
+// marks <html> with sr-presenting while it is up): a reload would end it in front of the CEO.
 // It also waits a few minutes after one ends, because stepping out is often
 // brief (Esc by mistake, a look at Lead Docket) and the page remembers the slide
 // to pick up from; a reload would put the report back on "This month" instead.

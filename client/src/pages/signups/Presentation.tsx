@@ -28,12 +28,16 @@
  * - It holds a screen wake lock, so a laptop left on one slide while the room
  *   talks doesn't dim or lock. And main.tsx holds off a new build's reload while
  *   the deck is up (it watches the sr-presenting class on <html>).
+ *
+ * All of that is the Deck below, which the Marketing Report's presentation
+ * (../marketing/Presentation) shares with its own slides: one shell, so a fix to
+ * the keys, the clicker or fullscreen reaches both decks.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Clock, X } from "lucide-react";
 import type { ReportData } from "../SignupsDashboard";
-import { buildSlides, type DeckContext } from "./slides";
+import { buildSlides, type DeckContext, type Slide } from "./slides";
 import { FULLSCREEN_EVENTS, exitFullscreen, fullscreenElement } from "./fullscreen";
 import "./Presentation.css";
 
@@ -49,6 +53,16 @@ export type PresentationProps = DeckContext & {
   onExit: () => void;
 };
 
+export type DeckProps = {
+  /** The slides. Called once, when the deck opens: they stay frozen for the meeting (see above). */
+  build: () => Slide[];
+  /** What a screen reader calls the deck: "Sign-ups report presentation". */
+  label: string;
+  resume?: DeckPlace;
+  onPlace?: (place: DeckPlace) => void;
+  onExit: () => void;
+};
+
 const STAGE_W = 1920, STAGE_H = 1080;
 const BAR_ENTRY_MS = 4000, BAR_IDLE_MS = 2500;
 // A still mouse, or a clicker's mouse-mode jitter, shouldn't wake the bar.
@@ -56,9 +70,43 @@ const WAKE_PX = 4;
 const SWIPE_PX = 60, TAP_PX = 10;
 
 export default function Presentation({ data, resume, onPlace, onExit, ...filters }: PresentationProps) {
-  // Frozen for the meeting (see above); the filters with it, so labels always match the numbers.
-  const [frozen] = useState(() => ({ data, ctx: filters }));
-  const slides = useMemo(() => buildSlides(frozen.data, frozen.ctx), [frozen]);
+  // The filters are frozen with the data, so labels always match the numbers.
+  return (
+    <Deck build={() => buildSlides(data, filters)} label="Sign-ups report presentation"
+      resume={resume} onPlace={onPlace} onExit={onExit} />
+  );
+}
+
+/**
+ * The page behind a full-screen overlay: no scrolling, no focus, no toasts, and
+ * no new-build reload (main.tsx watches sr-presenting); all put back when the
+ * overlay goes, including when Back or a route change unmounts it. A layout
+ * effect, so the page is live again before the Present button takes focus back.
+ * The Marketing deck holds the page the same way while its slides are prepared.
+ */
+export function usePageBehind(focus: RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const html = document.documentElement, body = document.body;
+    const root = document.getElementById("root");
+    const before = { html: html.style.overflow, body: body.style.overflow, inert: root?.inert ?? false };
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    html.classList.add("sr-presenting");
+    if (root) root.inert = true;
+    focus.current?.focus({ preventScroll: true });
+    return () => {
+      html.style.overflow = before.html;
+      body.style.overflow = before.body;
+      html.classList.remove("sr-presenting");
+      if (root) root.inert = before.inert;
+    };
+  }, [focus]);
+}
+
+/** The deck: the stage, the keys, the control bar and everything above, around any report's slides. */
+export function Deck({ build, label, resume, onPlace, onExit }: DeckProps) {
+  // Built once, on entry: frozen for the meeting (see above).
+  const [slides] = useState(build);
   // Tracked by id, so a re-render can never jump to another slide. On resume, a
   // slide that no longer exists (the data changed since) starts from the cover.
   const [currentId, setCurrentId] = useState(() =>
@@ -201,26 +249,11 @@ export default function Presentation({ data, resume, onPlace, onExit, ...filters
     return () => FULLSCREEN_EVENTS.forEach((t) => document.removeEventListener(t, onChange));
   }, [leave]);
 
-  // ---- the page behind: no scrolling, no focus, no toasts; all put back on the way out,
-  // including when Back or a route change unmounts the deck. Layout effect, so
-  // the page is live again before the Present button takes focus back.
-  useLayoutEffect(() => {
-    const html = document.documentElement, body = document.body;
-    const root = document.getElementById("root");
-    const before = { html: html.style.overflow, body: body.style.overflow, inert: root?.inert ?? false };
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    html.classList.add("sr-presenting");
-    if (root) root.inert = true;
-    deckRef.current?.focus({ preventScroll: true });
-    return () => {
-      exitFullscreen();
-      html.style.overflow = before.html;
-      body.style.overflow = before.body;
-      html.classList.remove("sr-presenting");
-      if (root) root.inert = before.inert;
-    };
-  }, []);
+  // ---- leaving by any route, Back and route changes included, leaves fullscreen too.
+  // Declared before the page is held, so it still runs first on the way out.
+  useLayoutEffect(() => () => exitFullscreen(), []);
+  // ---- the page behind: no scrolling, no focus, no toasts, until the deck goes.
+  usePageBehind(deckRef);
 
   // ---- keep the screen on. Fullscreen alone doesn't: a laptop left on one slide
   // while the room talks would dim, then lock, on the projector. The system drops
@@ -336,7 +369,7 @@ export default function Presentation({ data, resume, onPlace, onExit, ...filters
       className={`sr sr-deck${barOn ? "" : " idle"}${blank ? " blank" : slide.dark ? " on-dark" : ""}`}
       role="dialog"
       aria-modal="true"
-      aria-label="Sign-ups report presentation"
+      aria-label={label}
       tabIndex={-1}
       onClick={onClick}
       onPointerMove={onPointerMove}

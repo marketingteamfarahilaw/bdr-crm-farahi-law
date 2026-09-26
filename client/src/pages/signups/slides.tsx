@@ -26,7 +26,8 @@ export type DeckContext = {
   /** The period button that is on ("This month"…); none for custom dates. */
   preset?: string;
 };
-type Pos = { n: number; of: number };
+/** A slide's place in the deck, for its footer: "3 / 10". */
+export type Pos = { n: number; of: number };
 export type Slide = {
   id: string;
   /** For screen readers: "3 of 10: FRS scorecard". */
@@ -55,7 +56,8 @@ const pctDown = (v: number | null | undefined) => `${Math.floor((v ?? 0) + 1e-6)
  */
 const scorecardPct = (v: number | null, of: "achieved" | "conversion") =>
   v == null ? "—" : `${(of === "achieved" ? Math.floor(v * 10 + 1e-6) / 10 : Math.round(v * 10) / 10).toFixed(1)}%`;
-function pages<T>(xs: T[], size: number): T[][] {
+/** A long list cut into slides of `size`; the Marketing deck pages its rejected cases with it too. */
+export function pages<T>(xs: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < xs.length; i += size) out.push(xs.slice(i, i + size));
   return out;
@@ -162,10 +164,18 @@ export function buildSlides(data: ReportData, ctx: DeckContext): Slide[] {
     slides.push({ id: "trend", label: "Sign-ups by month", render: (pos) => <Trend months={months} total={data.totals.signed} perMonth={perMonth} meta={meta} pos={pos} /> });
   }
 
+  // Every rep with a sign-up. The first version kept the top six, which left the
+  // seventh (Queenie Miranda) off the slide; eight fit on one, more go on another.
   const leaders = data.reps.filter((r) => r.signed > 0);
-  if (leaders.length) {
-    slides.push({ id: "leaders", label: "Top representatives", render: (pos) => <Leaders reps={leaders} meta={meta} pos={pos} /> });
-  }
+  const leaderPages = pages(leaders, 8);
+  leaderPages.forEach((page, i) => {
+    const part = leaderPages.length > 1 ? `${i + 1} of ${leaderPages.length}` : null;
+    slides.push({
+      id: i ? `leaders-${i + 1}` : "leaders",
+      label: part ? `Top representatives, ${part}` : "Top representatives",
+      render: (pos) => <Leaders reps={leaders} page={page} part={part} meta={meta} pos={pos} />,
+    });
+  });
 
   const targeted = meta.targets ? data.scorecard.groups.filter((g) => g.total.target != null && g.rows.length > 0) : [];
   if (targeted.length && targeted.every((g) => g.rows.length <= 12)) {
@@ -405,9 +415,11 @@ function Trend({ months, total, perMonth, meta, pos }: { months: MonthRow[]; tot
   );
 }
 
-function Leaders({ reps, meta, pos }: { reps: ReportData["reps"]; meta: Meta; pos: Pos }) {
-  const top = reps.slice(0, 6);
-  const max = top[0].signed;
+function Leaders({ reps, page, part, meta, pos }: {
+  reps: ReportData["reps"]; page: ReportData["reps"]; part: string | null; meta: Meta; pos: Pos;
+}) {
+  const top = page;
+  const max = reps[0].signed;
   const tied = reps.filter((r) => r.signed === max);
   const each = count(max, "sign-up");
   const title = tied.length === 1
@@ -417,8 +429,8 @@ function Leaders({ reps, meta, pos }: { reps: ReportData["reps"]; meta: Meta; po
       : `${tied.length} representatives share the lead with ${each} each`;
 
   return (
-    <Frame meta={meta} pos={pos} kicker="Leaderboard" title={title}>
-      <div className="sr-ld">
+    <Frame meta={meta} pos={pos} kicker={part ? `Leaderboard · ${part}` : "Leaderboard"} title={title}>
+      <div className={`sr-ld${top.length > 6 ? " dense" : ""}`}>
         {top.map((r) => {
           const rank = 1 + reps.filter((x) => x.signed > r.signed).length;
           return (
