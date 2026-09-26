@@ -286,3 +286,11 @@
 }
 .premium-card:hover { background: rgb(255 255 255 / 0.82); }
 .dark .premium-card:hover { background: rgb(255 255 255 / 0.08); }
+
+/* A rep's RingCentral picture inside an avatar circle (components/RepFace.tsx). */
+.rep-face { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+.sr-av:has(> .rep-face), .sr-deck-av:has(> .rep-face) { overflow: hidden; }
+/* The top-rep card: a round portrait where the big initials were. */
+.sr-spot-ini > .rep-face.sr-spot-photo {
+  width: 132px; height: 132px; border-radius: 50%; box-shadow: 0 0 0 4px rgb(255 255 255 / .55), 0 18px 40px -18px rgb(0 0 0 / .5);
+}

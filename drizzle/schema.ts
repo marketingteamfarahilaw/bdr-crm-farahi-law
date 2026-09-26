@@ -1191,3 +1191,17 @@ export const marketingSpend = mysqlTable("marketing_spend", {
   updatedBy: varchar("updatedBy", { length: 255 }),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+/**
+ * Each rep's profile picture, from their RingCentral extension (server/repPhotos.ts,
+ * refreshed daily), so avatars show faces instead of initials. Keyed by the name
+ * with only its letters, lower-cased, since RingCentral and Lead Docket space
+ * names differently ("Youssef  El Karmi").
+ */
+export const repPhotos = mysqlTable("rep_photos", {
+  nameKey: varchar("nameKey", { length: 120 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  extensionId: varchar("extensionId", { length: 64 }),
+  image: longtext("image").notNull(),   // a small JPEG/PNG data URL (RingCentral's 195×195)
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});

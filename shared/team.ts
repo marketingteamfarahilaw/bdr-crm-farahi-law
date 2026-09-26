@@ -13,6 +13,14 @@
 
 export type TeamRole = "BDR" | "FR" | "Intake";
 
+/**
+ * A person's name as a matching key: letters only, lower-cased, unaccented.
+ * RingCentral writes "Youssef  El Karmi", Lead Docket "Youssef El Karmi" — one key.
+ * Used to find a rep's RingCentral profile picture (server/repPhotos.ts).
+ */
+export const repNameKey = (s: unknown) =>
+  String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+
 // In the order the team's own scorecard sheet lists them.
 export const CURRENT_TEAM: Record<TeamRole, readonly string[]> = {
   BDR: ["Queenie Miranda", "Grace Lanayon", "Ally Maceda", "Miguel Flores"],

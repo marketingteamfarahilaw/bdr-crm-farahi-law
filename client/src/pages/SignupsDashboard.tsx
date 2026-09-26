@@ -14,6 +14,7 @@ import { CURRENT_TEAM } from "@shared/team";
 import { enterFullscreen, exitFullscreenSoon } from "./signups/fullscreen";
 import type { DeckPlace, PresentationProps } from "./signups/Presentation";
 import "./SignupsDashboard.css";
+import { RepFace } from "@/components/RepFace";
 
 // The look lives in SignupsDashboard.css (the Voice Agents board style).
 
@@ -312,7 +313,7 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
         {top ? (
           <div className="sr-spot" style={hueStyle(top.name)}>
             <span className="sr-spot-tag">Top representative</span>
-            <div className="sr-spot-ini">{initials(top.name)}</div>
+            <div className="sr-spot-ini"><RepFace name={top.name} fallback={initials(top.name)} className="sr-spot-photo" /></div>
             <div className="sr-spot-foot">
               <div><b>{top.name}</b><i>{roleName(top.role)}</i></div>
               <span className="sr-spot-pill">{fmt(top.signed)} signed</span>
@@ -404,7 +405,7 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
                           onClick={() => setFocus({ rep: r.name, role: r.role })}>
                           <td>
                             <div className="sr-who">
-                              <span className="sr-av" style={hueStyle(r.name)}>{initials(r.name)}</span>
+                              <span className="sr-av" style={hueStyle(r.name)}><RepFace name={r.name} fallback={initials(r.name)} /></span>
                               <div><b>{r.name}</b><i>{roleName(r.role)}{r.current ? "" : " · former"}</i></div>
                             </div>
                           </td>
@@ -940,7 +941,7 @@ function RepClients({ focus, leads, onClose }: {
       <div className="sr-modal" role="dialog" aria-modal="true" aria-label={`${focus.rep}'s clients`} onClick={(e) => e.stopPropagation()}>
         <div className="sr-panel-h" style={{ flexWrap: "wrap", marginBottom: 14 }}>
           <div className="sr-who">
-            <span className="sr-av" style={hueStyle(focus.rep)}>{initials(focus.rep)}</span>
+            <span className="sr-av" style={hueStyle(focus.rep)}><RepFace name={focus.rep} fallback={initials(focus.rep)} /></span>
             <div><b style={{ fontSize: 17 }}>{focus.rep}</b><i>{roleName(focus.role)} · {focus.month ? monthLabel(focus.month) : "the selected period"}</i></div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

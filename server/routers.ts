@@ -107,6 +107,7 @@ const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
+import { getRepPhotos } from "./repPhotos";
 import { getMarketingDashboard, listMarketingSpend } from "./marketingReport";
 import { REASON_KEYS, TZ as MARKETING_TZ } from "./marketing/common";
 import { getMarketingLeads, exportMarketingLeads } from "./marketing/leadFilter";
@@ -798,6 +799,9 @@ export const appRouter = router({
 
   // Intake — AI Case Desk (separate world from the BD/FR CRM; see intakeRouter)
   intake: intakeRouter,
+
+  // Reps' RingCentral profile pictures by name key (server/repPhotos.ts), for avatars.
+  repPhotos: bdProcedure.query(() => getRepPhotos()),
 
   // Marketing Report — every Lead Docket lead by marketing source. Managers and
   // super admins (canSeeMarketing); why leads didn't sign is an intake case fact,

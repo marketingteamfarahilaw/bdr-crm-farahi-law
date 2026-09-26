@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRepPhotos } from "@/components/RepFace";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -192,6 +193,7 @@ function DashboardLayoutContent({
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { logo, slogan } = useBrand();
+  const photoOf = useRepPhotos();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -360,7 +362,7 @@ function DashboardLayoutContent({
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-2xl p-2.5 bg-white/65 shadow-[inset_0_0_0_1px_var(--edge)] dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border shrink-0">
-                    {(user as any)?.photoUrl && <AvatarImage src={(user as any).photoUrl} className="object-cover" />}
+                    {((user as any)?.photoUrl || photoOf(user?.name)) && <AvatarImage src={(user as any)?.photoUrl || photoOf(user?.name)!} className="object-cover" />}
                     <AvatarFallback className="text-xs font-medium">
                       {user?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>

@@ -22,6 +22,7 @@ import { listConnectedRcUsers, setUserRcLastSync } from "../crmDb";
 import { getSetting } from "../db";
 import { isIntakeOnly } from "@shared/permissions";
 import { runDueJobs } from "../dataSync";
+import { syncRepPhotosIfDue } from "../repPhotos";
 // Note: RingCentral auto-connect via JWT has been removed.
 // Agents now log in to RingCentral directly through the embedded widget UI.
 // The server still stores tokens when agents connect via OAuth through the widget.
@@ -109,7 +110,11 @@ function startDataSyncSchedule() {
     return;
   }
   const CHECK_MS = 15 * 60 * 1000;
-  const tick = () => runDueJobs().catch((e) => console.warn("[dataSync] schedule check failed:", e?.message ?? e));
+  const tick = () => {
+    runDueJobs().catch((e) => console.warn("[dataSync] schedule check failed:", e?.message ?? e));
+    // Reps' RingCentral pictures, once a day (it never throws).
+    void syncRepPhotosIfDue();
+  };
   setTimeout(tick, 2 * 60 * 1000);      // shortly after boot, once the server has settled
   setInterval(tick, CHECK_MS);
   console.log("[dataSync] Lead Docket + Google Sheets sync scheduled every 8h (checked every 15 min).");

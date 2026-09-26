@@ -11,6 +11,7 @@
  * deck scales evenly to the screen.
  */
 import type { ReactNode } from "react";
+import { RepFace } from "@/components/RepFace";
 import { CheckCircle2, Handshake, Info, Percent, TrendingUp, Trophy, Users } from "lucide-react";
 import { MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
 import {
@@ -436,7 +437,7 @@ function Leaders({ reps, page, part, meta, pos }: {
           return (
             <div key={r.name} className={`sr-ld-row${rank === 1 ? " first" : ""}`}>
               <span className="sr-ld-rank">{rank}</span>
-              <span className="sr-deck-av" style={hueStyle(r.name)}>{initials(r.name)}</span>
+              <span className="sr-deck-av" style={hueStyle(r.name)}><RepFace name={r.name} fallback={initials(r.name)} /></span>
               <div className="sr-ld-who">
                 <b>{r.name}{!r.current && <span className="sr-deck-former">former</span>}</b>
                 <i>{roleName(r.role)} · {count(r.leads, "lead")} · {r.conversion}% conversion</i>
