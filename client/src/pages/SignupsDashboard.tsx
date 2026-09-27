@@ -561,7 +561,12 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
           <div className="sr-panel-h">
             <div className="sr-ttl"><h2>Top referring partners</h2><span className="sr-count">{data.partners.length}</span></div>
           </div>
-          <p className="sr-sub">From the {fmt(data.totals.attributed)} leads whose "Referred by" in Lead Docket matches a partner in the CRM.</p>
+          <p className="sr-sub">
+            From the {fmt(data.totals.attributed)} leads whose "Referred by" in Lead Docket matches a partner in the CRM.
+            {data.totals.leads > data.totals.attributed && (
+              <> The other {fmt(data.totals.leads - data.totals.attributed)} name none we can match — <Link href="/data-check">link them in Data Check</Link>.</>
+            )}
+          </p>
           {data.partners.length === 0 ? <p className="sr-nil">No leads in this period name a partner we can match.</p> : (
             <div className="sr-scroll">
               <table className="sr-t" style={{ minWidth: 560 }}>

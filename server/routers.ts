@@ -108,6 +108,7 @@ import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgen
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
+import { getSystemHealth } from "./systemHealth";
 import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
 import { getRepPhotos } from "./repPhotos";
 import { getFacilityLogos } from "./facilityLogos";
@@ -275,6 +276,8 @@ export const appRouter = router({
       .input(z.object({ key: z.string().max(400).nullable() }))
       .mutation(({ ctx, input }) => { superOnly(ctx); return saveClaudeKey(input.key); }),
     testClaude: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return testClaude(); }),
+    // Is every background job the reports depend on working? (server/systemHealth.ts)
+    systemHealth: protectedProcedure.query(({ ctx }) => { superOnly(ctx); return getSystemHealth(); }),
   }),
 
   leads: router({
@@ -955,18 +958,21 @@ export const appRouter = router({
           }
           return linkLeadToPartner(input.leadId, input.facilityId, byOf(ctx.user));
         }),
+      // alsoKeys: other spellings of the same business, answered the same way.
       answerWords: bdProcedure
-        .input(z.object({ key, facilityId: z.number().int().nullable() }))
-        .mutation(async ({ ctx, input }) => answerWords(input.key, input.facilityId, byOf(ctx.user), await whoOf(ctx.user))),
+        .input(z.object({ key, facilityId: z.number().int().nullable(), alsoKeys: z.array(key).max(25).optional() }))
+        .mutation(async ({ ctx, input }) => answerWords(input.key, input.facilityId, byOf(ctx.user), await whoOf(ctx.user), input.alsoKeys ?? [])),
       addPartner: bdProcedure
         .input(z.object({
           key,
           name: z.string().trim().min(2).max(255),
           category: z.enum(["body_shop", "chiropractor", "physical_therapist", "medical_clinic", "orthopedic_doctor", "imaging_center", "other"]),
           city: z.string().trim().max(120).optional(),
+          alsoKeys: z.array(key).max(25).optional(),
         }))
         .mutation(async ({ ctx, input }) =>
-          addPartnerForWords(input.key, { name: input.name, category: input.category, city: input.city }, { id: ctx.user.id, name: byOf(ctx.user) }, await whoOf(ctx.user))),
+          addPartnerForWords(input.key, { name: input.name, category: input.category, city: input.city }, { id: ctx.user.id, name: byOf(ctx.user) },
+            await whoOf(ctx.user), input.alsoKeys ?? [])),
       forgetWords: bdProcedure
         .input(z.object({ key }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await forgetWords(input.key); return { ok: true }; }),

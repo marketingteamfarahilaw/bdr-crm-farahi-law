@@ -56,26 +56,34 @@ export function suggestPartners(options: { id: number; name: string; territory: 
     .map((x) => x.o);
 }
 
+/** Another spelling of the same business, answered along with this one when ticked. */
+export type AlsoSpelling = { key: string; label: string; count: number; checked: boolean };
+
 /**
  * Pick a referring partner — for one lead (Sign-ups Report) or for every lead
  * with the same words (Data Check). With onCreate, a partner the CRM doesn't
- * have yet can be added on the spot.
+ * have yet can be added on the spot; with also, other spellings of the same
+ * business get the same answer (the callbacks get the ticked ones).
  */
-export function PartnerPicker({ title, who, said, currentId, pending, onPick, none, onCreate, hint, onClose }: {
+export function PartnerPicker({ title, who, said, currentId, pending, onPick, none, onCreate, also, hint, onClose }: {
   title: string;
   who: ReactNode;
   said: string | null;
   currentId?: number | null;
   pending: boolean;
-  onPick: (facilityId: number) => void;
-  none?: { label: string; run: () => void };
-  onCreate?: (p: NewPartner) => void;
+  onPick: (facilityId: number, alsoKeys: string[]) => void;
+  none?: { label: string; run: (alsoKeys: string[]) => void };
+  onCreate?: (p: NewPartner, alsoKeys: string[]) => void;
+  also?: AlsoSpelling[];
   hint: string;
   onClose: () => void;
 }) {
   const options = trpc.dataCheck.partners.useQuery(undefined, { staleTime: 5 * 60_000 });
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState<NewPartner | null>(null);
+  const [ticked, setTicked] = useState<Set<string>>(() => new Set((also ?? []).filter((a) => a.checked).map((a) => a.key)));
+  const alsoKeys = Array.from(ticked);
+  const toggle = (k: string) => setTicked((t) => { const n = new Set(t); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   // Capture phase: Esc closes this picker only, not the window underneath.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } };
@@ -108,8 +116,20 @@ export function PartnerPicker({ title, who, said, currentId, pending, onPick, no
             {said && <><br />Lead Docket says: “{said}”</>}
           </p>
 
+          {also && also.length > 0 && (
+            <div className="sr-also">
+              <p className="sr-pick-h">Also answer for these spellings</p>
+              {also.map((a) => (
+                <label key={a.key}>
+                  <input type="checkbox" checked={ticked.has(a.key)} onChange={() => toggle(a.key)} disabled={pending} />
+                  <span>“{a.label}”</span><i>{a.count} lead{a.count === 1 ? "" : "s"}</i>
+                </label>
+              ))}
+            </div>
+          )}
+
           {adding ? (
-            <form className="sr-add" onSubmit={(e) => { e.preventDefault(); if (adding.name.trim().length >= 2) onCreate?.(adding); }}>
+            <form className="sr-add" onSubmit={(e) => { e.preventDefault(); if (adding.name.trim().length >= 2) onCreate?.(adding, alsoKeys); }}>
               <label>Name
                 <input autoFocus className="sr-input" value={adding.name} maxLength={255}
                   onChange={(e) => setAdding({ ...adding, name: e.target.value })} />
@@ -144,7 +164,7 @@ export function PartnerPicker({ title, who, said, currentId, pending, onPick, no
                   {!words.length && <p className="sr-pick-h">{shown.length ? "Suggested from what Lead Docket says" : "Type a partner's name to find it"}</p>}
                   <div className="sr-pick-list">
                     {shown.map((o) => (
-                      <button key={o.id} className={o.id === currentId ? "on" : ""} disabled={pending} onClick={() => onPick(o.id)}>
+                      <button key={o.id} className={o.id === currentId ? "on" : ""} disabled={pending} onClick={() => onPick(o.id, alsoKeys)}>
                         <b>{o.name}</b>{o.territory && <i>{o.territory}</i>}{o.id === currentId && <em>current</em>}
                       </button>
                     ))}
@@ -162,7 +182,7 @@ export function PartnerPicker({ title, who, said, currentId, pending, onPick, no
               )}
               <div className="sr-pick-foot">
                 <span className="sr-hint">{hint}</span>
-                {none && <button className="sr-btn2" disabled={pending} onClick={none.run}>{none.label}</button>}
+                {none && <button className="sr-btn2" disabled={pending} onClick={() => none.run(alsoKeys)}>{none.label}</button>}
               </div>
             </>
           )}

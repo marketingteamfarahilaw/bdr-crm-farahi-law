@@ -9,6 +9,7 @@ import { canAssignRoles, canManage } from "@shared/permissions";
 import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock, Sparkles, CheckCircle2 } from "lucide-react";
 import { DEFAULT_LOGO } from "@/hooks/useBranding";
 import { DataSyncPanel } from "@/components/DataSyncPanel";
+import { SystemHealthCard } from "@/components/SystemHealth";
 import { PageTabs } from "@/components/PageTabs";
 import RingCentralSettings from "./crm/RingCentralSettings";
 
@@ -285,6 +286,7 @@ function BrandingSettings() {
       </p>
 
       {isManager && <DataSyncPanel />}
+      {canAssignRoles(user?.role) && <SystemHealthCard />}
       {canAssignRoles(user?.role) && <ClaudeCard />}
 
       {!isManager && (

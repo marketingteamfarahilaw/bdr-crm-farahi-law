@@ -579,6 +579,8 @@ async function queueRecap(call: RecapCall, failure: { error: string; outOfCredit
 }
 
 let retriesPausedUntil = 0;
+/** Recap retries are on hold because the transcription service is out of credit (System health). */
+export const recapsPausedForCredit = () => Date.now() < retriesPausedUntil;
 
 /**
  * Retry a few queued recaps (newest calls first); the sync loop calls this each

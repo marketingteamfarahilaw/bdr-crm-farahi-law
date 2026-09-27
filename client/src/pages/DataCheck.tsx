@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 import { trpc } from "@/lib/trpc";
-import { ChevronDown, ExternalLink, Inbox, Link2, Loader2, ShieldCheck, Wrench, X } from "lucide-react";
+import { ChevronDown, Download, ExternalLink, Inbox, Link2, Loader2, ShieldCheck, Wrench, X } from "lucide-react";
 import { LeadDocketSyncButton } from "@/components/DataSyncPanel";
 import { RepFace } from "@/components/RepFace";
 import { Big, DateInput, fmt, hueStyle, initials, leadDay, outcomeBadge, presets, rangeLabel } from "./SignupsDashboard";
@@ -27,6 +27,30 @@ type Picking = { kind: "words"; words: Words } | { kind: "lead"; lead: Lead } | 
 /** Lead Docket's page for a lead; it asks for a sign-in first when needed. */
 const ldUrl = (id: string) => `https://farahi.leaddocket.com/Leads/Edit/${encodeURIComponent(id)}`;
 const plural = (n: number, one: string, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
+
+/**
+ * Every lead that needs fixing, one row each, for whoever fixes them in Lead
+ * Docket (intake): the problem, the client, what Lead Docket says, and the link.
+ */
+function exportCsv(data: Data, from: string, to: string) {
+  const q = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }) : "");
+  const row = (problem: string, l: Lead, said: string | null) =>
+    [problem, l.name, l.rep, day(l.date), l.outcome, said ?? "", ldUrl(l.ld)].map(q).join(",");
+  const lines = [
+    ["Problem", "Client", "Representative", "Date", "Outcome", "What Lead Docket says", "Lead Docket"].map(q).join(","),
+    ...data.unmatched.flatMap((g) => g.leads.map((l) => row("Partner not found", l, g.text))),
+    ...data.nothing.map((l) => row("No partner written", l, null)),
+    ...data.duplicates.flatMap((g) => g.leads.map((l) => row(`Possible duplicate (${g.why.toLowerCase()})`, l, l.text))),
+    ...data.tests.map((l) => row("Test lead", l, l.text)),
+  ];
+  const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `data-check-${from}-to-${to}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 const PAGE = 25;
 
 function OpenInLD({ id }: { id: string }) {
@@ -93,7 +117,13 @@ export default function DataCheck() {
                   Lead Docket leads that need a partner, an answer or a second look · {rangeLabel(from, to)}{rep ? ` · ${rep}` : ""}
                 </p>
               </div>
-              {manager && <div className="sr-actions"><LeadDocketSyncButton className="sr-btn1" hintClassName="sr-hint" /></div>}
+              <div className="sr-actions">
+                <button className="sr-btn2" onClick={() => data && exportCsv(data, from, to)} disabled={!data || data.totals.fix === 0}
+                  title="Every lead that needs fixing, with its Lead Docket link — for whoever fixes them in Lead Docket">
+                  <Download /> Export CSV
+                </button>
+                {manager && <LeadDocketSyncButton className="sr-btn1" hintClassName="sr-hint" />}
+              </div>
             </div>
             {data && <Meter data={data} />}
           </section>
@@ -154,9 +184,10 @@ function Checks({ data, rep, onRep }: { data: Data; rep: string | null; onRep?: 
   };
   const answer = trpc.dataCheck.answerWords.useMutation({
     onSuccess: (r, v) => {
+      const across = r.spellings > 1 ? ` across ${r.spellings} spellings` : "";
       toast.success(v.facilityId == null
-        ? `“${r.text}” is not a partner — ${plural(r.leads, "lead")} updated`
-        : `Linked ${plural(r.leads, "lead")} that say “${r.text}”. Later ones will follow.`);
+        ? `Not a partner — ${plural(r.leads, "lead")} updated${across}`
+        : `Linked ${plural(r.leads, "lead")}${across}. Later ones will follow.`);
       setPicking(null);
       refresh();
     },
@@ -164,7 +195,7 @@ function Checks({ data, rep, onRep }: { data: Data; rep: string | null; onRep?: 
   });
   const addPartner = trpc.dataCheck.addPartner.useMutation({
     onSuccess: (r) => {
-      toast.success(`Partner added, and ${plural(r.leads, "lead")} that say “${r.text}” now count under it.`);
+      toast.success(`Partner added, and ${plural(r.leads, "lead")}${r.spellings > 1 ? ` across ${r.spellings} spellings` : ""} now count under it.`);
       setPicking(null);
       refresh();
       utils.dataCheck.partners.invalidate();
@@ -200,10 +231,11 @@ function Checks({ data, rep, onRep }: { data: Data; rep: string | null; onRep?: 
           who={<><b style={{ color: "var(--ink)" }}>{plural(picking.words.leads.length, "lead")}</b> · {picking.words.reps.join(", ")}</>}
           said={picking.words.text}
           pending={pending}
-          onPick={(facilityId) => answer.mutate({ key: picking.words.key, facilityId })}
-          none={{ label: "Not a partner", run: () => answer.mutate({ key: picking.words.key, facilityId: null }) }}
-          onCreate={(p: NewPartner) => addPartner.mutate({ key: picking.words.key, name: p.name, category: p.category, city: p.city || undefined })}
-          hint="Every lead that says this — these and any that come in later — counts under the partner you pick."
+          also={picking.words.similar.map((x) => ({ key: x.key, label: x.text, count: x.leads, checked: x.sameKind }))}
+          onPick={(facilityId, alsoKeys) => answer.mutate({ key: picking.words.key, facilityId, alsoKeys })}
+          none={{ label: "Not a partner", run: (alsoKeys) => answer.mutate({ key: picking.words.key, facilityId: null, alsoKeys }) }}
+          onCreate={(p: NewPartner, alsoKeys) => addPartner.mutate({ key: picking.words.key, name: p.name, category: p.category, city: p.city || undefined, alsoKeys })}
+          hint="Every lead that says this (and the ticked spellings) — these and any that come in later — counts under the partner you pick."
           onClose={() => setPicking(null)}
         />
       )}
@@ -308,7 +340,14 @@ function Unmatched({ groups, pending, onLink, onNotPartner }: {
                 return (
                   <Fragment key={g.key}>
                     <tr>
-                      <td className="client"><b>“{g.text}”</b></td>
+                      <td className="client">
+                        <b>“{g.text}”</b>
+                        {g.similar.length > 0 && (
+                          <span className="sr-similar" title={g.similar.map((x) => `“${x.text}”`).join(", ")}>
+                            +{g.similar.length} similar spelling{g.similar.length === 1 ? "" : "s"} — answered together from Link
+                          </span>
+                        )}
+                      </td>
                       <td className="num">
                         <button className="dc-count" onClick={() => setOpen(isOpen ? null : g.key)} aria-expanded={isOpen}
                           title={isOpen ? "Hide the leads" : "Show the leads"}>

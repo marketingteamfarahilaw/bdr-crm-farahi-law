@@ -5,7 +5,8 @@ import { seesAllData } from "@shared/permissions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Phone, PhoneCall, Clock, Building2, ThumbsUp, ThumbsDown, Loader2, AlertTriangle, Lightbulb, Award, CalendarDays } from "lucide-react";
+import { Sparkles, Phone, PhoneCall, Clock, Building2, ThumbsUp, ThumbsDown, Loader2, AlertTriangle, Lightbulb, Award, CalendarDays, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "@/lib/datetime";
 
 function presetRange(p: string): { from: string; to: string } {
@@ -58,6 +59,34 @@ export default function AgentPerformance() {
   const pct = (n: number) => (recaps ? Math.round((n / recaps) * 100) : 0);
   const rev = review.data;
   const rating = rev ? (RATING[rev.performanceRating] ?? RATING.solid) : null;
+  // Calls without a recap are invisible to the AI review and the interest numbers.
+  const connected = k?.connected ?? 0;
+  const thinRecaps = connected >= 5 && recaps < connected / 2;
+  const whoLabel = isManager ? (agent === "__all__" ? "the whole team" : agent) : (user?.name ?? "me");
+
+  // The review as plain text, to paste into an email or a chat.
+  const copyReview = async () => {
+    if (!rev) return;
+    const list = (title: string, items: string[]) => (items.length ? [title, ...items.map((x) => `• ${x}`), ""] : []);
+    const text = [
+      `AI Performance Review — ${whoLabel} · ${from} to ${to}`,
+      rating ? `Rating: ${rating.label}` : "",
+      "",
+      rev.overallSummary,
+      "",
+      ...list("Strengths", rev.strengths),
+      ...list("Challenges", rev.challenges),
+      ...list("Recommendations", rev.recommendations),
+      ...(rev.daily.length ? ["Day by day", ...rev.daily.map((d) => `${d.date} — ${d.summary}`), ""] : []),
+      `Written by ${rev.writtenBy ?? "AI"} from ${rev.basedOnRecaps} call recap${rev.basedOnRecaps === 1 ? "" : "s"}.`,
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Review copied — paste it into an email or a chat.");
+    } catch {
+      toast.error("Couldn't copy — select the text and copy it instead.");
+    }
+  };
 
   return (
     <div className="min-h-full bg-background p-6 lg:p-8">
@@ -105,6 +134,12 @@ export default function AgentPerformance() {
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
           <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3">
             <span className="text-sm font-semibold text-foreground flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> AI Performance Review</span>
+            <div className="flex items-center gap-2">
+            {rev && (
+              <Button size="sm" variant="outline" className="gap-2 border-border" onClick={copyReview} title="Copy the review as text">
+                <Copy className="w-4 h-4" /> Copy
+              </Button>
+            )}
             <Button
               size="sm" className="gap-2"
               disabled={review.isPending || isFetching || !(k?.calls || k?.recaps)}
@@ -113,9 +148,19 @@ export default function AgentPerformance() {
               {review.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {review.isPending ? "Analyzing…" : rev ? "Regenerate" : "Generate review"}
             </Button>
+            </div>
           </div>
 
           <div className="p-5">
+            {thinRecaps && (
+              <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-px" />
+                <span className="text-foreground/80">
+                  Only <strong className="text-foreground">{recaps} of {connected}</strong> connected calls in this period have a recap (what was said on the call).
+                  The review and the Interested / Not Interested numbers can only see those; missing recaps fill in by themselves once call transcription is working.
+                </span>
+              </div>
+            )}
             {!rev && !review.isPending && (
               <p className="text-sm text-muted-foreground">
                 Click <strong className="text-foreground">Generate review</strong> — the AI reads {agent === "__all__" && isManager ? "the team's" : "this agent's"} call recaps for the period and writes a day-by-day summary, the challenges they ran into, what they did well, and concrete recommendations.

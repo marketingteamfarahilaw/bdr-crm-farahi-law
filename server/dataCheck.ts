@@ -60,6 +60,33 @@ const phoneKey = (s: string | null) => {
   const d = String(s ?? "").replace(/\D/g, "").slice(-10);
   return d.length === 10 && !/^(\d)\1+$/.test(d) ? d : "";
 };
+// ── similar spellings: one partner written several ways ("Cali Dream Insurance",
+// "Yazmin with Cali Dream Insurance"), so one answer can cover them all.
+const SIM_STOP = new Set(["the", "and", "of", "with", "from", "for", "inc", "llc", "dba", "co", "corp", "company", "at", "by", "to",
+  "in", "de", "referral", "referred", "dr", "mr", "mrs", "field", "representative", "rep", "bdr"]);
+// Trade words say what a business is, not which one.
+const SIM_TRADE = new Set(["auto", "autos", "body", "shop", "collision", "collisions", "center", "centre", "repair", "repairs",
+  "towing", "tow", "medical", "health", "clinic", "care", "insurance", "services", "service", "group", "chiropractic", "chiro",
+  "wellness", "urgent", "paint", "painting", "garage", "motors", "automotive", "recovery", "transport", "agency", "office",
+  "mechanic", "tires", "tire", "glass", "smog", "therapy", "physical", "rehab", "spine", "injury", "accident", "pain", "imaging",
+  "mri", "cars", "car", "truck", "trucks", "detail", "detailing", "wrecker", "customs", "works", "autobody", "bodyshop"]);
+const simWords = (s: string) => String(s).toLowerCase().replace(/['’]s\b/g, "").replace(/&/g, " ").split(/[^a-z0-9]+/)
+  .filter((w) => w.length >= 2 && !SIM_STOP.has(w));
+const KINDS: [string, RegExp][] = [["towing", /\btow(ing)?\b|wrecker/], ["body", /body|collision|paint|auto ?repair|autobody/],
+  ["chiro", /chiro|spine/], ["medical", /medical|clinic|health|urgent|wellness|imaging|mri|therap|rehab/], ["insurance", /insur|agency/]];
+const kindsOf = (s: string) => new Set(KINDS.filter(([, re]) => re.test(s.toLowerCase())).map(([k]) => k));
+/** The words that say which business: no rep, no contact person ("Yazmin with …"), no trade or town. */
+function businessWords(text: string, places: Set<string>) {
+  const part = text.split("/").filter((p) => !/field rep|\bbdr\b|employee referral|client/i.test(p)).join(" ");
+  const person = new Set(Array.from(part.toLowerCase().matchAll(/([a-z]+)[\s\-–]+(?:with|from|at|de)\b/g)).map((m) => m[1]));
+  return new Set(simWords(part).filter((w) => !SIM_TRADE.has(w) && !places.has(w) && !person.has(w) && !/^\d+$/.test(w)));
+}
+/** Two spellings of one business: two of its words in common, or one real word that is all one of them says. */
+function sameBusiness(a: Set<string>, b: Set<string>) {
+  const shared = Array.from(a).filter((w) => b.has(w));
+  return shared.length >= 2 || (shared.length === 1 && shared[0].length >= 4 && (a.size === 1 || b.size === 1));
+}
+
 /** Two leads, in either order: what "not a duplicate" is stored against. */
 const pairKey = (a: string, b: string) => (a < b ? `${a},${b}` : `${b},${a}`);
 
@@ -232,13 +259,33 @@ export async function getDataCheck(range: { from: Date; to: Date }, opts: { rep?
     }))
     .sort((a, b) => b.leads.length - a.leads.length || (b.latest ?? "").localeCompare(a.latest ?? ""));
 
+  // Other spellings of the same business, offered alongside when one is answered.
+  // A different kind of business ("Freeway Towing" next to Freeway Insurance)
+  // is offered unticked.
+  const places = new Set<string>();
+  for (const f of await db.select({ city: facilities.city, territory: facilities.territory }).from(facilities)) {
+    for (const w of simWords(`${f.city ?? ""} ${f.territory ?? ""}`)) places.add(w);
+  }
+  const sigs = unmatched.map((g) => ({ g, words: businessWords(g.text, places), kinds: kindsOf(g.text) }));
+  const withSimilar = sigs.map(({ g, words, kinds }) => ({
+    ...g,
+    similar: words.size ? sigs
+      .filter((o) => o.g.key !== g.key && o.words.size && sameBusiness(words, o.words))
+      .map((o) => ({
+        key: o.g.key, text: o.g.text, leads: o.g.leads.length,
+        sameKind: !(kinds.size && o.kinds.size && !Array.from(kinds).some((k) => o.kinds.has(k))),
+      }))
+      .sort((x, y) => y.leads - x.leads)
+      .slice(0, 12) : [],
+  }));
+
   const byDateDesc = (a: Row, b: Row) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0);
   return {
     totals: { ...totals, cleanPct: pct(totals.clean, totals.leads) },
     reps: Array.from(reps.values())
       .map((r) => ({ ...r, cleanPct: pct(r.clean, r.leads) }))
       .sort((a, b) => a.cleanPct - b.cleanPct || b.fix - a.fix || a.name.localeCompare(b.name)),
-    unmatched,
+    unmatched: withSimilar,
     nothing: leads.filter((r) => standing(r) === "nothing").sort(byDateDesc).map(brief),
     duplicates,
     tests: leads.filter((r) => isTest(r.caseType)).sort(byDateDesc).map(brief),
@@ -290,10 +337,27 @@ async function mayAnswer(key: string, who: Who) {
 }
 
 /** These words are this partner (or none): every lead saying them follows, now and later. */
-export async function answerWords(key: string, facilityId: number | null, by: string, who: Who) {
+export async function answerWords(key: string, facilityId: number | null, by: string, who: Who, alsoKeys: string[] = []) {
   const { text } = await mayAnswer(key, who);
   const leads = await rememberPartner(key, text, facilityId, by);
-  return { text, leads };
+  const also = await answerAlso(alsoKeys.filter((k) => k !== key), facilityId, by, who);
+  return { text, leads: leads + also.leads, spellings: 1 + also.spellings };
+}
+
+/**
+ * The same answer for other spellings of the business. One this person may not
+ * answer (not their leads, already answered) is skipped rather than failing the rest.
+ */
+async function answerAlso(keys: string[], facilityId: number | null, by: string, who: Who) {
+  let leads = 0, spellings = 0;
+  for (const k of Array.from(new Set(keys))) {
+    try {
+      const { text } = await mayAnswer(k, who);
+      leads += await rememberPartner(k, text, facilityId, by);
+      spellings++;
+    } catch { /* skipped */ }
+  }
+  return { leads, spellings };
 }
 
 /** A partner the CRM didn't have yet, added from the words, and the words linked to it. */
@@ -302,6 +366,7 @@ export async function addPartnerForWords(
   partner: { name: string; category: string; city?: string | null },
   by: { id: number; name: string },
   who: Who,
+  alsoKeys: string[] = [],
 ) {
   const { text } = await mayAnswer(key, who);
   const db = await getDb();
@@ -321,7 +386,8 @@ export async function addPartnerForWords(
   const facilityId = Number((result as { insertId?: number }).insertId);
   if (!facilityId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The partner was added but couldn't be linked — link it from the list." });
   const leads = await rememberPartner(key, text, facilityId, by.name);
-  return { facilityId, text, leads };
+  const also = await answerAlso(alsoKeys.filter((k) => k !== key), facilityId, by.name, who);
+  return { facilityId, text, leads: leads + also.leads, spellings: 1 + also.spellings };
 }
 
 export async function forgetWords(key: string) {

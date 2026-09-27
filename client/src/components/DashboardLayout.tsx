@@ -30,6 +30,7 @@ import { CommandPalette } from "./CommandPalette";
 import { QuickAdd } from "./QuickAdd";
 import { NotificationBell } from "./NotificationBell";
 import { useBrand, DEFAULT_LOGO, DEFAULT_MARK } from "@/hooks/useBranding";
+import { SystemAlert } from "@/components/SystemHealth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { canSeeBDR, canSeeFR, canManage, canAssignRoles, canSeeIntake, isIntakeOnly, canSeeMarketing } from "@shared/permissions";
 
@@ -434,6 +435,8 @@ function DashboardLayoutContent({
           </div>
         )}
         <main className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 0px)' }}>{children}</main>
+        {/* Super admins: a banner while a background job is down (System health). */}
+        <SystemAlert />
       </SidebarInset>
     </>
   );
