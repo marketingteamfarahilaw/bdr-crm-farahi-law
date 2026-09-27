@@ -46,6 +46,27 @@ describe("ringSenseTranscript", () => {
     if (!r.ok) expect(r.reason).toBe("not_ready");
   });
 
+  it("keeps asking after a 404, and a 404 outranks the 403s", async () => {
+    // What RingCentral really answered for one call on 2026-09-27, token by token.
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(reply(403, { errors: [{ errorCode: "RAH-3005" }] }))
+      .mockResolvedValueOnce(reply(404, { errors: [{ errorCode: "RAH-3001" }] }))
+      .mockResolvedValueOnce(reply(403, { errors: [{ errorCode: "RAH-3005" }] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const r = await ringSenseTranscript("1", ["rep", "call-log-role", "admin"]);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe("not_ready");
+  });
+
+  it("still takes the transcript from a later token after a 404", async () => {
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(reply(404, { errors: [{ errorCode: "RAH-3001" }] }))
+      .mockResolvedValueOnce(reply(200, insights)));
+    const r = await ringSenseTranscript("1", ["a", "b"]);
+    expect(r.ok).toBe(true);
+  });
+
   it("says no permission when no connected user may read transcripts", async () => {
     // A fresh response per request, as the network gives.
     vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => reply(403, { errors: [{ errorCode: "RAH-3005" }] })));

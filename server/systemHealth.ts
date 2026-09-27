@@ -13,7 +13,7 @@ import { getDb } from "./db";
 import { callRecapQueue, contactLogs, facilityUpdates, userRingcentralTokens, users } from "../drizzle/schema";
 import { getStatus, SYNC_INTERVAL_MS, type JobName } from "./dataSync";
 import { claudeStatus } from "./_core/claude";
-import { recapsPausedForPermission } from "./rcSync";
+import { recapsOnHold } from "./rcSync";
 
 export type HealthState = "ok" | "warn" | "down";
 export type HealthCheck = { id: string; label: string; state: HealthState; detail: string; action?: string };
@@ -67,7 +67,7 @@ export async function getSystemHealth(): Promise<{ checks: HealthCheck[]; worst:
           action: stale.length ? "Those reps reconnect in Settings → RingCentral (their sign-in may have expired)." : undefined,
         });
 
-    // Call recaps: transcription (OpenAI) + summary (Claude). Waiting ones are retried.
+    // Call recaps: RingCentral's transcript (RingSense) + Claude's summary. Waiting ones are retried.
     const [q] = await db.select({ waiting: sql<number>`COUNT(*)` })
       .from(callRecapQueue).where(and(isNull(callRecapQueue.doneAt), lt(callRecapQueue.attempts, 8)));
     // Tried eight times over a day and RingCentral never had a transcript: usually a rep without the license.
@@ -80,19 +80,23 @@ export async function getSystemHealth(): Promise<{ checks: HealthCheck[]; worst:
       .where(and(eq(facilityUpdates.updateType, "transcript"), gte(facilityUpdates.updateDate, weekAgo)));
     const waiting = Number(q?.waiting ?? 0);
     // The recap loop's own verdict, as of its last round (every 2 minutes).
-    const noPermission = recapsPausedForPermission();
+    const hold = recapsOnHold();
     const missed = Number(gone?.n ?? 0);
     const week = `This week: ${Number(recaps?.n ?? 0)} recaps for ${Number(calls?.n ?? 0)} connected calls.`
       + (missed ? ` ${missed} recorded call${missed === 1 ? "" : "s"} never got a RingCentral transcript.` : "");
     checks.push({
       id: "recaps", label: "Call recaps",
-      state: noPermission ? "down" : waiting > 40 || missed > 5 ? "warn" : "ok",
-      detail: noPermission
-        ? `Paused: RingCentral won't share call transcripts with the CRM — nobody connected has its "AI Conversation Expert — Access Insights" permission. ${waiting} call${waiting === 1 ? "" : "s"} waiting. ${week}`
+      state: hold ? "down" : waiting > 40 || missed > 5 ? "warn" : "ok",
+      detail: hold
+        ? `On hold: ${hold === "no_permission"
+            ? `RingCentral won't share call transcripts with the CRM — nobody connected has its "AI Conversation Expert — Access Insights" permission.`
+            : "RingCentral hasn't transcribed any of the reps' recorded calls, so there's nothing to summarize."} ${waiting} call${waiting === 1 ? "" : "s"} waiting, none dropped. ${week}`
         : waiting ? `${waiting} call${waiting === 1 ? "" : "s"} waiting for RingCentral's transcript. ${week}` : week,
-      action: noPermission
-        ? "A RingCentral admin turns on \"AI Conversation Expert — Access Insights\" for one connected user's role (service.ringcentral.com → Users → Roles → Artificial Intelligence). The waiting calls then fill in by themselves."
-        : missed > 5 ? "Calls get a transcript only when the rep holds a RingCentral AI Conversation Expert license — check the reps' licenses." : undefined,
+      action: hold === "no_permission"
+        ? "A RingCentral admin turns on \"AI Conversation Expert — Access Insights\" for one connected user's role (service.ringcentral.com → Users → Roles → Artificial Intelligence)."
+        : hold || missed > 5
+          ? "RingCentral transcribes a call only when the rep holds its AI Conversation Expert (RingSense) license, and shares it with a role that has \"AI Conversation Expert — Access Insights\" — both set in service.ringcentral.com."
+          : undefined,
     });
   }
 

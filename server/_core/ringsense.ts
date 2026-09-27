@@ -10,6 +10,12 @@
  * Access Insights" permission can read every licensed rep's transcripts. So a
  * request tries each connected rep's token until one is allowed. The CRM's
  * RingCentral app already has the RingSense permission.
+ *
+ * What RingCentral answers (seen 2026-09-27, before anyone had the license or
+ * the permission): 403 RAH-3005 to users without the permission, but 404
+ * RAH-3001 "Insights not found" for the same call to a user on a custom "Call
+ * Log Access Only" role. So a 404 doesn't end the search, and it outranks the
+ * 403s: someone RingCentral let look found nothing.
  */
 const RC_BASE = "https://platform.ringcentral.com";
 
@@ -52,6 +58,7 @@ function toText(j: Insights): { text: string; summary: string | null } {
 /** RingSense's transcript of a recorded call, trying each token until one may read it. */
 export async function ringSenseTranscript(recordingId: string, tokens: string[]): Promise<TranscriptResult> {
   let refused = false;
+  let missing = false;
   let lastError = "no RingCentral connection to ask with";
   for (const token of tokens) {
     let r: Response;
@@ -69,13 +76,15 @@ export async function ringSenseTranscript(recordingId: string, tokens: string[])
       return text ? { ok: true, text, summary } : { ok: false, reason: "not_ready", error: "RingCentral's analysis of this call has no transcript yet." };
     }
     const body = (await r.text()).slice(0, 300);
-    // Found, but this user may not read transcripts: another connected user might.
+    // This user may not read transcripts: another connected user might.
     if (r.status === 403) { refused = true; lastError = `RingSense 403: ${body}`; continue; }
-    // Nothing for this recording (checked before permission): not processed yet, or the rep has no license.
-    if (r.status === 404) return { ok: false, reason: "not_ready", error: "RingCentral has no transcript for this call (yet)." };
+    // Nothing for this recording as this user sees it — not processed yet, or the
+    // rep has no license. The others are still asked.
+    if (r.status === 404) { missing = true; continue; }
     lastError = `RingSense ${r.status}: ${body}`;
   }
+  if (missing) return { ok: false, reason: "not_ready", error: "RingCentral has no transcript for this call (yet)." };
   return refused
-    ? { ok: false, reason: "no_permission", error: "No one connected to the CRM has RingCentral's \"AI Conversation Expert — Access Insights\" permission." }
+    ? { ok: false, reason: "no_permission", error: "No one connected to the CRM may read RingCentral's call transcripts (its \"AI Conversation Expert — Access Insights\" permission)." }
     : { ok: false, reason: "error", error: lastError };
 }
