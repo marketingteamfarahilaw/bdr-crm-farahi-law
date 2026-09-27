@@ -8,10 +8,9 @@ import axios from "axios";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { seesAllData, canManage, isIntakeOnly } from "@shared/permissions";
-import { transcribeAudio } from "./_core/voiceTranscription";
-import { invokeLLM } from "./_core/llm";
+import { recordingIdOf, ringSenseTranscript } from "./_core/ringsense";
 import { fromZonedTime } from "date-fns-tz";
-import { syncRecentCalls, analyzeCallTranscript, maybeCreateVisitFromCall } from "./rcSync";
+import { syncRecentCalls, analyzeCallTranscript, maybeCreateVisitFromCall, enqueueRecap } from "./rcSync";
 import { getNewFacilitiesReport } from "./teamReports";
 import { syncRcMeetings } from "./rcMeetingSync";
 import { syncIntakeCalls } from "./intakeSync";
@@ -1012,12 +1011,10 @@ export const crmRouter = router({
         let transcriptSummary = "";
 
         if (recordingUrl) {
-          // Append access token to recording URL for auth
-          const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
-          const result = await transcribeAudio({ audioUrl: authedUrl });
-          if (!('error' in result)) {
-            transcriptText = result.text ?? "";
-          }
+          // RingCentral's own transcript (RingSense), once it has processed the call.
+          const recordingId = recordingIdOf(recordingUrl);
+          const tr = recordingId ? await ringSenseTranscript(recordingId, [accessToken]) : null;
+          if (tr?.ok) transcriptText = tr.text;
         }
 
         // Save to facility_updates as transcript
@@ -1094,22 +1091,22 @@ export const crmRouter = router({
           });
         }
 
-        // 3. Attempt to fetch recording and transcribe
-        let transcriptText = "";
-        let aiSummary = "";
-
+        // 3. Find the call's recording and queue its recap: RingSense (RingCentral)
+        // has the transcript some minutes after the call, and the sync loop's
+        // retryQueuedRecaps writes the recap, tasks and arranged visit then.
+        let recapQueued = false;
         let accessToken: string | null = null;
         try { accessToken = (await resolveRCToken(ctx.user)).token; } catch (e) { console.warn("[logFacilityCall] no RC token:", (e as any)?.message ?? e); }
 
         // Only connected calls (duration > 0) can have a recording. Skip the
         // whole fetch for unanswered / 0:00 calls so they log instantly.
         const connected = (input.duration ?? 0) > 0;
-        if (accessToken && input.callId && connected) {
+        if (facility && accessToken && input.callId && connected) {
           console.log(`[logFacilityCall] looking for recording of call ${input.callId}…`);
           let noRecordingStreak = 0;
           // RC needs a little time to attach a recording — retry up to ~30s,
           // but bail early once we know the call simply wasn't recorded.
-          for (let attempt = 1; attempt <= 6 && !transcriptText; attempt++) {
+          for (let attempt = 1; attempt <= 6 && !recapQueued; attempt++) {
             await new Promise((r) => setTimeout(r, 5000));
             try {
               let record: any = null;
@@ -1130,16 +1127,20 @@ export const crmRouter = router({
               }
               const recordingUrl: string | null = record?.recording?.contentUri ?? null;
               if (recordingUrl) {
-                console.log(`[logFacilityCall] recording ready (attempt ${attempt}); transcribing…`);
-                const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
-                const result = await transcribeAudio({ audioUrl: authedUrl });
-                if (!('error' in result)) {
-                  transcriptText = result.text ?? "";
-                  console.log(`[logFacilityCall] transcript: ${transcriptText.length} chars`);
-                } else {
-                  console.warn("[logFacilityCall] transcription error:", result.error, result.details ?? "");
-                  break;
-                }
+                const result = String(input.result ?? "").toLowerCase();
+                await enqueueRecap({
+                  rcCallId: String(record.id),
+                  facility: { id: facility.id, name: facility.name, assignedRepId: facility.assignedRepId ?? null, assignedRepName: facility.assignedRepName ?? null },
+                  callDate: record.startTime ? new Date(record.startTime) : callDate,
+                  recordingUri: recordingUrl,
+                  durationSecs: record.duration ?? input.duration ?? 0,
+                  callResult: result.includes("connected") ? "connected" : result.includes("voicemail") ? "voicemail" : "other",
+                  direction: input.direction ?? record.direction ?? null,
+                  repId: ctx.user.id,
+                  repName: agentName,
+                });
+                recapQueued = true;
+                console.log(`[logFacilityCall] recording found (attempt ${attempt}); recap queued for RingSense's transcript.`);
               } else if (record) {
                 // Call is in the log but no recording attached — if that holds for
                 // ~10s, the call wasn't recorded, so stop waiting.
@@ -1155,111 +1156,22 @@ export const crmRouter = router({
               console.warn(`[logFacilityCall] recording attempt ${attempt} failed:`, e?.response?.status ?? e?.message);
             }
           }
-          if (!transcriptText) console.log("[logFacilityCall] no transcript (call not recorded or recording unavailable).");
         } else if (!connected) {
-          console.log("[logFacilityCall] call did not connect (0:00) — skipping recording/transcription.");
-        }
-
-        // 4. Generate structured AI analysis if we have a transcript
-        let actionItems: string[] = [];
-        let followUpTasks: Array<{ title: string; priority: "high" | "medium" | "low"; dueInDays?: number }> = [];
-        let extractedData: Record<string, unknown> = {};
-
-        if (transcriptText) {
-          try {
-            console.log("[logFacilityCall] generating AI summary from transcript…");
-            // Shared analyzer (same one the account-wide sync uses) — includes
-            // planned-visit extraction with the call date for relative dates.
-            const analysis = await analyzeCallTranscript(transcriptText, callDate);
-            aiSummary = analysis.summary ?? "";
-            console.log("[logFacilityCall] AI summary:", JSON.stringify(aiSummary).slice(0, 120));
-            actionItems = analysis.actionItems ?? [];
-            followUpTasks = analysis.followUpTasks ?? [];
-            extractedData = analysis.extractedData ?? {};
-            // Visit arranged on the call → put it on the books automatically.
-            if (facility) {
-              try {
-                await maybeCreateVisitFromCall(
-                  { id: facility.id, name: facility.name, assignedRepName: (facility as any).assignedRepName ?? null },
-                  analysis,
-                  callDate,
-                  ctx.user.agentName ?? ctx.user.name ?? ctx.user.email ?? null
-                );
-              } catch (e: any) {
-                console.warn("[logFacilityCall] auto-visit creation failed:", e?.message ?? e);
-              }
-            }
-          } catch (e) {
-            // LLM unavailable or JSON parse error — skip structured analysis
-            console.warn("[logFacilityCall] LLM analysis failed:", e);
-          }
-        }
-
-        // 5. Save the transcript + AI summary as a "Call Recap" — ONLY when we
-        // actually have a transcript. Don't create empty recap cards for
-        // unanswered / 0:00 / unrecorded calls (they still log as a touchpoint
-        // in the Contact Log).
-        if (facility && transcriptText) {
-          const rawText = transcriptText || `[Call on ${callDate.toISOString()}${input.phone ? ` to ${input.phone}` : ""}${durationStr ? `, duration: ${durationStr}` : ""}]`;
-          const summary = aiSummary || (transcriptText ? transcriptText.slice(0, 300) : `${input.direction ?? "Outbound"} call — ${input.result ?? ""} (${durationStr})`);
-          await createFacilityUpdate({
-            facilityId: facility.id,
-            updateDate: callDate,
-            rawText,
-            summary,
-            updateType: "transcript",
-            repId: ctx.user.id,
-            repName: agentName,
-            extractedData: Object.keys(extractedData).length > 0 ? extractedData : null,
-          });
-
-          // Auto-create follow-up tasks extracted from the call
-          for (const task of followUpTasks) {
-            const dueDate = new Date(callDate);
-            dueDate.setDate(dueDate.getDate() + (task.dueInDays ?? 7));
-            await createTask({
-              facilityId: facility.id,
-              title: task.title,
-              description: `Auto-created from call on ${callDate.toLocaleDateString()} with ${agentName}`,
-              dueDate,
-              priority: task.priority,
-              assignedToId: ctx.user.id,
-              assignedToName: agentName,
-              status: "open",
-            });
-          }
-          // Push the finished recap out to Filevine (via the Zapier/n8n webhook).
-          await sendCallRecapToWebhook({
-            event: "call_recap",
-            facilityId: facility.id,
-            facilityName: facility.name,
-            agent: agentName,
-            callTime: callDate.toISOString(),
-            callTimeLocal: callDate.toLocaleString(),
-            durationStr,
-            durationSeconds: input.duration ?? null,
-            callResult: input.result ?? null,
-            direction: input.direction ?? null,
-            summary: aiSummary || transcriptText.slice(0, 300),
-            keyPoints: (extractedData.keyPoints as string[]) ?? [],
-            sentiment: (extractedData.sentiment as string) ?? null,
-            interestLevel: (extractedData.interestLevel as string) ?? null,
-            tasks: followUpTasks,
-            transcript: transcriptText,
-            source: "bdcrm",
-          });
+          console.log("[logFacilityCall] call did not connect (0:00) — no recording to recap.");
         }
 
         return {
           success: true as const,
           facilityId: facility?.id ?? null,
           facilityName: facility?.name ?? null,
-          hasTranscript: !!transcriptText,
-          hasAiSummary: !!aiSummary,
-          transcriptText: transcriptText || null,
-          aiSummary: aiSummary || null,
-          actionItemsCount: actionItems.length,
-          followUpTasksCreated: followUpTasks.length,
+          // The recap comes later from the queue; nothing is transcribed here any more.
+          hasTranscript: false,
+          hasAiSummary: false,
+          transcriptText: null,
+          aiSummary: null,
+          actionItemsCount: 0,
+          followUpTasksCreated: 0,
+          recapQueued,
         };
       }),
 

@@ -78,6 +78,34 @@ export async function claudeStatus() {
   };
 }
 
+/**
+ * A JSON answer from Claude, held to a JSON schema (structured outputs) — for
+ * callers with a hand-written schema (the Intake Desk, the Daily Log). Throws
+ * when Claude isn't connected, declines, or runs out of room.
+ */
+export async function claudeJson<T>(opts: {
+  system: string;
+  user: string;
+  schema: Record<string, unknown>;
+  effort?: "low" | "medium" | "high";
+}): Promise<T> {
+  const anthropic = await claude();
+  if (!anthropic) throw new Error("Claude isn't connected — a super admin connects it in Settings.");
+  const msg = await anthropic.beta.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 16000,
+    // A request Claude's safety filters decline is re-run on Anthropic's recommended fallback model.
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    output_config: { effort: opts.effort ?? "medium", format: { type: "json_schema", schema: opts.schema } },
+    system: opts.system,
+    messages: [{ role: "user", content: opts.user }],
+  });
+  if (msg.stop_reason === "refusal" || msg.stop_reason === "max_tokens") throw new Error(`Claude gave no answer (${msg.stop_reason}).`);
+  const text = msg.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+  return JSON.parse(text) as T;
+}
+
 /** Anthropic's answer for a key: can it use the model? Costs no tokens. */
 async function check(key: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {

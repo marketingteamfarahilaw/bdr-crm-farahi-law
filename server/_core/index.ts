@@ -151,12 +151,16 @@ function startRingCentralAutoSync() {
       // transcribed (zero Whisper/LLM spend). BDR/FR sync is unaffected.
       let intakePaused = false;
       try { intakePaused = (await getSetting("intake_automation")) === "paused"; } catch { /* default active */ }
+      // Every connected user's token, for reading RingSense transcripts: any one
+      // of them with the permission can read every licensed rep's calls.
+      const tokens: { userId: number; token: string }[] = [];
       for (const u of connected) {
         const display = String(u.userName ?? u.ownerName ?? u.userEmail ?? "Unknown");
         try {
           if (isIntakeOnly(u.userRole) && intakePaused) continue;
           const token = await getValidRCTokenForUser(u.userId);
           if (!token) continue; // not connected / refresh expired — they'll reconnect
+          tokens.push({ userId: u.userId, token });
           if (isIntakeOnly(u.userRole)) {
             const res = await syncIntakeCalls(token, { agent: { id: u.userId, name: display }, lookbackMinutes: 90 });
             await setUserRcLastSync(u.userId, new Date());
@@ -170,7 +174,7 @@ function startRingCentralAutoSync() {
             });
             await setUserRcLastSync(u.userId, new Date());
             if (res.logged > 0 || res.transcribed > 0) {
-              console.log(`[rcSync] agent #${u.userId} (${u.userName ?? u.ownerName ?? "?"}): ${res.logged} new, ${res.transcribed} transcribed.`);
+              console.log(`[rcSync] agent #${u.userId} (${u.userName ?? u.ownerName ?? "?"}): ${res.logged} new, ${res.transcribed} queued for a recap.`);
             }
             // RingCentral Video meetings for this agent (lightweight — recent page)
             try {
@@ -183,10 +187,10 @@ function startRingCentralAutoSync() {
         }
       }
 
-      // 1b) Recaps that failed when their call was synced (transcription down,
-      //     out of credit) — a few each round. And, once, every call in a stretch
-      //     when nothing retried them: app_settings recap_backfill_since (an ISO
-      //     date) queues them, then clears itself.
+      // 1b) Recaps: each recorded call waits in a queue until RingSense has its
+      //     transcript — a few written each round. And, once, every call in a
+      //     stretch when nothing retried them: app_settings recap_backfill_since
+      //     (an ISO date) queues them, then clears itself.
       if (connected.length) {
         const tokenFor = (userId: number) => getValidRCTokenForUser(userId);
         try {
@@ -197,7 +201,7 @@ function startRingCentralAutoSync() {
             await setSetting("recap_backfill_since", null);
             console.log(`[rcSync] queued ${queued} call(s) since ${since} that had no recap.`);
           }
-          const r = await retryQueuedRecaps(tokenFor, 3);
+          const r = await retryQueuedRecaps(tokens, 3);
           if (r.done || r.failed) console.log(`[rcSync] recap retries: ${r.done} written, ${r.failed} failed.`);
         } catch (e: any) {
           console.warn("[rcSync] recap retries failed:", e?.response?.status ?? e?.message ?? e);

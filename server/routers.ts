@@ -17,7 +17,7 @@ import { pdRouter } from "./pdRouter";
 import { territoriesRouter } from "./territoriesRouter";
 import { triviaRouter } from "./triviaRouter";
 import axios from "axios";
-import { transcribeAudio } from "./_core/voiceTranscription";
+import { recordingIdOf, ringSenseTranscript } from "./_core/ringsense";
 import { getRingcentralToken, listFacilities } from "./crmDb";
 import {
   getSavedLeads,
@@ -693,12 +693,10 @@ export const appRouter = router({
             );
             const recordingUrl: string | null = callResp.data?.recording?.contentUri ?? null;
             if (recordingUrl) {
-              // 4. Transcribe the recording
-              const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
-              const result = await transcribeAudio({ audioUrl: authedUrl });
-              if (!('error' in result)) {
-                transcriptText = result.text ?? "";
-              }
+              // 4. RingCentral's own transcript (RingSense), if it has processed the call yet
+              const recordingId = recordingIdOf(recordingUrl);
+              const tr = recordingId ? await ringSenseTranscript(recordingId, [accessToken]) : null;
+              if (tr?.ok) transcriptText = tr.text;
             }
           } catch { /* recording not yet available — save log without transcript */ }
         }

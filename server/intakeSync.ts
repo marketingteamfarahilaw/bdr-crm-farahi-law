@@ -12,7 +12,7 @@
  * call NEVER lands in contact_logs and never touches facility data.
  */
 import axios from "axios";
-import { transcribeAudio } from "./_core/voiceTranscription";
+import { recordingIdOf, ringSenseTranscript } from "./_core/ringsense";
 import { analyzeIntakeTranscript } from "./intakeAI";
 import {
   addLeadEvent,
@@ -24,6 +24,7 @@ import {
   getExistingIntakeRcSessionIds,
   linkCallToLead,
   listRecordinglessRecentCalls,
+  listUntranscribedRecordedCalls,
   updateIntakeCall,
 } from "./intakeDb";
 
@@ -126,7 +127,11 @@ export async function routeAnalyzedTranscript(opts: {
   return out;
 }
 
-/** Whisper-transcribe one recorded RingCentral call, then route it. */
+/**
+ * RingCentral's own transcript of one recorded call (RingSense — Youssef stopped
+ * using OpenAI's Whisper, 2026-09-27), then route it. Not ready yet → false,
+ * and the sync asks again next round.
+ */
 export async function processRecordedCall(opts: {
   callId: number;
   recordingUrl: string;
@@ -137,17 +142,18 @@ export async function processRecordedCall(opts: {
   callDate: Date | null;
   agent: { id: number; name: string };
 }): Promise<{ transcribed: boolean; leadCreated: boolean; leadUpdated: boolean }> {
-  const authedUrl = `${opts.recordingUrl}?access_token=${opts.accessToken}`;
-  const tr = await transcribeAudio({ audioUrl: authedUrl });
-  if ("error" in tr || !tr.text) {
-    // Visibility: rate-limited/expired-token downloads used to fail silently here.
-    console.warn(`[intakeSync] transcription failed for intake call #${opts.callId}:`, ("error" in tr ? String((tr as any).error).slice(0, 160) : "empty transcript"));
+  const recordingId = recordingIdOf(opts.recordingUrl);
+  const tr = recordingId
+    ? await ringSenseTranscript(recordingId, [opts.accessToken])
+    : { ok: false as const, reason: "error" as const, error: "no recording id in the recording link" };
+  if (!tr.ok) {
+    if (tr.reason !== "not_ready") console.warn(`[intakeSync] no transcript for intake call #${opts.callId}: ${tr.error.slice(0, 160)}`);
     return { transcribed: false, leadCreated: false, leadUpdated: false };
   }
   return routeAnalyzedTranscript({
     callId: opts.callId,
     transcript: tr.text,
-    transcriptLang: tr.language ?? null,
+    transcriptLang: null,
     direction: opts.direction,
     callerNumber: opts.callerNumber,
     durationSecs: opts.durationSecs,
@@ -289,6 +295,37 @@ export async function syncIntakeCalls(
     }
   } catch (e: any) {
     console.warn("[intakeSync] late-recording pass failed:", e?.message ?? e);
+  }
+
+  // ── Third chance: recorded, but RingSense hadn't transcribed it yet ─────────
+  try {
+    for (const p of await listUntranscribedRecordedCalls(opts.agent.id)) {
+      if (!p.rcCallId) continue;
+      try {
+        const rec = await axios
+          .get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${encodeURIComponent(p.rcCallId)}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: { view: "Detailed" },
+          })
+          .catch(() => null);
+        const url: string | null = rec?.data?.recording?.contentUri ?? null;
+        if (!url) continue;
+        const callerNumber = p.direction === "Inbound" ? p.fromNumber : p.toNumber;
+        const r = await processRecordedCall({
+          callId: p.id, recordingUrl: url, accessToken,
+          direction: p.direction, callerNumber,
+          durationSecs: p.durationSeconds ?? 0, callDate: p.callDate,
+          agent: opts.agent,
+        });
+        if (r.transcribed) result.transcribed++;
+        if (r.leadCreated) result.leadsCreated++;
+        if (r.leadUpdated) result.leadsUpdated++;
+      } catch (e: any) {
+        console.warn(`[intakeSync] transcript retry failed for call ${p.id}:`, e?.response?.status ?? e?.message ?? e);
+      }
+    }
+  } catch (e: any) {
+    console.warn("[intakeSync] transcript retry pass failed:", e?.message ?? e);
   }
 
   return result;

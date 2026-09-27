@@ -108,6 +108,30 @@ export async function listRecordinglessRecentCalls(agentId: number) {
     .limit(30);
 }
 
+/**
+ * Recorded calls not processed yet: RingSense (RingCentral) has a call's
+ * transcript some minutes after it ends, so these are asked again each round
+ * for half a day.
+ */
+export async function listUntranscribedRecordedCalls(agentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const now = Date.now();
+  return db
+    .select()
+    .from(intakeCalls)
+    .where(and(
+      eq(intakeCalls.agentId, agentId),
+      eq(intakeCalls.aiProcessed, 0),
+      eq(intakeCalls.hasRecording, 1),
+      gte(intakeCalls.callDate, new Date(now - 12 * 60 * 60 * 1000)),
+      lte(intakeCalls.callDate, new Date(now - 5 * 60 * 1000)),
+      sql`${intakeCalls.durationSeconds} >= 15`,
+      sql`${intakeCalls.rcCallId} IS NOT NULL`,
+    ))
+    .limit(10);
+}
+
 // ─── Leads ────────────────────────────────────────────────────────────────────
 
 export async function createIntakeLead(data: InsertIntakeLead): Promise<number> {

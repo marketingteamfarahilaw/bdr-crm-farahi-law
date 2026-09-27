@@ -154,7 +154,7 @@ function ClaudeCard() {
   const save = trpc.settings.saveClaudeKey.useMutation({
     onSuccess: (r, v) => {
       if (!r.ok) return void toast.error(r.error);
-      toast.success(v.key ? "Claude is connected — AI reviews are now written by Claude." : "Key removed — AI reviews use ChatGPT again.");
+      toast.success(v.key ? "Claude is connected — the CRM's AI features now run." : "Key removed — the CRM's AI features are off until a key is connected.");
       setKey("");
       utils.settings.claudeStatus.invalidate();
     },
@@ -181,9 +181,9 @@ function ClaudeCard() {
         )}
       </div>
       <p className="text-xs text-muted-foreground mb-4">
-        The AI Performance Review (Representative Performance) is written by {s?.model ?? "Claude"} when a key is connected;
-        without one it uses ChatGPT. Create a key at console.anthropic.com → API keys and paste it here — it's checked with
-        Anthropic, stored encrypted, and never shown again.
+        {s?.model ?? "Claude"} writes the CRM's AI: call recaps (from RingCentral's transcripts), the AI Performance Review, the
+        Intake Desk analysis and the Daily Log. Without a key none of them run. Create a key at console.anthropic.com → API keys
+        and paste it here — it's checked with Anthropic, stored encrypted, and never shown again.
       </p>
       {s?.unreadable && (
         <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">The saved key can't be read any more (the server's secret changed). Paste it again.</p>

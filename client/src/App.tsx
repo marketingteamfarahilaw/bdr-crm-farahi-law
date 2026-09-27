@@ -296,7 +296,8 @@ function AppWithPhone() {
   const intakeOnly = isIntakeOnly(user?.role);
 
   // Auto-log facility calls when a RingCentral call ends.
-  // Uses logFacilityCall which: matches facility by phone → creates contact log → fetches RC recording → Whisper transcription → AI summary → saves to facility_updates.
+  // Uses logFacilityCall which: matches facility by phone → creates contact log → finds the RC recording
+  // → queues the recap, written once RingCentral's RingSense has the transcript (usually within half an hour).
   const logFacilityCall = trpc.crm.ringcentral.logFacilityCall.useMutation({
     onSuccess: (result) => {
       if (result.facilityId) {
@@ -330,7 +331,7 @@ function AppWithPhone() {
       const processingId = `rc-processing-${Date.now()}`;
       toast.loading("Processing call…", {
         id: processingId,
-        description: `${phone} · ${dur} — fetching recording & transcribing`,
+        description: `${phone} · ${dur} — logging the call and finding its recording`,
         duration: 60000,
       });
 
@@ -367,11 +368,19 @@ function AppWithPhone() {
                     duration: 8000,
                   }
                 );
+              } else if (result.recapQueued) {
+                toast.success(
+                  `Call logged for ${result.facilityName}`,
+                  {
+                    description: `${dur} · the recap (transcript, AI summary, tasks) arrives once RingCentral finishes the transcript — usually within half an hour`,
+                    duration: 9000,
+                  }
+                );
               } else {
                 toast.success(
                   `Call logged for ${result.facilityName}`,
                   {
-                    description: `${dur} · ${data.direction ?? ""} · no recording available yet`,
+                    description: `${dur} · ${data.direction ?? ""} · no recording to recap`,
                     duration: 6000,
                   }
                 );

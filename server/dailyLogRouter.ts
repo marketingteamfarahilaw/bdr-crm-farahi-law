@@ -8,7 +8,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { canManage, isIntakeOnly } from "@shared/permissions";
-import { invokeLLM } from "./_core/llm";
+import { claudeJson } from "./_core/claude";
 import { getDailyLog, getActiveDates, todayLA } from "./dailyLogDb";
 
 const dailyProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -39,17 +39,12 @@ export const dailyLogRouter = router({
       if (!p || !p.events.length) return { bullets: [], pending: [] };
       const lines = p.events.map((e: any) => `- [${e.kind}] ${e.facilityName ? e.facilityName + ": " : ""}${e.detail}`).join("\n");
       try {
-        const resp = await invokeLLM({
-          messages: [
-            { role: "system", content: `You write a concise end-of-day activity recap for a law-firm business-development rep, for leadership. Turn the raw activity log into clean, specific past-tense bullets (one per meaningful action; merge trivial duplicates). Then list any pending/carry-over follow-ups. Be factual — only use what's in the log. Return JSON: {"bullets": string[], "pending": string[]}.` },
-            { role: "user", content: `Rep: ${input.person}\nDate: ${input.date}\nOpen follow-ups still pending: ${p.pendingFollowUps}\n\nActivity log:\n${lines}` },
-          ],
-          response_format: {
-            type: "json_schema",
-            json_schema: { name: "daily_recap", strict: true, schema: { type: "object", properties: { bullets: { type: "array", items: { type: "string" } }, pending: { type: "array", items: { type: "string" } } }, required: ["bullets", "pending"], additionalProperties: false } },
-          },
+        const parsed = await claudeJson<{ bullets: string[]; pending: string[] }>({
+          effort: "low",
+          system: `You write a concise end-of-day activity recap for a law-firm business-development rep, for leadership. Turn the raw activity log into clean, specific past-tense bullets (one per meaningful action; merge trivial duplicates). Then list any pending/carry-over follow-ups. Be factual — only use what's in the log.`,
+          user: `Rep: ${input.person}\nDate: ${input.date}\nOpen follow-ups still pending: ${p.pendingFollowUps}\n\nActivity log:\n${lines}`,
+          schema: { type: "object", properties: { bullets: { type: "array", items: { type: "string" } }, pending: { type: "array", items: { type: "string" } } }, required: ["bullets", "pending"], additionalProperties: false },
         });
-        const parsed = JSON.parse(resp.choices[0]?.message?.content as string);
         return { bullets: parsed.bullets ?? [], pending: parsed.pending ?? [] };
       } catch {
         // LLM unavailable — fall back to the raw bullets

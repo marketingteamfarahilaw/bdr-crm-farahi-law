@@ -13,7 +13,7 @@ import { getDb } from "./db";
 import { callRecapQueue, contactLogs, facilityUpdates, userRingcentralTokens, users } from "../drizzle/schema";
 import { getStatus, SYNC_INTERVAL_MS, type JobName } from "./dataSync";
 import { claudeStatus } from "./_core/claude";
-import { recapsPausedForCredit } from "./rcSync";
+import { recapsPausedForPermission } from "./rcSync";
 
 export type HealthState = "ok" | "warn" | "down";
 export type HealthCheck = { id: string; label: string; state: HealthState; detail: string; action?: string };
@@ -69,32 +69,39 @@ export async function getSystemHealth(): Promise<{ checks: HealthCheck[]; worst:
 
     // Call recaps: transcription (OpenAI) + summary (Claude). Waiting ones are retried.
     const [q] = await db.select({ waiting: sql<number>`COUNT(*)` })
-      .from(callRecapQueue).where(and(isNull(callRecapQueue.doneAt), lt(callRecapQueue.attempts, 6)));
+      .from(callRecapQueue).where(and(isNull(callRecapQueue.doneAt), lt(callRecapQueue.attempts, 8)));
+    // Tried eight times over a day and RingCentral never had a transcript: usually a rep without the license.
+    const [gone] = await db.select({ n: sql<number>`COUNT(*)` })
+      .from(callRecapQueue).where(and(isNull(callRecapQueue.doneAt), gte(callRecapQueue.attempts, 8), gte(callRecapQueue.callDate, new Date(Date.now() - 7 * 24 * HOUR))));
     const weekAgo = new Date(Date.now() - 7 * 24 * HOUR);
     const [calls] = await db.select({ n: sql<number>`COUNT(*)` }).from(contactLogs)
       .where(and(eq(contactLogs.fromRingCentral, 1), eq(contactLogs.callResult, "connected"), gte(contactLogs.contactDate, weekAgo)));
     const [recaps] = await db.select({ n: sql<number>`COUNT(*)` }).from(facilityUpdates)
       .where(and(eq(facilityUpdates.updateType, "transcript"), gte(facilityUpdates.updateDate, weekAgo)));
     const waiting = Number(q?.waiting ?? 0);
-    // The retry loop's own verdict, as of its last round (every 2 minutes).
-    const noCredit = recapsPausedForCredit();
-    const week = `This week: ${Number(recaps?.n ?? 0)} recaps for ${Number(calls?.n ?? 0)} connected calls.`;
+    // The recap loop's own verdict, as of its last round (every 2 minutes).
+    const noPermission = recapsPausedForPermission();
+    const missed = Number(gone?.n ?? 0);
+    const week = `This week: ${Number(recaps?.n ?? 0)} recaps for ${Number(calls?.n ?? 0)} connected calls.`
+      + (missed ? ` ${missed} recorded call${missed === 1 ? "" : "s"} never got a RingCentral transcript.` : "");
     checks.push({
       id: "recaps", label: "Call recaps",
-      state: noCredit ? "down" : waiting > 5 ? "warn" : "ok",
-      detail: noCredit
-        ? `Paused: OpenAI, which turns call audio into text, has no credit. ${waiting} call${waiting === 1 ? "" : "s"} waiting. ${week}`
-        : waiting ? `${waiting} call${waiting === 1 ? "" : "s"} waiting to be retried. ${week}` : week,
-      action: noCredit ? "Add credit at platform.openai.com → Billing; the waiting calls then fill in by themselves." : undefined,
+      state: noPermission ? "down" : waiting > 40 || missed > 5 ? "warn" : "ok",
+      detail: noPermission
+        ? `Paused: RingCentral won't share call transcripts with the CRM — nobody connected has its "AI Conversation Expert — Access Insights" permission. ${waiting} call${waiting === 1 ? "" : "s"} waiting. ${week}`
+        : waiting ? `${waiting} call${waiting === 1 ? "" : "s"} waiting for RingCentral's transcript. ${week}` : week,
+      action: noPermission
+        ? "A RingCentral admin turns on \"AI Conversation Expert — Access Insights\" for one connected user's role (service.ringcentral.com → Users → Roles → Artificial Intelligence). The waiting calls then fill in by themselves."
+        : missed > 5 ? "Calls get a transcript only when the rep holds a RingCentral AI Conversation Expert license — check the reps' licenses." : undefined,
     });
   }
 
   const c = await claudeStatus();
   checks.push(c.connected
-    ? { id: "claude", label: "AI — Claude", state: "ok", detail: `Connected (key ending ${c.tail}). Writes the performance reviews and call summaries.` }
+    ? { id: "claude", label: "AI — Claude", state: "ok", detail: `Connected (key ending ${c.tail}). Writes call recaps, performance reviews and the Intake Desk analysis.` }
     : {
-        id: "claude", label: "AI — Claude", state: c.unreadable ? "down" : "warn",
-        detail: c.unreadable ? "The saved key can't be read any more." : "Not connected: reviews and call summaries use ChatGPT.",
+        id: "claude", label: "AI — Claude", state: "down",
+        detail: c.unreadable ? "The saved key can't be read any more." : "Not connected: call recaps, performance reviews and the Intake Desk analysis don't run.",
         action: "Connect a key in the AI card above.",
       });
 

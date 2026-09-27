@@ -8,7 +8,6 @@ import { and, gte, lte, inArray, eq, desc, sql } from "drizzle-orm";
 import { formatInTimeZone } from "date-fns-tz";
 import { getDb } from "./db";
 import { isNonReportingRep } from "@shared/permissions";
-import { invokeLLM } from "./_core/llm";
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
@@ -423,8 +422,7 @@ const ReviewSchema = z.object({
 
 /** AI-generated performance review: what the agent did each day with facilities,
  *  the challenges they met, their strengths, and concrete recommendations.
- *  Written by Claude when a key is connected (server/_core/claude.ts), else by
- *  the OpenAI model the rest of the app uses. */
+ *  Written by Claude (server/_core/claude.ts); Youssef stopped using OpenAI on 2026-09-27. */
 export async function generateAgentPerformanceReview(opts: { names?: string[]; from: Date; to: Date; agentLabel?: string }): Promise<AgentPerformanceReview> {
   const data = await getAgentPerformanceData(opts);
   const k = data.kpis;
@@ -483,36 +481,5 @@ export async function generateAgentPerformanceReview(opts: { names?: string[]; f
     }
   }
 
-  try {
-    const llmResp = await invokeLLM({
-      messages: [
-        { role: "system", content: `${coach} Return JSON only.` },
-        { role: "user", content: `${statsLine}\n\nDaily call recaps:\n${digest || "(no recorded-call recaps this period; base the review on the call totals above)"}\n\nWrite the performance review for ${agentLabel}.` },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "agent_review", strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              overallSummary: { type: "string" },
-              performanceRating: { type: "string", enum: ["strong", "solid", "needs_improvement"] },
-              daily: { type: "array", items: { type: "object", properties: { date: { type: "string" }, summary: { type: "string" } }, required: ["date", "summary"], additionalProperties: false } },
-              challenges: { type: "array", items: { type: "string" } },
-              recommendations: { type: "array", items: { type: "string" } },
-              strengths: { type: "array", items: { type: "string" } },
-            },
-            required: ["overallSummary", "performanceRating", "daily", "challenges", "recommendations", "strengths"],
-            additionalProperties: false,
-          },
-        },
-      },
-    });
-    const parsed = JSON.parse(llmResp.choices[0]?.message?.content as string);
-    return { ...base, ...parsed, basedOnRecaps: capped.length, writtenBy: `ChatGPT (${process.env.LLM_MODEL || "gpt-4o-mini"})` };
-  } catch (e) {
-    console.warn("[reports] performance review LLM failed:", (e as any)?.message ?? e);
-    return { ...base, overallSummary: "Could not generate the AI review right now (the AI service was unavailable). The metrics shown are still accurate — try again in a moment." };
-  }
+  return { ...base, overallSummary: "AI reviews are written by Claude, which isn't connected — a super admin connects it in Settings. The metrics shown are accurate." };
 }
