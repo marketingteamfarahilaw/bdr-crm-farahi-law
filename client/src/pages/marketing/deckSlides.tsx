@@ -140,7 +140,7 @@ export function buildMarketingSlides(data: MarketingData, ctx: DeckContext, case
     slides.push({ id: "case-types", label: "Case types", render: (pos) => <CaseTypesSlide data={data} meta={meta} pos={pos} /> });
   }
   if (data.insights.length) {
-    slides.push({ id: "briefing", label: "Executive briefing", dark: true, render: (pos) => <Briefing insights={data.insights} meta={meta} pos={pos} /> });
+    slides.push({ id: "briefing", label: "Executive briefing", render: (pos) => <Briefing insights={data.insights} meta={meta} pos={pos} /> });
   }
 
   if (data.caseFacts && cases && cases.total > 0 && cases.rows.length > 0) {
@@ -614,7 +614,7 @@ function Briefing({ insights, meta, pos }: { insights: string[]; meta: Meta; pos
   const chars = insights.join("").length;
   const density = chars > 1300 ? " xdense" : chars > 900 ? " dense" : "";
   return (
-    <Frame meta={meta} pos={pos} kicker="Executive briefing" title="What the numbers say" className={`sr-slide-dark${density}`}>
+    <Frame meta={meta} pos={pos} kicker="Executive briefing" title="What the numbers say" className={`sr-slide-brief${density}`}>
       <div className="sr-bf solo">
         <div className="sr-bf-list">
           {insights.map((text, n) => {

@@ -275,6 +275,7 @@ table.sr-grid tr.soft td.cell { background: none; color: var(--mute); font-weigh
   .sr-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sr-board { grid-template-columns: minmax(0, 1fr); }
 }
+@media (max-width: 1100px) { .sr-pair.sr-pair-wide { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 900px) { .sr-hero-bot { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 720px) {
   .sr-canvas { padding: 18px 14px 36px; }

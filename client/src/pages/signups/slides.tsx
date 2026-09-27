@@ -33,8 +33,6 @@ export type Slide = {
   id: string;
   /** For screen readers: "3 of 10: FRS scorecard". */
   label: string;
-  /** The closing briefing is dark edge to edge, letterbox included. */
-  dark?: boolean;
   render: (pos: Pos) => ReactNode;
 };
 
@@ -212,7 +210,7 @@ export function buildSlides(data: ReportData, ctx: DeckContext): Slide[] {
     slides.push({ id: "case-types", label: "Case types", render: (pos) => <CaseTypes data={data} meta={meta} pos={pos} /> });
   }
   if (data.insights.length) {
-    slides.push({ id: "briefing", label: "Executive briefing", dark: true, render: (pos) => <Briefing data={data} meta={meta} pos={pos} /> });
+    slides.push({ id: "briefing", label: "Executive briefing", render: (pos) => <Briefing data={data} meta={meta} pos={pos} /> });
   }
   return slides;
 }
@@ -584,13 +582,13 @@ function CaseTypes({ data, meta, pos }: { data: ReportData; meta: Meta; pos: Pos
   );
 }
 
-/** The report's dark briefing card as the closing slide. Text as the server wrote it: rep and partner names, never clients. */
+/** The report's briefing as the closing slide. Text as the server wrote it: rep and partner names, never clients. */
 function Briefing({ data, meta, pos }: { data: ReportData; meta: Meta; pos: Pos }) {
   const chars = [...data.insights, ...data.recommendations].join("").length;
-  const density = chars > 1300 ? " xdense" : chars > 900 ? " dense" : "";
+  const density = chars > 1100 ? " xdense" : chars > 800 ? " dense" : "";
   const recs = data.recommendations;
   return (
-    <Frame meta={meta} pos={pos} kicker="Executive briefing" title="What the numbers say" className={`sr-slide-dark${density}`}>
+    <Frame meta={meta} pos={pos} kicker="Executive briefing" title="What the numbers say" className={`sr-slide-brief${density}`}>
       <div className={`sr-bf${recs.length ? "" : " solo"}`}>
         <div className="sr-bf-list">
           {data.insights.map((text, n) => {

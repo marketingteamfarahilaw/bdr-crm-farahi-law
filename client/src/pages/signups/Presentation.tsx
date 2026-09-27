@@ -366,7 +366,7 @@ export function Deck({ build, label, resume, onPlace, onExit }: DeckProps) {
   return createPortal(
     <div
       ref={deckRef}
-      className={`sr sr-deck${barOn ? "" : " idle"}${blank ? " blank" : slide.dark ? " on-dark" : ""}`}
+      className={`sr sr-deck${barOn ? "" : " idle"}${blank ? " blank" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-label={label}

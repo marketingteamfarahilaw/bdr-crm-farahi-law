@@ -502,88 +502,6 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
               </>
             )}
           </div>
-
-          {/* Referring partners */}
-          <div className="sr-panel" ref={partnersRef} style={{ scrollMarginTop: 16 }}>
-            <div className="sr-panel-h">
-              <div className="sr-ttl"><h2>Top referring partners</h2><span className="sr-count">{data.partners.length}</span></div>
-            </div>
-            <p className="sr-sub">From the {fmt(data.totals.attributed)} leads whose "Referred by" in Lead Docket matches a partner in the CRM.</p>
-            {data.partners.length === 0 ? <p className="sr-nil">No leads in this period name a partner we can match.</p> : (
-              <div className="sr-scroll">
-                <table className="sr-t" style={{ minWidth: 560 }}>
-                  <thead>
-                    <tr><th>Partner</th><th className="num">Leads</th><th className="num">Signed</th><th>Conversion</th></tr>
-                  </thead>
-                  <tbody>
-                    {data.partners.map((p) => (
-                      <tr key={p.facilityId}>
-                        <td>
-                          <div className="sr-who">
-                            <span className="sr-av" style={hueStyle(p.name)}><PartnerLogo facilityId={p.facilityId} fallback={initials(p.name)} /></span>
-                            <div><Link href={`/crm/facilities/${p.facilityId}`}><b>{p.name}</b></Link><i>{p.territory ?? "No territory"}</i></div>
-                          </div>
-                        </td>
-                        <td className="num">{p.leads}</td>
-                        <td className="num"><span className="sr-score">{p.signed}</span></td>
-                        <td><span className={`sr-badge ${p.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{p.conversion}%</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Case types */}
-          <div className="sr-panel">
-            <div className="sr-panel-h">
-              <div className="sr-ttl"><h2>Case types</h2><span className="sr-count">{data.caseTypes.length}</span></div>
-            </div>
-            <p className="sr-sub">As classified in Lead Docket.</p>
-            {data.caseTypes.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
-              <div className="sr-scroll">
-                <table className="sr-t" style={{ minWidth: 480 }}>
-                  <thead>
-                    <tr><th>Case type</th><th className="num">Leads</th><th className="num">Signed</th><th>Conversion</th></tr>
-                  </thead>
-                  <tbody>
-                    {data.caseTypes.map((c) => (
-                      <tr key={c.name}>
-                        <td><b style={{ color: "var(--ink)", fontWeight: 600 }}>{c.name}</b></td>
-                        <td className="num">{fmt(c.leads)}</td>
-                        <td className="num"><span className="sr-score">{fmt(c.signed)}</span></td>
-                        <td><span className={`sr-badge ${c.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{c.conversion}%</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-
-          {/* Partner type + territory (partner-attributed leads only) */}
-          <div className="sr-pair">
-            <div className="sr-panel">
-              <div className="sr-panel-h"><h2>Referring partner type</h2></div>
-              <p className="sr-sub">Leads with a matched referring partner.</p>
-              {types.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
-                <div className="sr-hb">
-                  {types.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={typeMax} lead={i === 0} />)}
-                </div>
-              )}
-            </div>
-            <div className="sr-panel">
-              <div className="sr-panel-h"><h2>Territory</h2></div>
-              <p className="sr-sub">Where the referring partner is; top 10.</p>
-              {territories.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
-                <div className="sr-hb">
-                  {territories.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={terrMax} lead={i === 0} />)}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Right rail */}
@@ -633,6 +551,90 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
             </details>
           </div>
         </aside>
+      </div>
+
+      {/* Below the side column, full width: the tables side by side (one above the
+          other on narrower screens), so no section sits beside empty space. */}
+      <div className="sr-pair sr-pair-wide">
+        {/* Referring partners */}
+        <div className="sr-panel" ref={partnersRef} style={{ scrollMarginTop: 16 }}>
+          <div className="sr-panel-h">
+            <div className="sr-ttl"><h2>Top referring partners</h2><span className="sr-count">{data.partners.length}</span></div>
+          </div>
+          <p className="sr-sub">From the {fmt(data.totals.attributed)} leads whose "Referred by" in Lead Docket matches a partner in the CRM.</p>
+          {data.partners.length === 0 ? <p className="sr-nil">No leads in this period name a partner we can match.</p> : (
+            <div className="sr-scroll">
+              <table className="sr-t" style={{ minWidth: 560 }}>
+                <thead>
+                  <tr><th>Partner</th><th className="num">Leads</th><th className="num">Signed</th><th>Conversion</th></tr>
+                </thead>
+                <tbody>
+                  {data.partners.map((p) => (
+                    <tr key={p.facilityId}>
+                      <td>
+                        <div className="sr-who">
+                          <span className="sr-av" style={hueStyle(p.name)}><PartnerLogo facilityId={p.facilityId} fallback={initials(p.name)} /></span>
+                          <div><Link href={`/crm/facilities/${p.facilityId}`}><b>{p.name}</b></Link><i>{p.territory ?? "No territory"}</i></div>
+                        </div>
+                      </td>
+                      <td className="num">{p.leads}</td>
+                      <td className="num"><span className="sr-score">{p.signed}</span></td>
+                      <td><span className={`sr-badge ${p.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{p.conversion}%</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        {/* Case types */}
+        <div className="sr-panel">
+          <div className="sr-panel-h">
+            <div className="sr-ttl"><h2>Case types</h2><span className="sr-count">{data.caseTypes.length}</span></div>
+          </div>
+          <p className="sr-sub">As classified in Lead Docket.</p>
+          {data.caseTypes.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
+            <div className="sr-scroll">
+              <table className="sr-t" style={{ minWidth: 480 }}>
+                <thead>
+                  <tr><th>Case type</th><th className="num">Leads</th><th className="num">Signed</th><th>Conversion</th></tr>
+                </thead>
+                <tbody>
+                  {data.caseTypes.map((c) => (
+                    <tr key={c.name}>
+                      <td><b style={{ color: "var(--ink)", fontWeight: 600 }}>{c.name}</b></td>
+                      <td className="num">{fmt(c.leads)}</td>
+                      <td className="num"><span className="sr-score">{fmt(c.signed)}</span></td>
+                      <td><span className={`sr-badge ${c.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{c.conversion}%</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Partner type + territory (partner-attributed leads only) */}
+      <div className="sr-pair">
+        <div className="sr-panel">
+          <div className="sr-panel-h"><h2>Referring partner type</h2></div>
+          <p className="sr-sub">Leads with a matched referring partner.</p>
+          {types.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
+            <div className="sr-hb">
+              {types.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={typeMax} lead={i === 0} />)}
+            </div>
+          )}
+        </div>
+        <div className="sr-panel">
+          <div className="sr-panel-h"><h2>Territory</h2></div>
+          <p className="sr-sub">Where the referring partner is; top 10.</p>
+          {territories.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
+            <div className="sr-hb">
+              {territories.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={terrMax} lead={i === 0} />)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Every lead by name — full width, so long client names have room */}

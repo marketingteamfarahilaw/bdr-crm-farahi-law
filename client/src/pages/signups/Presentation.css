@@ -18,7 +18,6 @@
   /* text on a charcoal fill: var(--char) turns light in dark mode, so this flips too */
   --on-char: #fff;
   --on-char-accent: var(--sun);
-  --brief: #262626;
   /* the slide footer: quieter than body text, still 5:1 on the canvas (a projector washes grey out first) */
   --foot: #5f5e5a;
   position: fixed; inset: 0; z-index: 100; height: auto; overflow: hidden;
@@ -32,13 +31,10 @@
   --dot: rgba(255, 255, 255, .2);
   --on-char: #161613;
   --on-char-accent: #7a5a00;
-  --brief: #22221e;
   --foot: rgba(214, 211, 201, .7);
 }
 .sr.sr-deck:focus, .sr.sr-deck:focus-visible { outline: none; }
 .sr.sr-deck.idle, .sr.sr-deck.idle * { cursor: none; }
-/* The closing briefing is dark edge to edge, letterbox included. */
-.sr.sr-deck.on-dark { background: var(--brief); }
 /* B or "." from a clicker: black, in both themes, as PowerPoint and Keynote do. */
 .sr.sr-deck.blank { background: #000; }
 
@@ -286,24 +282,30 @@
 .sr-deck .sr-ct .sr-badge::before { width: 10px; height: 10px; }
 .dark .sr-deck .sr-b-grey { background: rgba(255, 255, 255, .08); }
 
-/* ---- executive briefing: the page's dark card as the closing slide (dark in both themes) */
-.sr-deck .sr-slide-dark .sr-slide-kicker { color: var(--sun); }
-.sr-deck .sr-slide-dark .sr-slide-title { color: #fff; }
-.sr-deck .sr-slide-dark .sr-slide-foot { color: rgba(255, 255, 255, .55); opacity: 1; }
-.sr-deck .sr-bf { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 600px; gap: 68px; align-items: start; }
+/* ---- executive briefing: the closing slide, in the deck's own palette like the
+   rest, and large enough to read from the back of the room (Youssef, 2026-09-26:
+   "bigger and in light mode" — it was a dark card in both themes). */
+.sr-deck .sr-bf { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 700px; gap: 76px; align-items: start; padding-top: 8px; }
 .sr-deck .sr-bf.solo { grid-template-columns: minmax(0, 1fr); }
-.sr-deck .sr-bf-list { display: flex; flex-direction: column; gap: 22px; }
-.sr-deck .sr-bf-i { display: flex; align-items: flex-start; gap: 24px; }
-.sr-deck .sr-bf-ic { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; flex: none; background: rgba(255, 255, 255, .1); color: var(--sun); }
-.sr-deck .sr-bf-ic svg { width: 22px; height: 22px; }
-.sr-deck .sr-bf-i p { margin: 0; padding-top: 3px; font: 400 30px/1.4 var(--ui); color: rgba(255, 255, 255, .9); }
-.sr-deck .sr-bf-h { margin: 6px 0 18px; font: 600 24px/1.2 var(--ui); color: var(--sun); }
-.sr-deck .sr-bf-rec { margin: 0 0 14px; padding: 22px 26px; border-radius: 22px; background: rgba(255, 255, 255, .08); font: 400 26px/1.4 var(--ui); color: rgba(255, 255, 255, .92); }
-.sr-deck .sr-slide-dark.dense .sr-bf-list, .sr-deck .sr-slide-dark.xdense .sr-bf-list { gap: 16px; }
-.sr-deck .sr-slide-dark.dense .sr-bf-i p { font-size: 26px; }
-.sr-deck .sr-slide-dark.dense .sr-bf-rec { font-size: 24px; }
-.sr-deck .sr-slide-dark.xdense .sr-bf-i p { font-size: 24px; }
-.sr-deck .sr-slide-dark.xdense .sr-bf-rec { padding: 18px 22px; font-size: 22px; }
+.sr-deck .sr-bf-list { display: flex; flex-direction: column; gap: 30px; }
+.sr-deck .sr-bf-i { display: flex; align-items: flex-start; gap: 28px; }
+.sr-deck .sr-bf-ic { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--sun-t); color: var(--sun-d); }
+.sr-deck .sr-bf-ic svg { width: 30px; height: 30px; }
+.sr-deck .sr-bf-i p { margin: 0; padding-top: 5px; font: 400 38px/1.35 var(--ui); color: var(--ink); }
+.sr-deck .sr-bf-h { display: flex; align-items: center; gap: 14px; margin: 4px 0 22px; font: 600 30px/1.2 var(--ui); color: var(--ink); }
+.sr-deck .sr-bf-h::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--sun); }
+.sr-deck .sr-bf-rec {
+  margin: 0 0 18px; padding: 28px 32px; border-radius: 26px; background: var(--glass-hi); box-shadow: inset 0 0 0 1px var(--edge), var(--lift);
+  font: 400 33px/1.35 var(--ui); color: var(--ink);
+}
+.sr-deck .sr-slide-brief.dense .sr-bf-list { gap: 22px; }
+.sr-deck .sr-slide-brief.dense .sr-bf-ic { width: 56px; height: 56px; }
+.sr-deck .sr-slide-brief.dense .sr-bf-i p { font-size: 33px; }
+.sr-deck .sr-slide-brief.dense .sr-bf-rec { padding: 24px 28px; font-size: 29px; }
+.sr-deck .sr-slide-brief.xdense .sr-bf-list { gap: 16px; }
+.sr-deck .sr-slide-brief.xdense .sr-bf-ic { width: 50px; height: 50px; }
+.sr-deck .sr-slide-brief.xdense .sr-bf-i p { font-size: 29px; }
+.sr-deck .sr-slide-brief.xdense .sr-bf-rec { padding: 20px 24px; font-size: 26px; }
 
 /* ---- presenter controls: outside the stage, in screen pixels */
 .sr-deck .sr-deck-bar {

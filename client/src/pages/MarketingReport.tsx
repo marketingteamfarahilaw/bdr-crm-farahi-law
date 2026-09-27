@@ -418,11 +418,6 @@ function Report({ data, from, to, group, onDrill }: {
             group={group} avg={avg} onDrill={onDrill} caseFacts={data.caseFacts} />
           {/* Why leads didn't sign is an intake case fact: the server sends it only to those who may see it. */}
           {data.why && <WhyNotSigned why={data.why} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} />}
-          {/* The rejected cases by name, with the reason: an intake case fact too. */}
-          {data.caseFacts && <Rejected from={from} to={to} group={group} count={data.totals.rejected} />}
-          <Routes routes={data.routes} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} caseFacts={data.caseFacts} />
-          <CaseTypes data={data} group={group} onDrill={onDrill} />
-          <Campaigns data={data} onDrill={onDrill} />
         </div>
 
         <aside>
@@ -457,6 +452,13 @@ function Report({ data, from, to, group, onDrill }: {
           </div>
         </aside>
       </div>
+
+      {/* Below the side column, full width: the wide tables get the whole page. */}
+      {/* The rejected cases by name, with the reason: an intake case fact too. */}
+      {data.caseFacts && <Rejected from={from} to={to} group={group} count={data.totals.rejected} />}
+      <Routes routes={data.routes} avg={avg} loadingMonths={loadingMonths} onDrill={onDrill} caseFacts={data.caseFacts} />
+      <CaseTypes data={data} group={group} onDrill={onDrill} />
+      <Campaigns data={data} onDrill={onDrill} />
 
       <SpendEditor months={data.months} group={group} rows={data.sources} unmatched={data.spendUnmatched} />
       <LeadList from={from} to={to} rows={data.sources} noun={noun} />
