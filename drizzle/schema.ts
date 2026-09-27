@@ -1247,6 +1247,31 @@ export const dataCheckDismissals = mysqlTable("data_check_dismissals", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (t) => ({ kindItem: uniqueIndex("data_check_kind_item").on(t.kind, t.itemKey) }));
 
+/**
+ * Recorded RingCentral calls whose recap (transcript + AI summary) couldn't be
+ * written when the call was synced — transcription down, OpenAI out of credit —
+ * retried by the sync loop until they succeed (server/rcSync.ts). Before this, a
+ * failed call was never tried again: recaps silently stopped on 2026-09-15 when
+ * OpenAI's credit ran out.
+ */
+export const callRecapQueue = mysqlTable("call_recap_queue", {
+  rcCallId: varchar("rcCallId", { length: 64 }).primaryKey(),   // contact_logs.rcCallId
+  facilityId: int("facilityId").notNull(),
+  // Whose RingCentral connection can fetch the recording, and who the recap is credited to.
+  repId: int("repId"),
+  repName: varchar("repName", { length: 255 }),
+  callDate: timestamp("callDate").notNull(),
+  recordingUri: varchar("recordingUri", { length: 500 }).notNull(),
+  durationSecs: int("durationSecs").default(0).notNull(),
+  direction: varchar("direction", { length: 20 }),
+  callResult: varchar("callResult", { length: 20 }),
+  attempts: int("attempts").default(0).notNull(),
+  lastError: varchar("lastError", { length: 500 }),
+  nextAttemptAt: timestamp("nextAttemptAt").defaultNow().notNull(),
+  doneAt: timestamp("doneAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const facilityLogos = mysqlTable("facility_logos", {
   facilityId: int("facilityId").primaryKey(),
   website: varchar("website", { length: 500 }),

@@ -11,7 +11,7 @@
  * module never imports the token logic — keeps it free of circular deps.
  */
 import axios from "axios";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, lte } from "drizzle-orm";
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { invokeLLM } from "./_core/llm";
@@ -21,7 +21,7 @@ import { claude, CLAUDE_MODEL } from "./_core/claude";
 import { createContactLog, createFacilityUpdate, createTask, getExistingRcCallIds, getExistingRcSessionIds, recordUnmatchedCall } from "./crmDb";
 import { sendCallRecapToWebhook } from "./filevineHook";
 import { getDb } from "./db";
-import { facilities, facilityTasks } from "../drizzle/schema";
+import { callRecapQueue, contactLogs, facilities, facilityTasks, facilityUpdates } from "../drizzle/schema";
 
 const RC_BASE = "https://platform.ringcentral.com";
 
@@ -444,72 +444,230 @@ export async function syncRecentCalls(
     if (sessionId) existingSessions.add(sessionId); // and a duplicate session (other extension) later in THIS batch
     result.logged++;
 
-    // Transcribe + summarize recorded, connected calls.
+    // Transcribe + summarize recorded, connected calls. One that can't be done
+    // now (transcription down, out of credit) is queued and retried.
     const recordingUrl: string | null = r.recording?.contentUri ?? null;
     if (transcribe && recordingUrl && durationSecs > 0) {
-      try {
-        const authedUrl = `${recordingUrl}?access_token=${accessToken}`;
-        const tr = await transcribeAudio({ audioUrl: authedUrl });
-        if (!("error" in tr) && tr.text) {
-          const transcriptText = tr.text;
-          const analysis = await analyzeCallTranscript(transcriptText, callDate);
-          // Visit arranged on the call → put it on the books automatically.
-          try {
-            await maybeCreateVisitFromCall(facility, analysis, callDate, attribution?.repName ?? r.from?.name ?? facility.assignedRepName ?? null);
-          } catch (e: any) {
-            console.warn(`[rcSync] auto-visit creation failed for call ${id}:`, e?.message ?? e);
-          }
-          await createFacilityUpdate({
-            facilityId: facility.id,
-            updateDate: callDate,
-            rawText: transcriptText,
-            summary: analysis.summary || transcriptText.slice(0, 300),
-            updateType: "transcript",
-            repId: attribution?.repId ?? facility.assignedRepId ?? undefined,
-            repName: attribution?.repName ?? facility.assignedRepName ?? undefined,
-            extractedData: Object.keys(analysis.extractedData).length > 0 ? analysis.extractedData : null,
-          });
-          for (const task of analysis.followUpTasks) {
-            const dueDate = new Date(callDate);
-            dueDate.setDate(dueDate.getDate() + (task.dueInDays ?? 7));
-            await createTask({
-              facilityId: facility.id,
-              title: task.title,
-              description: `Auto-created from a synced call on ${callDate.toLocaleDateString()}`,
-              dueDate,
-              priority: task.priority,
-              assignedToId: attribution?.repId ?? facility.assignedRepId ?? undefined,
-              assignedToName: attribution?.repName ?? facility.assignedRepName ?? undefined,
-              status: "open",
-            });
-          }
-          // Push the finished recap out to Filevine (via the Zapier/n8n webhook).
-          await sendCallRecapToWebhook({
-            event: "call_recap",
-            facilityId: facility.id,
-            facilityName: facility.name,
-            agent: attribution?.repName ?? facility.assignedRepName ?? r.from?.name ?? null,
-            callTime: callDate.toISOString(),
-            callTimeLocal: callDate.toLocaleString(),
-            durationStr,
-            durationSeconds: durationSecs,
-            callResult,
-            direction: r.direction ?? null,
-            summary: analysis.summary || transcriptText.slice(0, 300),
-            keyPoints: (analysis.extractedData.keyPoints as string[]) ?? [],
-            sentiment: (analysis.extractedData.sentiment as string) ?? null,
-            interestLevel: (analysis.extractedData.interestLevel as string) ?? null,
-            tasks: analysis.followUpTasks,
-            transcript: transcriptText,
-            source: "bdcrm",
-          });
-          result.transcribed++;
-        }
-      } catch (e: any) {
-        console.warn(`[rcSync] transcription failed for call ${id}:`, e?.response?.status ?? e?.message ?? e);
-      }
+      const call: RecapCall = {
+        rcCallId: id, facility, callDate, recordingUri: recordingUrl, durationSecs, callResult,
+        direction: r.direction ?? null,
+        repId: attribution?.repId ?? facility.assignedRepId ?? null,
+        repName: attribution?.repName ?? facility.assignedRepName ?? null,
+        visitBy: attribution?.repName ?? r.from?.name ?? facility.assignedRepName ?? null,
+        agent: attribution?.repName ?? facility.assignedRepName ?? r.from?.name ?? null,
+      };
+      const done = await recapCall(call, accessToken, { fresh: true });
+      if (done.ok) result.transcribed++;
+      else await queueRecap(call, done);
     }
   }
 
   return result;
+}
+
+// ─── recaps: write one, and retry the ones that failed ───────────────────────
+
+type RecapCall = {
+  rcCallId: string;
+  facility: { id: number; name: string; assignedRepId?: number | null; assignedRepName?: string | null };
+  callDate: Date;
+  recordingUri: string;
+  durationSecs: number;
+  callResult: string;
+  direction: string | null;
+  /** Credited with the recap and its tasks; their RingCentral fetches the recording on a retry. */
+  repId: number | null;
+  repName: string | null;
+  /** Who goes on an arranged visit, and the agent named in the Filevine recap. */
+  visitBy?: string | null;
+  agent?: string | null;
+};
+type RecapResult = { ok: true } | { ok: false; error: string; outOfCredit: boolean };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const RETRY_MS = 30 * 60 * 1000;
+const MAX_ATTEMPTS = 6;
+
+/**
+ * Transcribe a recorded call and write its recap to the partner — the "Recap"
+ * the reports and the AI performance review read. fresh (a call from the last
+ * day) also creates its follow-up tasks and an arranged visit and sends the
+ * recap to Filevine; an older call (a retry, a backfill) gets only its recap —
+ * two-week-old tasks would just be noise.
+ */
+async function recapCall(call: RecapCall, accessToken: string, opts: { fresh: boolean }): Promise<RecapResult> {
+  const { facility, callDate } = call;
+  const durationStr = `${Math.floor(call.durationSecs / 60)}:${(call.durationSecs % 60).toString().padStart(2, "0")}`;
+  try {
+    const tr = await transcribeAudio({ audioUrl: `${call.recordingUri}?access_token=${accessToken}` });
+    if ("error" in tr || !tr.text) {
+      const error = ("error" in tr ? `${tr.error}${tr.details ? `: ${tr.details}` : ""}` : "empty transcript").slice(0, 500);
+      return { ok: false, error, outOfCredit: /insufficient_quota|\b429\b/.test(error) };
+    }
+    const transcriptText = tr.text;
+    const analysis = await analyzeCallTranscript(transcriptText, callDate);
+    if (opts.fresh) {
+      // Visit arranged on the call → put it on the books automatically.
+      try {
+        await maybeCreateVisitFromCall(facility, analysis, callDate, call.visitBy ?? call.repName ?? null);
+      } catch (e: any) {
+        console.warn(`[rcSync] auto-visit creation failed for call ${call.rcCallId}:`, e?.message ?? e);
+      }
+    }
+    await createFacilityUpdate({
+      facilityId: facility.id,
+      updateDate: callDate,
+      rawText: transcriptText,
+      summary: analysis.summary || transcriptText.slice(0, 300),
+      updateType: "transcript",
+      repId: call.repId ?? undefined,
+      repName: call.repName ?? undefined,
+      extractedData: Object.keys(analysis.extractedData).length > 0 ? analysis.extractedData : null,
+    });
+    if (!opts.fresh) return { ok: true };
+    for (const task of analysis.followUpTasks) {
+      const dueDate = new Date(callDate);
+      dueDate.setDate(dueDate.getDate() + (task.dueInDays ?? 7));
+      await createTask({
+        facilityId: facility.id,
+        title: task.title,
+        description: `Auto-created from a synced call on ${callDate.toLocaleDateString()}`,
+        dueDate,
+        priority: task.priority,
+        assignedToId: call.repId ?? undefined,
+        assignedToName: call.repName ?? undefined,
+        status: "open",
+      });
+    }
+    // Push the finished recap out to Filevine (via the Zapier/n8n webhook).
+    await sendCallRecapToWebhook({
+      event: "call_recap",
+      facilityId: facility.id,
+      facilityName: facility.name,
+      agent: call.agent ?? call.repName ?? null,
+      callTime: callDate.toISOString(),
+      callTimeLocal: callDate.toLocaleString(),
+      durationStr,
+      durationSeconds: call.durationSecs,
+      callResult: call.callResult,
+      direction: call.direction,
+      summary: analysis.summary || transcriptText.slice(0, 300),
+      keyPoints: (analysis.extractedData.keyPoints as string[]) ?? [],
+      sentiment: (analysis.extractedData.sentiment as string) ?? null,
+      interestLevel: (analysis.extractedData.interestLevel as string) ?? null,
+      tasks: analysis.followUpTasks,
+      transcript: transcriptText,
+      source: "bdcrm",
+    });
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: String(e?.response?.status ?? e?.message ?? e).slice(0, 500), outOfCredit: false };
+  }
+}
+
+/** A recap that failed, for retryQueuedRecaps. Running out of credit doesn't use up an attempt. */
+async function queueRecap(call: RecapCall, failure: { error: string; outOfCredit: boolean }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(callRecapQueue).values({
+    rcCallId: call.rcCallId, facilityId: call.facility.id, repId: call.repId, repName: call.repName,
+    callDate: call.callDate, recordingUri: call.recordingUri.slice(0, 500), durationSecs: call.durationSecs,
+    direction: call.direction, callResult: call.callResult,
+    attempts: failure.outOfCredit ? 0 : 1, lastError: failure.error, nextAttemptAt: new Date(Date.now() + RETRY_MS),
+  }).onDuplicateKeyUpdate({ set: { lastError: failure.error } });
+  console.warn(`[rcSync] recap for call ${call.rcCallId} queued for retry: ${failure.error.slice(0, 160)}`);
+}
+
+let retriesPausedUntil = 0;
+
+/**
+ * Retry a few queued recaps (newest calls first); the sync loop calls this each
+ * round. The transcription service out of credit pauses all retries for half
+ * an hour, without counting against the calls; other failures back off, and a
+ * call is given up after six tries (a deleted recording, a file too large).
+ */
+export async function retryQueuedRecaps(tokenFor: (userId: number) => Promise<string | null>, limit = 3) {
+  if (Date.now() < retriesPausedUntil) return { done: 0, failed: 0, paused: true };
+  const db = await getDb();
+  if (!db) return { done: 0, failed: 0, paused: false };
+  const due = await db.select().from(callRecapQueue)
+    .where(and(isNull(callRecapQueue.doneAt), lt(callRecapQueue.attempts, MAX_ATTEMPTS), lte(callRecapQueue.nextAttemptAt, new Date())))
+    .orderBy(desc(callRecapQueue.callDate))
+    .limit(limit);
+  let done = 0, failed = 0;
+  for (const q of due) {
+    const mark = (set: Partial<typeof callRecapQueue.$inferInsert>) => db.update(callRecapQueue).set(set).where(eq(callRecapQueue.rcCallId, q.rcCallId));
+    const [facility] = await db.select({ id: facilities.id, name: facilities.name, assignedRepId: facilities.assignedRepId, assignedRepName: facilities.assignedRepName })
+      .from(facilities).where(eq(facilities.id, q.facilityId)).limit(1);
+    if (!facility) { await mark({ doneAt: new Date(), lastError: "the partner was deleted" }); continue; }
+    // Written meanwhile (never twice).
+    const [recap] = await db.select({ id: facilityUpdates.id }).from(facilityUpdates)
+      .where(and(eq(facilityUpdates.facilityId, q.facilityId), eq(facilityUpdates.updateType, "transcript"), eq(facilityUpdates.updateDate, q.callDate))).limit(1);
+    if (recap) { await mark({ doneAt: new Date() }); continue; }
+    const token = q.repId ? await tokenFor(q.repId) : null;
+    if (!token) { await mark({ nextAttemptAt: new Date(Date.now() + 2 * RETRY_MS), lastError: "the rep's RingCentral isn't connected" }); continue; }
+
+    const res = await recapCall({
+      rcCallId: q.rcCallId, facility, callDate: q.callDate, recordingUri: q.recordingUri, durationSecs: q.durationSecs,
+      callResult: q.callResult ?? "other", direction: q.direction, repId: q.repId, repName: q.repName,
+    }, token, { fresh: Date.now() - q.callDate.getTime() < DAY_MS });
+    if (res.ok) { await mark({ doneAt: new Date(), lastError: null }); done++; continue; }
+    if (res.outOfCredit) {
+      retriesPausedUntil = Date.now() + RETRY_MS;
+      await mark({ lastError: res.error });
+      console.warn("[rcSync] recap retries paused for 30 min: the transcription service is out of credit.");
+      break;
+    }
+    failed++;
+    const attempts = q.attempts + 1;
+    await mark({ attempts, lastError: res.error, nextAttemptAt: new Date(Date.now() + attempts * RETRY_MS) });
+  }
+  return { done, failed, paused: Date.now() < retriesPausedUntil };
+}
+
+/**
+ * Queue every recorded call since a date that was logged to a partner but has
+ * no recap — for a stretch when recaps failed and nothing retried them (from
+ * 2026-09-15, when OpenAI's credit ran out). Reads each connected rep's
+ * RingCentral call log. Runs inside the sync loop: the app owns the tokens, and
+ * refreshing one from anywhere else can disconnect the rep. Safe to run twice.
+ */
+export async function seedMissedRecaps(users: { userId: number }[], tokenFor: (userId: number) => Promise<string | null>, since: Date) {
+  const db = await getDb();
+  if (!db) return 0;
+  let queued = 0;
+  for (const u of users) {
+    const token = await tokenFor(u.userId);
+    if (!token) continue;
+    for (let page = 1; page <= 20; page++) {
+      const resp = await axios.get(`${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { dateFrom: since.toISOString(), perPage: 250, page, view: "Detailed" },
+      });
+      const records: any[] = resp.data?.records ?? [];
+      for (const r of records) {
+        const uri: string | null = r.recording?.contentUri ?? null;
+        if (!uri || !(r.duration > 0)) continue;
+        const [log] = await db.select({
+          facilityId: contactLogs.facilityId, contactDate: contactLogs.contactDate, repId: contactLogs.repId, repName: contactLogs.repName,
+          callResult: contactLogs.callResult, direction: contactLogs.direction,
+        }).from(contactLogs).where(eq(contactLogs.rcCallId, String(r.id))).limit(1);
+        if (!log?.facilityId || !log.contactDate) continue;   // not logged to a partner
+        const [recap] = await db.select({ id: facilityUpdates.id }).from(facilityUpdates)
+          .where(and(eq(facilityUpdates.facilityId, log.facilityId), eq(facilityUpdates.updateType, "transcript"), eq(facilityUpdates.updateDate, log.contactDate))).limit(1);
+        if (recap) continue;
+        const res = await db.insert(callRecapQueue).values({
+          rcCallId: String(r.id), facilityId: log.facilityId,
+          // The recording is on this rep's extension, so their RingCentral fetches it.
+          repId: u.userId, repName: log.repName ?? null,
+          callDate: log.contactDate, recordingUri: uri.slice(0, 500), durationSecs: r.duration ?? 0,
+          direction: log.direction ?? r.direction ?? null, callResult: log.callResult ?? null,
+          attempts: 0, lastError: null, nextAttemptAt: new Date(),
+        }).onDuplicateKeyUpdate({ set: { recordingUri: uri.slice(0, 500) } });
+        if ((res as any)?.[0]?.affectedRows === 1) queued++;
+      }
+      if (records.length < 250) break;
+    }
+  }
+  return queued;
 }

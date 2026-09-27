@@ -15,11 +15,11 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getValidRCToken, getValidRCTokenForUser } from "../crmRouter";
-import { syncRecentCalls } from "../rcSync";
+import { retryQueuedRecaps, seedMissedRecaps, syncRecentCalls } from "../rcSync";
 import { syncRcMeetings } from "../rcMeetingSync";
 import { syncIntakeCalls } from "../intakeSync";
 import { listConnectedRcUsers, setUserRcLastSync } from "../crmDb";
-import { getSetting } from "../db";
+import { getSetting, setSetting } from "../db";
 import { isIntakeOnly } from "@shared/permissions";
 import { runDueJobs } from "../dataSync";
 import { syncRepPhotosIfDue } from "../repPhotos";
@@ -180,6 +180,27 @@ function startRingCentralAutoSync() {
           }
         } catch (e: any) {
           console.warn(`[rcSync] per-agent sync failed for user ${u.userId}:`, e?.response?.status ?? e?.message ?? e);
+        }
+      }
+
+      // 1b) Recaps that failed when their call was synced (transcription down,
+      //     out of credit) — a few each round. And, once, every call in a stretch
+      //     when nothing retried them: app_settings recap_backfill_since (an ISO
+      //     date) queues them, then clears itself.
+      if (connected.length) {
+        const tokenFor = (userId: number) => getValidRCTokenForUser(userId);
+        try {
+          const since = await getSetting("recap_backfill_since");
+          if (since) {
+            const reps = connected.filter((u) => !isIntakeOnly(u.userRole)).map((u) => ({ userId: u.userId }));
+            const queued = await seedMissedRecaps(reps, tokenFor, new Date(since));
+            await setSetting("recap_backfill_since", null);
+            console.log(`[rcSync] queued ${queued} call(s) since ${since} that had no recap.`);
+          }
+          const r = await retryQueuedRecaps(tokenFor, 3);
+          if (r.done || r.failed) console.log(`[rcSync] recap retries: ${r.done} written, ${r.failed} failed.`);
+        } catch (e: any) {
+          console.warn("[rcSync] recap retries failed:", e?.response?.status ?? e?.message ?? e);
         }
       }
 
