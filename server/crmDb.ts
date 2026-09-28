@@ -432,10 +432,25 @@ export async function listFacilityUpdates(facilityId: number) {
     .orderBy(desc(facilityUpdates.updateDate));
 }
 
+/** Text cut to fit a column — at a word, with an ellipsis — measured in bytes, as MySQL measures TEXT. */
+function fitBytes(s: string, maxBytes: number) {
+  if (Buffer.byteLength(s, "utf8") <= maxBytes) return s;
+  let cut = Buffer.from(s, "utf8").subarray(0, maxBytes - 3).toString("utf8").replace(/\uFFFD+$/, "");
+  const space = cut.lastIndexOf(" ");
+  if (space > cut.length * 0.8) cut = cut.slice(0, space);
+  return `${cut}…`;
+}
+
 export async function createFacilityUpdate(data: InsertFacilityUpdate) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  await db.insert(facilityUpdates).values(data);
+  // A summary past the column (2,000 characters) or a transcript past TEXT's 64 KB
+  // made the whole recap fail to save (Sept 2026); cut them instead.
+  await db.insert(facilityUpdates).values({
+    ...data,
+    summary: data.summary == null ? data.summary : data.summary.length > 2000 ? `${data.summary.slice(0, 1997).replace(/\s+\S*$/, "")}…` : data.summary,
+    rawText: data.rawText == null ? data.rawText : fitBytes(data.rawText, 65_000),
+  });
 }
 
 export async function deleteFacilityUpdate(id: number) {

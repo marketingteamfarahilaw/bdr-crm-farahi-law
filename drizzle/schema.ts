@@ -432,7 +432,7 @@ export const facilityUpdates = mysqlTable("facility_updates", {
   // Raw input from user (transcript, SMS, or manual note)
   rawText: text("rawText"),
   // AI-generated or manually written short summary (shown at top of activity file)
-  summary: varchar("summary", { length: 500 }),
+  summary: varchar("summary", { length: 2000 }),
   // Structured data extracted from the transcript
   extractedData: json("extractedData"), // { contactPerson, leadDirection, clientArea, promisedAction, followUpDate, relationshipTone, signedCaseStatus }
   updateType: mysqlEnum("updateType", ["transcript", "sms", "manual_note", "visit_note", "other"])
