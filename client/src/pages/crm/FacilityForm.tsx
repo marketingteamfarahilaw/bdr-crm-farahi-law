@@ -29,7 +29,7 @@ const STATUSES = [
   { value: "do_not_use", label: "Do Not Use" },
 ];
 
-const FR_REPS = ["Genysys", "Jezel", "Lupe", "Zulema"];
+const FR_REPS = ["Genysys", "Jezel", "Lupe", "Marisol", "Zulema"];
 const BDR_REPS = ["Ally", "Grace", "Malvin", "Queenie", "Miguel"];
 const BD_REPS = [...BDR_REPS, ...FR_REPS].sort();
 

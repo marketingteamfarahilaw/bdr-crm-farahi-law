@@ -6,7 +6,7 @@ import { AddressAutocompleteInput } from "@/components/AddressAutocompleteInput"
 // Option lists — mirror the team's Excel data-validation.
 export const LEAD_ROLES = ["FR", "BDR"];
 export const ROLE_MEMBERS: Record<string, string[]> = {
-  FR: ["Jezel", "Lupe", "Zulema", "Genysys"],
+  FR: ["Jezel", "Lupe", "Zulema", "Genysys", "Marisol"],
   BDR: ["Grace", "Queenie", "Ally", "Miguel"],
 };
 export const ALL_MEMBERS = [...ROLE_MEMBERS.FR, ...ROLE_MEMBERS.BDR];

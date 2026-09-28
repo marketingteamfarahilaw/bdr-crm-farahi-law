@@ -24,7 +24,7 @@ export const repNameKey = (s: unknown) =>
 // In the order the team's own scorecard sheet lists them.
 export const CURRENT_TEAM: Record<TeamRole, readonly string[]> = {
   BDR: ["Queenie Miranda", "Grace Lanayon", "Ally Maceda", "Miguel Flores"],
-  FR: ["Lupe Campos", "Jezel Mercado", "Zulema Salas", "Genysys Sanchez"],
+  FR: ["Lupe Campos", "Jezel Mercado", "Zulema Salas", "Genysys Sanchez", "Marisol Lopez"],
   Intake: ["Malvin Rosales"],
 };
 

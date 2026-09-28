@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Map, Search, UserCheck, Pencil, Merge, Wand2, Building2, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 
-const FR_REPS = ["Genysys", "Jezel", "Lupe", "Zulema"];
+const FR_REPS = ["Genysys", "Jezel", "Lupe", "Marisol", "Zulema"];
 const BDR_REPS = ["Ally", "Grace", "Malvin", "Queenie", "Miguel"];
 
 export default function Territories() {
