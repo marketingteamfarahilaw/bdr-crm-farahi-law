@@ -784,7 +784,7 @@ function Scorecard({ sc, label, onRep }: { sc: ReportData["scorecard"]; label: s
       <p className="sr-sub" style={{ margin: "2px 4px 18px" }}>
         From Lead Docket. Each lead counts once, in the column for where it ended up — so the columns add up to Total Leads.
         Lost counts as Rejected. Referred Out = referred to another firm without signing; Signed Referred Out = signed first,
-        then referred. Sign-up Unique Count = different referring partners behind the sign-ups.{" "}
+        then referred. Sign-up Unique Count = different accidents behind the sign-ups: a driver and passengers Lead Docket links are one case.{" "}
         {sc.prorated
           ? `Targets: FR 20, BDR 5 a month per rep, prorated to these ${sc.prorated.days} days (FR ${Math.round(20 * sc.prorated.share * 10) / 10}, BDR ${Math.round(5 * sc.prorated.share * 10) / 10} each).`
           : `Targets: FR ${20 * sc.months}, BDR ${5 * sc.months} a month per rep${sc.months > 1 ? ` (× ${sc.months} months)` : ""}.`}

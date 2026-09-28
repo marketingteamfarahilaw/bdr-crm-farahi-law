@@ -256,6 +256,11 @@ async function store(d) {
       externalId: String(d.Id),
       externalSource: "leaddocket",
       marketingSource: source.slice(0, 255) || null,
+      // The accident, and the leads intake linked to it (driver, passengers…):
+      // the Sign-ups Report counts them as one case.
+      incidentDate: pacificYmd(ldInstant(d.IncidentDate)),
+      relatedLeadIds: [...new Set((d.RelatedContacts ?? []).map((r) => String(r?.PromotedLeadId ?? "")).filter((id) => id && id !== String(d.Id)))]
+        .join(",").slice(0, 500) || null,
     };
     const [ex] = await c.query("SELECT id FROM lead_intake WHERE externalId=? LIMIT 1", [String(d.Id)]);
     if (ex.length) {

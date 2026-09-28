@@ -78,6 +78,38 @@ export const scorecardBucket = (outcome: unknown): ScoreBucket => {
   return "open";
 };
 
+/**
+ * Which accident each lead belongs to, as one key per lead: the scorecard's
+ * "Sign-up Unique Count" is the number of different keys among a rep's
+ * sign-ups (Miguel, 2026-09-28: "1 driver 1 passenger is 1 case"). Leads are
+ * one accident when Lead Docket links them — intake adds the passengers to the
+ * driver's lead as related contacts, so two passengers join through the driver
+ * even when the driver's own lead isn't in view — or when they share the
+ * accident's day and a phone number.
+ */
+export function accidentKeys(leads: { id: number; externalId: string | null; relatedLeadIds: string | null; incidentDate: string | null; phone: string | null }[]) {
+  const parent = new Map<string, string>();
+  const find = (k: string): string => {
+    const p = parent.get(k);
+    if (!p || p === k) return k;
+    const root = find(p);
+    parent.set(k, root);
+    return root;
+  };
+  const join = (a: string, b: string) => {
+    const ra = find(a), rb = find(b);
+    if (ra !== rb) parent.set(ra, rb);
+  };
+  const node = (l: (typeof leads)[number]) => (l.externalId ? `ld:${l.externalId}` : `row:${l.id}`);
+  for (const l of leads) {
+    const me = node(l);
+    for (const id of String(l.relatedLeadIds ?? "").split(",")) if (id.trim()) join(me, `ld:${id.trim()}`);
+    const phone = String(l.phone ?? "").replace(/\D/g, "").slice(-10);
+    if (l.incidentDate && phone.length >= 7) join(me, `accident:${l.incidentDate}|${phone}`);
+  }
+  return leads.map((l) => find(node(l)));
+}
+
 export type SignupsDashboard = Awaited<ReturnType<typeof getSignupsDashboard>>;
 
 export type SignupsFilter = {
@@ -145,6 +177,9 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     return bestScore >= 0.6 ? best : null;
   };
 
+  // Every lead in the range links accidents — a passenger credited to another rep still joins the driver.
+  const accidentOf = new Map(accidentKeys(all).map((k, i) => [all[i].id, k]));
+
   const typeCount = new Map<string, number>();
   const territoryCount = new Map<string, number>();
   const memberCount = new Map<string, number>();
@@ -173,7 +208,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   const caseStats = new Map<string, { name: string; leads: number; signed: number }>();
   // The team's scorecard: each lead lands in exactly one column, so the columns
   // add up to Total Leads, as in their sheet (see scorecardBucket).
-  type Score = Record<ScoreBucket, number> & { name: string; role: string; leads: number; partners: Set<number> };
+  type Score = Record<ScoreBucket, number> & { name: string; role: string; leads: number; accidents: Set<string> };
   const scoreStats = new Map<string, Score>();
 
   for (const l of leads) {
@@ -247,12 +282,12 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
 
     if (l.member) {
       const s = scoreStats.get(l.member) ?? {
-        name: l.member, role: l.role ?? "", leads: 0, partners: new Set<number>(),
+        name: l.member, role: l.role ?? "", leads: 0, accidents: new Set<string>(),
         open: 0, rejected: 0, referredOut: 0, notInterested: 0, signedReferred: 0, signedInHouse: 0,
       };
       s.leads++;
       s[scorecardBucket(l.outcome)]++;
-      if (isS && hit) s.partners.add(hit.id);
+      if (isS) s.accidents.add(accidentOf.get(l.id) ?? `row:${l.id}`);
       scoreStats.set(l.member, s);
     }
   }
@@ -355,7 +390,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
           return {
             name: s.name, current: isCurrentRep(s.name), leads: s.leads,
             open: s.open, rejected: s.rejected, referredOut: s.referredOut, notInterested: s.notInterested,
-            signedReferred: s.signedReferred, unique: s.partners.size, signedInHouse: s.signedInHouse, signed: signedN,
+            signedReferred: s.signedReferred, unique: s.accidents.size, signedInHouse: s.signedInHouse, signed: signedN,
             target, achieved: target ? pctOf(signedN, target) : null, conversion: pctOf(signedN, s.leads),
           };
         });

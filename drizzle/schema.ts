@@ -809,6 +809,12 @@ export const leadIntake = mysqlTable("lead_intake", {
   externalId: varchar("externalId", { length: 64 }),
   externalSource: varchar("externalSource", { length: 40 }),  // "leaddocket"
   marketingSource: varchar("marketingSource", { length: 255 }), // raw Lead Docket value — how the rep is credited
+  // Lead Docket's accident: its Pacific day (YYYY-MM-DD), and the other leads
+  // intake linked to it (RelatedContacts → PromotedLeadId, comma-separated Lead
+  // Docket ids). One accident's driver and passengers are one case in the
+  // Sign-ups Report's "Sign-up Unique Count".
+  incidentDate: varchar("incidentDate", { length: 10 }),
+  relatedLeadIds: varchar("relatedLeadIds", { length: 500 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
