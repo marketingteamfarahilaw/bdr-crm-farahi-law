@@ -29,10 +29,10 @@ export const CURRENT_TEAM: Record<TeamRole, readonly string[]> = {
 };
 
 /**
- * First day on the team, for someone who joined recently: their sign-up target
- * starts then, not on the 1st (Youssef, 2026-09-28: "Marisol is the new one").
- * Sept 23 is the date of her first supplies request — change it if she started
- * another day.
+ * First day on the team, for someone who joined recently: a report for dates
+ * before it has no row for them. Their target is everyone's (Youssef,
+ * 2026-09-28: "she have same target as the other"). Sept 23 is the date of
+ * Marisol's first supplies request — change it if she started another day.
  */
 export const STARTED: Readonly<Record<string, string>> = { "Marisol Lopez": "2026-09-23" };
 

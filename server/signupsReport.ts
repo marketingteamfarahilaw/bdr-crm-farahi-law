@@ -110,24 +110,6 @@ export function accidentKeys(leads: { id: number; externalId: string | null; rel
   return leads.map((l) => find(node(l)));
 }
 
-/**
- * How many months of target someone who joined during a range carries: none
- * before their first day. Whole months count each month from that day (a rep
- * starting Sept 23 carries 8/30 of September); a range that isn't whole months
- * counts its days, each 1/(days in its month), as everyone's target does.
- */
-export function targetMonthsFrom(start: string, days: string[], prorated: boolean) {
-  const daysIn = (d: string) => new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate();
-  if (prorated) return days.reduce((a, d) => a + (d >= start ? 1 / daysIn(d) : 0), 0);
-  return Array.from(new Set(days.map((d) => d.slice(0, 7)))).reduce((a, m) => {
-    const first = start.slice(0, 7);
-    if (first < m) return a + 1;
-    if (first > m) return a;
-    const n = daysIn(`${m}-01`);
-    return a + (n - Number(start.slice(8, 10)) + 1) / n;
-  }, 0);
-}
-
 export type SignupsDashboard = Awaited<ReturnType<typeof getSignupsDashboard>>;
 
 export type SignupsFilter = {
@@ -389,11 +371,6 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   const prorated = days.length > 0 && !wholeMonths;
   const targetMonths = prorated ? days.reduce((a, d) => a + 1 / daysIn(d), 0) : monthsInRange;
   const pctOf = (a: number, b: number) => (b ? Math.round((a / b) * 10000) / 100 : null);
-  /** A rep's months of target: everyone's, or from their first day for someone who joined during the range. */
-  const repTargetMonths = (name: string) => {
-    const start = STARTED[name];
-    return start && days.length && start > days[0] ? targetMonthsFrom(start, days, prorated) : targetMonths;
-  };
   // Every current rep has a row, even with no leads yet, as the team's own
   // sheet lists them (Youssef, 2026-09-28: Marisol, the new hire, at 0) — but
   // not in a range that ends before they started.
@@ -423,7 +400,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
         .sort((a, b) => order(role, a.name) - order(role, b.name) || a.name.localeCompare(b.name))
         .map((s) => {
           const signedN = s.signedReferred + s.signedInHouse;
-          const target = perRepTarget ? Math.round(perRepTarget * repTargetMonths(s.name) * 10) / 10 : null;
+          const target = perRepTarget ? Math.round(perRepTarget * targetMonths * 10) / 10 : null;
           return {
             name: s.name, current: isCurrentRep(s.name), leads: s.leads,
             open: s.open, rejected: s.rejected, referredOut: s.referredOut, notInterested: s.notInterested,

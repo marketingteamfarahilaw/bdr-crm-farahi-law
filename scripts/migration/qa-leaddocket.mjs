@@ -17,7 +17,7 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
-import { creditedRep, outcomeFor, str } from "./leaddocket-rules.mjs";
+import { creditFor, outcomeFor, str } from "./leaddocket-rules.mjs";
 import { ldInstant, pacificYmd } from "./dates.mjs";
 
 const BASE = process.env.LEADDOCKET_BASE_URL || "https://farahi.leaddocket.com";
@@ -75,7 +75,7 @@ else {
       const raw = await r.json(); d = raw?.Data ?? raw;
     } catch { unreadable++; continue; }
 
-    const rep = creditedRep(str(d.MarketingSource));
+    const rep = creditFor(row.externalId, str(d.MarketingSource));
     const wantOutcome = outcomeFor(str(d.Status) || str(d.StatusName), d.SignedUpDate);
     const wantSud = pacificYmd(ldInstant(d.SignedUpDate));
     const diffs = [];

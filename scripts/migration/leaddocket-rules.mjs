@@ -95,6 +95,23 @@ export function creditedRep(marketingSource) {
 }
 
 /**
+ * Leads Lead Docket credits to the wrong rep, credited by hand: Lead Docket id →
+ * who. The real fix is the lead's Marketing Source in Lead Docket; this keeps
+ * the CRM right meanwhile and through every re-sync.
+ *   50304, 50339 — Jose Manuel Delgado: Marketing Source "BDR Miguel Flores",
+ *   but its details say "Field Representative Marisol Lopez" (Youssef,
+ *   2026-09-28: "the 2 of Miguel are the ones of Marisol").
+ */
+export const CREDIT_OVERRIDES = new Map([
+  ["50304", { role: "FR", member: "Marisol Lopez" }],
+  ["50339", { role: "FR", member: "Marisol Lopez" }],
+]);
+
+/** Who a Lead Docket lead is credited to: a hand override, else its Marketing Source. */
+export const creditFor = (leadId, marketingSource) =>
+  CREDIT_OVERRIDES.get(String(leadId)) ?? creditedRep(marketingSource);
+
+/**
  * A sign-up is an event, not a current state. A client signed in February whose
  * case later moves to Closed or Lost was still a February sign-up — reading the
  * CURRENT status instead made past months' sign-ups shrink as cases closed. So

@@ -36,7 +36,7 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
-import { creditedRep, outcomeFor, str } from "./leaddocket-rules.mjs";
+import { creditFor, outcomeFor, str } from "./leaddocket-rules.mjs";
 import { ldInstant, pacificYmd } from "./dates.mjs";
 
 const BASE = process.env.LEADDOCKET_BASE_URL || "https://farahi.leaddocket.com";
@@ -222,7 +222,7 @@ async function processLead(row) {
 
 async function store(d) {
     const source = str(d.MarketingSource);
-    const rep = creditedRep(source);
+    const rep = creditFor(d.Id, source);
     if (!rep) {
       skipped++;
       const key = source || "(no marketing source)";
@@ -283,7 +283,7 @@ async function storeMarketing(d, row) {
   const contact = d.Contact ?? {};
   const intake = d.Intake ?? {};
   const source = str(d.MarketingSource);
-  const rep = creditedRep(source);
+  const rep = creditFor(d.Id, source);
   const status = str(d.Status) || str(d.StatusName) || str(row.StatusName);
   const created = ldInstant(d.CreatedDate);
   const signedUp = ldInstant(d.SignedUpDate);
