@@ -452,3 +452,58 @@ table.sr-t tr.dc-sub:hover td { background: transparent; }
 .sr-add label { display: flex; flex-direction: column; gap: 6px; font: 600 12px var(--ui); color: var(--ink2); }
 .sr-add label i { font-weight: 400; font-style: normal; color: var(--mute); }
 .sr-add .sr-input { width: 100%; }
+
+/* ---- trends & forecast (signups/Trends.tsx): past sticks charcoal, the period
+   under way yellow, the forecast a dashed ghost, the team's target a dashed line */
+.sr-trends .sr-panel-h { flex-wrap: wrap; }
+.sr-tlegend { display: flex; flex-wrap: wrap; gap: 14px; font: 11.5px var(--ui); color: var(--mute); }
+.sr-tlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.sr-tlegend i { display: inline-block; width: 8px; height: 12px; border-radius: 99px; }
+.sr-tlegend i.act { background: var(--char); }
+.sr-tlegend i.now { background: var(--sun); }
+.sr-tlegend i.fc { border: 1px dashed var(--mute); }
+.sr-tlegend i.tgt { width: 16px; height: 0; border-radius: 0; border-top: 1px dashed var(--mute); }
+.sr-trend-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 10px; }
+.sr-tcard { display: flex; flex-direction: column; min-width: 0; padding: 16px 16px 12px; border: 1px solid var(--line); border-radius: var(--rad-m); background: var(--glass-hi); }
+.sr-tcard-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
+.sr-tcard-h h3 { margin: 0; font: 600 14px var(--ui); color: var(--ink); }
+.sr-tcard-tg { font: 500 11.5px var(--ui); color: var(--mute); }
+.sr-tcard .sr-kv { margin: 0 0 6px; }
+.sr-tcard .sr-kv .u b, .sr-tcmp b { color: var(--ink); font-weight: 600; }
+.sr-tcmp { margin: 0 0 10px; font: 12px/1.5 var(--ui); color: var(--mute); }
+.sr-tdelta { display: inline-flex; align-items: center; gap: 3px; height: 20px; padding: 0 7px; border-radius: 99px; background: rgba(28, 28, 28, .06); font: 600 11px var(--ui); color: var(--ink2); }
+.sr-tdelta.up { background: var(--ok-t); color: var(--ok); }
+.sr-tdelta.down { background: var(--bad-t); color: var(--bad); }
+.sr-tchart { position: relative; display: flex; align-items: flex-end; gap: 2px; height: 150px; margin-top: auto; padding-top: 12px; }
+.sr-tplot { position: absolute; left: 0; right: 0; top: 12px; bottom: 20px; pointer-events: none; }
+.sr-tline { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--mute); }
+.sr-tline span { position: absolute; right: 0; bottom: 2px; padding: 0 3px; border-radius: 4px; background: var(--glass-hi); font: 500 10px var(--ui); color: var(--mute); }
+.sr-tcol { position: relative; flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; outline: none; cursor: default; }
+.sr-tstick { position: relative; flex: 1; width: 100%; }
+.sr-tstick i { position: absolute; bottom: 0; left: 50%; width: 8px; margin-left: -4px; border-radius: 99px; }
+.sr-tstick i.act { background: var(--char); }
+.sr-tcol.current .sr-tstick i.act { background: var(--sun); }
+.sr-tstick i.fc { border: 1px dashed var(--mute2); background: transparent; }
+.sr-tcol:hover .sr-tstick i.act, .sr-tcol:focus-visible .sr-tstick i.act { box-shadow: 0 0 0 2px var(--sun-t); }
+.sr-tcol:focus-visible .sr-lab { color: var(--ink); }
+.sr-tcol .sr-lab { height: 14px; font-size: 10.5px; overflow: visible; }
+.sr-ttip {
+  position: absolute; top: 0; left: 50%; z-index: 5; width: max-content; max-width: 210px; transform: translate(-50%, -100%);
+  padding: 6px 9px; border-radius: 10px; background: var(--char); color: #fff; font: 500 11.5px/1.35 var(--ui);
+  opacity: 0; pointer-events: none; transition: opacity .12s ease;
+}
+.sr-tcol.l .sr-ttip { left: 0; transform: translate(0, -100%); }
+.sr-tcol.r .sr-ttip { left: auto; right: 0; transform: translate(0, -100%); }
+.sr-tcol:hover .sr-ttip, .sr-tcol:focus-visible .sr-ttip { opacity: 1; }
+.sr-tnums { margin-top: 10px; font: 12px var(--ui); color: var(--ink2); }
+.sr-tnums summary { cursor: pointer; font-weight: 500; color: var(--mute); }
+.sr-tnums table { width: 100%; margin-top: 8px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.sr-tnums th, .sr-tnums td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.sr-tnums th:first-child, .sr-tnums td:first-child { text-align: left; }
+.sr-tnums th { font-weight: 600; color: var(--mute); }
+.sr-tnums tr.current td { font-weight: 600; color: var(--ink); }
+.sr-tnums tr.next td { color: var(--mute); }
+@media (max-width: 1100px) { .sr-trend-grid { grid-template-columns: minmax(0, 1fr); } }
+.dark .sr .sr-tstick i.fc { border-color: rgba(255, 255, 255, .5); }
+.dark .sr .sr-tdelta { background: rgba(255, 255, 255, .08); }
+.dark .sr .sr-ttip { color: #1c1c19; }

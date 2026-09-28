@@ -107,6 +107,7 @@ const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
+import { getSignupsTrends } from "./signupsTrends";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
 import { getSystemHealth } from "./systemHealth";
 import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
@@ -906,6 +907,10 @@ export const appRouter = router({
       signupsDashboard: bdProcedure
         .input(range.extend({ role: z.enum(["BDR", "FR", "Intake"]).optional(), team: z.enum(["current", "all"]).optional() }))
         .query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupsDashboard(toRange(input), { role: input.role, team: input.team }); }),
+      // Sign-ups by week, month and year with a forecast — whatever the report's dates.
+      signupsTrends: bdProcedure
+        .input(z.object({ role: z.enum(["BDR", "FR", "Intake"]).optional(), team: z.enum(["current", "all"]).optional() }))
+        .query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupsTrends({ role: input.role, team: input.team }); }),
       // Pick a lead's referring partner by hand from the report's lead lists.
       partnerOptions: bdProcedure.query(async ({ ctx }) => { mgrOnly(ctx); return getPartnerOptions(); }),
       linkLeadPartner: bdProcedure

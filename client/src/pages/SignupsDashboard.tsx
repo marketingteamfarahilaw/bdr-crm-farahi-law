@@ -14,6 +14,7 @@ import type { DeckPlace, PresentationProps } from "./signups/Presentation";
 import "./SignupsDashboard.css";
 import { RepFace, PartnerLogo } from "@/components/RepFace";
 import { PartnerPicker } from "./signups/PartnerPicker";
+import { TrendsPanel } from "./signups/Trends";
 
 // The look lives in SignupsDashboard.css (the Voice Agents board style).
 
@@ -244,7 +245,7 @@ export default function SignupsDashboard() {
               {[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 270 }} />)}
             </div>
           ) : (
-            <Report data={data} from={from} to={to} />
+            <Report data={data} from={from} to={to} role={role} team={team} />
           )}
         </div>
       </div>
@@ -292,7 +293,7 @@ function HeroBottom({ data }: { data: ReportData }) {
   );
 }
 
-function Report({ data, from, to }: { data: ReportData; from: string; to: string }) {
+function Report({ data, from, to, role, team }: { data: ReportData; from: string; to: string; role: Role; team: Team }) {
   const partnersRef = useRef<HTMLDivElement>(null);
   // Clicking a rep (or one of their monthly numbers) opens the clients behind it.
   const [focus, setFocus] = useState<{ rep: string; role: string; month?: string } | null>(null);
@@ -323,6 +324,7 @@ function Report({ data, from, to }: { data: ReportData; from: string; to: string
   return (
     <>
       <Scorecard sc={data.scorecard} label={rangeLabel(from, to)} onRep={(rep, role) => setFocus({ rep, role })} />
+      <TrendsPanel role={role} team={team} />
 
       {/* Feature row */}
       <div className="sr-features">
