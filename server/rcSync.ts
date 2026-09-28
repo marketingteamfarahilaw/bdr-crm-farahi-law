@@ -389,9 +389,9 @@ export async function syncRecentCalls(
     if (sessionId) existingSessions.add(sessionId); // and a duplicate session (other extension) later in THIS batch
     result.logged++;
 
-    // Recorded, connected calls get a recap: RingCentral has their transcript
-    // (AI Notes, or RingSense) after the call, so each is queued and written by
-    // retryQueuedRecaps once it's there.
+    // Recorded, connected calls get a recap: each is queued and written by
+    // retryQueuedRecaps once its transcript is there (RingCentral's own, which
+    // can take a while after the call, else OpenAI's from the recording).
     const recordingUrl: string | null = r.recording?.contentUri ?? null;
     if (transcribe && recordingUrl && durationSecs > 0) {
       await enqueueRecap({
@@ -431,6 +431,8 @@ const RETRY_MS = 30 * MIN;
 const FIRST_TRY_MS = 10 * MIN;
 const MAX_ATTEMPTS = 8;
 const HOLD_MS = 60 * MIN;
+// Out of OpenAI credit: back soon after someone pays.
+const CREDIT_HOLD_MS = 15 * MIN;
 // When RingCentral last gave the CRM a transcript (ISO); three days covers a weekend without calls.
 const TRANSCRIPT_OK_KEY = "rc_transcript_last_ok_at";
 const QUIET_MS = 3 * DAY_MS;
@@ -529,11 +531,12 @@ export async function enqueueRecap(call: RecapCall, delayMs = FIRST_TRY_MS) {
 let hold: { until: number; reason: RecapHold; error: string } | null = null;
 /**
  * Recaps wait because of the whole account, not one call (System health):
+ * no_credit — OpenAI, transcribing the recordings, has no credit left;
  * app_permission — the CRM's RingCentral app may not read AI Notes;
  * no_permission — nobody connected may read RingSense's transcripts;
  * not_transcribing — RingCentral hasn't had a transcript for any call lately.
  */
-export type RecapHold = "app_permission" | "no_permission" | "not_transcribing";
+export type RecapHold = "no_credit" | "app_permission" | "no_permission" | "not_transcribing";
 export const recapsOnHold = () => (hold && Date.now() < hold.until ? { reason: hold.reason, error: hold.error } : null);
 
 /**
@@ -582,11 +585,12 @@ export async function retryQueuedRecaps(tokens: { userId: number; token: string 
       done++;
       continue;
     }
-    if (res.reason === "app_permission" || res.reason === "no_permission" || (res.reason === "not_ready" && !working)) {
+    if (res.reason === "no_credit" || res.reason === "app_permission" || res.reason === "no_permission" || (res.reason === "not_ready" && !working)) {
       const reason: RecapHold = res.reason === "not_ready" ? "not_transcribing" : res.reason;
-      hold = { until: Date.now() + HOLD_MS, reason, error: res.error };
+      const ms = reason === "no_credit" ? CREDIT_HOLD_MS : HOLD_MS;
+      hold = { until: Date.now() + ms, reason, error: res.error };
       await mark({ lastError: res.error });
-      console.warn(`[rcSync] recaps on hold for an hour: ${reason === "not_transcribing" ? "RingCentral hasn't had a transcript for any call in three days." : res.error}`);
+      console.warn(`[rcSync] recaps on hold for ${ms / MIN} min: ${reason === "not_transcribing" ? "RingCentral hasn't had a transcript for any call in three days." : res.error}`);
       break;
     }
     failed++;

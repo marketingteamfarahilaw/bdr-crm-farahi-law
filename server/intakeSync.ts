@@ -128,9 +128,9 @@ export async function routeAnalyzedTranscript(opts: {
 }
 
 /**
- * RingCentral's own transcript of one recorded call (AI Notes, or RingSense —
- * Youssef stopped using OpenAI's Whisper, 2026-09-27), then route it. Not ready
- * yet → false, and the sync asks again next round.
+ * The transcript of one recorded call (RingCentral's AI Notes or RingSense,
+ * else OpenAI's Whisper — server/_core/callTranscript.ts), then route it. Not
+ * ready yet → false, and the sync asks again next round.
  */
 export async function processRecordedCall(opts: {
   callId: number;

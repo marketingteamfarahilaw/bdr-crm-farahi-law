@@ -1013,7 +1013,7 @@ export const crmRouter = router({
         let transcriptSummary = "";
 
         if (recordingUrl) {
-          // RingCentral's own transcript (AI Notes, or RingSense), once it has one.
+          // RingCentral's own transcript (AI Notes, RingSense), else OpenAI's from the recording.
           const tr = await rcCallTranscript({ telephonySessionId, recordingUri: recordingUrl }, accessToken);
           if (tr.ok) {
             transcriptText = tr.text;

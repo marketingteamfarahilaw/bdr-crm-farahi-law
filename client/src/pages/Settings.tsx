@@ -181,7 +181,7 @@ function ClaudeCard() {
         )}
       </div>
       <p className="text-xs text-muted-foreground mb-4">
-        {s?.model ?? "Claude"} writes the CRM's AI: call recaps (from RingCentral's transcripts), the AI Performance Review, the
+        {s?.model ?? "Claude"} writes the CRM's AI: call recaps (from the calls' transcripts), the AI Performance Review, the
         Intake Desk analysis and the Daily Log. Without a key none of them run. Create a key at console.anthropic.com → API keys
         and paste it here — it's checked with Anthropic, stored encrypted, and never shown again.
       </p>

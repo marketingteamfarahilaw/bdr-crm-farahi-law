@@ -693,7 +693,7 @@ export const appRouter = router({
             );
             const recordingUrl: string | null = callResp.data?.recording?.contentUri ?? null;
             if (recordingUrl) {
-              // 4. RingCentral's own transcript (AI Notes, or RingSense), if it has one yet
+              // 4. RingCentral's own transcript (AI Notes, RingSense), else OpenAI's from the recording
               const tr = await rcCallTranscript({ telephonySessionId: callResp.data?.telephonySessionId, recordingUri: recordingUrl }, accessToken);
               if (tr.ok) transcriptText = tr.text;
             }

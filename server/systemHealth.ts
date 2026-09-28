@@ -67,7 +67,7 @@ export async function getSystemHealth(): Promise<{ checks: HealthCheck[]; worst:
           action: stale.length ? "Those reps reconnect in Settings → RingCentral (their sign-in may have expired)." : undefined,
         });
 
-    // Call recaps: RingCentral's transcript (AI Notes, or RingSense) + Claude's summary. Waiting ones are retried.
+    // Call recaps: the call's transcript (RingCentral's AI Notes or RingSense, else OpenAI's Whisper) + Claude's summary. Waiting ones are retried.
     const [q] = await db.select({ waiting: sql<number>`COUNT(*)` })
       .from(callRecapQueue).where(and(isNull(callRecapQueue.doneAt), lt(callRecapQueue.attempts, 8)));
     // Tried eight times over a day and RingCentral never had a transcript: usually a rep without the license.
@@ -92,7 +92,9 @@ export async function getSystemHealth(): Promise<{ checks: HealthCheck[]; worst:
             ? "RingCentral hasn't had a transcript for any of the reps' recent calls, so there's nothing to summarize."
             : hold.error} ${waiting} call${waiting === 1 ? "" : "s"} waiting, none dropped. ${week}`
         : waiting ? `${waiting} call${waiting === 1 ? "" : "s"} waiting for RingCentral's transcript. ${week}` : week,
-      action: hold?.reason === "app_permission"
+      action: hold?.reason === "no_credit"
+        ? "Add credit to OpenAI at platform.openai.com → Settings → Organization → Billing. Recaps restart by themselves within 15 minutes."
+        : hold?.reason === "app_permission"
         ? "RingCentral turns this on for the CRM's app: ask RingCentral developer support to enable \"ReadCopilotCallNotes\" (AI Notes) for it. If recaps haven't started an hour later, each rep reconnects RingCentral in Settings."
         : hold?.reason === "no_permission"
           ? "A RingCentral admin turns on \"AI Conversation Expert — Access Insights\" for one connected user's role (service.ringcentral.com → Users → Roles → Artificial Intelligence)."

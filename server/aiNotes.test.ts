@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { aiNotesTranscript, noteText } from "./_core/aiNotes";
 import { rcCallTranscript } from "./_core/callTranscript";
 
+// RingCentral's sources alone: no OpenAI key, so OpenAI never transcribes here (callTranscript.test.ts does that).
+vi.mock("./_core/env", () => ({ ENV: { forgeApiUrl: "", forgeApiKey: "" } }));
+
 // RingCentral's AI Notes — the transcript the team sees in the RingCentral app —
 // and the order the CRM asks RingCentral's two transcript sources in.
 const notes = {
