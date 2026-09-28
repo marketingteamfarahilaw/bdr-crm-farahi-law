@@ -46,7 +46,7 @@ export function TrendsPanel({ role, team }: { role: "all" | "BDR" | "FR" | "Inta
   );
 }
 
-export function TrendCard({ title, unit, v }: { title: string; unit: Unit; v: View }) {
+function TrendCard({ title, unit, v }: { title: string; unit: Unit; v: View }) {
   const delta = v.soFar - v.samePointBefore;
   const max = Math.max(1, v.target ?? 0, ...v.periods.map((p) => Math.max(p.signed, p.forecast ?? 0)));
   const h = (n: number) => `${Math.min(100, (n / max) * 100)}%`;

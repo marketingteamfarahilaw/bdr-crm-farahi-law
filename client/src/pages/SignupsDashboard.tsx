@@ -555,10 +555,10 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
         </aside>
       </div>
 
-      {/* Below the side column, full width: the tables side by side (one above the
-          other on narrower screens), so no section sits beside empty space. */}
-      <div className="sr-pair sr-pair-wide">
-        {/* Referring partners */}
+      {/* Below the side column: the four lists as two balanced columns, each card
+          only as tall as itself — side-by-side cards stretched to their
+          neighbour's height sat half empty. The browser picks the split. */}
+      <div className="sr-flow">
         <div className="sr-panel" ref={partnersRef} style={{ scrollMarginTop: 16 }}>
           <div className="sr-panel-h">
             <div className="sr-ttl"><h2>Top referring partners</h2><span className="sr-count">{data.partners.length}</span></div>
@@ -594,7 +594,15 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
             </div>
           )}
         </div>
-        {/* Case types */}
+        <div className="sr-panel">
+          <div className="sr-panel-h"><h2>Referring partner type</h2></div>
+          <p className="sr-sub">Leads with a matched referring partner.</p>
+          {types.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
+            <div className="sr-hb">
+              {types.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={typeMax} lead={i === 0} />)}
+            </div>
+          )}
+        </div>
         <div className="sr-panel">
           <div className="sr-panel-h">
             <div className="sr-ttl"><h2>Case types</h2><span className="sr-count">{data.caseTypes.length}</span></div>
@@ -602,7 +610,7 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
           <p className="sr-sub">As classified in Lead Docket.</p>
           {data.caseTypes.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
             <div className="sr-scroll">
-              <table className="sr-t" style={{ minWidth: 480 }}>
+              <table className="sr-t" style={{ minWidth: 330 }}>
                 <thead>
                   <tr><th>Case type</th><th className="num">Leads</th><th className="num">Signed</th><th>Conversion</th></tr>
                 </thead>
@@ -617,19 +625,6 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Partner type + territory (partner-attributed leads only) */}
-      <div className="sr-pair">
-        <div className="sr-panel">
-          <div className="sr-panel-h"><h2>Referring partner type</h2></div>
-          <p className="sr-sub">Leads with a matched referring partner.</p>
-          {types.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
-            <div className="sr-hb">
-              {types.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={typeMax} lead={i === 0} />)}
             </div>
           )}
         </div>
