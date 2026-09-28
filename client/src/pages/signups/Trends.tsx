@@ -15,12 +15,12 @@ type Unit = "week" | "month" | "year";
 
 const num = (n: number) => n.toLocaleString("en-US");
 
-export function TrendsPanel({ role, team }: { role: "all" | "BDR" | "FR" | "Intake"; team: "all" | "current" }) {
+export function TrendsPanel({ role, team, member }: { role: "all" | "BDR" | "FR" | "Intake"; team: "all" | "current"; member?: string }) {
   const { data, isPlaceholderData } = trpc.teamReports.signupsTrends.useQuery(
-    { ...(role !== "all" ? { role } : {}), team },
+    { ...(role !== "all" ? { role } : {}), team, ...(member ? { member } : {}) },
     { placeholderData: (prev) => prev },
   );
-  const scope = [role === "all" ? "BDR and FR" : role, team === "current" ? "current team" : "including former reps"].join(", ");
+  const scope = member ?? [role === "all" ? "BDR and FR" : role, team === "current" ? "current team" : "including former reps"].join(", ");
   return (
     <div className="sr-panel sr-trends" style={isPlaceholderData ? { opacity: 0.6 } : undefined}>
       <div className="sr-panel-h">

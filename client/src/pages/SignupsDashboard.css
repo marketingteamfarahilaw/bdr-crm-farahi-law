@@ -514,3 +514,58 @@ table.sr-t tr.dc-sub:hover td { background: transparent; }
 .dark .sr .sr-tstick i.fc { border-color: rgba(255, 255, 255, .5); }
 .dark .sr .sr-tdelta { background: rgba(255, 255, 255, .08); }
 .dark .sr .sr-ttip { color: #1c1c19; }
+
+/* ---- a representative's profile (signups/RepProfile.tsx): the report's look,
+   with the person up front — photo, role, standing — then their numbers */
+.rp-back { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.rp-back svg { width: 15px; height: 15px; }
+.rp-hero .rp-head { display: flex; align-items: center; gap: 22px; margin: 0 0 24px; }
+.rp-photo {
+  flex: none; width: 108px; height: 108px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+  font: 300 38px var(--disp); color: hsl(var(--h) 45% 24%); background: hsl(var(--h) 55% 86%);
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, .85), var(--lift);
+}
+.rp-id { min-width: 0; }
+.rp-kicker { font: 600 11.5px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.rp-id h1 { margin: 6px 0 0; }
+.rp-id .sr-lead { margin-top: 6px; }
+.rp-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.rp-chips .sr-award { margin-left: 0; height: 30px; padding: 0 12px 0 10px; font-size: 12.5px; }
+.rp-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 99px;
+  border: 1px solid var(--line); background: var(--glass-hi); font: 500 12.5px var(--ui); color: var(--ink2); text-decoration: none;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rp-chip svg { width: 14px; height: 14px; flex: none; }
+.rp-bigs { flex-wrap: wrap; row-gap: 18px; }
+.rp-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.rp-stats > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .55); }
+.rp-stats b { font: 300 26px/1.1 var(--disp); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rp-stats span { font: 12px var(--ui); color: var(--mute); }
+.rp-tone { display: flex; gap: 2px; height: 10px; border-radius: 99px; overflow: hidden; }
+.rp-tone i { display: block; height: 100%; }
+.rp-tone i.pos, .rp-tone-l i.pos { background: var(--ok); }
+.rp-tone i.neu, .rp-tone-l i.neu { background: var(--mute2); }
+.rp-tone i.neg, .rp-tone-l i.neg { background: var(--bad); }
+.rp-tone-l { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font: 11.5px var(--ui); color: var(--mute); }
+.rp-tone-l span { display: inline-flex; align-items: center; gap: 5px; }
+.rp-tone-l i { width: 8px; height: 8px; border-radius: 50%; }
+.rp-partners { display: flex; flex-direction: column; gap: 6px; }
+.rp-partner { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; border-radius: 14px; background: rgba(255, 255, 255, .55); color: inherit; text-decoration: none; transition: background .15s ease; }
+.rp-partner:hover { background: #fff; }
+.rp-pname { display: flex; flex-direction: column; min-width: 0; }
+.rp-pname b { font: 600 13.5px var(--ui); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-pname i { font: 12px var(--ui); font-style: normal; color: var(--mute); }
+.rp-recaps { display: flex; flex-direction: column; gap: 10px; }
+.rp-recap { padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, .55); }
+.rp-recap-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 6px; }
+.rp-recap-h a, .rp-recap-h b { font: 600 13.5px var(--ui); color: var(--ink); text-decoration: none; }
+.rp-recap-h > span:not(.sr-badge) { font: 12px var(--ui); color: var(--mute); }
+.rp-recap p { margin: 0; font: 13px/1.55 var(--ui); color: var(--ink2); }
+@media (max-width: 720px) {
+  .rp-hero .rp-head { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .rp-photo { width: 88px; height: 88px; font-size: 30px; }
+}
+.dark .sr .rp-stats > div, .dark .sr .rp-partner, .dark .sr .rp-recap { background: rgba(255, 255, 255, .04); }
+.dark .sr .rp-partner:hover { background: rgba(255, 255, 255, .08); }
+.dark .sr .rp-photo { box-shadow: 0 0 0 5px rgba(255, 255, 255, .08); }

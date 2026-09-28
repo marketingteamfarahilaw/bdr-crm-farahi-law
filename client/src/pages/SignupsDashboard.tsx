@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
-import { Link } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
@@ -108,9 +108,11 @@ export function presets(today: Date) {
 
 export default function SignupsDashboard() {
   const today = new Date();
-  // Opens on the current month — what the team reviews day to day.
-  const [from, setFrom] = useState(iso(new Date(today.getFullYear(), today.getMonth(), 1)));
-  const [to, setTo] = useState(iso(today));
+  // Opens on the current month — what the team reviews day to day — or on the
+  // dates a rep's profile came back with.
+  const linked = new URLSearchParams(useSearch());
+  const [from, setFrom] = useState(linked.get("from") || iso(new Date(today.getFullYear(), today.getMonth(), 1)));
+  const [to, setTo] = useState(linked.get("to") || iso(today));
   const [role, setRole] = useState<Role>("all");
   const [team, setTeam] = useState<Team>("all");
   const { data, isLoading, isFetching, isPlaceholderData } = trpc.teamReports.signupsDashboard.useQuery(
@@ -295,8 +297,10 @@ function HeroBottom({ data }: { data: ReportData }) {
 
 function Report({ data, from, to, role, team }: { data: ReportData; from: string; to: string; role: Role; team: Team }) {
   const partnersRef = useRef<HTMLDivElement>(null);
-  // Clicking a rep (or one of their monthly numbers) opens the clients behind it.
+  // A rep opens their profile page; one of their monthly numbers, the clients behind it.
   const [focus, setFocus] = useState<{ rep: string; role: string; month?: string } | null>(null);
+  const [, navigate] = useLocation();
+  const openRep = (rep: string) => navigate(`/signups-report/rep/${encodeURIComponent(rep)}?from=${from}&to=${to}`);
   const avg = data.totals.signedPct;
   const tops = teamTops(data.reps);
   const top = data.reps[0];
@@ -323,7 +327,7 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
 
   return (
     <>
-      <Scorecard sc={data.scorecard} label={rangeLabel(from, to)} onRep={(rep, role) => setFocus({ rep, role })} />
+      <Scorecard sc={data.scorecard} label={rangeLabel(from, to)} onRep={(rep) => openRep(rep)} />
       <TrendsPanel role={role} team={team} />
 
       {/* Feature row */}
@@ -420,8 +424,8 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
                       const isTop = tops.has(r.name);
                       const latest = data.repMonths.rows.find((x) => x.name === r.name)?.cells.at(-1) ?? 0;
                       return (
-                        <tr key={r.name} className={`sr-click ${r.current ? "" : "former"}`} title={`See ${r.name}'s clients`}
-                          onClick={() => setFocus({ rep: r.name, role: r.role })}>
+                        <tr key={r.name} className={`sr-click ${r.current ? "" : "former"}`} title={`Open ${r.name}'s profile`}
+                          onClick={() => openRep(r.name)}>
                           <td>
                             <div className="sr-who">
                               <span className="sr-av" style={hueStyle(r.name)}><RepFace name={r.name} fallback={initials(r.name)} /></span>
@@ -466,7 +470,7 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
                     <tbody>
                       {data.repMonths.rows.map((r) => (
                         <tr key={r.name} className={r.current ? "" : "former"}>
-                          <td className="name sr-click" onClick={() => setFocus({ rep: r.name, role: r.role })}>{r.name}<i>{r.role}</i></td>
+                          <td className="name sr-click" title={`Open ${r.name}'s profile`} onClick={() => openRep(r.name)}>{r.name}<i>{r.role}</i></td>
                           {r.cells.map((v, i) => (
                             <td key={i} className={`cell ${level(v)} ${v ? "sr-click" : ""}`}
                               title={v ? `${r.name} · ${monthLabel(data.repMonths.months[i])}: see the ${v} sign-up${v === 1 ? "" : "s"}` : undefined}
@@ -651,8 +655,8 @@ export const leadDay = (iso: string | null) =>
 export const outcomeBadge = (o: string, signed: boolean) =>
   signed ? "sr-b-ok" : /^(lost|rejected)/i.test(o) ? "sr-b-bad" : "sr-b-sun";
 
-/** Every lead in the period by name — searchable, newest first. */
-function LeadList({ leads }: { leads: ReportData["leadList"] }) {
+/** Every lead in the period by name — searchable, newest first. Also a rep's own list on their profile. */
+export function LeadList({ leads, showRep = true }: { leads: ReportData["leadList"]; showRep?: boolean }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "signed" | "open">("all");
   const [showAll, setShowAll] = useState(false);
@@ -667,7 +671,7 @@ function LeadList({ leads }: { leads: ReportData["leadList"] }) {
       <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
         <div className="sr-ttl"><h2>Leads</h2><span className="sr-count">{fmt(rows.length)}</span></div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input className="sr-input" placeholder="Search lead, case type, rep, partner…" value={search}
+          <input className="sr-input" placeholder={showRep ? "Search lead, case type, rep, partner…" : "Search lead, case type, partner…"} value={search}
             onChange={(e) => setSearch(e.target.value)} style={{ width: 260 }} aria-label="Search leads" />
           <div className="sr-seg" role="group" aria-label="Outcome">
             {([["all", "All"], ["signed", "Signed"], ["open", "Not signed"]] as const).map(([v, label]) => (
@@ -679,7 +683,7 @@ function LeadList({ leads }: { leads: ReportData["leadList"] }) {
       <p className="sr-sub">Newest first. The date is the sign-up date for signed leads, otherwise the day the lead came in.</p>
       {rows.length === 0 ? <p className="sr-nil">No leads match.</p> : (
         <>
-          <LeadTable rows={shown} showRep />
+          <LeadTable rows={shown} showRep={showRep} />
           {rows.length > shown.length && (
             <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
               <button className="sr-btn2" onClick={() => setShowAll(true)}>Show all {fmt(rows.length)} leads</button>
@@ -785,7 +789,7 @@ function Scorecard({ sc, label, onRep }: { sc: ReportData["scorecard"]; label: s
         {sc.prorated
           ? `Targets: FR 20, BDR 5 a month per rep, prorated to these ${sc.prorated.days} days (FR ${Math.round(20 * sc.prorated.share * 10) / 10}, BDR ${Math.round(5 * sc.prorated.share * 10) / 10} each).`
           : `Targets: FR ${20 * sc.months}, BDR ${5 * sc.months} a month per rep${sc.months > 1 ? ` (× ${sc.months} months)` : ""}.`}
-        {" "}Click a rep to see the names.
+        {" "}Click a rep to open their profile.
       </p>
     </div>
   );

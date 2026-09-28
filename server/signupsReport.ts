@@ -117,6 +117,8 @@ export type SignupsFilter = {
   role?: TeamRole;
   /** "current" hides former representatives (see @shared/team). */
   team?: "current" | "all";
+  /** One representative, by full name — their profile page. */
+  member?: string;
 };
 
 export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, filter: SignupsFilter = {}) {
@@ -130,6 +132,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   // People outside BD/FR (NON_REPORTING_REPS, e.g. Malvin Rosales of Intake) stay out of team reporting.
   const leads = all.filter((l) => !isNonReportingRep(l.member) &&
     (!filter.role || l.role === filter.role) &&
+    (!filter.member || l.member === filter.member) &&
     (filter.team !== "current" || isCurrentRep(l.member)));
 
   const facs = await db
@@ -377,6 +380,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   for (const role of ["FR", "BDR", "Intake"] as const) {
     if (filter.role && filter.role !== role) continue;
     for (const name of CURRENT_TEAM[role]) {
+      if (filter.member && name !== filter.member) continue;
       if (scoreStats.has(name) || isNonReportingRep(name)) continue;
       if (STARTED[name] && lastDay && STARTED[name] > lastDay) continue;
       scoreStats.set(name, {

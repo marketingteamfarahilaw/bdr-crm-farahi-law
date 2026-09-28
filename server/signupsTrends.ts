@@ -159,6 +159,7 @@ export async function getSignupsTrends(filter: SignupsFilter = {}) {
     // The same leads the rest of the report counts.
     if (!l.leadDate || isNonReportingRep(l.member)) continue;
     if (filter.role && l.role !== filter.role) continue;
+    if (filter.member && l.member !== filter.member) continue;
     if (filter.team === "current" && !isCurrentRep(l.member)) continue;
     const d = formatInTimeZone(new Date(l.leadDate), "America/Los_Angeles", "yyyy-MM-dd");
     const t = byDay.get(d) ?? { leads: 0, signed: 0, fr: 0, bdr: 0 };
@@ -171,9 +172,12 @@ export async function getSignupsTrends(filter: SignupsFilter = {}) {
     byDay.set(d, t);
   }
   // Today's team's target, for the roles on show: FR 20 and BDR 5 a rep a month.
+  // One rep's own, on their profile; none for someone who has left.
   const roles: TeamRole[] = filter.role ? [filter.role] : ["FR", "BDR"];
-  const monthlyTarget = roles.reduce(
-    (a, r) => a + (MONTHLY_SIGNUP_TARGET[r] ?? 0) * CURRENT_TEAM[r].filter((n) => !isNonReportingRep(n)).length, 0) || null;
+  const repRole = filter.member ? (Object.keys(CURRENT_TEAM) as TeamRole[]).find((r) => CURRENT_TEAM[r].includes(filter.member!)) : undefined;
+  const monthlyTarget = filter.member
+    ? (repRole ? MONTHLY_SIGNUP_TARGET[repRole] ?? null : null)
+    : roles.reduce((a, r) => a + (MONTHLY_SIGNUP_TARGET[r] ?? 0) * CURRENT_TEAM[r].filter((n) => !isNonReportingRep(n)).length, 0) || null;
   const today = formatInTimeZone(new Date(), "America/Los_Angeles", "yyyy-MM-dd");
   return { today, paceWeeks: PACE_WEEKS, ...buildTrends(byDay, today, monthlyTarget) };
 }
