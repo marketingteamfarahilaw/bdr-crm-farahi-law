@@ -431,7 +431,7 @@ export default function Facilities() {
 // Choose BDR/FR facility → pick the facility (search) → type auto-fills →
 // date + FR who visited. Saves a visit-type contact log credited to the FR, so
 // it feeds the Check-In Report's FR section and the Daily Log.
-const FR_VISITORS = ["Lupe", "Jezel", "Zulema", "Genysys", "Marisol"];
+const FR_VISITORS = ["Lupe", "Jezel", "Zulema", "Marisol"];
 function LogFrVisitGlobal({ facilities }: { facilities: any[] }) {
   const utils = trpc.useUtils();
   const [open, setOpen] = useState(false);

@@ -112,7 +112,7 @@ function facilityTemperature(facility: any, contactLogs: any[] | undefined, open
 // Record an FR's in-person visit — logged by the BDR on the partner's behalf.
 // Stored as a visit-type contact log credited to the FR, so it feeds the
 // Check-In Report's FIELD REPRESENTATIVES visit matrix and the Daily Log.
-const FR_ROSTER = ["Lupe", "Jezel", "Zulema", "Genysys", "Marisol"];
+const FR_ROSTER = ["Lupe", "Jezel", "Zulema", "Marisol"];
 function RecordFrVisitDialog({ facilityId, onSuccess }: { facilityId: number; onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
   const [frName, setFrName] = useState(FR_ROSTER[0]);

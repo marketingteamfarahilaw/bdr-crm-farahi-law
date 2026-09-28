@@ -8,7 +8,7 @@
 // ── the team ────────────────────────────────────────────────────────────────
 // Role is how the person is credited when the source carries no prefix.
 // Current BDR: Ally, Grace, Miguel, Queenie. Current FR: Zulema, Lupe, Jezel,
-// Genysys, Marisol (hired September 2026). Malvin Rosales is intake, but the leads he brings in count, as
+// Marisol (hired September 2026); Genysys has left. Malvin Rosales is intake, but the leads he brings in count, as
 // "Intake". The rest are former team members, kept so their past sign-ups stay
 // in historical reporting.
 export const TEAM = [

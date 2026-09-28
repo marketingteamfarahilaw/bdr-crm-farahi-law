@@ -19,7 +19,7 @@ import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
 import { leadIntake, facilities, facilityLeads, partnerAliases } from "../drizzle/schema";
 import { rememberPartner, setLeadsPartner } from "./partnerLinks";
-import { isCurrentRep, CURRENT_TEAM, MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
+import { isCurrentRep, CURRENT_TEAM, MONTHLY_SIGNUP_TARGET, STARTED, type TeamRole } from "@shared/team";
 import { isNonReportingRep } from "@shared/permissions";
 import { formatInTimeZone } from "date-fns-tz";
 
@@ -108,6 +108,24 @@ export function accidentKeys(leads: { id: number; externalId: string | null; rel
     if (l.incidentDate && phone.length >= 7) join(me, `accident:${l.incidentDate}|${phone}`);
   }
   return leads.map((l) => find(node(l)));
+}
+
+/**
+ * How many months of target someone who joined during a range carries: none
+ * before their first day. Whole months count each month from that day (a rep
+ * starting Sept 23 carries 8/30 of September); a range that isn't whole months
+ * counts its days, each 1/(days in its month), as everyone's target does.
+ */
+export function targetMonthsFrom(start: string, days: string[], prorated: boolean) {
+  const daysIn = (d: string) => new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate();
+  if (prorated) return days.reduce((a, d) => a + (d >= start ? 1 / daysIn(d) : 0), 0);
+  return Array.from(new Set(days.map((d) => d.slice(0, 7)))).reduce((a, m) => {
+    const first = start.slice(0, 7);
+    if (first < m) return a + 1;
+    if (first > m) return a;
+    const n = daysIn(`${m}-01`);
+    return a + (n - Number(start.slice(8, 10)) + 1) / n;
+  }, 0);
 }
 
 export type SignupsDashboard = Awaited<ReturnType<typeof getSignupsDashboard>>;
@@ -371,6 +389,25 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
   const prorated = days.length > 0 && !wholeMonths;
   const targetMonths = prorated ? days.reduce((a, d) => a + 1 / daysIn(d), 0) : monthsInRange;
   const pctOf = (a: number, b: number) => (b ? Math.round((a / b) * 10000) / 100 : null);
+  /** A rep's months of target: everyone's, or from their first day for someone who joined during the range. */
+  const repTargetMonths = (name: string) => {
+    const start = STARTED[name];
+    return start && days.length && start > days[0] ? targetMonthsFrom(start, days, prorated) : targetMonths;
+  };
+  // Every current rep has a row, even with no leads yet, as the team's own
+  // sheet lists them (Youssef, 2026-09-28: Marisol, the new hire, at 0) — but
+  // not in a range that ends before they started.
+  for (const role of ["FR", "BDR", "Intake"] as const) {
+    if (filter.role && filter.role !== role) continue;
+    for (const name of CURRENT_TEAM[role]) {
+      if (scoreStats.has(name) || isNonReportingRep(name)) continue;
+      if (STARTED[name] && lastDay && STARTED[name] > lastDay) continue;
+      scoreStats.set(name, {
+        name, role, leads: 0, accidents: new Set<string>(),
+        open: 0, rejected: 0, referredOut: 0, notInterested: 0, signedReferred: 0, signedInHouse: 0,
+      });
+    }
+  }
   const order = (role: TeamRole, name: string) => {
     const i = CURRENT_TEAM[role]?.indexOf(name) ?? -1;
     return i < 0 ? 100 : i;   // current team in the sheet's order, former reps after
@@ -386,7 +423,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
         .sort((a, b) => order(role, a.name) - order(role, b.name) || a.name.localeCompare(b.name))
         .map((s) => {
           const signedN = s.signedReferred + s.signedInHouse;
-          const target = perRepTarget ? Math.round(perRepTarget * targetMonths * 10) / 10 : null;
+          const target = perRepTarget ? Math.round(perRepTarget * repTargetMonths(s.name) * 10) / 10 : null;
           return {
             name: s.name, current: isCurrentRep(s.name), leads: s.leads,
             open: s.open, rejected: s.rejected, referredOut: s.referredOut, notInterested: s.notInterested,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accidentKeys } from "./signupsReport";
+import { accidentKeys, targetMonthsFrom } from "./signupsReport";
 
 // The scorecard's "Sign-up Unique Count": one accident's driver and passengers
 // are one case. Shaped like a BDR's September 2026 (names made up).
@@ -32,5 +32,19 @@ describe("accidentKeys", () => {
       lead(4, "503", null, "2026-08-05", null),                        // same day, no phone
       lead(5, null, null, "2026-08-05", null),                          // entered by hand
     ])).toBe(4);
+  });
+});
+
+// A rep who joined during the range carries target only from their first day.
+describe("targetMonthsFrom", () => {
+  const september = Array.from({ length: 28 }, (_, i) => `2026-09-${String(i + 1).padStart(2, "0")}`);
+  it("counts a month from the first day: Sept 23 carries 8/30 of September", () => {
+    expect(targetMonthsFrom("2026-09-23", september, false)).toBeCloseTo(8 / 30);
+  });
+  it("counts whole later months in full", () => {
+    expect(targetMonthsFrom("2026-09-23", [...september, "2026-10-01"], false)).toBeCloseTo(8 / 30 + 1);
+  });
+  it("counts only the days from the first day in a week-long range", () => {
+    expect(targetMonthsFrom("2026-09-23", ["2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24"], true)).toBeCloseTo(2 / 30);
   });
 });

@@ -24,9 +24,17 @@ export const repNameKey = (s: unknown) =>
 // In the order the team's own scorecard sheet lists them.
 export const CURRENT_TEAM: Record<TeamRole, readonly string[]> = {
   BDR: ["Queenie Miranda", "Grace Lanayon", "Ally Maceda", "Miguel Flores"],
-  FR: ["Lupe Campos", "Jezel Mercado", "Zulema Salas", "Genysys Sanchez", "Marisol Lopez"],
+  FR: ["Lupe Campos", "Jezel Mercado", "Zulema Salas", "Marisol Lopez"],
   Intake: ["Malvin Rosales"],
 };
+
+/**
+ * First day on the team, for someone who joined recently: their sign-up target
+ * starts then, not on the 1st (Youssef, 2026-09-28: "Marisol is the new one").
+ * Sept 23 is the date of her first supplies request — change it if she started
+ * another day.
+ */
+export const STARTED: Readonly<Record<string, string>> = { "Marisol Lopez": "2026-09-23" };
 
 /** Monthly sign-up target per representative, from the team's scorecard sheet. */
 export const MONTHLY_SIGNUP_TARGET: Partial<Record<TeamRole, number>> = { FR: 20, BDR: 5 };

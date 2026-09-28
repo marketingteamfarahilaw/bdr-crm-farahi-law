@@ -29,9 +29,13 @@ const STATUSES = [
   { value: "do_not_use", label: "Do Not Use" },
 ];
 
-const FR_REPS = ["Genysys", "Jezel", "Lupe", "Marisol", "Zulema"];
+const FR_REPS = ["Jezel", "Lupe", "Marisol", "Zulema"];
 const BDR_REPS = ["Ally", "Grace", "Malvin", "Queenie", "Miguel"];
 const BD_REPS = [...BDR_REPS, ...FR_REPS].sort();
+// A partner can still be in a former rep's name (Genysys has 53): keep that
+// name showing until someone reassigns it.
+const withCurrent = (list: string[], current?: string | null) =>
+  current && current !== "unset" && !list.includes(current) ? [...list, current] : list;
 
 interface FormState {
   name: string; category: string; address: string; city: string;
@@ -276,7 +280,7 @@ export default function FacilityForm() {
               <Select value={form.assignedRepName} onValueChange={(v) => setForm((f) => ({ ...f, assignedRepName: v }))}>
                 <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select rep..." /></SelectTrigger>
                 <SelectContent>
-                  {(form.managedBy === "fr" ? FR_REPS : form.managedBy === "bdr" ? BDR_REPS : BD_REPS).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  {withCurrent(form.managedBy === "fr" ? FR_REPS : form.managedBy === "bdr" ? BDR_REPS : BD_REPS, form.assignedRepName).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
