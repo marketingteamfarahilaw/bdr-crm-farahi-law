@@ -12,7 +12,7 @@
  * call NEVER lands in contact_logs and never touches facility data.
  */
 import axios from "axios";
-import { recordingIdOf, ringSenseTranscript } from "./_core/ringsense";
+import { rcCallTranscript } from "./_core/callTranscript";
 import { analyzeIntakeTranscript } from "./intakeAI";
 import {
   addLeadEvent,
@@ -128,13 +128,15 @@ export async function routeAnalyzedTranscript(opts: {
 }
 
 /**
- * RingCentral's own transcript of one recorded call (RingSense — Youssef stopped
- * using OpenAI's Whisper, 2026-09-27), then route it. Not ready yet → false,
- * and the sync asks again next round.
+ * RingCentral's own transcript of one recorded call (AI Notes, or RingSense —
+ * Youssef stopped using OpenAI's Whisper, 2026-09-27), then route it. Not ready
+ * yet → false, and the sync asks again next round.
  */
 export async function processRecordedCall(opts: {
   callId: number;
   recordingUrl: string;
+  /** The id RingCentral's AI Notes file the call under. */
+  telephonySessionId?: string | null;
   accessToken: string;
   direction: string | null;
   callerNumber: string | null;
@@ -142,10 +144,7 @@ export async function processRecordedCall(opts: {
   callDate: Date | null;
   agent: { id: number; name: string };
 }): Promise<{ transcribed: boolean; leadCreated: boolean; leadUpdated: boolean }> {
-  const recordingId = recordingIdOf(opts.recordingUrl);
-  const tr = recordingId
-    ? await ringSenseTranscript(recordingId, [opts.accessToken])
-    : { ok: false as const, reason: "error" as const, error: "no recording id in the recording link" };
+  const tr = await rcCallTranscript({ telephonySessionId: opts.telephonySessionId, recordingUri: opts.recordingUrl }, opts.accessToken);
   if (!tr.ok) {
     if (tr.reason !== "not_ready") console.warn(`[intakeSync] no transcript for intake call #${opts.callId}: ${tr.error.slice(0, 160)}`);
     return { transcribed: false, leadCreated: false, leadUpdated: false };
@@ -226,6 +225,7 @@ export async function syncIntakeCalls(
       : r.result === "No Answer" || r.result === "Missed" ? "no_answer"
       : r.result === "Busy" ? "busy" : "other";
     const recordingUrl: string | null = r.recording?.contentUri ?? null;
+    const telephonySessionId: string | null = r.telephonySessionId ?? null;
 
     const callId = await createIntakeCall({
       direction,
@@ -249,7 +249,7 @@ export async function syncIntakeCalls(
 
     try {
       const r = await processRecordedCall({
-        callId, recordingUrl, accessToken, direction, callerNumber, durationSecs, callDate,
+        callId, recordingUrl, telephonySessionId, accessToken, direction, callerNumber, durationSecs, callDate,
         agent: opts.agent,
       });
       if (r.transcribed) result.transcribed++;
@@ -281,7 +281,7 @@ export async function syncIntakeCalls(
         await updateIntakeCall(p.id, { hasRecording: 1 });
         const callerNumber = p.direction === "Inbound" ? p.fromNumber : p.toNumber;
         const r = await processRecordedCall({
-          callId: p.id, recordingUrl: lateUrl, accessToken,
+          callId: p.id, recordingUrl: lateUrl, telephonySessionId: rec?.data?.telephonySessionId ?? null, accessToken,
           direction: p.direction, callerNumber,
           durationSecs: p.durationSeconds ?? 0, callDate: p.callDate,
           agent: opts.agent,
@@ -297,7 +297,7 @@ export async function syncIntakeCalls(
     console.warn("[intakeSync] late-recording pass failed:", e?.message ?? e);
   }
 
-  // ── Third chance: recorded, but RingSense hadn't transcribed it yet ─────────
+  // ── Third chance: recorded, but RingCentral had no transcript yet ──────────
   try {
     for (const p of await listUntranscribedRecordedCalls(opts.agent.id)) {
       if (!p.rcCallId) continue;
@@ -312,7 +312,7 @@ export async function syncIntakeCalls(
         if (!url) continue;
         const callerNumber = p.direction === "Inbound" ? p.fromNumber : p.toNumber;
         const r = await processRecordedCall({
-          callId: p.id, recordingUrl: url, accessToken,
+          callId: p.id, recordingUrl: url, telephonySessionId: rec?.data?.telephonySessionId ?? null, accessToken,
           direction: p.direction, callerNumber,
           durationSecs: p.durationSeconds ?? 0, callDate: p.callDate,
           agent: opts.agent,

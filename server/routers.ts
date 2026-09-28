@@ -17,7 +17,7 @@ import { pdRouter } from "./pdRouter";
 import { territoriesRouter } from "./territoriesRouter";
 import { triviaRouter } from "./triviaRouter";
 import axios from "axios";
-import { recordingIdOf, ringSenseTranscript } from "./_core/ringsense";
+import { rcCallTranscript } from "./_core/callTranscript";
 import { getRingcentralToken, listFacilities } from "./crmDb";
 import {
   getSavedLeads,
@@ -693,10 +693,9 @@ export const appRouter = router({
             );
             const recordingUrl: string | null = callResp.data?.recording?.contentUri ?? null;
             if (recordingUrl) {
-              // 4. RingCentral's own transcript (RingSense), if it has processed the call yet
-              const recordingId = recordingIdOf(recordingUrl);
-              const tr = recordingId ? await ringSenseTranscript(recordingId, [accessToken]) : null;
-              if (tr?.ok) transcriptText = tr.text;
+              // 4. RingCentral's own transcript (AI Notes, or RingSense), if it has one yet
+              const tr = await rcCallTranscript({ telephonySessionId: callResp.data?.telephonySessionId, recordingUri: recordingUrl }, accessToken);
+              if (tr.ok) transcriptText = tr.text;
             }
           } catch { /* recording not yet available — save log without transcript */ }
         }

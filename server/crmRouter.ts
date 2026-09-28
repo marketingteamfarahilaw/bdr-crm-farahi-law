@@ -8,7 +8,7 @@ import axios from "axios";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { seesAllData, canManage, isIntakeOnly } from "@shared/permissions";
-import { recordingIdOf, ringSenseTranscript } from "./_core/ringsense";
+import { rcCallTranscript } from "./_core/callTranscript";
 import { fromZonedTime } from "date-fns-tz";
 import { syncRecentCalls, analyzeCallTranscript, maybeCreateVisitFromCall, enqueueRecap } from "./rcSync";
 import { getNewFacilitiesReport } from "./teamReports";
@@ -999,22 +999,26 @@ export const crmRouter = router({
 
         // Also try fetching via call-log to get recording URI
         let recordingUrl: string | null = null;
+        let telephonySessionId: string | null = null;
         try {
           const callResp = await axios.get(
             `${RC_BASE}/restapi/v1.0/account/~/extension/~/call-log/${input.callId}`,
             { headers: { Authorization: `Bearer ${accessToken}` } }
           );
           recordingUrl = callResp.data?.recording?.contentUri ?? null;
+          telephonySessionId = callResp.data?.telephonySessionId ?? null;
         } catch { /* ignore */ }
 
         let transcriptText = "";
         let transcriptSummary = "";
 
         if (recordingUrl) {
-          // RingCentral's own transcript (RingSense), once it has processed the call.
-          const recordingId = recordingIdOf(recordingUrl);
-          const tr = recordingId ? await ringSenseTranscript(recordingId, [accessToken]) : null;
-          if (tr?.ok) transcriptText = tr.text;
+          // RingCentral's own transcript (AI Notes, or RingSense), once it has one.
+          const tr = await rcCallTranscript({ telephonySessionId, recordingUri: recordingUrl }, accessToken);
+          if (tr.ok) {
+            transcriptText = tr.text;
+            transcriptSummary = tr.summary ?? "";
+          }
         }
 
         // Save to facility_updates as transcript

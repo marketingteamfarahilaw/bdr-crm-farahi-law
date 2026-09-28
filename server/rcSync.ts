@@ -13,7 +13,8 @@
 import axios from "axios";
 import { and, desc, eq, gte, isNull, lt, lte } from "drizzle-orm";
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
-import { recordingIdOf, ringSenseTranscript } from "./_core/ringsense";
+import { rcCallTranscript } from "./_core/callTranscript";
+import type { TranscriptResult } from "./_core/ringsense";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { claude, CLAUDE_MODEL } from "./_core/claude";
@@ -388,8 +389,8 @@ export async function syncRecentCalls(
     if (sessionId) existingSessions.add(sessionId); // and a duplicate session (other extension) later in THIS batch
     result.logged++;
 
-    // Recorded, connected calls get a recap: RingSense (RingCentral) has their
-    // transcript some minutes after the call, so each is queued and written by
+    // Recorded, connected calls get a recap: RingCentral has their transcript
+    // (AI Notes, or RingSense) after the call, so each is queued and written by
     // retryQueuedRecaps once it's there.
     const recordingUrl: string | null = r.recording?.contentUri ?? null;
     if (transcribe && recordingUrl && durationSecs > 0) {
@@ -420,33 +421,32 @@ export type RecapCall = {
   repId: number | null;
   repName: string | null;
 };
-type RecapResult = { ok: true } | { ok: false; error: string; reason: "not_ready" | "no_permission" | "error" };
+type RecapResult = { ok: true } | { ok: false; error: string; reason: Extract<TranscriptResult, { ok: false }>["reason"] };
 
 const MIN = 60 * 1000;
 const DAY_MS = 24 * 60 * MIN;
 const RETRY_MS = 30 * MIN;
-// RingSense can take half an hour after the call; a rep without its license never gets one.
+// RingSense can take half an hour after the call; a call without AI Notes, by a
+// rep without the license, never gets a transcript.
 const FIRST_TRY_MS = 10 * MIN;
 const MAX_ATTEMPTS = 8;
 const HOLD_MS = 60 * MIN;
-// When RingSense last gave the CRM a transcript (ISO); three days covers a weekend without calls.
-const RINGSENSE_OK_KEY = "ringsense_last_transcript_at";
+// When RingCentral last gave the CRM a transcript (ISO); three days covers a weekend without calls.
+const TRANSCRIPT_OK_KEY = "rc_transcript_last_ok_at";
 const QUIET_MS = 3 * DAY_MS;
 
 /**
  * Write a recorded call's recap to the partner — the "Recap" the reports and
- * the AI performance review read: RingSense's transcript, Claude's summary.
+ * the AI performance review read: RingCentral's transcript, Claude's summary.
  * fresh (a call from the last day) also creates its follow-up tasks and an
  * arranged visit and sends the recap to Filevine; an older call (a backfill)
  * gets only its recap — two-week-old tasks would just be noise.
  */
-async function recapCall(call: RecapCall, tokens: string[], opts: { fresh: boolean }): Promise<RecapResult> {
+async function recapCall(call: RecapCall, own: string | null, all: string[], opts: { fresh: boolean }): Promise<RecapResult> {
   const { facility, callDate } = call;
   const durationStr = `${Math.floor(call.durationSecs / 60)}:${(call.durationSecs % 60).toString().padStart(2, "0")}`;
   try {
-    const recordingId = recordingIdOf(call.recordingUri);
-    if (!recordingId) return { ok: false, error: "no recording id in the recording link", reason: "error" };
-    const tr = await ringSenseTranscript(recordingId, tokens);
+    const tr = await rcCallTranscript({ callId: call.rcCallId, recordingUri: call.recordingUri }, own, all);
     if (!tr.ok) return { ok: false, error: tr.error, reason: tr.reason };
     const transcriptText = tr.text;
     const analysis = await analyzeCallTranscript(transcriptText, callDate);
@@ -513,7 +513,7 @@ async function recapCall(call: RecapCall, tokens: string[], opts: { fresh: boole
 
 /**
  * Queue a recorded call for its recap (the account-wide sync, and calls logged
- * from the facility page). The first try waits for RingSense to process the call.
+ * from the facility page). The first try waits for RingCentral to process the call.
  */
 export async function enqueueRecap(call: RecapCall, delayMs = FIRST_TRY_MS) {
   const db = await getDb();
@@ -526,25 +526,25 @@ export async function enqueueRecap(call: RecapCall, delayMs = FIRST_TRY_MS) {
   }).onDuplicateKeyUpdate({ set: { recordingUri: call.recordingUri.slice(0, 500) } });
 }
 
-let hold: { until: number; reason: RecapHold } | null = null;
+let hold: { until: number; reason: RecapHold; error: string } | null = null;
 /**
  * Recaps wait because of the whole account, not one call (System health):
- * no_permission — nobody connected may read RingCentral's transcripts;
- * not_transcribing — RingCentral hasn't transcribed any call lately (usually
- * no AI Conversation Expert license on the reps' lines).
+ * app_permission — the CRM's RingCentral app may not read AI Notes;
+ * no_permission — nobody connected may read RingSense's transcripts;
+ * not_transcribing — RingCentral hasn't had a transcript for any call lately.
  */
-export type RecapHold = "no_permission" | "not_transcribing";
-export const recapsOnHold = (): RecapHold | null => (hold && Date.now() < hold.until ? hold.reason : null);
+export type RecapHold = "app_permission" | "no_permission" | "not_transcribing";
+export const recapsOnHold = () => (hold && Date.now() < hold.until ? { reason: hold.reason, error: hold.error } : null);
 
 /**
  * Write the queued recaps whose time has come (newest calls first); the sync
- * loop calls this each round with every connected rep's token. RingSense not
- * done with a call yet backs off (30 min, 1 h, 1.5 h…) and gives up after
- * eight tries — a rep without its license never gets a transcript. But while
- * RingSense has given the CRM nothing for three days, or nobody may read what
- * it has, the fault is the account's: everything waits an hour and no call
- * uses up a try — else the 251 calls queued in September 2026, before
- * RingSense was set up, would all have been dropped within a day.
+ * loop calls this each round with every connected rep's token. RingCentral
+ * without a transcript for a call yet backs off (30 min, 1 h, 1.5 h…) and gives
+ * up after eight tries — a call without AI Notes may never get one. But while
+ * RingCentral has given the CRM nothing for three days, or won't let it read
+ * what it has, the fault is the account's: everything waits an hour and no
+ * call uses up a try — else the 251 calls queued in September 2026, before the
+ * CRM could read RingCentral's transcripts, would all have been dropped within a day.
  */
 export async function retryQueuedRecaps(tokens: { userId: number; token: string }[], limit = 3) {
   if (recapsOnHold()) return { done: 0, failed: 0, paused: true };
@@ -555,7 +555,7 @@ export async function retryQueuedRecaps(tokens: { userId: number; token: string 
     .orderBy(desc(callRecapQueue.callDate))
     .limit(limit);
   if (!due.length) return { done: 0, failed: 0, paused: false };
-  const lastOk = await getSetting(RINGSENSE_OK_KEY);
+  const lastOk = await getSetting(TRANSCRIPT_OK_KEY);
   let working = !!lastOk && Date.now() - new Date(lastOk).getTime() < QUIET_MS;
   let done = 0, failed = 0;
   for (const q of due) {
@@ -568,24 +568,25 @@ export async function retryQueuedRecaps(tokens: { userId: number; token: string 
       .where(and(eq(facilityUpdates.facilityId, q.facilityId), eq(facilityUpdates.updateType, "transcript"), eq(facilityUpdates.updateDate, q.callDate))).limit(1);
     if (recap) { await mark({ doneAt: new Date() }); continue; }
 
-    // The rep's own connection first; any connected user with the permission can read it.
-    const ordered = [...tokens.filter((t) => t.userId === q.repId), ...tokens.filter((t) => t.userId !== q.repId)].map((t) => t.token);
+    // AI Notes are filed under the rep who made the call; RingSense answers anyone with its permission.
+    const own = tokens.find((t) => t.userId === q.repId)?.token ?? null;
+    const all = [...(own ? [own] : []), ...tokens.filter((t) => t.userId !== q.repId).map((t) => t.token)];
     const res = await recapCall({
       rcCallId: q.rcCallId, facility, callDate: q.callDate, recordingUri: q.recordingUri, durationSecs: q.durationSecs,
       callResult: q.callResult ?? "other", direction: q.direction, repId: q.repId, repName: q.repName,
-    }, ordered, { fresh: Date.now() - q.callDate.getTime() < DAY_MS });
+    }, own, all, { fresh: Date.now() - q.callDate.getTime() < DAY_MS });
     if (res.ok) {
       await mark({ doneAt: new Date(), lastError: null });
-      await setSetting(RINGSENSE_OK_KEY, new Date().toISOString());
+      await setSetting(TRANSCRIPT_OK_KEY, new Date().toISOString());
       working = true;
       done++;
       continue;
     }
-    if (res.reason === "no_permission" || (res.reason === "not_ready" && !working)) {
-      const reason: RecapHold = res.reason === "no_permission" ? "no_permission" : "not_transcribing";
-      hold = { until: Date.now() + HOLD_MS, reason };
+    if (res.reason === "app_permission" || res.reason === "no_permission" || (res.reason === "not_ready" && !working)) {
+      const reason: RecapHold = res.reason === "not_ready" ? "not_transcribing" : res.reason;
+      hold = { until: Date.now() + HOLD_MS, reason, error: res.error };
       await mark({ lastError: res.error });
-      console.warn(`[rcSync] recaps on hold for an hour: ${reason === "no_permission" ? res.error : "RingCentral hasn't transcribed any call in three days."}`);
+      console.warn(`[rcSync] recaps on hold for an hour: ${reason === "not_transcribing" ? "RingCentral hasn't had a transcript for any call in three days." : res.error}`);
       break;
     }
     failed++;

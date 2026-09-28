@@ -67,7 +67,7 @@ export async function getSystemHealth(): Promise<{ checks: HealthCheck[]; worst:
           action: stale.length ? "Those reps reconnect in Settings → RingCentral (their sign-in may have expired)." : undefined,
         });
 
-    // Call recaps: RingCentral's transcript (RingSense) + Claude's summary. Waiting ones are retried.
+    // Call recaps: RingCentral's transcript (AI Notes, or RingSense) + Claude's summary. Waiting ones are retried.
     const [q] = await db.select({ waiting: sql<number>`COUNT(*)` })
       .from(callRecapQueue).where(and(isNull(callRecapQueue.doneAt), lt(callRecapQueue.attempts, 8)));
     // Tried eight times over a day and RingCentral never had a transcript: usually a rep without the license.
@@ -88,15 +88,17 @@ export async function getSystemHealth(): Promise<{ checks: HealthCheck[]; worst:
       id: "recaps", label: "Call recaps",
       state: hold ? "down" : waiting > 40 || missed > 5 ? "warn" : "ok",
       detail: hold
-        ? `On hold: ${hold === "no_permission"
-            ? `RingCentral won't share call transcripts with the CRM — nobody connected has its "AI Conversation Expert — Access Insights" permission.`
-            : "RingCentral hasn't transcribed any of the reps' recorded calls, so there's nothing to summarize."} ${waiting} call${waiting === 1 ? "" : "s"} waiting, none dropped. ${week}`
+        ? `On hold: ${hold.reason === "not_transcribing"
+            ? "RingCentral hasn't had a transcript for any of the reps' recent calls, so there's nothing to summarize."
+            : hold.error} ${waiting} call${waiting === 1 ? "" : "s"} waiting, none dropped. ${week}`
         : waiting ? `${waiting} call${waiting === 1 ? "" : "s"} waiting for RingCentral's transcript. ${week}` : week,
-      action: hold === "no_permission"
-        ? "A RingCentral admin turns on \"AI Conversation Expert — Access Insights\" for one connected user's role (service.ringcentral.com → Users → Roles → Artificial Intelligence)."
-        : hold || missed > 5
-          ? "RingCentral transcribes a call only when the rep holds its AI Conversation Expert (RingSense) license, and shares it with a role that has \"AI Conversation Expert — Access Insights\" — both set in service.ringcentral.com."
-          : undefined,
+      action: hold?.reason === "app_permission"
+        ? "RingCentral turns this on for the CRM's app: ask RingCentral developer support to enable \"ReadCopilotCallNotes\" (AI Notes) for it. If recaps haven't started an hour later, each rep reconnects RingCentral in Settings."
+        : hold?.reason === "no_permission"
+          ? "A RingCentral admin turns on \"AI Conversation Expert — Access Insights\" for one connected user's role (service.ringcentral.com → Users → Roles → Artificial Intelligence)."
+          : hold || missed > 5
+            ? "RingCentral keeps a call's transcript when AI Notes are on during the call (or the rep holds an AI Conversation Expert license) — check the reps' AI Notes in the RingCentral app."
+            : undefined,
     });
   }
 

@@ -21,9 +21,10 @@ const RC_BASE = "https://platform.ringcentral.com";
 
 export type TranscriptResult =
   | { ok: true; text: string; summary: string | null }
-  /** not_ready: RingSense has nothing for the call (yet — or never, for a rep without the license).
-   *  no_permission: nobody connected may read transcripts. */
-  | { ok: false; reason: "not_ready" | "no_permission" | "error"; error: string };
+  /** not_ready: RingCentral has nothing for the call (yet — or never, for a rep without the license).
+   *  no_permission: nobody connected may read transcripts.
+   *  app_permission: the CRM's RingCentral app itself lacks a permission (aiNotes.ts). */
+  | { ok: false; reason: "not_ready" | "no_permission" | "app_permission" | "error"; error: string };
 
 /** The recording id in a RingCentral recording link (…/recording/3822154740023/content). */
 export const recordingIdOf = (uri: string | null | undefined) => String(uri ?? "").match(/\/recording\/(\d+)/)?.[1] ?? null;
