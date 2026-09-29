@@ -6,12 +6,12 @@
  * filtered to them, so the two pages always agree; their activity — calls,
  * recaps, visits, errands — from the performance data (server/repProfile.ts).
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useRoute, useSearch } from "wouter";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import {
-  ArrowLeft, Building2, CheckCircle2, Inbox, Layers, Loader2, MapPin, Percent, Phone, PhoneCall, Target, Trophy,
+  ArrowLeft, Building2, CheckCircle2, ChevronRight, Inbox, Layers, Loader2, MapPin, Percent, Phone, PhoneCall, Search, Target, Trophy, X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { RepFace, PartnerLogo } from "@/components/RepFace";
@@ -45,6 +45,8 @@ export default function RepProfile() {
 
   const d = mine.data;
   const a = act.data;
+  // The territory and partner chips open the full list behind them.
+  const [open, setOpen] = useState<"cities" | "partners" | null>(null);
   const group = d?.scorecard.groups.find((g) => g.rows.some((r) => r.name === member));
   const row = group?.rows.find((r) => r.name === member);
   const role = group?.role ?? d?.reps[0]?.role ?? a?.role ?? "";
@@ -89,11 +91,17 @@ export default function RepProfile() {
                   {isTop && <span className="sr-award"><Trophy /> Top {role}</span>}
                   {a?.profile?.phone && <a className="rp-chip" href={`tel:${a.profile.phone.replace(/[^\d+]/g, "")}`}><Phone /> {a.profile.phone}</a>}
                   {!!a?.profile?.cities.length && (
-                    <span className="rp-chip" title={a.profile.cities.join(", ")}>
+                    <button type="button" className="rp-chip rp-chip-btn" aria-haspopup="dialog" onClick={() => setOpen("cities")}>
                       <MapPin /> {a.profile.cities.slice(0, 3).join(", ")}{a.profile.cities.length > 3 ? ` +${a.profile.cities.length - 3}` : ""}
-                    </span>
+                      <ChevronRight className="rp-chev" />
+                    </button>
                   )}
-                  {a && <span className="rp-chip"><Building2 /> {fmt(a.partners)} partner{a.partners === 1 ? "" : "s"} assigned</span>}
+                  {a && (
+                    <button type="button" className="rp-chip rp-chip-btn" aria-haspopup="dialog" disabled={!a.partners} onClick={() => setOpen("partners")}>
+                      <Building2 /> {fmt(a.partners)} partner{a.partners === 1 ? "" : "s"} assigned
+                      {!!a.partners && <ChevronRight className="rp-chev" />}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -105,6 +113,11 @@ export default function RepProfile() {
               {row?.target != null && <Big n={pctText(row.achieved)} label={`Of the ${fmt(row.target)} target`} icon={<Target />} />}
             </div>
           </section>
+
+          {open === "cities" && a?.profile && <CitiesList member={member} cities={a.profile.cities} onClose={() => setOpen(null)} />}
+          {open === "partners" && a && (
+            <PartnersList member={member} partners={a.assignedPartners} period={d?.partners ?? []} periodLabel={rangeLabel(from, to)} onClose={() => setOpen(null)} />
+          )}
 
           {!d ? (
             <div className="sr-features">{[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 240 }} />)}</div>
@@ -229,5 +242,94 @@ function Recaps({ recaps, total }: {
         </div>
       )}
     </div>
+  );
+}
+
+/** Escape closes a list, as the report's other windows do. */
+function useEscape(onClose: () => void) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+}
+
+const matches = (q: string, ...fields: (string | null | undefined)[]) =>
+  !q.trim() || fields.some((f) => String(f ?? "").toLowerCase().includes(q.trim().toLowerCase()));
+
+/** Every city in the rep's territory (agent_zones), from the hero's territory chip. */
+function CitiesList({ member, cities, onClose }: { member: string; cities: string[]; onClose: () => void }) {
+  useEscape(onClose);
+  const [q, setQ] = useState("");
+  const shown = cities.slice().sort((x, y) => x.localeCompare(y)).filter((c) => matches(q, c));
+  return (
+    <div className="sr-modal-back" onClick={onClose}>
+      <div className="sr-modal rp-list" role="dialog" aria-modal="true" aria-label={`${member}'s territory`} onClick={(e) => e.stopPropagation()}>
+        <div className="sr-panel-h rp-list-h">
+          <div className="sr-ttl"><MapPin size={18} /><h2>{member}'s territory</h2><span className="sr-count">{fmt(cities.length)}</span></div>
+          <button className="sr-arr" aria-label="Close" onClick={onClose}><X /></button>
+        </div>
+        {cities.length > 12 && <ListSearch value={q} onChange={setQ} placeholder="Find a city" />}
+        {shown.length === 0 ? <p className="sr-nil">No city matches.</p> : (
+          <div className="rp-cities">{shown.map((c) => <span key={c} className="rp-city">{c}</span>)}</div>
+        )}
+        <p className="sr-sub rp-list-foot">From the rep's territory in the CRM. <Link href="/territories">Open the territories map</Link></p>
+      </div>
+    </div>
+  );
+}
+
+type Assigned = Act["assignedPartners"][number];
+const pacificDay = (d: Date | string) => new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+
+/** Every partner assigned to the rep in the CRM, with what each sent in the dates picked — from the partners chip. */
+function PartnersList({ member, partners, period, periodLabel, onClose }: {
+  member: string; partners: Assigned[]; period: { facilityId: number; leads: number; signed: number }[]; periodLabel: string; onClose: () => void;
+}) {
+  useEscape(onClose);
+  const [q, setQ] = useState("");
+  const sent = new Map(period.map((p) => [p.facilityId, p]));
+  // Partners who sent leads in the dates picked first, then A to Z.
+  const shown = partners
+    .filter((p) => matches(q, p.name, p.city, p.type))
+    .sort((x, y) => (sent.get(y.id)?.signed ?? 0) - (sent.get(x.id)?.signed ?? 0) || (sent.get(y.id)?.leads ?? 0) - (sent.get(x.id)?.leads ?? 0) || x.name.localeCompare(y.name));
+  const active = partners.filter((p) => sent.has(p.id)).length;
+  return (
+    <div className="sr-modal-back" onClick={onClose}>
+      <div className="sr-modal rp-list" role="dialog" aria-modal="true" aria-label={`Partners assigned to ${member}`} onClick={(e) => e.stopPropagation()}>
+        <div className="sr-panel-h rp-list-h">
+          <div className="sr-ttl"><Building2 size={18} /><h2>Partners assigned to {member}</h2><span className="sr-count">{fmt(partners.length)}</span></div>
+          <button className="sr-arr" aria-label="Close" onClick={onClose}><X /></button>
+        </div>
+        <p className="sr-sub">{fmt(active)} of them sent leads in {periodLabel}. Click a partner to open it.</p>
+        <ListSearch value={q} onChange={setQ} placeholder="Find a partner, city or type" />
+        {shown.length === 0 ? <p className="sr-nil">No partner matches.</p> : (
+          <div className="rp-plist">
+            {shown.map((p) => {
+              const s = sent.get(p.id);
+              const meta = [p.type, p.city, p.lastContact ? `last contact ${dayLabel(pacificDay(p.lastContact))}` : null].filter(Boolean).join(" · ");
+              return (
+                <Link key={p.id} href={`/crm/facilities/${p.id}`} className="rp-partner">
+                  <span className="sr-av" style={hueStyle(p.name)}><PartnerLogo facilityId={p.id} fallback={initials(p.name)} /></span>
+                  <span className="rp-pname"><b>{p.name}</b><i>{meta}</i></span>
+                  <span className="rp-psent">
+                    {s ? <>{fmt(s.leads)} lead{s.leads === 1 ? "" : "s"}<br /><b>{fmt(s.signed)} signed</b></> : <span className="rp-none">no leads</span>}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ListSearch({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <label className="rp-search">
+      <Search />
+      <input autoFocus className="sr-input" type="search" value={value} placeholder={placeholder} aria-label={placeholder} onChange={(e) => onChange(e.target.value)} />
+    </label>
   );
 }

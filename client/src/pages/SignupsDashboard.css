@@ -605,6 +605,30 @@ table.sr-mo-t td.tot { font-weight: 600; color: var(--ink); }
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .rp-chip svg { width: 14px; height: 14px; flex: none; }
+/* The territory and partner chips open their full lists. */
+.rp-chip-btn { cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+.rp-chip-btn:hover:not(:disabled) { background: #fff; border-color: rgba(28, 28, 28, .18); color: var(--ink); }
+.rp-chip-btn:disabled { cursor: default; }
+.rp-chip .rp-chev { width: 13px; height: 13px; margin-right: -4px; color: var(--mute); }
+.dark .sr .rp-chip-btn:hover:not(:disabled) { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .2); }
+.rp-list { width: min(720px, 100%); }
+.rp-list-h { margin-bottom: 10px; }
+.rp-list-h h2 { margin: 0; }
+.rp-search { position: relative; display: block; margin: 4px 0 12px; }
+.rp-search svg { position: absolute; left: 12px; top: 50%; width: 15px; height: 15px; margin-top: -7.5px; color: var(--mute); pointer-events: none; }
+.rp-search .sr-input { width: 100%; padding-left: 34px; }
+.rp-cities { display: flex; flex-wrap: wrap; gap: 6px; }
+.rp-city { display: inline-flex; align-items: center; height: 28px; padding: 0 11px; border-radius: 99px; background: rgba(255, 255, 255, .7); border: 1px solid var(--line); font: 500 12.5px var(--ui); color: var(--ink2); }
+.rp-list-foot { margin: 14px 0 0; }
+.rp-list-foot a { color: var(--ink); font-weight: 500; }
+.rp-plist { display: flex; flex-direction: column; gap: 6px; }
+.rp-plist .rp-partner { padding: 8px 12px; }
+.rp-plist .rp-pname { flex: 1; }
+.rp-plist .rp-pname i { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-psent { flex: none; text-align: right; font: 12px/1.35 var(--ui); color: var(--mute); font-variant-numeric: tabular-nums; }
+.rp-psent b { color: var(--ink); font-weight: 600; }
+.rp-none { color: var(--mute2); }
+.dark .sr .rp-city { background: rgba(255, 255, 255, .05); }
 .rp-bigs { flex-wrap: wrap; row-gap: 18px; }
 .rp-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .rp-stats > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .55); }

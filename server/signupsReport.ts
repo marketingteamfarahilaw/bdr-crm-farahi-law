@@ -58,6 +58,10 @@ const byKeyword = (text: string): string | null => {
   return null;
 };
 
+/** A partner's type as the report labels it: its category, with towing/insurance/marketing split out of "other" by name. */
+export const partnerType = (category: string | null, name: string) =>
+  TYPE_LABEL[!category || category === "other" ? byKeyword(name) ?? "other" : category] ?? "Independent";
+
 const SIGNED = new Set(["signed", "signed referred out", "referral accepted"]);
 export const isSigned = (o: unknown) => SIGNED.has(String(o ?? "").toLowerCase().replace(/[_\s]+/g, " ").trim());
 

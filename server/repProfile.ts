@@ -6,11 +6,12 @@
  * sign-ups and trends come from the Sign-ups Report's own functions, filtered
  * to them, so the two pages always agree.
  */
-import { inArray, sql } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { getDb } from "./db";
 import { agentZones, facilities } from "../drizzle/schema";
 import { getAgentPerformanceData, getAgentReport } from "./reports";
 import { CURRENT_TEAM, isCurrentRep, type TeamRole } from "@shared/team";
+import { partnerType } from "./signupsReport";
 
 /** The spellings a rep's name takes across the CRM's tables: "Lupe Campos", "Lupe". */
 export const nameVariants = (member: string) => Array.from(new Set([member.trim(), member.trim().split(/\s+/)[0]].filter(Boolean)));
@@ -23,12 +24,20 @@ export async function getRepActivity(member: string, range: { from: Date; to: Da
     getDb(),
   ]);
   let profile: { title: string | null; phone: string | null; email: string | null; cities: string[]; active: boolean } | null = null;
-  let partners = 0;
+  let assigned: { id: number; name: string; type: string; city: string | null; status: string | null; lastContact: Date | null }[] = [];
   if (db) {
     const [z] = await db.select().from(agentZones).where(inArray(agentZones.agentName, [...names, member])).limit(1);
     if (z) profile = { title: z.title, phone: z.phone, email: z.email, cities: Array.isArray(z.cities) ? (z.cities as string[]) : [], active: !!z.active };
-    const [n] = await db.select({ n: sql<number>`COUNT(*)` }).from(facilities).where(inArray(facilities.assignedRepName, names));
-    partners = Number(n?.n ?? 0);
+    const rows = await db
+      .select({
+        id: facilities.id, name: facilities.name, category: facilities.category, city: facilities.city,
+        status: facilities.relationshipStatus, lastContact: facilities.lastContactDate,
+      })
+      .from(facilities)
+      .where(inArray(facilities.assignedRepName, names));
+    assigned = rows
+      .map(({ category, ...f }) => ({ ...f, type: partnerType(category, f.name) }))
+      .sort((x, y) => x.name.localeCompare(y.name));
   }
   const role = (Object.keys(CURRENT_TEAM) as TeamRole[]).find((r) => CURRENT_TEAM[r].includes(member)) ?? null;
   const k = perf.kpis, r = report.kpis;
@@ -37,8 +46,9 @@ export async function getRepActivity(member: string, range: { from: Date; to: Da
     role,
     current: isCurrentRep(member),
     profile,
-    /** Partners in the CRM assigned to them today. */
-    partners,
+    /** Partners in the CRM assigned to them today — the hero's chip opens the list. */
+    partners: assigned.length,
+    assignedPartners: assigned,
     calls: {
       total: k.calls, connected: k.connected, voicemail: k.voicemail, noAnswer: k.noAnswer,
       talkMinutes: Math.round(k.talkSec / 60), partnersContacted: k.facilities,
