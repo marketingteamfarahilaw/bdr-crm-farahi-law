@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import "./CaliforniaMap.css";
+import { CURRENT_TEAM, type TeamRole } from "@shared/team";
 
 // ── Tier config ───────────────────────────────────────────────────────────────
 // Colours live in CaliforniaMap.css (--hot, --warm, --cold and their text inks),
@@ -81,22 +82,50 @@ const statusToTier = (s: string | null | undefined): "hot" | "warm" | "cold" => 
   return "warm";
 };
 
-// ── Agent color map ──────────────────────────────────────────────────────────
-const AGENT_COLORS: Record<string, string> = {
-  "Miguel Flores":    "#FF6B35",
-  "Youssef El Karmi": "#4ECDC4",
-  "Rupert Musni":     "#A855F7",
-  "David Carrillo":   "#F59E0B",
-};
+// ── The team on the map ──────────────────────────────────────────────────────
+// Partners carry their rep's name as the CRM spells it ("Lupe", "Miguel Flores"),
+// and agent_zones as the Representative Zones page does, so match on first names.
+const firstOf = (s?: string | null) => String(s ?? "").trim().split(/\s+/)[0].toLowerCase();
+const initialsOf = (name: string) => name.split(/\s+/).map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+/** Today's team by first name (@shared/team). Former reps have no zone or filter on the map. */
+const CURRENT = new Map(
+  (Object.entries(CURRENT_TEAM) as [TeamRole, readonly string[]][])
+    .flatMap(([role, names]) => names.map((n) => [firstOf(n), { full: n, role }] as const)),
+);
+
+/**
+ * A Field Rep's zone: the outline around the partners assigned to them, leaving
+ * out the farthest 15% so one partner out of town doesn't stretch the whole zone,
+ * and eased out a little so edge pins sit inside it. Null under three partners.
+ */
+function zoneOutline(points: { lat: number; lng: number }[]): { lat: number; lng: number }[] | null {
+  if (points.length < 3) return null;
+  const mid = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+  const cLat = mid(points.map((p) => p.lat)), cLng = mid(points.map((p) => p.lng));
+  const miles = (p: { lat: number; lng: number }) => Math.hypot((p.lat - cLat) * 69, (p.lng - cLng) * 57);
+  const limit = points.map(miles).sort((a, b) => a - b)[Math.floor(points.length * 0.85)];
+  const kept = points.filter((p) => miles(p) <= limit).sort((a, b) => a.lng - b.lng || a.lat - b.lat);
+  if (kept.length < 3) return null;
+  // Monotone chain convex hull, x = lng, y = lat.
+  const cross = (o: typeof kept[0], a: typeof kept[0], b: typeof kept[0]) => (a.lng - o.lng) * (b.lat - o.lat) - (a.lat - o.lat) * (b.lng - o.lng);
+  const half = (pts: typeof kept) => {
+    const h: typeof kept = [];
+    for (const p of pts) { while (h.length >= 2 && cross(h[h.length - 2], h[h.length - 1], p) <= 0) h.pop(); h.push(p); }
+    return h.slice(0, -1);
+  };
+  const hull = [...half(kept), ...half([...kept].reverse())];
+  if (hull.length < 3) return null;
+  const hLat = hull.reduce((t, p) => t + p.lat, 0) / hull.length, hLng = hull.reduce((t, p) => t + p.lng, 0) / hull.length;
+  return hull.map((p) => ({ lat: hLat + (p.lat - hLat) * 1.12, lng: hLng + (p.lng - hLng) * 1.12 }));
+}
 
 // ── Pin DOM element ───────────────────────────────────────────────────────────
 // A teardrop in the lead's temperature, the category's emoji inside, ringed in
 // the representative's colour when one is assigned; a small charcoal star when
 // it's already in the CRM. Styles: .pm-pin* in CaliforniaMap.css.
-function createLeadPin(lead: PinLead): HTMLElement {
+function createLeadPin(lead: PinLead, agentColor: string | null): HTMLElement {
   const tier = TIER_CONFIG[lead.scoreTier];
   const cat = CATEGORY_CONFIG[lead.category] ?? { emoji: "📍", color: "#94a3b8" };
-  const agentColor = lead.assignedAgent ? (AGENT_COLORS[lead.assignedAgent] ?? null) : null;
 
   const wrapper = document.createElement("div");
   wrapper.className = "pm-pin";
@@ -125,6 +154,7 @@ function createLeadPin(lead: PinLead): HTMLElement {
 // ── Info Window content ───────────────────────────────────────────────────────
 function createInfoWindowContent(
   lead: PinLead,
+  agentColor: string | null,
   onSaveLead: () => void,
   onOpenCrm: () => void,
   onSearch: () => void,
@@ -132,7 +162,6 @@ function createInfoWindowContent(
   const tier = TIER_CONFIG[lead.scoreTier];
   const cat = CATEGORY_CONFIG[lead.category] ?? { emoji: "📍", color: "#94a3b8" };
   const catLabel = getCategoryLabel(lead.category);
-  const agentColor = lead.assignedAgent ? (AGENT_COLORS[lead.assignedAgent] ?? "#94a3b8") : null;
   const stars = lead.rating
     ? "★".repeat(Math.round(lead.rating)) + "☆".repeat(5 - Math.round(lead.rating))
     : "";
@@ -173,81 +202,6 @@ function createInfoWindowContent(
   return container;
 }
 
-// ── Agent territory polygons ─────────────────────────────────────────────────
-// Approximate county/region boundaries for each agent's territory
-const AGENT_TERRITORIES: Array<{
-  agent: string;
-  color: string;
-  label: string;
-  initials: string;
-  paths: Array<{ lat: number; lng: number }>;
-}> = [
-  {
-    agent: "Miguel Flores",
-    color: "#FF6B35",
-    label: "Miguel Flores",
-    initials: "MF",
-    // Los Angeles County + Orange County
-    paths: [
-      { lat: 34.823, lng: -118.944 }, // NW corner LA County
-      { lat: 34.823, lng: -117.646 }, // NE corner LA County
-      { lat: 34.080, lng: -117.646 }, // SE corner LA County / border with San Bernardino
-      { lat: 33.740, lng: -117.440 }, // Orange County east
-      { lat: 33.400, lng: -117.510 }, // Orange County south
-      { lat: 33.400, lng: -118.050 }, // OC coast south
-      { lat: 33.600, lng: -118.600 }, // Palos Verdes / coast
-      { lat: 34.050, lng: -118.950 }, // Santa Monica mountains west
-    ],
-  },
-  {
-    agent: "Youssef El Karmi",
-    color: "#4ECDC4",
-    label: "Youssef El Karmi",
-    initials: "YE",
-    // NorCal: SF Bay Area + Sacramento Valley + Central Valley (Fresno/Bakersfield)
-    paths: [
-      { lat: 38.864, lng: -123.533 }, // NW (Sonoma coast)
-      { lat: 38.864, lng: -121.200 }, // NE (Sacramento foothills)
-      { lat: 37.200, lng: -119.500 }, // SE (Fresno/Kings)
-      { lat: 35.000, lng: -119.000 }, // Bakersfield south
-      { lat: 35.000, lng: -120.200 }, // SW Bakersfield
-      { lat: 36.200, lng: -121.100 }, // Monterey coast
-      { lat: 37.200, lng: -122.400 }, // Bay Area coast
-      { lat: 37.900, lng: -122.700 }, // Marin
-    ],
-  },
-  {
-    agent: "Rupert Musni",
-    color: "#A855F7",
-    label: "Rupert Musni",
-    initials: "RM",
-    // San Diego County
-    paths: [
-      { lat: 33.500, lng: -117.510 }, // NW border with OC
-      { lat: 33.500, lng: -116.080 }, // NE corner
-      { lat: 32.534, lng: -116.080 }, // SE corner (US-Mexico border)
-      { lat: 32.534, lng: -117.125 }, // SW corner (coast)
-      { lat: 32.700, lng: -117.250 }, // Point Loma
-      { lat: 33.200, lng: -117.480 }, // Carlsbad coast
-    ],
-  },
-  {
-    agent: "David Carrillo",
-    color: "#F59E0B",
-    label: "David Carrillo",
-    initials: "DC",
-    // South Bay + San Gabriel Valley + East LA suburbs
-    paths: [
-      { lat: 34.200, lng: -118.550 }, // Burbank/Glendale NW
-      { lat: 34.200, lng: -117.750 }, // Pasadena/Pomona NE
-      { lat: 33.850, lng: -117.750 }, // Pomona/West Covina SE
-      { lat: 33.750, lng: -118.250 }, // Torrance/Carson S
-      { lat: 33.750, lng: -118.450 }, // El Segundo/Inglewood SW
-      { lat: 34.050, lng: -118.450 }, // Culver City W
-    ],
-  },
-];
-
 // ── Major California cities with coordinates ──────────────────────────────────
 const CA_CITIES = [
   { name: "Los Angeles",    lat: 34.0522,  lng: -118.2437 },
@@ -281,6 +235,12 @@ export default function CaliforniaMapPage() {
 
   // Agent zones data
   const { data: agentZones = [] } = trpc.agentZones.list.useQuery();
+  // Today's team only (Sept 2026: "hide former team from the map"), by full name.
+  const teamZones = useMemo(() => (agentZones as any[]).flatMap((z) => {
+    const who = CURRENT.get(firstOf(z.agentName));
+    return who ? [{ ...z, full: who.full, role: who.role as TeamRole }] : [];
+  }), [agentZones]);
+  const repColor = useMemo(() => new Map<string, string>(teamZones.map((z) => [firstOf(z.agentName), z.color])), [teamZones]);
   const assignLeadMutation = trpc.agentZones.assignLead.useMutation({
     onSuccess: () => {
       toast.success("Representative assigned!");
@@ -366,7 +326,7 @@ export default function CaliforniaMapPage() {
     return allPins.filter(p =>
       (tierFilter === "all" || p.scoreTier === tierFilter) &&
       activeCats.has(p.category) &&
-      (agentFilter === "all" || p.assignedAgent === agentFilter)
+      (agentFilter === "all" || firstOf(p.assignedAgent) === firstOf(agentFilter))
     );
   }, [allPins, tierFilter, activeCats, agentFilter]);
 
@@ -390,7 +350,8 @@ export default function CaliforniaMapPage() {
 
     visiblePins.forEach(lead => {
       const position = { lat: lead.latitude, lng: lead.longitude };
-      const pinEl = createLeadPin(lead);
+      const color = repColor.get(firstOf(lead.assignedAgent)) ?? null;
+      const pinEl = createLeadPin(lead, color);
 
       const marker = new window.google.maps.marker.AdvancedMarkerElement({
         map: mapRef.current!,
@@ -404,6 +365,7 @@ export default function CaliforniaMapPage() {
 
         const content = createInfoWindowContent(
           lead,
+          color,
           () => {
             // Save lead
             saveLeadMutation.mutate({
@@ -455,11 +417,19 @@ export default function CaliforniaMapPage() {
 
       markersRef.current.push(marker);
     });
-  }, [visiblePins, saveLeadMutation, navigate]);
+  }, [visiblePins, saveLeadMutation, navigate, repColor]);
 
   useEffect(() => {
     if (mapRef.current) buildMarkers();
   }, [buildMarkers]);
+
+  // Field Reps' zones, from where their partners are. BDRs work the whole state by
+  // phone, so a shape around their partners would cover most of California.
+  const territories = useMemo(() => teamZones.filter((z) => z.role === "FR").flatMap((z) => {
+    const pins = allPins.filter((p) => firstOf(p.assignedAgent) === firstOf(z.agentName));
+    const paths = zoneOutline(pins.map((p) => ({ lat: p.latitude, lng: p.longitude })));
+    return paths ? [{ agent: z.agentName, color: z.color as string, label: z.full, initials: initialsOf(z.full), paths, pins }] : [];
+  }), [teamZones, allPins]);
 
   // Draw territory polygons
   const drawTerritories = useCallback((map: google.maps.Map) => {
@@ -472,9 +442,9 @@ export default function CaliforniaMapPage() {
 
     if (!showZones) return;
 
-    AGENT_TERRITORIES.forEach(territory => {
+    territories.forEach(territory => {
       // Compute per-agent lead stats from allPins
-      const agentPins = allPins.filter(p => p.assignedAgent === territory.agent);
+      const agentPins = territory.pins;
       const hotCount = agentPins.filter(p => p.scoreTier === "hot").length;
       const warmCount = agentPins.filter(p => p.scoreTier === "warm").length;
       const coldCount = agentPins.filter(p => p.scoreTier === "cold").length;
@@ -571,7 +541,7 @@ export default function CaliforniaMapPage() {
       });
       labelMarkersRef.current.push(labelMarker);
     });
-  }, [showZones, allPins]);
+  }, [showZones, territories]);
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -685,7 +655,7 @@ export default function CaliforniaMapPage() {
             </div>
 
             {/* Agent Zones panel */}
-            {agentZones.length > 0 && (
+            {teamZones.length > 0 && (
               <div className="pm-card">
                 <div className="pm-h">Representative zones</div>
                 <div className="pm-rows">
@@ -694,14 +664,13 @@ export default function CaliforniaMapPage() {
                     <span className="lbl">All representatives</span>
                     <span className="pm-count">{allPins.length}</span>
                   </button>
-                  {agentZones.map((zone: any) => {
+                  {teamZones.map((zone) => {
                     const active = agentFilter === zone.agentName;
-                    const count = allPins.filter(p => p.assignedAgent === zone.agentName).length;
-                    const initials = zone.agentName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+                    const count = allPins.filter(p => firstOf(p.assignedAgent) === firstOf(zone.agentName)).length;
                     return (
                       <button key={zone.agentName} type="button" className={cn("pm-row", active && "on")} aria-pressed={active} onClick={() => setAgentFilter(active ? "all" : zone.agentName)}>
-                        <span className="pm-av" style={{ ["--c" as any]: zone.color }}>{initials}</span>
-                        <span className="lbl">{zone.agentName}</span>
+                        <span className="pm-av" style={{ ["--c" as any]: zone.color }}>{initialsOf(zone.full)}</span>
+                        <span className="lbl">{zone.full}</span>
                         <span className="pm-count">{count}</span>
                       </button>
                     );
