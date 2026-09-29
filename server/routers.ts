@@ -108,6 +108,7 @@ import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgen
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
 import { getSignupsTrends } from "./signupsTrends";
+import { getSignupsMonthly } from "./signupsMonthly";
 import { getRepActivity } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
 import { getSystemHealth } from "./systemHealth";
@@ -912,6 +913,10 @@ export const appRouter = router({
       signupsTrends: bdProcedure
         .input(z.object({ role: z.enum(["BDR", "FR", "Intake"]).optional(), team: z.enum(["current", "all"]).optional(), member: z.string().max(120).optional() }))
         .query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupsTrends({ role: input.role, team: input.team, member: input.member }); }),
+      // The team sheet's monthly leads summary, per role (or one rep), from Lead Docket.
+      signupsMonthly: bdProcedure
+        .input(z.object({ year: z.number().int().min(2019).max(2100).optional(), role: z.enum(["BDR", "FR", "Intake"]).optional(), team: z.enum(["current", "all"]).optional(), member: z.string().max(120).optional() }))
+        .query(async ({ ctx, input }) => { mgrOnly(ctx); return getSignupsMonthly(input.year, { role: input.role, team: input.team, member: input.member }); }),
       // A representative's profile: their calls, recaps, visits, errands, expenses and partners.
       repActivity: bdProcedure
         .input(range.extend({ member: z.string().min(1).max(120) }))

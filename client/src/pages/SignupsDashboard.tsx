@@ -15,6 +15,7 @@ import "./SignupsDashboard.css";
 import { RepFace, PartnerLogo } from "@/components/RepFace";
 import { PartnerPicker } from "./signups/PartnerPicker";
 import { TrendsPanel } from "./signups/Trends";
+import { MonthlyPanel } from "./signups/Monthly";
 
 // The look lives in SignupsDashboard.css (the Voice Agents board style).
 
@@ -329,6 +330,7 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
     <>
       <Scorecard sc={data.scorecard} label={rangeLabel(from, to)} onRep={(rep) => openRep(rep)} />
       <TrendsPanel role={role} team={team} />
+      <MonthlyPanel role={role} team={team} />
 
       {/* Feature row */}
       <div className="sr-features">

@@ -19,6 +19,7 @@ import {
   Big, DateInput, HBar, LeadList, SC_TITLE, ScorecardTable, fmt, hueStyle, initials, iso, pctText, presets, rangeLabel, roleName, teamTops,
 } from "../SignupsDashboard";
 import { TrendsPanel } from "./Trends";
+import { MonthlyPanel } from "./Monthly";
 import "../SignupsDashboard.css";
 
 type Act = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["repActivity"]>;
@@ -120,6 +121,7 @@ export default function RepProfile() {
               )}
 
               <TrendsPanel role="all" team="all" member={member} />
+              <MonthlyPanel role="all" team="all" member={member} />
 
               <div className="sr-board">
                 <div style={{ minWidth: 0 }}>

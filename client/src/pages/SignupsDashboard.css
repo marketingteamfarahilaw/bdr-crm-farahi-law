@@ -515,6 +515,74 @@ table.sr-t tr.dc-sub:hover td { background: transparent; }
 .dark .sr .sr-tdelta { background: rgba(255, 255, 255, .08); }
 .dark .sr .sr-ttip { color: #1c1c19; }
 
+/* ---- monthly leads summary (signups/Monthly.tsx): the team sheet's table with a
+   dark header band and bold totals, and its chart — leads as bars, quality and
+   sign-ups as lines. Line colours pass the palette validator (CVD ΔE ≥ 8.7,
+   ≥ 3:1 on the card) in both themes; each line sits on a halo of the card colour
+   so it stays readable where it crosses a bar. */
+.sr-monthly { --mo-q: #2f6fb3; --mo-s: #1f9d6b; --mo-r: #b87d00; --mo-bar: var(--char); --mo-halo: #fff; }
+.dark .sr .sr-monthly { --mo-q: #5a92d6; --mo-s: #34a574; --mo-r: #b98710; --mo-bar: rgba(241, 239, 232, .82); --mo-halo: #1e1e1b; }
+.sr-monthly .sr-panel-h { flex-wrap: wrap; }
+.sr-mo { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 12px; }
+.sr-mo + .sr-mo { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+.sr-mo-tw { min-width: 0; }
+table.sr-mo-t { width: 100%; border-collapse: separate; border-spacing: 0; font: 12.5px var(--ui); color: var(--ink2); font-variant-numeric: tabular-nums; }
+/* Row names stay put while the months scroll sideways on a narrow screen. */
+table.sr-mo-t th:first-child { position: sticky; left: 0; z-index: 1; }
+table.sr-mo-t tbody th { background: var(--mo-row, #f9f8f4); }
+table.sr-mo-t tbody tr:nth-child(even) th { background: var(--mo-row2, #f1f0eb); }
+table.sr-mo-t th, table.sr-mo-t td { padding: 5px 8px; text-align: right; white-space: nowrap; }
+table.sr-mo-t thead th { background: var(--char); color: #fff; font-weight: 600; }
+table.sr-mo-t thead th:first-child { text-align: left; border-radius: 10px 0 0 10px; }
+table.sr-mo-t thead th:last-child { border-radius: 0 10px 10px 0; }
+table.sr-mo-t thead th.now { color: var(--sun); }
+table.sr-mo-t tbody th { text-align: left; font-weight: 500; color: var(--ink2); cursor: help; }
+table.sr-mo-t tbody th[title=""], table.sr-mo-t tbody th:not([title]) { cursor: default; }
+table.sr-mo-t tbody tr:nth-child(even) { background: rgba(28, 28, 28, .035); }
+table.sr-mo-t tbody tr.b th, table.sr-mo-t tbody tr.b td { font-weight: 700; color: var(--ink); }
+table.sr-mo-t td.now { background: var(--sun-t); }
+table.sr-mo-t .tot { border-left: 1px solid var(--line); }
+table.sr-mo-t td.tot { font-weight: 600; color: var(--ink); }
+.sr-mo-foot { margin: 6px 0 0; font: 11.5px var(--ui); color: var(--mute); }
+.sr-mo-chart { min-width: 0; padding: 12px 12px 6px; border: 1px solid var(--line); border-radius: var(--rad-m); background: var(--glass-hi); }
+.sr-mo-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; font: 11.5px var(--ui); color: var(--ink2); margin: 0 0 4px; }
+.sr-mo-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sr-mo-legend i.bar { width: 10px; height: 10px; border-radius: 3px; background: var(--mo-bar); }
+.sr-mo-legend i.ln { width: 16px; height: 3px; border-radius: 2px; }
+.sr-mo-legend i.q, .sr-mo-plot .ln.q { --c: var(--mo-q); }
+.sr-mo-legend i.s, .sr-mo-plot .ln.s { --c: var(--mo-s); }
+.sr-mo-legend i.r, .sr-mo-plot .ln.r { --c: var(--mo-r); }
+.sr-mo-legend i.ln { background: var(--c); }
+.sr-mo-plot { position: relative; }
+.sr-mo-plot svg { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--ui); }
+.sr-mo-plot .grid line { stroke: var(--line); stroke-width: 1; }
+.sr-mo-plot .grid text, .sr-mo-plot .mx { fill: var(--mute); font-size: 10.5px; }
+.sr-mo-plot .bar { fill: var(--mo-bar); }
+.sr-mo-plot .col.now .bar { fill: var(--sun); }
+.sr-mo-plot .col.on .bar { opacity: .86; }
+.sr-mo-plot .bv { fill: var(--ink2); font-size: 10.5px; font-weight: 600; }
+.sr-mo-plot .bv.in { fill: #fff; paint-order: stroke; stroke: var(--mo-bar); stroke-width: 3px; stroke-linejoin: round; }
+.sr-mo-plot .bv.in.now { stroke: var(--sun); }
+.sr-mo-plot .bv:not(.in) { paint-order: stroke; stroke: var(--mo-halo); stroke-width: 3px; stroke-linejoin: round; }
+.dark .sr .sr-mo-plot .bv.in, .sr-mo-plot .bv.in.now { fill: #1c1c1c; }
+.sr-mo-plot .ln polyline { fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.sr-mo-plot .ln polyline.halo { stroke: var(--mo-halo); stroke-width: 5; }
+.sr-mo-plot .ln circle { fill: var(--c); stroke: var(--mo-halo); stroke-width: 2; }
+.sr-mo-plot .hit { fill: transparent; outline: none; cursor: default; }
+.sr-mo-plot .hit:focus-visible { stroke: var(--char); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.sr-mo-tip {
+  position: absolute; top: 0; z-index: 5; transform: translate(-50%, -100%); display: flex; flex-direction: column; gap: 1px;
+  width: max-content; max-width: 220px; padding: 6px 9px; border-radius: 10px; background: var(--char); color: #fff;
+  font: 500 11.5px/1.35 var(--ui); pointer-events: none;
+}
+.sr-mo-tip[data-edge="l"] { transform: translate(-12%, -100%); }
+.sr-mo-tip[data-edge="r"] { transform: translate(-88%, -100%); }
+.dark .sr table.sr-mo-t thead th, .dark .sr .sr-mo-tip { color: #161613; }
+.dark .sr table.sr-mo-t thead th.now { color: #7a5a00; }
+.dark .sr table.sr-mo-t tbody tr:nth-child(even) { background: rgba(255, 255, 255, .04); }
+.dark .sr .sr-monthly { --mo-row: #22221f; --mo-row2: #2a2a26; }
+@media (max-width: 1240px) { .sr-mo { grid-template-columns: minmax(0, 1fr); } .sr-mo-chart { max-width: 720px; } }
+
 /* ---- a representative's profile (signups/RepProfile.tsx): the report's look,
    with the person up front — photo, role, standing — then their numbers */
 .rp-back { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
