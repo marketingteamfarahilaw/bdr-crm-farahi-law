@@ -924,7 +924,7 @@ export default function CaliforniaMapPage() {
             <MapPin size={14} color="#07101f" strokeWidth={2.5} />
           </div>
           <span className="text-sm font-bold tracking-wide" style={{ color: "#f1f5f9", fontFamily: "'Playfair Display', serif", letterSpacing: "0.02em" }}>
-            California Lead Map
+            California Partner Map
           </span>
         </div>
 

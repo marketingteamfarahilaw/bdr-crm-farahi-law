@@ -1,6 +1,6 @@
 /**
  * The Lead Scraper under one menu item (Sept 2026: "Lead search … Saved leads
- * … Saved searches … under one folder"): the CA Lead Map, Lead Search, Saved
+ * … Saved searches … under one folder"): the Partner Map, Lead Search, Saved
  * Leads and Saved Searches as tabs of one page. Each keeps its own address, so
  * old links, bookmarks and a refresh land on the right tab.
  */
@@ -12,7 +12,7 @@ import SavedLeads from "./SavedLeads";
 import SavedSearches from "./SavedSearches";
 
 const TABS = [
-  ["/map", "CA Lead Map"],
+  ["/map", "Partner Map"],
   ["/search", "Lead Search"],
   ["/saved-leads", "Saved Leads"],
   ["/saved-searches", "Saved Searches"],

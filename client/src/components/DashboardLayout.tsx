@@ -50,9 +50,9 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: Settings, label: "Settings & RingCentral", path: "/intake/settings", level: "intake" },
   ] },
   // Lead Scraper: one item (Sept 2026, "under one folder for all these 4 options").
-  // Lead Search, Saved Leads and Saved Searches are tabs of the CA Lead Map page.
+  // Lead Search, Saved Leads and Saved Searches are tabs of the Partner Map page (named so Sept 2026).
   { title: "Lead Scraper", items: [
-    { icon: Map, label: "CA Lead Map", path: "/map", level: "bdr", also: ["/search", "/saved-leads", "/saved-searches"] },
+    { icon: Map, label: "Partner Map", path: "/map", level: "bdr", also: ["/search", "/saved-leads", "/saved-searches"] },
   ] },
   { title: "Marketing", items: [
     { icon: Megaphone, label: "Marketing Report", path: "/marketing-report", level: "marketing" },

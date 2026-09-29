@@ -9,7 +9,7 @@ import { Building2, Search, LayoutDashboard, Map, BarChart3, Users, Phone, MapPi
 const PAGES = [
   { label: "Command Center", path: "/", icon: LayoutDashboard },
   { label: "Facilities", path: "/crm/facilities", icon: Building2 },
-  { label: "CA Lead Map", path: "/map", icon: Map },
+  { label: "Partner Map", path: "/map", icon: Map },
   { label: "Lead Search", path: "/search", icon: Search },
   { label: "BDR Reports", path: "/crm/reports", icon: BarChart3 },
   { label: "Data Check", path: "/data-check", icon: ListChecks },
