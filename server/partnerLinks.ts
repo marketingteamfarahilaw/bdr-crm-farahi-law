@@ -33,7 +33,7 @@ async function dbOrThrow(): Promise<Db> {
 }
 
 /** Recompute these partners' stored totals from facility_leads, as the mirror does. */
-async function refreshTotals(db: Db, ids: number[]) {
+export async function refreshTotals(db: Db, ids: number[]) {
   for (const id of Array.from(new Set(ids))) {
     await db.execute(sql`UPDATE facilities f SET
       f.totalLeadsReceived = (SELECT COUNT(*) FROM facility_leads WHERE facilityId = ${id} AND direction = 'received_from_facility'),

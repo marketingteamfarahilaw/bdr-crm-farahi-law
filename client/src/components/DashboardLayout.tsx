@@ -49,21 +49,19 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: PhoneCall, label: "Calls & Transcripts", path: "/intake/calls", level: "intake" },
     { icon: Settings, label: "Settings & RingCentral", path: "/intake/settings", level: "intake" },
   ] },
-  // Lead Scraper hidden (per request, Sept 2026), with its shortcuts on the home
-  // page and in the Ctrl+K palette. Pages/routes still exist; uncomment to restore.
-  // { title: "Lead Scraper", items: [
-  //   { icon: Map, label: "CA Lead Map", path: "/map", level: "bdr" },
-  //   { icon: Search, label: "Lead Search", path: "/search", level: "bdr" },
-  //   { icon: Bookmark, label: "Saved Leads", path: "/saved-leads", level: "bdr" },
-  //   { icon: History, label: "Saved Searches", path: "/saved-searches", level: "bdr" },
-  // ] },
+  // Lead Scraper: one item (Sept 2026, "under one folder for all these 4 options").
+  // Lead Search, Saved Leads and Saved Searches are tabs of the CA Lead Map page.
+  { title: "Lead Scraper", items: [
+    { icon: Map, label: "CA Lead Map", path: "/map", level: "bdr", also: ["/search", "/saved-leads", "/saved-searches"] },
+  ] },
   { title: "Marketing", items: [
     { icon: Megaphone, label: "Marketing Report", path: "/marketing-report", level: "marketing" },
   ] },
   { title: "Facility Partner CRM", items: [
     // { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
-    { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr" },
-    { icon: Map, label: "Territories", path: "/territories", level: "manage" },
+    // Territories opens from a button on the Facilities page (Sept 2026: "it does
+    // not need its own spot on the left menu").
+    { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr", also: ["/territories"] },
     // RingCentral is a tab in Settings and Uber Eats one in Expenses (per request,
     // Sept 2026); their old addresses open those tabs.
     // { icon: Car, label: "PD Car Tracker", path: "/pd-tracker", level: "bdr" },
@@ -434,7 +432,8 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 0px)' }}>{children}</main>
+        {/* overflow-x-clip, not overflow-hidden: clipping without being a scroll box lets sticky bars and tab strips stick. */}
+        <main className="flex-1 overflow-x-clip" style={{ height: 'calc(100vh - 0px)' }}>{children}</main>
         {/* Super admins: a banner while a background job is down (System health). */}
         <SystemAlert />
       </SidebarInset>

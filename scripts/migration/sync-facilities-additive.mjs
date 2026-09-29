@@ -19,6 +19,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
 import { fullName } from "./leaddocket-rules.mjs";
+import { loadRedirects, redirectLookup } from "./facility-redirects.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
 const APPLY = process.argv.includes("--apply");
@@ -129,12 +130,21 @@ for (const f of existing) {
   const k = nameKey(f.name); if (k && !byName.has(k)) byName.set(k, f);
 }
 const findExisting = (rec) => byPhone.get(p10(rec.phone)) ?? byName.get(nameKey(rec.name)) ?? null;
+// Merged or deleted from the Facilities page: the facility kept, or none — never a new copy.
+const redirect = redirectLookup(await loadRedirects(c), { nameKey, phoneKey: p10 });
+const byId = new Map(existing.map((f) => [f.id, f]));
+let redirected = 0;
 
 const FILL = ["address", "city", "phone", "phone2", "phone3", "contactName", "contactEmail", "notes", "assignedRepName"];
 let toInsert = 0, toFill = 0, toPromote = 0;
 const seen = new Set();
 for (const rec of wanted) {
-  const cur = findExisting(rec);
+  let cur = findExisting(rec);
+  if (!cur) {
+    const to = redirect(rec.name, rec.phone);
+    if (to === null || (to !== undefined && !byId.has(to))) { redirected++; continue; }
+    if (to !== undefined) cur = byId.get(to);
+  }
   if (!cur) {
     toInsert++;
     if (toInsert <= 10) console.log(`  + ${rec.name}  (${rec.city || "no city"}, ${rec.phone || "no phone"}, ${rec.assignedRepName || "unassigned"})`);
@@ -177,6 +187,7 @@ for (const f of existing) {
 const dbOnly = existing.filter((f) => !seen.has(f.id));
 console.log(`\nWorkbook: ${wanted.length} facilities | database before: ${existing.length}`);
 console.log(`  to insert (missing from DB): ${toInsert}`);
+console.log(`  merged or deleted in the app (not re-created): ${redirected}`);
 console.log(`  existing rows with blanks to fill: ${toFill}`);
 console.log(`  to promote to active partner: ${toPromote}`);
 console.log(`  owner names respelled in full: ${respelled}`);

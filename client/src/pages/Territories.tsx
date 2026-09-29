@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Map, Search, UserCheck, Pencil, Merge, Wand2, Building2, AlertTriangle, X } from "lucide-react";
+import { Map, Search, UserCheck, Pencil, Merge, Wand2, Building2, AlertTriangle, X, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const FR_REPS = ["Jezel", "Lupe", "Marisol", "Zulema"];
@@ -82,6 +83,10 @@ export default function Territories() {
     <div className="p-6 space-y-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
+          {/* Opened from the Facilities page now, not the left menu (Sept 2026). */}
+          <Link href="/crm/facilities" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to Facilities
+          </Link>
           <h1 className="text-2xl font-semibold flex items-center gap-2"><Map className="w-6 h-6" /> Territories</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {data?.territories.length ?? 0} territories · owners shown here also colour the California map

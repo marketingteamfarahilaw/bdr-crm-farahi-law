@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowLeft, Save } from "lucide-react";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 
 const CATEGORIES = [
   { value: "body_shop", label: "Body Shop" },
@@ -62,6 +63,8 @@ export default function FacilityForm() {
   const facilityId = isEdit ? parseInt(params.id!, 10) : undefined;
 
   const [form, setForm] = useState<FormState>(EMPTY);
+  // What the form held when it opened, to tell whether anything changed.
+  const [baseline, setBaseline] = useState<FormState>(EMPTY);
   const utils = trpc.useUtils();
 
   const { data: existing, isLoading } = trpc.crm.facilities.get.useQuery(
@@ -70,9 +73,12 @@ export default function FacilityForm() {
   );
   const { data: territories } = trpc.crm.facilities.territories.useQuery();
 
+  // Fill the form once. A refetch (the window regaining focus) must not wipe what's being typed.
+  const seeded = useRef(false);
   useEffect(() => {
-    if (existing) {
-      setForm({
+    if (existing && !seeded.current) {
+      seeded.current = true;
+      const loaded: FormState = {
         name: existing.name ?? "",
         category: existing.category ?? "body_shop",
         address: existing.address ?? "",
@@ -92,33 +98,25 @@ export default function FacilityForm() {
         managementFlag: existing.managementFlag === 1,
         territory: (existing as any).territory ?? "",
         managedBy: (existing as any).managedBy ?? "",
-      });
+      };
+      setForm(loaded);
+      setBaseline(loaded);
     }
   }, [existing]);
 
   const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const createFacility = trpc.crm.facilities.create.useMutation({
-    onSuccess: () => {
-      toast.success("Facility created");
-      utils.crm.facilities.list.invalidate();
-      navigate("/crm/facilities");
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  const createFacility = trpc.crm.facilities.create.useMutation({ onError: (e) => toast.error(e.message) });
+  const updateFacility = trpc.crm.facilities.update.useMutation({ onError: (e) => toast.error(e.message) });
+  const isPending = createFacility.isPending || updateFacility.isPending;
 
-  const updateFacility = trpc.crm.facilities.update.useMutation({
-    onSuccess: () => {
-      toast.success("Facility updated");
-      utils.crm.facilities.list.invalidate();
-      utils.crm.facilities.get.invalidate({ id: facilityId! });
-      navigate(`/crm/facilities/${facilityId}`);
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  // Leaving with unsaved changes asks first: save them, leave without saving, or stay.
+  const dirty = JSON.stringify(form) !== JSON.stringify(baseline);
+  const { dialog: unsavedDialog, release } = useUnsavedChanges(dirty, { onSave: (then) => handleSubmit(then), saving: isPending });
 
-  const handleSubmit = () => {
+  /** Save, then go where the user was heading — or back to the profile (or the list, for a new facility). */
+  const handleSubmit = (then?: () => void) => {
     if (!form.name) { toast.error("Facility name is required"); return; }
     const payload = {
       name: form.name,
@@ -140,10 +138,17 @@ export default function FacilityForm() {
       territory: form.territory || undefined,
       managedBy: (form.managedBy || undefined) as any,
     };
+    const saved = (message: string, fallback: string) => () => {
+      toast.success(message);
+      utils.crm.facilities.list.invalidate();
+      if (isEdit) utils.crm.facilities.get.invalidate({ id: facilityId! });
+      release();
+      if (then) then(); else navigate(fallback);
+    };
     if (isEdit) {
-      updateFacility.mutate({ id: facilityId!, ...payload, managementFlag: form.managementFlag });
+      updateFacility.mutate({ id: facilityId!, ...payload, managementFlag: form.managementFlag }, { onSuccess: saved("Facility updated", `/crm/facilities/${facilityId}`) });
     } else {
-      createFacility.mutate(payload);
+      createFacility.mutate(payload, { onSuccess: saved("Facility created", "/crm/facilities") });
     }
   };
 
@@ -156,21 +161,29 @@ export default function FacilityForm() {
     );
   }
 
-  const isPending = createFacility.isPending || updateFacility.isPending;
+  const saveLabel = isPending ? "Saving..." : isEdit ? "Save Changes" : "Create Facility";
+  const back = () => navigate(isEdit ? `/crm/facilities/${facilityId}` : "/crm/facilities");
 
   return (
     <div className="p-6 max-w-3xl space-y-6">
       <div>
         <button
-          onClick={() => navigate(isEdit ? `/crm/facilities/${facilityId}` : "/crm/facilities")}
+          onClick={back}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           {isEdit ? "Back to Profile" : "Back to Facilities"}
         </button>
-        <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
-          {isEdit ? "Edit Facility" : "Add New Facility"}
-        </h1>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
+            {isEdit ? "Edit Facility" : "Add New Facility"}
+          </h1>
+          {/* Save at the top too, so it's never a long scroll away. */}
+          <Button onClick={() => handleSubmit()} disabled={isPending} className="gap-2" style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}>
+            <Save className="w-4 h-4" />
+            {saveLabel}
+          </Button>
+        </div>
       </div>
 
       {/* Basic Info */}
@@ -315,24 +328,23 @@ export default function FacilityForm() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-3">
+      {/* Pinned to the bottom of the screen while scrolling the form. */}
+      <div className="sticky bottom-0 z-10 -mx-6 px-6 py-3 flex items-center gap-3 border-t border-border bg-background/90 backdrop-blur">
         <Button
-          onClick={handleSubmit}
+          onClick={() => handleSubmit()}
           disabled={isPending}
           className="gap-2"
           style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}
         >
           <Save className="w-4 h-4" />
-          {isPending ? "Saving..." : isEdit ? "Save Changes" : "Create Facility"}
+          {saveLabel}
         </Button>
-        <Button
-          variant="outline"
-          className="border-border"
-          onClick={() => navigate(isEdit ? `/crm/facilities/${facilityId}` : "/crm/facilities")}
-        >
+        <Button variant="outline" className="border-border" onClick={back}>
           Cancel
         </Button>
+        {dirty && <span className="text-xs text-amber-600 dark:text-amber-400">Unsaved changes</span>}
       </div>
+      {unsavedDialog}
     </div>
   );
 }

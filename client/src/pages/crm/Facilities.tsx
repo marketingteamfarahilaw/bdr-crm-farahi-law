@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { canManage } from "@shared/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,14 +14,15 @@ import {
 } from "@/components/ui/table";
 import {
   Building2, Phone, MapPin, User, Plus, Search,
-  AlertTriangle, Clock, ChevronUp, ChevronDown, Upload, List, Map,
-  Receipt, ListChecks, FileText, ArrowRight,
+  AlertTriangle, Clock, ChevronUp, ChevronDown, Upload, List,
+  Receipt, ListChecks, ArrowRight, Merge, Trash2, Map as MapIcon,
 } from "lucide-react";
 import { formatDistanceToNow } from "@/lib/datetime";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { BulkImportDialog } from "./BulkImportDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import FacilitiesMap from "@/components/FacilitiesMap";
+import { DeleteFacilitiesDialog, MergeFacilitiesDialog } from "./FacilityMergeDelete";
 
 import { STATUS_LABELS } from "@/lib/crmMeta";
 
@@ -60,22 +63,34 @@ export default function Facilities() {
   );
 
   const utils = trpc.useUtils();
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const { user } = useAuth();
+  const manager = canManage(user?.role);
+  // Ticked facilities by id, with their row: a search or filter change doesn't lose them.
+  const [selected, setSelected] = useState<Map<number, any>>(new Map());
+  // Merging two, or deleting some, of the ticked facilities (managers only).
+  const [merging, setMerging] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const picked = Array.from(selected.values());
+  const afterMergeOrDelete = () => {
+    setMerging(false); setDeleting(false); setSelected(new Map());
+    utils.crm.facilities.list.invalidate();
+    utils.crm.map.allFacilities.invalidate();
+  };
   const [bulkRep, setBulkRep] = useState("");
   const [bulkStatus, setBulkStatus] = useState("");
   const bulkUpdate = trpc.crm.facilities.bulkUpdate.useMutation({
     onSuccess: (r) => {
       toast.success(`Updated ${r.updated} facilit${r.updated === 1 ? "y" : "ies"}`);
-      setSelected(new Set()); setBulkRep(""); setBulkStatus("");
+      setSelected(new Map()); setBulkRep(""); setBulkStatus("");
       utils.crm.facilities.list.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
-  const toggleSelect = (id: number) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleSelect = (f: any) => setSelected((s) => { const n = new Map(s); n.has(f.id) ? n.delete(f.id) : n.set(f.id, f); return n; });
   const applyBulk = () => {
     if (selected.size === 0 || (!bulkRep && !bulkStatus)) return;
     bulkUpdate.mutate({
-      ids: Array.from(selected),
+      ids: Array.from(selected.keys()),
       ...(bulkStatus ? { partnerStatus: bulkStatus as any } : {}),
       ...(bulkRep ? { assignedRepName: bulkRep } : {}),
     });
@@ -148,11 +163,18 @@ export default function Facilities() {
                   : "bg-card text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Map className="w-3.5 h-3.5" />
+              <MapIcon className="w-3.5 h-3.5" />
               Map
             </button>
           </div>
 
+          {/* Territories lives here now, not in the left menu (Sept 2026). */}
+          {manager && (
+            <Button variant="outline" onClick={() => navigate("/territories")} className="gap-2 border-border text-muted-foreground hover:text-foreground">
+              <MapIcon className="w-4 h-4" />
+              Territories
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => setShowBulkImport(true)}
@@ -223,7 +245,18 @@ export default function Facilities() {
           <Button size="sm" onClick={applyBulk} disabled={bulkUpdate.isPending || (!bulkRep && !bulkStatus)} style={{ background: "var(--gold)", color: "var(--gold-foreground)" }}>
             {bulkUpdate.isPending ? "Applying…" : "Apply"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+          {manager && (
+            <>
+              <span className="h-5 w-px bg-border" aria-hidden />
+              <Button size="sm" variant="outline" className="gap-1.5 border-border" disabled={selected.size !== 2} title={selected.size === 2 ? "Merge these two facilities" : "Tick exactly two facilities to merge them"} onClick={() => picked.length === 2 && setMerging(true)}>
+                <Merge className="w-3.5 h-3.5" /> Merge
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5 border-border text-red-600 hover:text-red-700 dark:text-red-400" onClick={() => setDeleting(true)}>
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Map())}>Clear</Button>
         </div>
       )}
 
@@ -286,7 +319,7 @@ export default function Facilities() {
                     <TableHead className="w-10">
                       <input type="checkbox" className="accent-[var(--gold)] cursor-pointer"
                         checked={sorted.length > 0 && sorted.every((f) => selected.has(f.id))}
-                        onChange={(e) => setSelected(e.target.checked ? new Set(sorted.map((f) => f.id)) : new Set())} />
+                        onChange={(e) => setSelected(e.target.checked ? new Map(sorted.map((f) => [f.id, f] as [number, any])) : new Map())} />
                     </TableHead>
                     <TableHead
                       className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
@@ -338,7 +371,7 @@ export default function Facilities() {
                       >
                         <TableCell className="py-1.5" onClick={(e) => e.stopPropagation()}>
                           <input type="checkbox" className="accent-[var(--gold)] cursor-pointer"
-                            checked={selected.has(facility.id)} onChange={() => toggleSelect(facility.id)} />
+                            checked={selected.has(facility.id)} onChange={() => toggleSelect(facility)} />
                         </TableCell>
                         <TableCell className="py-1.5">
                           <div className="flex items-center gap-2">
@@ -408,7 +441,6 @@ export default function Facilities() {
                             {facility.phone && <ClickToCallButton phoneNumber={facility.phone} facilityId={facility.id} />}
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Tasks" onClick={() => navigate(`/crm/facilities/${facility.id}?tab=tasks`)}><ListChecks className="w-3.5 h-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Expenses" onClick={() => navigate(`/crm/facilities/${facility.id}?tab=expenses`)}><Receipt className="w-3.5 h-3.5" /></Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" title="FileVine note" onClick={() => navigate(`/filevine-note`)}><FileText className="w-3.5 h-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Open profile" onClick={() => navigate(`/crm/facilities/${facility.id}`)}><ArrowRight className="w-3.5 h-3.5" /></Button>
                           </div>
                         </TableCell>
@@ -423,6 +455,8 @@ export default function Facilities() {
       )}
 
       <BulkImportDialog open={showBulkImport} onClose={() => setShowBulkImport(false)} />
+      <MergeFacilitiesDialog pair={merging && picked.length === 2 ? [picked[0], picked[1]] : null} onClose={() => setMerging(false)} onDone={afterMergeOrDelete} />
+      <DeleteFacilitiesDialog list={deleting && picked.length ? picked : null} onClose={() => setDeleting(false)} onDone={afterMergeOrDelete} />
     </div>
   );
 }

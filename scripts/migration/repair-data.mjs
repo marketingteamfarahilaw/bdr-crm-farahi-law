@@ -27,6 +27,7 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
+import { loadRedirects, redirectLookup } from "./facility-redirects.mjs";
 
 const APPLY = process.argv.includes("--apply");
 const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, timezone: "Z" });
@@ -155,7 +156,8 @@ const userFor = (raw) => {
     if (k) { if (byName.has(k)) dupName.add(k); else byName.set(k, f.id); }
     for (const p of [f.phone, f.phone2, f.phone3]) { const d = phone10(p); if (d && !byPhone.has(d)) byPhone.set(d, f.id); }
   }
-  const find = (name, ph) => byPhone.get(phone10(ph)) ?? (dupName.has(nkey(name)) ? null : byName.get(nkey(name))) ?? null;
+  const redirect = redirectLookup(await loadRedirects(c), { nameKey: nkey, phoneKey: phone10 });
+  const find = (name, ph) => byPhone.get(phone10(ph)) ?? (dupName.has(nkey(name)) ? null : byName.get(nkey(name))) ?? redirect(name, ph) ?? null;
   for (const [t, phoneCol] of [["fr_expenses", null], ["bdr_expenses", "facilityPhone"], ["referral_rewards", null], ["referral_tracker", null]]) {
     const rows = await q(`SELECT id, facilityName${phoneCol ? `, ${phoneCol} ph` : ""} FROM \`${t}\` WHERE facilityId IS NULL AND facilityName IS NOT NULL AND facilityName <> ''`);
     let n = 0;

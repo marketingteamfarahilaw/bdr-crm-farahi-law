@@ -16,6 +16,7 @@ import mysql from "mysql2/promise";
 import xlsx from "xlsx";
 import { pacific, serialParts } from "./dates.mjs";
 import { fullName } from "./leaddocket-rules.mjs";
+import { loadRedirects, redirectLookup } from "./facility-redirects.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
 const dry = process.argv.includes("--dry");
@@ -111,8 +112,14 @@ const byPhone = new Map();
 for (const f of facs) for (const p of [f.phone, f.phone2, f.phone3, f.contactPhone]) {
   const k = last10(p); if (k && !byPhone.has(k)) byPhone.set(k, f);
 }
+// A number that belonged to a facility merged away belongs to the one kept now.
+const redirect = redirectLookup(await loadRedirects(c), { nameKey: (s) => String(s ?? "").toLowerCase(), phoneKey: last10 });
+const facById = new Map(facs.map((f) => [f.id, f]));
 let matched = 0;
-for (const call of calls) { const f = call.phone ? byPhone.get(call.phone) : null; if (f) { call.facilityId = f.id; matched++; } }
+for (const call of calls) {
+  const f = call.phone ? byPhone.get(call.phone) ?? facById.get(redirect(null, call.phone)) : null;
+  if (f) { call.facilityId = f.id; matched++; }
+}
 console.log(`Matched to a facility: ${matched} / ${calls.length}  (unmatched ${calls.length - matched} → rc_unmatched_calls)`);
 
 // The sheet and the live RingCentral sync overlap (the sheet runs to the end of

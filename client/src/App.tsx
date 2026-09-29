@@ -1,16 +1,13 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch, useLocation } from "wouter";
+import { Redirect, Route, Switch, useLocation } from "wouter";
 import { useEffect, useRef } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
-import SearchPage from "./pages/Search";
-import CaliforniaMapPage from "./pages/CaliforniaMap";
+import LeadMapHubPage from "./pages/LeadMapHub";
 import Dashboard from "./pages/Dashboard";
-import SavedLeadsPage from "./pages/SavedLeads";
-import SavedSearchesPage from "./pages/SavedSearches";
 import FacilitiesPage from "./pages/crm/Facilities";
 import PipelinePage from "./pages/crm/Pipeline";
 import FacilityProfilePage from "./pages/crm/FacilityProfile";
@@ -35,7 +32,6 @@ import SignupsDashboardPage from "./pages/SignupsDashboard";
 import RepProfilePage from "./pages/signups/RepProfile";
 import DataCheckPage from "./pages/DataCheck";
 import CheckinReportPage from "./pages/CheckinReport";
-import FileVineNotePage from "./pages/FileVineNote";
 import AgentDashboardPage from "./pages/AgentDashboard";
 import FieldVisitsPage from "./pages/FieldVisits";
 import FrExpensesPage from "./pages/FrExpenses";
@@ -118,18 +114,18 @@ function Router() {
         <Route path="/intake/agents" component={IntakeAgentsPage} />
         <Route path="/intake/settings" component={IntakeSettingsPage} />
 
-        <Route path="/map" component={CaliforniaMapPage} />
-
-        {/* Lead Scraper */}
-        <Route path="/search" component={SearchPage} />
-        <Route path="/saved-leads" component={SavedLeadsPage} />
-        <Route path="/saved-searches" component={SavedSearchesPage} />
+        {/* Lead Scraper: one page, four tabs (pages/LeadMapHub.tsx) */}
+        <Route path="/map" component={LeadMapHubPage} />
+        <Route path="/search" component={LeadMapHubPage} />
+        <Route path="/saved-leads" component={LeadMapHubPage} />
+        <Route path="/saved-searches" component={LeadMapHubPage} />
 
         {/* Facility Partner CRM */}
         <Route path="/crm/pipeline" component={PipelinePage} />
         <Route path="/crm/facilities" component={FacilitiesPage} />
-        <Route path="/crm/facilities/new" component={FacilityFormPage} />
-        <Route path="/crm/facilities/:id/edit" component={FacilityFormPage} />
+        {/* Keyed, so going from one facility's form to another's (or to a new one) starts fresh. */}
+        <Route path="/crm/facilities/new">{() => <FacilityFormPage key="new" />}</Route>
+        <Route path="/crm/facilities/:id/edit">{(p) => <FacilityFormPage key={p.id} />}</Route>
         <Route path="/crm/facilities/:id" component={FacilityProfilePage} />
         <Route path="/crm/dashboard" component={ManagementDashboardPage} />
         <Route path="/team" component={TeamRolesPage} />
@@ -164,7 +160,8 @@ function Router() {
         <Route path="/marketing-report" component={MarketingReportPage} />
 
         {/* FileVine Note Generator */}
-        <Route path="/filevine-note" component={FileVineNotePage} />
+        {/* FileVine Note off for now (Sept 2026); the page is kept for later. */}
+        <Route path="/filevine-note">{() => <Redirect to="/crm/facilities" replace />}</Route>
 
         {/* FR/BDR Dual Partnership Model */}
         <Route path="/partnership/bdr-desk" component={BdrDeskPage} />

@@ -14,7 +14,7 @@ import { syncRecentCalls, analyzeCallTranscript, maybeCreateVisitFromCall, enque
 import { getNewFacilitiesReport } from "./teamReports";
 import { syncRcMeetings } from "./rcMeetingSync";
 import { syncIntakeCalls } from "./intakeSync";
-import { sendCallRecapToWebhook } from "./filevineHook";
+import { deleteFacilityFully, facilityRecordCounts, mergeFacilities } from "./facilityMerge";
 import { uberConfigured, importOrderReceipt, matchFacilityByAddress } from "./uber";
 import { frExpenses } from "../drizzle/schema";
 import {
@@ -26,7 +26,6 @@ import {
   createFacilityUpdate,
   createReferral,
   createTask,
-  deleteFacility,
   deleteContactLog,
   deleteFacilityLead,
   deleteGratitudeAction,
@@ -546,14 +545,31 @@ export const crmRouter = router({
         return { success: true, updated: ids.length };
       }),
 
+    // Delete one or more facilities with their own history (server/facilityMerge.ts).
     delete: crmProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         if (!canManage(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can delete facilities." });
         }
-        await deleteFacility(input.id);
+        await deleteFacilityFully(input.id, String(ctx.user.name || ctx.user.email || `user ${ctx.user.id}`));
         return { success: true };
+      }),
+
+    // What hangs off each facility, shown before a merge or delete.
+    recordCounts: crmProcedure
+      .input(z.object({ ids: z.array(z.number().int()).min(1).max(2000) }))
+      .query(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can merge or delete facilities." });
+        return facilityRecordCounts(input.ids);
+      }),
+
+    // Merge a duplicate into the facility kept: its history moves over, then it's removed.
+    merge: crmProcedure
+      .input(z.object({ keepId: z.number().int(), removeId: z.number().int() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can merge facilities." });
+        return mergeFacilities(input.keepId, input.removeId, String(ctx.user.name || ctx.user.email || `user ${ctx.user.id}`));
       }),
 
     bulkCreate: crmProcedure

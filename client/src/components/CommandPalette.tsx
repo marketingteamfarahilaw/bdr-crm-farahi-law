@@ -9,9 +9,8 @@ import { Building2, Search, LayoutDashboard, Map, BarChart3, Users, Phone, MapPi
 const PAGES = [
   { label: "Command Center", path: "/", icon: LayoutDashboard },
   { label: "Facilities", path: "/crm/facilities", icon: Building2 },
-  // Lead Search and Lead Map hidden with the Lead Scraper menu (per request).
-  // { label: "Lead Search", path: "/search", icon: Search },
-  // { label: "Lead Map", path: "/map", icon: Map },
+  { label: "CA Lead Map", path: "/map", icon: Map },
+  { label: "Lead Search", path: "/search", icon: Search },
   { label: "BDR Reports", path: "/crm/reports", icon: BarChart3 },
   { label: "Data Check", path: "/data-check", icon: ListChecks },
   { label: "Representatives", path: "/agents", icon: Users },

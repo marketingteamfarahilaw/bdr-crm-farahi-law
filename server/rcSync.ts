@@ -20,8 +20,11 @@ import { z } from "zod";
 import { claude, CLAUDE_MODEL } from "./_core/claude";
 import { createContactLog, createFacilityUpdate, createTask, getExistingRcCallIds, getExistingRcSessionIds, recordUnmatchedCall } from "./crmDb";
 import { sendCallRecapToWebhook } from "./filevineHook";
+
+/** Call recaps go to Filevine only when this is on. Off since Sept 2026, by request; flip it to bring them back. */
+const SEND_RECAPS_TO_FILEVINE = false;
 import { getDb, getSetting, setSetting } from "./db";
-import { callRecapQueue, contactLogs, facilities, facilityTasks, facilityUpdates } from "../drizzle/schema";
+import { callRecapQueue, contactLogs, facilities, facilityRedirects, facilityTasks, facilityUpdates } from "../drizzle/schema";
 
 const RC_BASE = "https://platform.ringcentral.com";
 
@@ -249,13 +252,23 @@ async function buildFacilityIndex(): Promise<FacIndexEntry[]> {
       contactPhone: facilities.contactPhone,
     })
     .from(facilities);
+  // Numbers that belonged to a facility merged into another now ring the one kept
+  // (server/facilityMerge.ts) — a facility has only three phone slots.
+  const moved = new Map<number, string[]>();
+  try {
+    const redirects = await db
+      .select({ value: facilityRedirects.value, facilityId: facilityRedirects.facilityId })
+      .from(facilityRedirects)
+      .where(eq(facilityRedirects.kind, "phone"));
+    for (const r of redirects) if (r.facilityId != null) moved.set(r.facilityId, [...(moved.get(r.facilityId) ?? []), last10(r.value)]);
+  } catch { /* the table isn't there yet */ }
   return rows.map((f) => ({
     id: f.id,
     name: f.name,
     assignedRepId: (f.assignedRepId as number | null) ?? null,
     assignedRepName: (f.assignedRepName as string | null) ?? null,
     primary: last10(f.phone),
-    others: [f.phone2, f.phone3, f.contactPhone].map(last10).filter(Boolean),
+    others: [f.phone2, f.phone3, f.contactPhone, ...(moved.get(f.id) ?? [])].map(last10).filter(Boolean),
   }));
 }
 
@@ -487,8 +500,10 @@ async function recapCall(call: RecapCall, own: string | null, all: string[], opt
         status: "open",
       });
     }
-    // Push the finished recap out to Filevine (via the Zapier/n8n webhook).
-    await sendCallRecapToWebhook({
+    // Push the finished recap out to Filevine (via the Zapier/n8n webhook) —
+    // switched off for now (Sept 2026: "remove the ability … to send filevine
+    // notes … we might want to add it in the future"). See SEND_RECAPS_TO_FILEVINE.
+    if (SEND_RECAPS_TO_FILEVINE) await sendCallRecapToWebhook({
       event: "call_recap",
       facilityId: facility.id,
       facilityName: facility.name,

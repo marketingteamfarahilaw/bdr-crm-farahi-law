@@ -1278,6 +1278,23 @@ export const callRecapQueue = mysqlTable("call_recap_queue", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+/**
+ * Where a merged or deleted facility's name and phone numbers point now
+ * (server/facilityMerge.ts): the facility kept in a merge, or null after a
+ * delete. The Google Sheets sync and call matching read it, so a merge or a
+ * delete from the Facilities page isn't undone (scripts/migration/facility-redirects.mjs).
+ */
+export const facilityRedirects = mysqlTable("facility_redirects", {
+  id: int("id").autoincrement().primaryKey(),
+  kind: varchar("kind", { length: 10 }).notNull(),            // "name" | "phone"
+  value: varchar("value", { length: 255 }).notNull(),         // the name as written, or the 10-digit number
+  facilityId: int("facilityId"),                              // the facility kept; null = deleted
+  fromFacilityId: int("fromFacilityId"),
+  reason: varchar("reason", { length: 20 }).notNull(),        // "merged" | "deleted"
+  createdBy: varchar("createdBy", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const facilityLogos = mysqlTable("facility_logos", {
   facilityId: int("facilityId").primaryKey(),
   website: varchar("website", { length: 500 }),

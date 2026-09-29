@@ -15,6 +15,7 @@ import xlsx from "xlsx";
 import { createHash } from "node:crypto";
 import { fullName } from "./leaddocket-rules.mjs";
 import { pacific, serialParts } from "./dates.mjs";
+import { loadRedirects, redirectLookup } from "./facility-redirects.mjs";
 
 const FILE = process.argv.find((a) => a.toLowerCase().endsWith(".xlsx"));
 const dry = process.argv.includes("--dry");
@@ -202,7 +203,9 @@ for (const f of facs) {
   const k = key(f.name); if (k && !facByName.has(k)) facByName.set(k, f.id);
   for (const p of [f.phone, f.phone2, f.phone3]) { const d = last10(p); if (d && !facByPhone.has(d)) facByPhone.set(d, f.id); }
 }
-const facId = (name, phone) => facByPhone.get(last10(phone)) ?? facByName.get(key(name)) ?? null;
+// A merged-away name or number points at the facility kept; a deleted one at none.
+const redirect = redirectLookup(await loadRedirects(c), { nameKey: key, phoneKey: last10 });
+const facId = (name, phone) => facByPhone.get(last10(phone)) ?? facByName.get(key(name)) ?? redirect(name, phone) ?? null;
 
 async function load(table, rows, build) {
   const [d] = await c.query("DELETE FROM `" + table + "`");
