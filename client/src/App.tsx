@@ -82,7 +82,9 @@ function Router() {
 
   // FIELD MODE — the FR team's phone/tablet experience. Full-screen with its
   // own bottom-tab navigation; deliberately rendered OUTSIDE the sidebar shell.
-  if (location.startsWith("/field")) return <FieldApp />;
+  // Only /field and its own sub-pages: a bare startsWith("/field") also took
+  // /field-time (FR Field Time), which then opened Field Mode.
+  if (location === "/field" || location.startsWith("/field/")) return <FieldApp />;
 
   // TEAM TRIVIA — full-screen hangout game, outside the sidebar shell so
   // players on phones get a clean game view. /thegame is the easy-to-share alias.
