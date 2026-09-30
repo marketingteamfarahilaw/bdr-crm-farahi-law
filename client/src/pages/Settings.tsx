@@ -258,7 +258,7 @@ function TimeeroCard() {
     },
     onError: (e) => toast.error(e.message),
   });
-  const [sampleKind, setSampleKind] = useState<"timesheets" | "users" | "jobs">("timesheets");
+  const [sampleKind, setSampleKind] = useState<"timesheets" | "users" | "jobs" | "tasks">("timesheets");
   const sample = trpc.settings.timeeroSample.useMutation({ onError: (e) => toast.error(e.message) });
   const secret = trpc.settings.newTimeeroSecret.useMutation({ onSuccess: () => { toast.success("New secret made — paste it into Timeero."); refresh(); } });
   const s = status.data;
@@ -340,7 +340,7 @@ function TimeeroCard() {
             <div className="mt-3 text-xs">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-muted-foreground">What Timeero sends:</span>
-                {(["timesheets", "users", "jobs"] as const).map((k) => (
+                {(["timesheets", "users", "jobs", "tasks"] as const).map((k) => (
                   <Button key={k} size="sm" variant={sampleKind === k && sample.data !== undefined ? "default" : "outline"} className="h-7 px-2 border-border"
                     disabled={sample.isPending} onClick={() => { setSampleKind(k); sample.mutate({ kind: k }); }}>
                     Show a sample {k.replace(/s$/, "")}

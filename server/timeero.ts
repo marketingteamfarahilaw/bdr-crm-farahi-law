@@ -378,9 +378,11 @@ export async function importTimeero(): Promise<{ ok: true; imported: Record<stri
 export async function timeeroSample(kind: string) {
   await ensureTable();
   const db = await getDb();
-  const [rows] = (await db!.execute(sql`SELECT data FROM timeero_records WHERE kind = ${kind} AND deleted = 0 AND data IS NOT NULL ORDER BY updatedAt DESC, id DESC LIMIT 1`)) as any;
-  const raw = (rows as any[])[0]?.data;
-  if (!raw) return null;
+  // Tasks and groups are few and name the categories reps clock into: show them all.
+  const all = kind === "tasks" || kind === "groups";
+  const [rows] = (await db!.execute(sql`SELECT data FROM timeero_records WHERE kind = ${kind} AND deleted = 0 AND data IS NOT NULL ORDER BY updatedAt DESC, id DESC LIMIT ${all ? 20 : 1}`)) as any;
+  if (!(rows as any[]).length) return null;
+  const raw = all ? `[${(rows as any[]).map((r) => r.data).join(",")}]` : (rows as any[])[0].data;
   const cut = (v: unknown, depth = 0): unknown => {
     if (typeof v === "string") return v.length > 120 ? `${v.slice(0, 120)}…` : v;
     if (Array.isArray(v)) return depth > 3 ? `[${v.length} items]` : v.slice(0, 3).map((x) => cut(x, depth + 1));
