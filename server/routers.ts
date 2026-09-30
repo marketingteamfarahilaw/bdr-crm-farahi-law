@@ -106,7 +106,7 @@ import { getAdminOverview } from "./adminOverview";
 import { getExpensesView } from "./expensesView";
 import { getRepActivity, getRepReview } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
-import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret, timeeroSample } from "./timeero";
+import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret, timeeroSample, getFieldTime } from "./timeero";
 import { getSystemHealth } from "./systemHealth";
 import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
 import { getRepPhotos } from "./repPhotos";
@@ -937,6 +937,10 @@ export const appRouter = router({
       repReview: bdProcedure
         .input(range.extend({ member: z.string().min(1).max(120), fresh: z.boolean().optional() }))
         .query(async ({ ctx, input }) => { mgrOnly(ctx); return getRepReview(input.member, toRange(input), input.fresh); }),
+      // The FRs' Timeero timesheets for the dates picked: hours, miles, where they clocked in and out.
+      fieldTime: bdProcedure
+        .input(z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), member: z.string().max(120).optional() }))
+        .query(async ({ ctx, input }) => { mgrOnly(ctx); return getFieldTime(input.from, input.to, input.member); }),
       // Pick a lead's referring partner by hand from the report's lead lists.
       partnerOptions: bdProcedure.query(async ({ ctx }) => { mgrOnly(ctx); return getPartnerOptions(); }),
       linkLeadPartner: bdProcedure

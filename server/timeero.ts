@@ -177,11 +177,15 @@ export function registerTimeeroWebhook(app: Express) {
 
     // Timeero's docs show {event, id, operation, last_updated_at}; accept the
     // same fields wrapped in "data" or under their other usual names too.
+    // What Timeero really sends (seen 2026-09-30):
+    //   {"payload":{"event":"timesheets","data":{"id":19178817,"operation":"timesheets_updated","last_updated_at":false}}}
     const top = req.body ?? {};
-    const b = top.event || top.type || top.event_type ? top : top.data && typeof top.data === "object" ? top.data : top;
-    const event = String(b.event ?? b.type ?? b.event_type ?? b.resource ?? "");
-    const id = String(b.id ?? b.data_id ?? b.resource_id ?? b.record_id ?? "");
-    const op = String(b.operation ?? b.action ?? "");
+    const env = top.payload && typeof top.payload === "object" ? top.payload : top;
+    const inner = env.data && typeof env.data === "object" ? env.data : {};
+    const b = { ...inner, ...env };
+    const event = String(env.event ?? env.type ?? env.event_type ?? inner.event ?? "");
+    const id = String(inner.id ?? env.id ?? env.data_id ?? "");
+    const op = String(inner.operation ?? env.operation ?? env.action ?? "");
     const kind = kindOf(event);
     try {
       if (!kind || !id) {
@@ -384,4 +388,107 @@ export async function timeeroSample(kind: string) {
     return v;
   };
   return JSON.stringify(cut(JSON.parse(raw)), null, 2);
+}
+
+// ── FR field time (the report on top of the timesheets) ─────────────────────
+
+const toSec = (d: unknown) => {
+  const m = String(d ?? "").match(/^(\d+):(\d{2}):(\d{2})$/);
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : 0;
+};
+const km = (a: [number, number], b: [number, number]) => {
+  const R = 6371, rad = Math.PI / 180;
+  const dLat = (b[0] - a[0]) * rad, dLng = (b[1] - a[1]) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+};
+const NEAR_KM = 0.15;   // a clock-in within ~150 m of a partner is at that partner
+
+/**
+ * Timesheets from Timeero for the dates picked (from/to are Pacific days,
+ * "YYYY-MM-DD"). Timeero writes clock times as the rep's local wall clock
+ * (clock_in_timezone, Los Angeles), so the day is the clock-in's own date.
+ * Each clock-in and clock-out point is matched to the nearest CRM partner
+ * within ~150 m.
+ */
+export async function getFieldTime(from: string, to: string, member?: string) {
+  await ensureTable();
+  const db = await getDb();
+  if (!db) return { reps: [], rows: [] };
+  const [rows] = (await db.execute(sql`SELECT data FROM timeero_records WHERE kind = 'timesheets' AND deleted = 0 AND data IS NOT NULL`)) as any;
+  const [facs] = (await db.execute(sql`SELECT id, name, latitude, longitude FROM facilities WHERE latitude IS NOT NULL AND longitude IS NOT NULL`)) as any;
+  const partners = (facs as any[]).map((f) => ({ id: Number(f.id), name: String(f.name), at: [Number(f.latitude), Number(f.longitude)] as [number, number] }));
+  const nearest = (lat: unknown, lng: unknown) => {
+    const p: [number, number] = [Number(lat), Number(lng)];
+    if (!isFinite(p[0]) || !isFinite(p[1]) || (p[0] === 0 && p[1] === 0)) return null;
+    let best: { id: number; name: string; km: number } | null = null;
+    for (const f of partners) {
+      const d = km(p, f.at);
+      if (d <= NEAR_KM && (!best || d < best.km)) best = { id: f.id, name: f.name, km: d };
+    }
+    return best ? { id: best.id, name: best.name, meters: Math.round(best.km * 1000) } : null;
+  };
+  const want = member ? member.trim().toLowerCase().split(/\s+/)[0] : null;
+
+  // Timeero jobs are partner locations (a name, GPS and a geofence radius).
+  // Each is tied to the CRM partner at that spot, or else of that name.
+  const normName = (x: string) => x.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const byName = new Map(partners.map((f) => [normName(f.name), f]));
+  const [jobRows] = (await db.execute(sql`SELECT externalId, data FROM timeero_records WHERE kind = 'jobs' AND deleted = 0 AND data IS NOT NULL`)) as any;
+  const jobPartner = new Map<string, { id: number; name: string } | null>();
+  for (const j of jobRows as any[]) {
+    let d: any;
+    try { d = JSON.parse(j.data); } catch { continue; }
+    const at: [number, number] = [Number(d.latitude), Number(d.longitude)];
+    const radius = Math.max(NEAR_KM, Number(d.radius_meters ?? 0) / 1000);
+    let best: { id: number; name: string; km: number } | null = null;
+    if (isFinite(at[0]) && isFinite(at[1]) && (at[0] || at[1])) {
+      for (const f of partners) {
+        const dist = km(at, f.at);
+        if (dist <= radius && (!best || dist < best.km)) best = { id: f.id, name: f.name, km: dist };
+      }
+    }
+    const named = byName.get(normName(String(d.name ?? "")));
+    jobPartner.set(String(d.id ?? j.externalId), best ? { id: best.id, name: best.name } : named ? { id: named.id, name: named.name } : null);
+  }
+
+  const list = [];
+  for (const r of rows as any[]) {
+    let t: any;
+    try { t = JSON.parse(r.data); } catch { continue; }
+    const inTime = String(t.clock_in_time ?? "");
+    const day = inTime.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < from || day > to) continue;
+    const name = [t.first_name, t.last_name].filter(Boolean).join(" ").trim() || `Timeero user ${t.user_id ?? "?"}`;
+    if (want && name.toLowerCase().split(/\s+/)[0] !== want) continue;
+    const worked = Math.max(0, toSec(t.duration) - Number(t.break_in_seconds ?? 0));
+    list.push({
+      id: String(t.id), rep: name, day,
+      clockIn: inTime || null, clockOut: t.clock_out_time ? String(t.clock_out_time) : null,
+      inAddress: t.clock_in_address ?? null, outAddress: t.clock_out_address ?? null,
+      inPartner: nearest(t.clock_in_latitude, t.clock_in_longitude),
+      outPartner: nearest(t.clock_out_latitude, t.clock_out_longitude),
+      seconds: worked,
+      miles: Math.round(Number(t.mileage ?? 0) * 10) / 10,
+      job: t.job_name || null, jobPartner: t.job_id ? jobPartner.get(String(t.job_id)) ?? null : null,
+      notes: t.notes ? String(t.notes) : null,
+      approved: !!t.approved, flagged: !!t.flagged, open: !t.clock_out_time,
+    });
+  }
+  list.sort((a, b) => (b.clockIn ?? "").localeCompare(a.clockIn ?? ""));
+
+  const byRep = new Map<string, { rep: string; days: Set<string>; seconds: number; miles: number; shifts: number; atPartners: number; flagged: number }>();
+  for (const r of list) {
+    const k = r.rep;
+    const s = byRep.get(k) ?? { rep: k, days: new Set(), seconds: 0, miles: 0, shifts: 0, atPartners: 0, flagged: 0 };
+    s.days.add(r.day); s.seconds += r.seconds; s.miles += r.miles; s.shifts++;
+    if (r.inPartner || r.outPartner || r.jobPartner || r.job) s.atPartners++;
+    if (r.flagged) s.flagged++;
+    byRep.set(k, s);
+  }
+  const reps = Array.from(byRep.values())
+    .map((s) => ({ rep: s.rep, days: s.days.size, hours: Math.round((s.seconds / 3600) * 10) / 10, miles: Math.round(s.miles), shifts: s.shifts, atPartners: s.atPartners, flagged: s.flagged,
+      avgHoursPerDay: s.days.size ? Math.round((s.seconds / 3600 / s.days.size) * 10) / 10 : 0 }))
+    .sort((a, b) => b.hours - a.hours);
+  return { reps, rows: list };
 }

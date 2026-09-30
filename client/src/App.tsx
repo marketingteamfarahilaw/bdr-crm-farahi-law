@@ -54,6 +54,7 @@ import TeamReports from "./pages/TeamReports";
 import CallAnalytics from "./pages/CallAnalytics";
 import CallLogs from "./pages/CallLogs";
 import AgentPerformance from "./pages/AgentPerformance";
+import FieldTime from "./pages/FieldTime";
 import RingCentralCallback from "./pages/RingCentralCallback";
 import IntakeDeskPage from "./pages/intake/IntakeDesk";
 import IntakeLeadsPage from "./pages/intake/IntakeLeads";
@@ -214,6 +215,7 @@ function Router() {
 
         {/* Agent Performance (AI review) */}
         <Route path="/agent-performance" component={AgentPerformance} />
+        <Route path="/field-time" component={FieldTime} />
 
         <Route path="/ringcentral-callback" component={RingCentralCallback} />
         <Route path="/404" component={NotFound} />
