@@ -9,9 +9,9 @@ import { sql } from "drizzle-orm";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { leaddocketLeads } from "../../drizzle/schema";
 import { isSigned, scorecardBucket, type ScoreBucket } from "../signupsReport";
-import { NO_SOURCE, TEAM_CHANNEL, channelOfSource, REASON_KEYS, REASON_LABEL, NOT_VIABLE, NOT_VIABLE_KEYS, type ReasonKey } from "@shared/marketing";
+import { NO_SOURCE, TEAM_CHANNEL, channelOfSource, digitalChannelOf, isDigitalSource, DIGITAL_SOURCE_PATTERN, REASON_KEYS, REASON_LABEL, NOT_VIABLE, NOT_VIABLE_KEYS, type ReasonKey } from "@shared/marketing";
 
-export { NO_SOURCE, TEAM_CHANNEL, channelOfSource, REASON_KEYS, REASON_LABEL, NOT_VIABLE, NOT_VIABLE_KEYS };
+export { NO_SOURCE, TEAM_CHANNEL, channelOfSource, digitalChannelOf, isDigitalSource, DIGITAL_SOURCE_PATTERN, REASON_KEYS, REASON_LABEL, NOT_VIABLE, NOT_VIABLE_KEYS };
 export type { ReasonKey, ScoreBucket };
 
 export const TZ = "America/Los_Angeles";
@@ -38,11 +38,13 @@ export const notBdFr = sql`(${leaddocketLeads.teamRole} IS NULL OR ${leaddocketL
 /** A BD/FR lead — the "BD/FR team" row. */
 export const bdFrOnly = sql`(${leaddocketLeads.teamRole} IN ('BDR', 'FR'))`;
 
-export type Grouping = "channel" | "source";
+/** "digital": the channel view of the "Digital only" switch — rows by kind of digital channel (digitalChannelOf). */
+export type Grouping = "channel" | "source" | "digital";
 
 /** The row a source is counted in: "No source" and "BD/FR team" stay whole either way; the rest group by channel on request. */
 export const rowNameOf = (source: string, group: Grouping) =>
-  group === "channel" && source !== NO_SOURCE && source !== TEAM_CHANNEL ? channelOfSource(source) : source;
+  group === "source" || source === NO_SOURCE || source === TEAM_CHANNEL ? source
+    : group === "digital" ? digitalChannelOf(source) : channelOfSource(source);
 
 /** Every Pacific month the range touches, oldest first. */
 export function monthsBetween(from: Date, to: Date) {
@@ -159,6 +161,8 @@ export type DrillScope = {
   caseTypes?: string[];
   notCaseTypes?: string[];
   campaigns?: string[];
+  /** Only the firm's digital channels (the page's "Digital only" switch). */
+  digital?: boolean;
 };
 
 /** A clickable number: what the clients modal shows and asks the server for. */

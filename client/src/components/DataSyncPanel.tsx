@@ -175,7 +175,7 @@ export function LeadDocketSyncButton({ className = "", hintClassName = "" }: { c
   // anyone having to refresh the page.
   const prev = useRef(s?.state);
   useEffect(() => {
-    if (prev.current === "running" && s && s.state !== "running") utils.teamReports.invalidate();
+    if (prev.current === "running" && s && s.state !== "running") { utils.teamReports.invalidate(); utils.marketing.invalidate(); }
     prev.current = s?.state;
   }, [s?.state]);
 

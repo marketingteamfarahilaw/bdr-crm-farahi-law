@@ -15,7 +15,7 @@ import { and, gte, sql } from "drizzle-orm";
 import { getDb } from "../db";
 import { leaddocketLeads } from "../../drizzle/schema";
 import {
-  NO_SOURCE, channelOfSource, clean, keyOf, notBdFr, pct,
+  NO_SOURCE, channelOfSource, clean, isDigitalSource, keyOf, notBdFr, pct,
   type DrillLink, type DrillScope, type Lead, type RowRef,
 } from "./common";
 import type { Comparison } from "./compare";
@@ -65,7 +65,7 @@ export type QuietRow = { source: string; n: number; last: Date };
  * newest came in. Independent of the selected range: it asks whether each
  * source is still producing, not how the period went.
  */
-export async function loadQuiet(now: Date): Promise<QuietRow[]> {
+export async function loadQuiet(now: Date, digital = false): Promise<QuietRow[]> {
   const db = await getDb();
   if (!db) return [];
   const L = leaddocketLeads;
@@ -82,6 +82,7 @@ export async function loadQuiet(now: Date): Promise<QuietRow[]> {
   for (const r of rows) {
     const last = r.last ? new Date(r.last) : null;
     if (!last || Number.isNaN(last.getTime())) continue;
+    if (digital && !isDigitalSource(clean(r.source) || NO_SOURCE)) continue;
     out.push({ source: clean(r.source) || NO_SOURCE, n: Number(r.n) || 0, last });
   }
   return out;

@@ -14,7 +14,7 @@ import { fromZonedTime } from "date-fns-tz";
 import { getDb } from "../db";
 import { leaddocketLeads } from "../../drizzle/schema";
 import {
-  NO_SOURCE, TEAM_CHANNEL, TZ, derive, monthBounds, monthsBetween, pct,
+  NO_SOURCE, TEAM_CHANNEL, TZ, derive, isDigitalSource, sourceOf, monthBounds, monthsBetween, pct,
   type Grouping, type Lead, type RowRef,
 } from "./common";
 import { assignSpend, type SpendRow } from "./spend";
@@ -159,14 +159,14 @@ export function tallyPrior<T extends { leadDate: Date | string | null; outcome: 
 }
 
 /** The earlier period, in one query over the same leads the dashboard reads (BD/FR included, as one row). */
-export async function loadPrior(range: { from: Date; to: Date }, group: Grouping): Promise<PriorTally> {
+export async function loadPrior(range: { from: Date; to: Date }, group: Grouping, digital = false): Promise<PriorTally> {
   const months = monthsBetween(range.from, range.to);
   const db = await getDb();
   if (!db) return tallyPrior([], months, group);
   const L = leaddocketLeads;
   const rows = await db.select(PRIOR_COLS).from(L)
     .where(and(gte(L.leadDate, range.from), lte(L.leadDate, range.to)));
-  return tallyPrior(rows, months, group);
+  return tallyPrior(digital ? rows.filter((r) => isDigitalSource(sourceOf(r))) : rows, months, group);
 }
 
 export type Comparison = {

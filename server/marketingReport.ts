@@ -22,7 +22,7 @@ import { and, gte, inArray, lte } from "drizzle-orm";
 import { getDb } from "./db";
 import { leaddocketLeads, marketingSpend } from "../drizzle/schema";
 import {
-  LEAD_COLS, NO_SOURCE, TEAM_CHANNEL, channelOfSource, clean, derive, emptyCounts, keyOf, monthsBetween, pct,
+  LEAD_COLS, NO_SOURCE, TEAM_CHANNEL, channelOfSource, clean, derive, isDigitalSource, sourceOf, emptyCounts, keyOf, monthsBetween, pct,
   type Counts, type Grouping, type RowRef,
 } from "./marketing/common";
 import { assignSpend, checkSpend, loadSpend, partialMonths, spendNotes } from "./marketing/spend";
@@ -53,13 +53,15 @@ const rawOf = (v: string | null) => String(v ?? "").trim();
 
 export async function getMarketingDashboard(
   range: { from: Date; to: Date },
-  opts: { group: Grouping; from: string; to: string; compare: CompareChoice; today: string; caseFacts?: boolean },
+  opts: { group: Grouping; from: string; to: string; compare: CompareChoice; today: string; caseFacts?: boolean; digital?: boolean },
 ) {
   // Why leads didn't sign is an intake case fact: only marketingCaseFacts sees it.
   const caseFacts = opts.caseFacts !== false;
   const db = await getDb();
   if (!db) return null;
-  const group = opts.group;
+  // Digital only: just the firm's own online channels, grouped by kind of channel in the channel view.
+  const digital = !!opts.digital;
+  const group: Grouping = digital && opts.group === "channel" ? "digital" : opts.group;
   const months = monthsBetween(range.from, range.to);
   const now = new Date();
 
@@ -74,15 +76,16 @@ export async function getMarketingDashboard(
     // The comparison and the gone-quiet alert are extras: if either read fails,
     // the page still shows this period's numbers, just without them.
     priorDates
-      ? loadPrior(priorDates, group).catch((e): PriorTally | null => { console.warn("[marketing] comparison unavailable:", e?.message ?? e); return null; })
+      ? loadPrior(priorDates, group, digital).catch((e): PriorTally | null => { console.warn("[marketing] comparison unavailable:", e?.message ?? e); return null; })
       : Promise.resolve(null),
     getCoverage(),
-    loadQuiet(now).catch((e): QuietRow[] => { console.warn("[marketing] gone-quiet check unavailable:", e?.message ?? e); return []; }),
+    loadQuiet(now, digital).catch((e): QuietRow[] => { console.warn("[marketing] gone-quiet check unavailable:", e?.message ?? e); return []; }),
     // A mid-month 'previous' range shares a month with this one; load it once.
     loadSpend(Array.from(new Set(months.concat(priorMonths)))),
   ]);
 
-  const leads = derive(rows, months, group);
+  // "Digital only": the firm's own online channels, and nothing else, everywhere on the page.
+  const leads = derive(digital ? rows.filter((r) => isDigitalSource(sourceOf(r))) : rows, months, group);
 
   const totals = emptyCounts();
   const monthly = months.map((month) => ({ month, leads: 0, signed: 0 }));
@@ -144,7 +147,8 @@ export async function getMarketingDashboard(
   // A channel takes spend by the channel its name belongs to, so a new contract
   // with no leads yet still counts toward its vendor.
   const monthSet = new Set(months);
-  const spend = assignSpend(spendRows.filter((r) => monthSet.has(r.month)), sourceRefs, group, months);
+  // Only digital sources' spend in the digital view, so its totals and cost per lead are digital's own.
+  const spend = assignSpend(spendRows.filter((r) => monthSet.has(r.month) && (!digital || isDigitalSource(clean(r.source)))), sourceRefs, group, months);
 
   const sourceList = rowsSorted.map((s) => {
     const rowSpend = spend.byRow.get(s.name) ?? null;
@@ -222,7 +226,7 @@ export async function getMarketingDashboard(
         mode: opts.compare as CompareMode,
         range: priorRange,
         current: { from: opts.from, to: opts.to, totals: totalsOut, rows: sourceList },
-        prior, priorSpend: spendRows, coverage: cov, group,
+        prior, priorSpend: digital ? spendRows.filter((r) => isDigitalSource(clean(r.source))) : spendRows, coverage: cov, group,
       })
     : null;
   const pace = paceOf(monthlyOut, opts.to, opts.today, opts.from);

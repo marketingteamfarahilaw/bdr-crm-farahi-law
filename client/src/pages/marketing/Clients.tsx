@@ -18,7 +18,7 @@ import type { LeadListRow } from "../../../../server/marketing/leadFilter";
 import { trpc } from "@/lib/trpc";
 import { fmt, hueStyle, initials, leadDay, monthAbbr, monthLabel, outcomeBadge } from "../SignupsDashboard";
 import { BUCKET_LABEL } from "./Scorecard";
-import { scopeOf } from "./shared";
+import { scopeOf, useDigital } from "./shared";
 import "./Clients.css";
 
 type ExportInput = inferRouterInputs<AppRouter>["marketing"]["exportLeads"];
@@ -156,7 +156,8 @@ export function Clients({ drill, from, to, loadingNote, onClose }: ClientsProps)
     ((end === "first" ? stops[0] : stops[stops.length - 1]) ?? el).focus();
   };
 
-  const base = { from, to, ...drill.scope };
+  const digital = useDigital();
+  const base = { from, to, ...drill.scope, ...(digital ? { digital: true } : {}) };
   const shown = trpc.marketing.leads.useQuery({ ...base, status, limit: 500, withWhy: status !== "signed" });
   // Only the count of the other side, for its toggle label.
   const other = trpc.marketing.leads.useQuery({ ...base, status: status === "signed" ? "all" : "signed", limit: 1 }, { enabled: !fixed });
@@ -311,7 +312,8 @@ export function LeadList({ from, to, rows: groups, noun }: LeadListProps) {
   const q = useDebounced(search.trim());
   useEffect(() => setLimit(50), [from, to, status, source, q]);
   const picked = groups.find((g) => g.name === source);
-  const input = { from, to, status, ...(picked ? scopeOf(picked) : {}), ...(q ? { search: q } : {}) };
+  const digital = useDigital();
+  const input = { from, to, status, ...(picked ? scopeOf(picked) : {}), ...(q ? { search: q } : {}), ...(digital ? { digital: true } : {}) };
   const { data, isFetching, isError, refetch } = trpc.marketing.leads.useQuery({ ...input, limit }, { placeholderData: (prev) => prev });
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;

@@ -1,8 +1,9 @@
+import { createContext, useContext } from "react";
 /**
  * Small helpers every Marketing Report panel shares: money formats, the row →
  * drill scope rule, and the change pill's wording and colour.
  */
-import { NO_SOURCE, TEAM_CHANNEL, channelOfSource } from "@shared/marketing";
+import { NO_SOURCE, TEAM_CHANNEL, channelOfSource, digitalChannelOf } from "@shared/marketing";
 import type { DrillScope, RowRef } from "../../../../server/marketing/common";
 
 export type Group = "channel" | "source";
@@ -31,8 +32,8 @@ export const prevMonth = (m: string) => {
 export const SPECIAL = new Set([NO_SOURCE, TEAM_CHANNEL]);
 
 /** The scorecard row a lead's source counts in, as the server's rowNameOf: the two special rows stay whole. */
-export const rowNameOf = (source: string, group: Group) =>
-  group === "channel" && !SPECIAL.has(source) ? channelOfSource(source) : source;
+export const rowNameOf = (source: string, group: Group, digital = false) =>
+  group === "channel" && !SPECIAL.has(source) ? (digital ? digitalChannelOf(source) : channelOfSource(source)) : source;
 
 /** What to ask the server for a row's clients: a channel asks for all its Lead Docket sources. */
 export const scopeOf = (row: RowRef): DrillScope =>
@@ -44,8 +45,15 @@ export const scopeOf = (row: RowRef): DrillScope =>
  * The Rejected panel and the presentation's appendix ask with exactly this, so
  * they share one cached answer and the deck opens without waiting for it.
  */
-export const rejectedQuery = (from: string, to: string) =>
-  ({ from, to, bucket: "rejected", status: "all", limit: 500, withWhy: true }) as const;
+export const rejectedQuery = (from: string, to: string, digital = false) =>
+  ({ from, to, bucket: "rejected", status: "all", limit: 500, withWhy: true, ...(digital ? { digital: true } : {}) }) as const;
+
+/**
+ * The page's "Digital only" switch, for every client list and export below it:
+ * a drill finds exactly the leads the number it was opened from counted.
+ */
+export const DigitalContext = createContext(false);
+export const useDigital = () => useContext(DigitalContext);
 /** How old that answer may be when the deck opens; older, and the deck fetches it again first. */
 export const REJECTED_FRESH_MS = 60_000;
 

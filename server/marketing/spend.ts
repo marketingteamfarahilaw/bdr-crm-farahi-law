@@ -9,7 +9,7 @@
 import { and, desc, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import { getDb } from "../db";
 import { leaddocketLeads, marketingSpend } from "../../drizzle/schema";
-import { channelOfSource } from "@shared/marketing";
+import { channelOfSource, digitalChannelOf } from "@shared/marketing";
 import { clean, keyOf, monthOf, notBdFr, type Grouping, type RowRef } from "./common";
 import type { MonthState } from "./coverage";
 
@@ -68,7 +68,9 @@ export function assignSpend(spend: SpendRow[], rows: RowRef[], group: Grouping, 
     const n = clean(s.source);
     const target = group === "channel"
       ? rowByKey.get(keyOf(channelOfSource(n))) ?? rowByKey.get(keyOf(n))
-      : rowByKey.get(keyOf(n));
+      : group === "digital"
+        ? rowByKey.get(keyOf(digitalChannelOf(n))) ?? rowByKey.get(keyOf(n))
+        : rowByKey.get(keyOf(n));
     monthCents[i] = (monthCents[i] ?? 0) + cents;
     if (target !== undefined) {
       rowCents.set(target, (rowCents.get(target) ?? 0) + cents);

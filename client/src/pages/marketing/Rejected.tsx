@@ -21,7 +21,7 @@ import type { LeadListRow } from "../../../../server/marketing/leadFilter";
 import { trpc } from "@/lib/trpc";
 import { fmt, leadDay, outcomeBadge } from "../SignupsDashboard";
 import { ExportButton, LoadFailed, useDebounced } from "./Clients";
-import { rejectedQuery, rowNameOf, type Group } from "./shared";
+import { rejectedQuery, rowNameOf, useDigital, type Group } from "./shared";
 
 // The server's NO_REASON (server/marketing/leadFilter.ts): how a lead with no
 // sub-status is listed, and what '' asks for in a sub-status filter.
@@ -54,7 +54,8 @@ export function Rejected({ from, to, group, count }: RejectedProps) {
   useEffect(() => setPick(null), [from, to]);
   useEffect(() => setShown(PAGE), [from, to, pick, q]);
 
-  const all = trpc.marketing.leads.useQuery(rejectedQuery(from, to), { placeholderData: (prev) => prev });
+  const digital = useDigital();
+  const all = trpc.marketing.leads.useQuery(rejectedQuery(from, to, digital), { placeholderData: (prev) => prev });
   // The family narrows too, so the list holds exactly the bar's count (see Pick).
   const scope = {
     ...(pick ? { subStatus: pick.reason === NO_REASON ? "" : pick.reason, reasons: [pick.family] } : {}),
@@ -62,7 +63,7 @@ export function Rejected({ from, to, group, count }: RejectedProps) {
   };
   const narrowed = !!pick || !!q;
   const some = trpc.marketing.leads.useQuery(
-    { ...rejectedQuery(from, to), withWhy: false, ...scope },
+    { ...rejectedQuery(from, to, digital), withWhy: false, ...scope },
     { enabled: narrowed, placeholderData: (prev) => prev },
   );
   const list = narrowed ? some : all;
@@ -151,6 +152,7 @@ export function Rejected({ from, to, group, count }: RejectedProps) {
 
 /** The cases as a table; on a phone, as two-line blocks (Clients.css). Dates are Pacific days. */
 function RejectedTable({ rows, group }: { rows: LeadListRow[]; group: Group }) {
+  const digital = useDigital();
   return (
     <>
       <div className="sr-scroll mk-cl-table">
@@ -165,7 +167,7 @@ function RejectedTable({ rows, group }: { rows: LeadListRow[]; group: Group }) {
                 <tr key={l.id}>
                   <td className="client"><b>{l.name}</b></td>
                   <td className="nowrap">{l.caseType}</td>
-                  <td className="partner">{rowNameOf(l.source, group)}{l.rep && <span className="mk-muted"> · {l.rep}</span>}</td>
+                  <td className="partner">{rowNameOf(l.source, group, digital)}{l.rep && <span className="mk-muted"> · {l.rep}</span>}</td>
                   <td className="nowrap">{leadDay(cameIn(l))}</td>
                   <td className="partner">
                     {l.reason ? <b style={INK}>{l.reason}</b> : <span className="mk-muted">{NO_REASON}</span>}
@@ -181,7 +183,7 @@ function RejectedTable({ rows, group }: { rows: LeadListRow[]; group: Group }) {
         {rows.map((l) => {
           const bits = [
             l.caseType,
-            l.rep ? `${rowNameOf(l.source, group)} · ${l.rep}` : rowNameOf(l.source, group),
+            l.rep ? `${rowNameOf(l.source, group, digital)} · ${l.rep}` : rowNameOf(l.source, group, digital),
             `came in ${leadDay(cameIn(l))}`,
           ];
           return (

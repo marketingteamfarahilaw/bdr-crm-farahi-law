@@ -20,7 +20,7 @@ import { getDb } from "../db";
 import { leaddocketLeads } from "../../drizzle/schema";
 import { isSigned, scorecardBucket } from "../signupsReport";
 import {
-  NO_SOURCE, TEAM_CHANNEL, TZ, bdFrOnly, clean, isBdFr, keyOf, monthBounds, monthOf, notBdFr, rowNameOf, sourceOf,
+  DIGITAL_SOURCE_PATTERN, NO_SOURCE, TEAM_CHANNEL, TZ, bdFrOnly, clean, isBdFr, keyOf, monthBounds, monthOf, notBdFr, rowNameOf, sourceOf,
   type DrillScope, type ReasonKey, type ScoreBucket,
 } from "./common";
 import { reasonOf } from "./reasons";
@@ -177,6 +177,8 @@ export function scopeWhere(q: DrillScope & { from: Date; to: Date; search?: stri
   else if (q.source === NO_SOURCE) conds.push(notBdFr, blank(L.marketingSource));
   else if (q.source?.trim()) conds.push(notBdFr, sql`TRIM(${L.marketingSource}) = ${q.source.trim()}`);
   if (q.sources?.length) conds.push(notBdFr, inList(L.marketingSource, q.sources));
+  // The same pattern isDigitalSource uses on the page, so a drill finds exactly the leads counted.
+  if (q.digital) conds.push(notBdFr, sql`LOWER(TRIM(${L.marketingSource})) REGEXP ${DIGITAL_SOURCE_PATTERN}`);
   if (q.contactSources?.length) conds.push(inList(L.contactSource, q.contactSources));
   if (q.caseTypes?.length) conds.push(inList(L.caseType, q.caseTypes));
   if (q.notCaseTypes?.length) conds.push(notInList(L.caseType, q.notCaseTypes));

@@ -16,11 +16,12 @@ import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 import { trpc } from "@/lib/trpc";
+import { LeadDocketSyncButton } from "@/components/DataSyncPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Inbox, CheckCircle2, DollarSign, Download, Loader2, Trophy, Percent, TrendingUp, Info, Megaphone, ArrowUpRight, Users, Presentation,
 } from "lucide-react";
-import { canEditMarketingSpend, canSeeMarketing } from "@shared/permissions";
+import { canEditMarketingSpend, canManage, canSeeMarketing } from "@shared/permissions";
 import { REASON_KEYS, REASON_LABEL } from "@shared/marketing";
 import type { DrillLink, RowRef } from "../../../server/marketing/common";
 import {
@@ -30,7 +31,7 @@ import { enterFullscreen } from "./signups/fullscreen";
 import type { DeckPlace } from "./signups/Presentation";
 import type { MarketingPresentationProps } from "./marketing/Presentation";
 import "./SignupsDashboard.css";
-import { REJECTED_FRESH_MS, rejectedQuery, scopeOf, usd, type Group } from "./marketing/shared";
+import { DigitalContext, REJECTED_FRESH_MS, rejectedQuery, scopeOf, usd, type Group } from "./marketing/shared";
 import { CoverageBanner, FreshnessLine, loadedLabel, whenLabel } from "./marketing/Freshness";
 import {
   BigWithDelta, CompareAccordion, MonthsCard, MoverCard, VsControl, compareDefault, conversionNote, type CompareChoice,
@@ -75,8 +76,8 @@ const pacificDay = (isoTime: string) =>
 /** A row's clients: signed first (with the toggle), or all of them. */
 const rowDrill = (row: RowRef, status?: "signed" | "all"): DrillLink => ({ title: row.name, scope: scopeOf(row), ...(status ? { status } : {}) });
 
-type Input = { from: string; to: string; group: Group; compare: CompareChoice };
-const sameInput = (a: Input, b: Input) => a.from === b.from && a.to === b.to && a.group === b.group && a.compare === b.compare;
+type Input = { from: string; to: string; group: Group; compare: CompareChoice; digital: boolean };
+const sameInput = (a: Input, b: Input) => a.from === b.from && a.to === b.to && a.group === b.group && a.compare === b.compare && a.digital === b.digital;
 
 /** An open clients window, with the range of the numbers it was opened from — a month-grid cell's month is only in that range. */
 type OpenDrill = { link: DrillLink; from: string; to: string };
@@ -90,6 +91,8 @@ export default function MarketingReport() {
   const [to, setTo] = useState(iso(today));
   // Channels group Lead Docket's per-contract and per-listing sources ("Walker Advertising Contract 26").
   const [group, setGroup] = useState<Group>("channel");
+  // "Digital only": the firm's own online channels (shared/marketing.ts isDigitalSource).
+  const [digital, setDigital] = useState(false);
   const periods = presets(today);
   const activePreset = periods.find((p) => p.from === from && p.to === to)?.label;
   const [cmp, setCmp] = useState<CompareChoice>(() => compareDefault(activePreset));
@@ -97,7 +100,7 @@ export default function MarketingReport() {
   // All time has nothing before it, whatever was picked for the last range.
   const allTime = from <= FLOOR;
   const compare: CompareChoice = allTime ? "off" : cmp;
-  const input: Input = { from, to, group, compare };
+  const input: Input = { from, to, group, compare, digital };
   const { data, isLoading, isFetching, isPlaceholderData, isError, refetch } = trpc.marketing.dashboard.useQuery(
     input,
     { enabled: allowed, placeholderData: (prev) => prev },
@@ -115,7 +118,7 @@ export default function MarketingReport() {
   // clock; a ref, so turning a slide doesn't re-render the report behind the deck.
   const [presenting, setPresenting] = useState(false);
   const presentBtn = useRef<HTMLButtonElement>(null);
-  const deckKey = [from, to, group, compare].join("|");
+  const deckKey = [from, to, group, compare, digital].join("|");
   const place = useRef<(DeckPlace & { key: string; at: number }) | null>(null);
   const [resume, setResume] = useState<DeckPlace>();
   const notePlace = (p: DeckPlace) => { place.current = { ...p, key: deckKey, at: Date.now() }; };
@@ -141,7 +144,7 @@ export default function MarketingReport() {
     loadPresentation().catch(() => {});
     // The appendix's rejected cases too (the deck's one fetch), so the deck opens without waiting.
     if (data?.caseFacts && data.totals.rejected > 0 && !isPlaceholderData) {
-      void utils.marketing.leads.prefetch(rejectedQuery(from, to), { staleTime: REJECTED_FRESH_MS });
+      void utils.marketing.leads.prefetch(rejectedQuery(from, to, digital), { staleTime: REJECTED_FRESH_MS });
     }
   };
 
@@ -165,6 +168,7 @@ export default function MarketingReport() {
   };
 
   return (
+    <DigitalContext.Provider value={view.digital}>
     <div className="sr">
       <div className="sr-canvas">
         <div className="sr-inner">
@@ -178,6 +182,11 @@ export default function MarketingReport() {
             <div className="sr-seg" role="group" aria-label="Group by">
               <button className={group === "channel" ? "on" : ""} onClick={() => setGroup("channel")}>Channels</button>
               <button className={group === "source" ? "on" : ""} onClick={() => setGroup("source")}>Sources</button>
+            </div>
+            <div className="sr-seg" role="group" aria-label="Which sources">
+              <button className={!digital ? "on" : ""} onClick={() => setDigital(false)}>All sources</button>
+              <button className={digital ? "on" : ""} onClick={() => setDigital(true)}
+                title="Google Business listings, websites and website chat, search and ads, email, online directories, social">Digital only</button>
             </div>
             <VsControl value={cmp} onChange={setCmp} allTime={allTime} />
             <span className="sr-dates">
@@ -206,6 +215,8 @@ export default function MarketingReport() {
                   <Presentation /> Present
                 </button>
                 <button className="sr-btn2" onClick={() => data && exportSummary(data, view.from, view.to)} disabled={!data}><Download /> Export summary</button>
+                {/* Pull the latest from Lead Docket now, as on the Sign-ups Report (managers run syncs). */}
+                {canManage(user?.role) && <LeadDocketSyncButton className="sr-btn1" hintClassName="sr-hint" />}
               </div>
             </div>
             {data && <CoverageBanner c={data.coverage} />}
@@ -234,6 +245,7 @@ export default function MarketingReport() {
         </Suspense>
       )}
     </div>
+    </DigitalContext.Provider>
   );
 }
 

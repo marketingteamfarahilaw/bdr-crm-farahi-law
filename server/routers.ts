@@ -875,6 +875,7 @@ export const appRouter = router({
       campaigns: z.array(z.string().max(255)).max(50).optional(),
       status: z.enum(["all", "signed", "open"]).default("all"),
       search: z.string().max(100).optional(),
+      digital: z.boolean().optional(),
     });
     // Who changed the spend, as setSpend has always recorded it.
     const byOf = (u: { name?: string | null; email?: string | null; id: unknown }) => String(u.name || u.email || `user ${u.id}`);
@@ -883,12 +884,13 @@ export const appRouter = router({
         .input(range.extend({
           group: z.enum(["channel", "source"]).default("channel"),
           compare: z.enum(["prev", "yoy", "off"]).default("prev"),
+          digital: z.boolean().optional(),
         }))
         // "today" is the server's Pacific date: pace and "still in progress" are judged against it.
         .query(({ ctx, input }) => getMarketingDashboard(toRange(input), {
           group: input.group, from: input.from, to: input.to, compare: input.compare,
           today: formatInTimeZone(new Date(), MARKETING_TZ, "yyyy-MM-dd"),
-          caseFacts: marketingCaseFacts(ctx.user.role),
+          caseFacts: marketingCaseFacts(ctx.user.role), digital: input.digital,
         })),
       leads: marketingProcedure
         .input(leadScope.extend({

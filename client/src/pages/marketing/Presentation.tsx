@@ -18,7 +18,7 @@ import { Loader2, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Deck, usePageBehind, type DeckPlace } from "../signups/Presentation";
 import { FULLSCREEN_EVENTS, exitFullscreen, fullscreenElement } from "../signups/fullscreen";
-import { REJECTED_FRESH_MS, rejectedQuery } from "./shared";
+import { REJECTED_FRESH_MS, rejectedQuery, useDigital } from "./shared";
 import { buildMarketingSlides, type DeckContext, type MarketingData, type RejectedCases } from "./deckSlides";
 import "./Presentation.css";
 
@@ -38,7 +38,8 @@ export default function MarketingPresentation({ data, resume, onPlace, onExit, .
   const wanted = frozen.data.caseFacts && frozen.data.totals.rejected > 0;
   // undefined while it loads; null when there is none, or it couldn't be had.
   const [cases, setCases] = useState<RejectedCases | null | undefined>(wanted ? undefined : null);
-  const q = trpc.marketing.leads.useQuery(rejectedQuery(frozen.ctx.from, frozen.ctx.to), {
+  const digital = useDigital();
+  const q = trpc.marketing.leads.useQuery(rejectedQuery(frozen.ctx.from, frozen.ctx.to, digital), {
     // Asked once: after that the deck is built and frozen, so a refetch would change nothing.
     enabled: cases === undefined,
     // A list fetched in the last minute (the panel's, or the button's hover) is used as is;
