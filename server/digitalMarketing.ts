@@ -461,7 +461,13 @@ export async function getDigitalMarketingReport(range: { from: Date; to: Date; f
     db.select(DM_COLS).from(L).where(and(gte(L.leadDate, startOf(p.from)), lte(L.leadDate, range.to), digitalOnly)),
     db.select(TREND_COLS).from(L).where(and(gte(L.leadDate, monthBounds(firstMonth).start), lt(L.leadDate, monthBounds(lastMonth).end), digitalOnly)),
     loadSpend(Array.from(new Set(tp.days.map((d) => d.slice(0, 7))))),
-  ]);
+  ]).catch((e) => {
+    // The database's own reason, not drizzle's echo of the whole query, so a
+    // failure on the page says what to fix (and no SQL reaches the browser).
+    const why = e?.cause?.sqlMessage ?? e?.cause?.message ?? e?.sqlMessage ?? e?.message ?? String(e);
+    console.warn("[digital] read failed:", e?.message ?? e);
+    throw new Error(`Couldn't read the Lead Docket data: ${String(why).slice(0, 300)}`);
+  });
   const fromT = range.from.getTime();
   const at = (r: { leadDate: Date | null }) => (r.leadDate ? new Date(r.leadDate).getTime() : -Infinity);
 
