@@ -17,7 +17,6 @@ import {
   AlertTriangle, Clock, ChevronUp, ChevronDown, Upload, List,
   Receipt, ListChecks, ArrowRight, Merge, Trash2, Map as MapIcon,
 } from "lucide-react";
-import { formatDistanceToNow } from "@/lib/datetime";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { BulkImportDialog } from "./BulkImportDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -63,6 +62,11 @@ function RepCell({ name }: { name: string | null }) {
   );
 }
 
+/** "Today", "3d ago", "5w ago", "4mo ago", "2y ago" — short, so the column stays narrow. */
+const shortAgo = (days: number) =>
+  days <= 0 ? "Today" : days === 1 ? "Yesterday" : days < 14 ? `${days}d ago` : days < 60 ? `${Math.round(days / 7)}w ago`
+    : days < 730 ? `${Math.round(days / 30.4)}mo ago` : `${Math.round(days / 365)}y ago`;
+
 // Green within a week, amber within two, red after that or never.
 function DaysAgoCell({ date }: { date: Date | string | null | undefined }) {
   const d = date ? new Date(date) : null;
@@ -74,7 +78,7 @@ function DaysAgoCell({ date }: { date: Date | string | null | undefined }) {
   return (
     <div className="flex items-center gap-1.5" title={d.toLocaleDateString()}>
       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} title={`${days} days ago`} />
-      <span>{formatDistanceToNow(d, { addSuffix: true })}</span>
+      <span>{shortAgo(days)}</span>
     </div>
   );
 }
@@ -372,7 +376,7 @@ export default function Facilities() {
             <div className="rounded-xl border border-border overflow-x-auto">
               {/* Each column as wide as its content (w-px on the headers), so the
                   spare width sits after Last Visit instead of between columns. */}
-              <Table className="[&_td]:whitespace-nowrap">
+              <Table className="[&_td]:whitespace-nowrap [&_td]:px-2 [&_td]:py-1 [&_th]:px-2 [&_th]:h-8">
                 <TableHeader>
                   <TableRow className="bg-card hover:bg-card border-border">
                     <TableHead className="w-10">
@@ -381,47 +385,47 @@ export default function Facilities() {
                         onChange={(e) => setSelected(e.target.checked ? new Map(sorted.map((f) => [f.id, f] as [number, any])) : new Map())} />
                     </TableHead>
                     <TableHead
-                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("name")}
                     >
                       Facility <SortIcon col="name" />
                     </TableHead>
                     <TableHead
-                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("bdrRep")}
                     >
                       BDR Rep <SortIcon col="bdrRep" />
                     </TableHead>
                     <TableHead
-                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("frRep")}
                     >
                       FR Rep <SortIcon col="frRep" />
                     </TableHead>
                     <TableHead
-                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("category")}
                     >
                       Category <SortIcon col="category" />
                     </TableHead>
-                    <TableHead className="w-px whitespace-nowrap pr-2 text-muted-foreground text-xs">Contact</TableHead>
-                    <TableHead className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs">Location</TableHead>
+                    <TableHead className="w-px whitespace-nowrap text-muted-foreground text-xs">Contact</TableHead>
+                    <TableHead className="w-px whitespace-nowrap text-muted-foreground text-xs">Location</TableHead>
                     <TableHead
-                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("relationshipStatus")}
                     >
                       Status <SortIcon col="relationshipStatus" />
                     </TableHead>
-                    <TableHead className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs text-right" title="Referrals sent to / received from this partner">Sent / Recv</TableHead>
+                    <TableHead className="w-px whitespace-nowrap text-muted-foreground text-xs text-right" title="Referrals sent to / received from this partner">Sent / Recv</TableHead>
                     <TableHead
-                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("lastCall")}
                       title="Most recent logged call"
                     >
                       Last Call <SortIcon col="lastCall" />
                     </TableHead>
                     <TableHead
-                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("lastVisit")}
                       title="Most recent in-person visit (field visits and visit logs)"
                     >
@@ -452,7 +456,7 @@ export default function Facilities() {
                             <span className="font-medium text-foreground text-sm block max-w-[240px] truncate" title={facility.name}>{facility.name}</span>
                           </div>
                           {facility.phone && (
-                            <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1 text-[11px] leading-tight text-muted-foreground">
                               <Phone className="w-3 h-3" />
                               <span>{facility.phone}</span>
                             </div>
