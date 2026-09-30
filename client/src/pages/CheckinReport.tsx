@@ -311,7 +311,9 @@ function RepBlock({ block, word = "CHECK-IN" }: { block: any; word?: string }) {
                 <TableRow key={r.label + i} className={`border-border ${r.facilityId ? "cursor-pointer hover:bg-card/60" : ""}`} onClick={() => r.facilityId && nav(`/crm/facilities/${r.facilityId}`)}>
                   <TableCell className="py-1.5 text-xs text-muted-foreground">{i + 1}</TableCell>
                   <TableCell className="py-1.5 text-sm font-medium text-foreground max-w-[320px]">
-                    {r.isPhoneOnly ? <span className="flex items-center gap-1.5 text-muted-foreground"><Phone className="w-3 h-3" /> {r.label}</span> : <span className="block truncate" title={r.label}>{r.label}</span>}
+                    {r.isPhoneOnly
+                      ? <span className="flex items-center gap-1.5 text-muted-foreground" title="Not linked to a partner in the CRM — the name is RingCentral's caller ID"><Phone className="w-3 h-3 shrink-0" /> <span className="truncate">{r.label}</span></span>
+                      : <span className="block truncate" title={r.label}>{r.label}</span>}
                   </TableCell>
                   {Array.from({ length: cols }, (_, k) => {
                     const c = r.checkIns[k];
