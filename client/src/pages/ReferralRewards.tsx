@@ -170,7 +170,9 @@ export default function ReferralRewards() {
           ) : !rewards || rewards.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">No referral rewards found. Adjust filters or click "Add Referral".</p>
           ) : (
-            <Table className="text-sm [&_td]:py-2 [&_th]:py-2">
+            {/* Compact: each column only as wide as it needs; a long SUD entry is cut
+                (full text on hover) instead of stretching its column. */}
+            <Table className="text-sm [&_td]:py-1.5 [&_td]:px-2 [&_th]:py-1.5 [&_th]:px-2">
               <TableHeader>
                 <TableRow>
                   <TableHead>Representative</TableHead>
@@ -189,10 +191,10 @@ export default function ReferralRewards() {
                 {rewards.map((r) => (
                   <TableRow key={r.id} onClick={() => setDetail(r)} className="cursor-pointer hover:bg-accent/40">
                     <TableCell><Badge variant="outline">{r.agentName}</Badge></TableCell>
-                    <TableCell className="whitespace-nowrap">{r.sud ?? "—"}</TableCell>
+                    <TableCell className="max-w-[110px] truncate" title={r.sud ?? undefined}>{r.sud ?? "—"}</TableCell>
                     <TableCell className="whitespace-nowrap">{r.referralType}</TableCell>
-                    <TableCell className="max-w-[120px] truncate">{r.facilityName ?? "—"}</TableCell>
-                    <TableCell className="max-w-[180px] truncate">{r.clientName ?? "—"}</TableCell>
+                    <TableCell className="max-w-[220px] truncate" title={r.facilityName ?? undefined}>{r.facilityName ?? "—"}</TableCell>
+                    <TableCell className="max-w-[220px] truncate" title={r.clientName ?? undefined}>{r.clientName ?? "—"}</TableCell>
                     <TableCell><Badge variant="secondary">{r.clientTier}</Badge></TableCell>
                     <TableCell className="font-medium text-emerald-600 whitespace-nowrap">${parseFloat(String(r.payoutAmount ?? 0)).toFixed(2)}</TableCell>
                     <TableCell>
@@ -200,7 +202,7 @@ export default function ReferralRewards() {
                         {r.status}
                       </span>
                     </TableCell>
-                    <TableCell className="max-w-[140px] truncate">{r.caseNumber ?? "—"}</TableCell>
+                    <TableCell className="max-w-[120px] truncate" title={r.caseNumber ?? undefined}>{r.caseNumber ?? "—"}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="w-3.5 h-3.5" /></Button>
