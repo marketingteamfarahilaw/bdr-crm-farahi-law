@@ -14,10 +14,11 @@
  * for the representative; the response carries the match rate so the page can
  * say how much of the picture is partner-attributed.
  */
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { leadIntake, facilities, facilityLeads, partnerAliases } from "../drizzle/schema";
+import { leadIntake, facilities, facilityLeads, partnerAliases, leaddocketLeads } from "../drizzle/schema";
+import { ensureDigitalColumns } from "../scripts/migration/leaddocket-digital.mjs";
 import { rememberPartner, setLeadsPartner } from "./partnerLinks";
 import { isCurrentRep, CURRENT_TEAM, MONTHLY_SIGNUP_TARGET, STARTED, type TeamRole } from "@shared/team";
 import { isNonReportingRep } from "@shared/permissions";
@@ -177,6 +178,11 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     (!filter.member || l.member === filter.member) &&
     (filter.team !== "current" || isCurrentRep(l.member)));
 
+  // Lead Docket's Case Value (Low / Medium / High / Rank X / Rank U), kept with
+  // the Lead Docket copy of each lead: the team's leads carry its id. Read by id;
+  // a failed read just leaves the values "not recorded".
+  const caseValueOf = await loadCaseValues(db, leads);
+
   const facs = await db
     .select({ id: facilities.id, name: facilities.name, category: facilities.category, territory: facilities.territory })
     .from(facilities);
@@ -249,6 +255,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     // CRM partner, so the list never hides who intake wrote down.
     referredBy: string | null;
     linkable: boolean; linkedBy: string | null;
+    caseValue: string | null;
   }[] = [];
   const caseStats = new Map<string, { name: string; leads: number; signed: number }>();
   // The team's scorecard: each lead lands in exactly one column, so the columns
@@ -322,6 +329,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
       partnerId: hit?.id ?? null,
       referredBy: text || null,
       linkable: l.externalSource === "leaddocket" && linkedTo.has(String(l.externalId)),
+      caseValue: caseValueOf.get(String(l.externalId ?? "")) ?? null,
       linkedBy: l.externalSource === "leaddocket" ? linkedByHand.get(String(l.externalId)) ?? null : null,
     });
 
@@ -477,7 +485,20 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
 
   const topTwoTerritoryLeads = (topTerritories[0]?.leads ?? 0) + (topTerritories[1]?.leads ?? 0);
 
+  // Case Value of the sign-ups, per team (the digital team's sheet reports the same split).
+  const valueRows = new Map<string, { value: string; FR: number; BDR: number; total: number }>();
+  for (const l of leadList) {
+    if (!l.signed) continue;
+    const v = l.caseValue ?? CASE_VALUE_NONE;
+    const r = valueRows.get(v) ?? { value: v, FR: 0, BDR: 0, total: 0 };
+    if (l.role === "FR") r.FR++; else if (l.role === "BDR") r.BDR++;
+    r.total++;
+    valueRows.set(v, r);
+  }
+  const caseValues = Array.from(valueRows.values()).sort((a, b) => caseValueRank(a.value) - caseValueRank(b.value) || b.total - a.total);
+
   return {
+    caseValues,
     period: {
       from: range?.from ? range.from.toISOString().slice(0, 10) : null,
       to: range?.to ? range.to.toISOString().slice(0, 10) : null,
@@ -572,4 +593,29 @@ export async function linkLeadToPartner(leadId: number, facilityId: number | nul
     if (!answered || alias!.facilityId === facilityId) also = await rememberPartner(row.partnerKey, String(lead.facility ?? ""), facilityId, by);
   }
   return { partner: partner?.name ?? null, also };
+}
+
+export const CASE_VALUE_NONE = "Not recorded";
+const CASE_VALUE_ORDER = ["Rank X", "High", "Medium", "Low", "Rank U"];
+const caseValueRank = (v: string) => (v === CASE_VALUE_NONE ? 99 : CASE_VALUE_ORDER.indexOf(v) === -1 ? 50 : CASE_VALUE_ORDER.indexOf(v));
+
+async function loadCaseValues(db: NonNullable<Awaited<ReturnType<typeof getDb>>>, leads: { externalSource: string | null; externalId: string | null }[]) {
+  const out = new Map<string, string>();
+  const ids = Array.from(new Set(leads.filter((l) => l.externalSource === "leaddocket" && /^\d+$/.test(String(l.externalId ?? ""))).map((l) => Number(l.externalId))));
+  if (!ids.length) return out;
+  try {
+    // The column arrives with the Digital Marketing Report; deploys run no migrations.
+    await ensureDigitalColumns(async (q: string) => {
+      const r: any = await db.execute(sql.raw(q));
+      return (Array.isArray(r) && Array.isArray(r[0]) ? r[0] : r) as any[];
+    });
+    for (let i = 0; i < ids.length; i += 1000) {
+      const rows = await db.select({ id: leaddocketLeads.leadId, v: leaddocketLeads.caseValue }).from(leaddocketLeads)
+        .where(inArray(leaddocketLeads.leadId, ids.slice(i, i + 1000)));
+      for (const r of rows) if (r.v) out.set(String(r.id), String(r.v));
+    }
+  } catch (e) {
+    console.warn("[signups] case values unavailable:", (e as Error)?.message ?? e);
+  }
+  return out;
 }

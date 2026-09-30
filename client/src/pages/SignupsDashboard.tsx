@@ -206,8 +206,10 @@ export default function SignupsDashboard() {
       ...data.partners.map((p) => [q(p.name), q(p.territory ?? ""), p.leads, p.signed, p.conversion.toFixed(1)].join(",")), "",
       "Case type,Leads,Signed,Conversion %",
       ...data.caseTypes.map((c) => [q(c.name), c.leads, c.signed, c.conversion.toFixed(1)].join(",")), "",
-      "Lead,Case type,Representative,Role,Date,Outcome,Referring partner,Lead Docket referral text",
-      ...data.leadList.map((l) => [q(l.name), q(l.caseType), q(l.member), l.role, l.date ? l.date.slice(0, 10) : "", q(l.outcome), q(l.partner ?? ""), q(l.referredBy ?? "")].join(",")),
+      "Case value of sign-ups,FR,BDR,Total",
+      ...data.caseValues.map((v) => [q(v.value), v.FR, v.BDR, v.total].join(",")), "",
+      "Lead,Case type,Case value,Representative,Role,Date,Outcome,Referring partner,Lead Docket referral text",
+      ...data.leadList.map((l) => [q(l.name), q(l.caseType), q(l.caseValue ?? ""), q(l.member), l.role, l.date ? l.date.slice(0, 10) : "", q(l.outcome), q(l.partner ?? ""), q(l.referredBy ?? "")].join(",")),
     ];
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
     const a = document.createElement("a");
@@ -368,6 +370,36 @@ function RoleSplit({ data }: { data: ReportData }) {
   );
 }
 
+/**
+ * Lead Docket's Case Value of the period's sign-ups, FR and BDR side by side.
+ * Values fill in as the sync re-reads leads, so "Not recorded" shrinks over time.
+ */
+function CaseValues({ data }: { data: ReportData }) {
+  const rows = data.caseValues;
+  if (!rows.length) return null;
+  const max = Math.max(1, ...rows.map((r) => r.total));
+  return (
+    <div className="sr-panel">
+      <div className="sr-panel-h"><div className="sr-ttl"><h2>Case value of sign-ups</h2><span className="sr-count">{fmt(data.totals.signed)}</span></div></div>
+      <p className="sr-sub">From Lead Docket's Case Value. "Not recorded" leads fill in as Lead Docket syncs them again.</p>
+      <table className="sr-t sr-t-fit">
+        <thead><tr><th>Case value</th><th className="num">FR</th><th className="num">BDR</th><th className="num">Total</th><th style={{ width: "40%" }} /></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.value}>
+              <td><b style={{ color: r.value === "Not recorded" ? "var(--mute)" : "var(--ink)", fontWeight: 600 }}>{r.value}</b></td>
+              <td className="num">{fmt(r.FR)}</td>
+              <td className="num">{fmt(r.BDR)}</td>
+              <td className="num"><span className="sr-score">{fmt(r.total)}</span></td>
+              <td><div className="sr-hb-t"><i style={{ width: `${Math.max(2, (r.total / max) * 100)}%` }} /></div></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function Overview({ data, onRep, onPartners }: { data: ReportData; onRep: (rep: string) => void; onPartners: () => void }) {
   const avg = data.totals.signedPct;
   const top = data.reps[0];
@@ -385,6 +417,7 @@ function Overview({ data, onRep, onPartners }: { data: ReportData; onRep: (rep: 
       <div style={{ minWidth: 0 }}>
         <Headline data={data} />
         <RoleSplit data={data} />
+        <CaseValues data={data} />
 
         <div className="sr-features">
           {top ? (
@@ -857,13 +890,14 @@ function LeadTable({ rows, showRep }: { rows: ReportData["leadList"]; showRep?: 
           pushing Outcome and Referred by off the edge. */}
       <table className="sr-t sr-leads" style={{ minWidth: showRep ? 760 : 600 }}>
         <thead>
-          <tr><th>Client</th><th>Case type</th>{showRep && <th>Representative</th>}<th>Date</th><th>Outcome</th><th>Referred by</th></tr>
+          <tr><th>Client</th><th>Case type</th><th>Case value</th>{showRep && <th>Representative</th>}<th>Date</th><th>Outcome</th><th>Referred by</th></tr>
         </thead>
         <tbody>
           {rows.map((l) => (
             <tr key={l.id}>
               <td className="client"><b>{l.name}</b></td>
               <td className="nowrap">{l.caseType}</td>
+              <td className="nowrap">{l.caseValue ?? <span style={{ color: "var(--mute2)" }}>—</span>}</td>
               {showRep && <td className="nowrap">{l.member} <span className="role">{l.role}</span></td>}
               <td className="nowrap">{leadDay(l.date)}</td>
               <td className="nowrap"><span className={`sr-badge ${outcomeBadge(l.outcome, l.signed)}`}>{l.outcome || "—"}</span></td>
