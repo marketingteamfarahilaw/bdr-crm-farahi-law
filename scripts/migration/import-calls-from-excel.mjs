@@ -14,7 +14,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
-import { pacific, serialParts } from "./dates.mjs";
+import { pacific, pacificYmd, serialParts } from "./dates.mjs";
 import { fullName } from "./leaddocket-rules.mjs";
 import { loadRedirects, redirectLookup } from "./facility-redirects.mjs";
 
@@ -76,14 +76,27 @@ const ws = wb.Sheets[SHEET];
 if (!ws) { console.error(`sheet "${SHEET}" not found`); process.exit(1); }
 const rows = xlsx.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
+// From Aug 27 (Queenie; the rest Aug 28) the live RingCentral sync owns calls.
+// People kept pasting RingCentral exports into 2.RC after that, and the overlap
+// check below can't see internal extensions, shared numbers or blank inbound
+// numbers, so those pastes came in twice. The sheet is history only: anything
+// dated on or after go-live (Pacific) is ignored.
+const RC_LIVE = pacificYmd(pacific(2026, 8, 27));
+
 const calls = [];
-let skippedNoDate = 0;
+const seen = new Set();
+let skippedNoDate = 0, skippedLive = 0, skippedDup = 0;
 for (const r of rows) {
   const agent = fullName(norm(r[COL.agent]));   // "Grace" → "Grace Lanayon", as RingCentral writes it
   if (!agent || /^agent$/i.test(agent)) continue;
   const when = excelDate(r[COL.date], r[COL.time]);
   if (!when) { skippedNoDate++; continue; }
+  if (pacificYmd(when) >= RC_LIVE) { skippedLive++; continue; }
   const phone = last10(r[COL.cleanPhone]) || last10(r[COL.phone]);
+  // Rows re-pasted inside the sheet: same rep, same minute, same number is one call.
+  const key = `${agent}|${Math.floor(when.getTime() / 60000)}|${phone || norm(r[COL.phone])}`;
+  if (seen.has(key)) { skippedDup++; continue; }
+  seen.add(key);
   const secs = durationSeconds(r[COL.duration]);
   calls.push({
     agent,
@@ -97,7 +110,7 @@ for (const r of rows) {
   });
 }
 
-console.log(`Parsed ${calls.length} calls (skipped ${skippedNoDate} rows with no usable date)`);
+console.log(`Parsed ${calls.length} calls (skipped ${skippedNoDate} rows with no usable date, ${skippedLive} dated on/after RingCentral go-live ${RC_LIVE}, ${skippedDup} repeated rows)`);
 const dates = calls.map((c) => c.when.getTime()).sort((a, b) => a - b);
 if (dates.length) console.log(`Date range: ${new Date(dates[0]).toISOString().slice(0,10)} → ${new Date(dates[dates.length-1]).toISOString().slice(0,10)}`);
 const byType = {}, byAgent = {};
