@@ -16,6 +16,7 @@ import { syncRcMeetings } from "./rcMeetingSync";
 import { syncIntakeCalls } from "./intakeSync";
 import { deleteFacilityFully, facilityRecordCounts, mergeFacilities } from "./facilityMerge";
 import { uberConfigured, importOrderReceipt, matchFacilityByAddress } from "./uber";
+import { backfillFrRepsOnce, ensureFrRepColumn } from "./facilityReps";
 import { frExpenses } from "../drizzle/schema";
 import {
   completeTask,
@@ -59,6 +60,8 @@ import {
   setTaskStatus,
   getReferralCountsMap,
   getLastContactLogMap,
+  getLastCallMap,
+  getLastVisitMap,
   getTotalLeadsSentMap,
   getCheckinMatrix,
   getVisitMatrix,
@@ -398,14 +401,18 @@ export const crmRouter = router({
         // Normalize to listFacilities' own row type: `scoped` is a union (agent vs
         // manager shape) and letting that union flow into the returned objects
         // widens the inferred output enough that the client loses its types.
+        await ensureFrRepColumn();
+        void backfillFrRepsOnce(); // no-op once it has run; not awaited — it's a one-off
         const rows: Awaited<ReturnType<typeof listFacilities>> = await listFacilities(scoped);
         // Enrich with last contact, total leads sent, and referral counts (sent/received).
         // All three come from batched maps — per-row lookups here meant ~2 queries
         // per facility and made this endpoint take ~32s over the full partner list.
-        const [refMap, lastContactMap, leadsSentMap] = await Promise.all([
+        const [refMap, lastContactMap, leadsSentMap, lastCallMap, lastVisitMap] = await Promise.all([
           getReferralCountsMap(),
           getLastContactLogMap(),
           getTotalLeadsSentMap(),
+          getLastCallMap(),
+          getLastVisitMap(),
         ]);
         // `rows` is a union of array types (agent vs manager query shape). The map
         // callback therefore needs an explicit element type, and the result must be
@@ -413,6 +420,8 @@ export const crmRouter = router({
         // the client loses its element typing. (The old Promise.all did this for us.)
         type Enriched = typeof rows[number] & {
           lastContact: Awaited<ReturnType<typeof getLastContactLog>>;
+          lastCallDate: Date | null;
+          lastVisitDate: Date | null;
           totalLeadsSent: number;
           referralsSent: number;
           referralsReceived: number;
@@ -422,6 +431,8 @@ export const crmRouter = router({
           return {
             ...f,
             lastContact: lastContactMap.get(f.id) ?? null,
+            lastCallDate: lastCallMap.get(f.id) ?? null,
+            lastVisitDate: lastVisitMap.get(f.id) ?? null,
             totalLeadsSent: leadsSentMap.get(f.id) ?? 0,
             referralsSent: ref.sent,
             referralsReceived: ref.received,
@@ -482,14 +493,17 @@ export const crmRouter = router({
           territory: z.string().optional(),
           managedBy: z.enum(["bdr", "fr"]).optional(),
           assignedRepName: z.string().optional(),
+          frRepName: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
+        await ensureFrRepColumn();
         await createFacility({
           ...input,
           assignedRepId: ctx.user.id,
           // The form's BDR/FR dropdown wins; fall back to the creator.
           assignedRepName: input.assignedRepName || (ctx.user.name ?? ctx.user.email ?? "Unknown"),
+          frRepName: input.frRepName?.trim() || null,
         });
         return { success: true };
       }),
@@ -514,6 +528,8 @@ export const crmRouter = router({
           partnerStatus: z.enum(PARTNER_STATUSES).optional(),
           assignedRepId: z.number().optional(),
           assignedRepName: z.string().optional(),
+          // null / "" clears it — unlike assignedRepName, a facility may have no FR.
+          frRepName: z.string().nullable().optional(),
           notes: z.string().optional(),
           managementFlag: z.boolean().optional(),
           managementNote: z.string().optional(),
@@ -529,10 +545,13 @@ export const crmRouter = router({
           await assertFacilityAccess(ctx.user, id);
           delete (rest as any).assignedRepId;
           delete (rest as any).assignedRepName;
+          delete (rest as any).frRepName;
           delete (rest as any).managementNote;
         }
+        await ensureFrRepColumn();
         await updateFacility(id, {
           ...rest,
+          ...(rest.frRepName !== undefined ? { frRepName: rest.frRepName?.trim() || null } : {}),
           ...(managementFlag !== undefined && seesAllData(ctx.user.role) ? { managementFlag: managementFlag ? 1 : 0 } : {}),
         });
         return { success: true };

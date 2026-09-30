@@ -262,6 +262,9 @@ export const facilities = mysqlTable("facilities", {
   // Assigned BD rep
   assignedRepId: int("assignedRepId"),
   assignedRepName: varchar("assignedRepName", { length: 255 }),
+  // The Field Rep for this partner, beside the BDR above. Added at runtime by
+  // server/facilityReps.ts (deploys run no migrations).
+  frRepName: varchar("frRepName", { length: 255 }),
   // Google Maps link (from scraper)
   placeId: varchar("placeId", { length: 255 }),
   latitude: float("latitude"),

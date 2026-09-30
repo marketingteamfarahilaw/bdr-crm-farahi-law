@@ -36,6 +36,49 @@ const TEAM_OF = new Map<string, { full: string; role: "BDR" | "FR" }>([
   ...CURRENT_TEAM.FR.map((n) => [firstName(n), { full: n, role: "FR" as const }] as const),
 ]);
 
+// A partner's BDR and FR. assignedRepName holds whoever owns it — usually the
+// BDR, but some are owned by an FR, and then that FR is the FR Rep unless
+// frRepName names another. A name not on today's team (a former rep) stays in
+// the BDR column, where it has always been, so it isn't silently hidden.
+function repsOf(f: { assignedRepName?: string | null; frRepName?: string | null }) {
+  const owner = f.assignedRepName?.trim() ? TEAM_OF.get(firstName(f.assignedRepName)) : undefined;
+  const ownerIsFr = owner?.role === "FR";
+  const bdr = f.assignedRepName?.trim() && !ownerIsFr ? (owner?.full ?? f.assignedRepName.trim()) : null;
+  const frStored = f.frRepName?.trim() ? (TEAM_OF.get(firstName(f.frRepName))?.full ?? f.frRepName.trim()) : null;
+  const fr = frStored ?? (ownerIsFr ? owner!.full : null);
+  return { bdr, fr };
+}
+
+const initials = (name: string) => name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
+function RepCell({ name }: { name: string | null }) {
+  if (!name) return <span className="text-muted-foreground opacity-40">—</span>;
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="w-5 h-5 rounded-full overflow-hidden bg-secondary flex items-center justify-center text-[9px] font-semibold text-foreground shrink-0 [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
+        <RepFace name={name} fallback={initials(name)} />
+      </span>
+      <span className="font-medium text-foreground block max-w-[120px] truncate" title={name}>{name}</span>
+    </div>
+  );
+}
+
+// Green within a week, amber within two, red after that or never.
+function DaysAgoCell({ date }: { date: Date | string | null | undefined }) {
+  const d = date ? new Date(date) : null;
+  if (!d || isNaN(d.getTime())) {
+    return <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /><span className="opacity-60">Never</span></div>;
+  }
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  const dot = days <= 7 ? "bg-emerald-500" : days <= 14 ? "bg-amber-500" : "bg-red-500";
+  return (
+    <div className="flex items-center gap-1.5" title={d.toLocaleDateString()}>
+      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} title={`${days} days ago`} />
+      <span>{formatDistanceToNow(d, { addSuffix: true })}</span>
+    </div>
+  );
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   body_shop: "Body Shop",
   chiropractor: "Chiropractor",
@@ -46,7 +89,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-type SortKey = "name" | "category" | "relationshipStatus" | "assignedRepName" | "lastContact" | "totalLeadsSent";
+type SortKey = "name" | "category" | "relationshipStatus" | "bdrRep" | "frRep" | "lastCall" | "lastVisit" | "totalLeadsSent";
 type SortDir = "asc" | "desc";
 type ViewMode = "list" | "map";
 
@@ -115,18 +158,22 @@ export default function Facilities() {
     }
   };
 
+  const time = (d: Date | string | null | undefined) => (d ? new Date(d).getTime() : 0);
   const sorted = [...(facilities ?? [])].sort((a, b) => {
     let av: string | number = "";
     let bv: string | number = "";
     if (sortKey === "name") { av = a.name ?? ""; bv = b.name ?? ""; }
     else if (sortKey === "category") { av = CATEGORY_LABELS[a.category] ?? ""; bv = CATEGORY_LABELS[b.category] ?? ""; }
     else if (sortKey === "relationshipStatus") { av = a.partnerStatus ?? ""; bv = b.partnerStatus ?? ""; }
-    else if (sortKey === "assignedRepName") { av = a.assignedRepName ?? ""; bv = b.assignedRepName ?? ""; }
-    else if (sortKey === "totalLeadsSent") { av = a.totalLeadsSent ?? 0; bv = b.totalLeadsSent ?? 0; }
-    else if (sortKey === "lastContact") {
-      av = a.lastContact?.contactDate ? new Date(a.lastContact.contactDate).getTime() : 0;
-      bv = b.lastContact?.contactDate ? new Date(b.lastContact.contactDate).getTime() : 0;
+    else if (sortKey === "bdrRep" || sortKey === "frRep") {
+      const k = sortKey === "bdrRep" ? "bdr" : "fr";
+      av = repsOf(a)[k] ?? ""; bv = repsOf(b)[k] ?? "";
+      // Unassigned rows go last either way: sorting by rep is for finding a rep's partners.
+      if (!av !== !bv) return av ? -1 : 1;
     }
+    else if (sortKey === "totalLeadsSent") { av = a.totalLeadsSent ?? 0; bv = b.totalLeadsSent ?? 0; }
+    else if (sortKey === "lastCall") { av = time(a.lastCallDate); bv = time(b.lastCallDate); }
+    else if (sortKey === "lastVisit") { av = time(a.lastVisitDate); bv = time(b.lastVisitDate); }
     if (av < bv) return sortDir === "asc" ? -1 : 1;
     if (av > bv) return sortDir === "asc" ? 1 : -1;
     return 0;
@@ -324,7 +371,7 @@ export default function Facilities() {
           ) : (
             <div className="rounded-xl border border-border overflow-x-auto">
               {/* Each column as wide as its content (w-px on the headers), so the
-                  spare width sits after Last Contact instead of between columns. */}
+                  spare width sits after Last Visit instead of between columns. */}
               <Table className="[&_td]:whitespace-nowrap">
                 <TableHeader>
                   <TableRow className="bg-card hover:bg-card border-border">
@@ -341,9 +388,15 @@ export default function Facilities() {
                     </TableHead>
                     <TableHead
                       className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
-                      onClick={() => handleSort("assignedRepName")}
+                      onClick={() => handleSort("bdrRep")}
                     >
-                      Responsible <SortIcon col="assignedRepName" />
+                      BDR Rep <SortIcon col="bdrRep" />
+                    </TableHead>
+                    <TableHead
+                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("frRep")}
+                    >
+                      FR Rep <SortIcon col="frRep" />
                     </TableHead>
                     <TableHead
                       className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
@@ -362,9 +415,17 @@ export default function Facilities() {
                     <TableHead className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs text-right" title="Referrals sent to / received from this partner">Sent / Recv</TableHead>
                     <TableHead
                       className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
-                      onClick={() => handleSort("lastContact")}
+                      onClick={() => handleSort("lastCall")}
+                      title="Most recent logged call"
                     >
-                      Last Contact <SortIcon col="lastContact" />
+                      Last Call <SortIcon col="lastCall" />
+                    </TableHead>
+                    <TableHead
+                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("lastVisit")}
+                      title="Most recent in-person visit (field visits and visit logs)"
+                    >
+                      Last Visit <SortIcon col="lastVisit" />
                     </TableHead>
                     <TableHead className="text-muted-foreground text-xs text-right">Actions</TableHead>
                   </TableRow>
@@ -372,9 +433,7 @@ export default function Facilities() {
                 <TableBody>
                   {sorted.map((facility) => {
                     const status = STATUS_LABELS[facility.partnerStatus] ?? STATUS_LABELS.prospect;
-                    const lastContactDate = facility.lastContact?.contactDate
-                      ? new Date(facility.lastContact.contactDate)
-                      : null;
+                    const reps = repsOf(facility);
                     return (
                       <TableRow
                         key={facility.id}
@@ -390,7 +449,7 @@ export default function Facilities() {
                             {facility.managementFlag === 1 && (
                               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                             )}
-                            <span className="font-medium text-foreground text-sm block max-w-[260px] truncate" title={facility.name}>{facility.name}</span>
+                            <span className="font-medium text-foreground text-sm block max-w-[240px] truncate" title={facility.name}>{facility.name}</span>
                           </div>
                           {facility.phone && (
                             <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
@@ -399,21 +458,8 @@ export default function Facilities() {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="py-1.5 text-xs">
-                          {facility.assignedRepName ? (() => {
-                            const who = TEAM_OF.get(firstName(facility.assignedRepName));
-                            const name = who?.full ?? facility.assignedRepName;
-                            return (
-                              <div className="flex items-center gap-2 whitespace-nowrap">
-                                <span className="w-6 h-6 rounded-full overflow-hidden bg-secondary flex items-center justify-center text-[10px] font-semibold text-foreground shrink-0 [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
-                                  <RepFace name={name} fallback={String(name).split(/\s+/).map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()} />
-                                </span>
-                                <span className="font-medium text-foreground">{name}</span>
-                                {who && <span className="text-[10px] font-semibold text-muted-foreground border border-border rounded-full px-1.5 py-px">{who.role}</span>}
-                              </div>
-                            );
-                          })() : <span className="text-muted-foreground opacity-60">Unassigned</span>}
-                        </TableCell>
+                        <TableCell className="py-1.5 text-xs"><RepCell name={reps.bdr} /></TableCell>
+                        <TableCell className="py-1.5 text-xs"><RepCell name={reps.fr} /></TableCell>
                         <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {CATEGORY_LABELS[facility.category] ?? facility.category}
                         </TableCell>
@@ -446,20 +492,8 @@ export default function Facilities() {
                           <span className="font-medium text-foreground">{(facility as any).referralsSent ?? 0}</span>
                           <span className="text-muted-foreground"> / {(facility as any).referralsReceived ?? 0}</span>
                         </TableCell>
-                        <TableCell className="py-1.5 text-xs text-muted-foreground">
-                          {lastContactDate ? (() => {
-                            const days = Math.floor((Date.now() - lastContactDate.getTime()) / 86400000);
-                            const dot = days <= 7 ? "bg-emerald-500" : days <= 14 ? "bg-amber-500" : "bg-red-500";
-                            return (
-                              <div className="flex items-center gap-1.5">
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} title={`${days} days ago`} />
-                                <span>{formatDistanceToNow(lastContactDate, { addSuffix: true })}</span>
-                              </div>
-                            );
-                          })() : (
-                            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /><span className="opacity-60">Never</span></div>
-                          )}
-                        </TableCell>
+                        <TableCell className="py-1.5 text-xs text-muted-foreground"><DaysAgoCell date={facility.lastCallDate} /></TableCell>
+                        <TableCell className="py-1.5 text-xs text-muted-foreground"><DaysAgoCell date={facility.lastVisitDate} /></TableCell>
                         <TableCell className="py-1.5" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-0.5">
                             {facility.phone && <ClickToCallButton phoneNumber={facility.phone} facilityId={facility.id} />}

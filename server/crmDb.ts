@@ -551,6 +551,78 @@ export async function getLastContactLogMap(): Promise<Map<number, ContactLogRow>
   return map;
 }
 
+/** Latest call per facility (contact_logs, contactType 'call') — one grouped query. */
+export async function getLastCallMap(): Promise<Map<number, Date>> {
+  const db = await getDb();
+  const map = new Map<number, Date>();
+  if (!db) return map;
+  const rows = await db.select({ facilityId: contactLogs.facilityId, last: sql<Date>`MAX(${contactLogs.contactDate})`.mapWith(contactLogs.contactDate) })
+    .from(contactLogs).where(eq(contactLogs.contactType, "call")).groupBy(contactLogs.facilityId);
+  for (const r of rows) if (r.last) map.set(r.facilityId, new Date(r.last));
+  return map;
+}
+
+/**
+ * The facilities one field_visits row names. Its JSON items are {id, name}
+ * (older rows {facilityId, facilityName}); some historical rows carry only a
+ * name, so fall back to the facility with that exact name when it's unique.
+ */
+export function fieldVisitFacilityIds(items: unknown, idByName: Map<string, number | null>): number[] {
+  const list: any[] = Array.isArray(items) ? items : [];
+  const ids = new Set<number>();
+  for (const it of list) {
+    const fid = Number(it?.id ?? it?.facilityId ?? 0);
+    if (fid > 0) { ids.add(fid); continue; }
+    const byName = idByName.get(facilityNameKey(it?.name ?? it?.facilityName));
+    if (byName) ids.add(byName);
+  }
+  return Array.from(ids);
+}
+
+export const facilityNameKey = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** Facility name key → id, or null when two facilities share the name (ambiguous). */
+export async function getFacilityNameIndex(): Promise<Map<string, number | null>> {
+  const db = await getDb();
+  const map = new Map<string, number | null>();
+  if (!db) return map;
+  const rows = await db.select({ id: facilities.id, name: facilities.name }).from(facilities);
+  for (const r of rows) {
+    const k = facilityNameKey(r.name);
+    if (!k) continue;
+    map.set(k, map.has(k) ? null : r.id);
+  }
+  return map;
+}
+
+/**
+ * Latest physical visit per facility: the newest of a visit-type contact log
+ * and a field_visits day that lists the facility. field_visits keeps the
+ * facilities in a JSON array, which TiDB can't unnest in SQL, so that table is
+ * read once and folded here.
+ */
+export async function getLastVisitMap(): Promise<Map<number, Date>> {
+  const db = await getDb();
+  const map = new Map<number, Date>();
+  if (!db) return map;
+  const [logs, visits, idByName] = await Promise.all([
+    db.select({ facilityId: contactLogs.facilityId, last: sql<Date>`MAX(${contactLogs.contactDate})`.mapWith(contactLogs.contactDate) })
+      .from(contactLogs).where(eq(contactLogs.contactType, "visit")).groupBy(contactLogs.facilityId),
+    db.select({ visitDate: fieldVisits.visitDate, facilitiesVisited: fieldVisits.facilitiesVisited }).from(fieldVisits),
+    getFacilityNameIndex(),
+  ]);
+  const bump = (id: number, d: Date | null | undefined) => {
+    if (!d) return;
+    const t = new Date(d);
+    if (isNaN(t.getTime())) return;
+    const prev = map.get(id);
+    if (!prev || t > prev) map.set(id, t);
+  };
+  for (const r of logs) bump(r.facilityId, r.last);
+  for (const v of visits) for (const id of fieldVisitFacilityIds(v.facilitiesVisited, idByName)) bump(id, v.visitDate as Date);
+  return map;
+}
+
 /**
  * Leads sent to each facility: every lead logged as sent (facility_leads — which
  * includes the outbound referrals from the Referral-Friendly sheet) plus any

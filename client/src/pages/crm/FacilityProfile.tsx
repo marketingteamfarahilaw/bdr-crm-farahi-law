@@ -1178,6 +1178,7 @@ export default function FacilityProfile() {
                 {facility.contactPhone && <div className="flex gap-2 items-center"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><ClickToCallButton icon={false} phoneNumber={facility.contactPhone} facilityId={facilityId} className="text-foreground hover:underline text-sm">{facility.contactPhone}</ClickToCallButton></div>}
                 {facility.contactEmail && <div className="flex gap-2"><Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" /><a href={`mailto:${facility.contactEmail}`} className="hover:text-[var(--gold)]">{facility.contactEmail}</a></div>}
                 {facility.assignedRepName && <div className="flex gap-2 pt-2 border-t border-border"><User className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>BD Rep: <span className="text-foreground font-medium">{facility.assignedRepName}</span></span></div>}
+                {facility.frRepName && <div className="flex gap-2"><User className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>FR Rep: <span className="text-foreground font-medium">{facility.frRepName}</span></span></div>}
               </CardContent>
             </Card>
           </div>

@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowLeft, Save } from "lucide-react";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { CURRENT_TEAM } from "@shared/team";
 
 const CATEGORIES = [
   { value: "body_shop", label: "Body Shop" },
@@ -42,7 +43,7 @@ interface FormState {
   name: string; category: string; address: string; city: string;
   phone: string; phone2: string; phone3: string; website: string;
   contactName: string; contactTitle: string; contactPhone: string; contactEmail: string;
-  partnerStatus: string; assignedRepName: string; notes: string;
+  partnerStatus: string; assignedRepName: string; frRepName: string; notes: string;
   managementNote: string; managementFlag: boolean;
   territory: string; managedBy: string;
 }
@@ -51,7 +52,7 @@ const EMPTY: FormState = {
   name: "", category: "body_shop", address: "", city: "",
   phone: "", phone2: "", phone3: "", website: "",
   contactName: "", contactTitle: "", contactPhone: "", contactEmail: "",
-  partnerStatus: "prospect", assignedRepName: "", notes: "",
+  partnerStatus: "prospect", assignedRepName: "", frRepName: "", notes: "",
   managementNote: "", managementFlag: false,
   territory: "", managedBy: "",
 };
@@ -93,6 +94,7 @@ export default function FacilityForm() {
         contactEmail: existing.contactEmail ?? "",
         partnerStatus: existing.partnerStatus ?? "prospect",
         assignedRepName: existing.assignedRepName ?? "",
+        frRepName: existing.frRepName ?? "",
         notes: existing.notes ?? "",
         managementNote: existing.managementNote ?? "",
         managementFlag: existing.managementFlag === 1,
@@ -133,6 +135,7 @@ export default function FacilityForm() {
       contactEmail: form.contactEmail || undefined,
       partnerStatus: form.partnerStatus as any,
       assignedRepName: form.assignedRepName || undefined,
+      frRepName: form.frRepName,
       notes: form.notes || undefined,
       managementNote: form.managementNote || undefined,
       territory: form.territory || undefined,
@@ -294,6 +297,16 @@ export default function FacilityForm() {
                 <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select rep..." /></SelectTrigger>
                 <SelectContent>
                   {withCurrent(form.managedBy === "fr" ? FR_REPS : form.managedBy === "bdr" ? BDR_REPS : BD_REPS, form.assignedRepName).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">FR Rep</label>
+              <Select value={form.frRepName || "unset"} onValueChange={(v) => setForm((f) => ({ ...f, frRepName: v === "unset" ? "" : v }))}>
+                <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select FR..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unset">— none —</SelectItem>
+                  {withCurrent([...CURRENT_TEAM.FR], form.frRepName).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

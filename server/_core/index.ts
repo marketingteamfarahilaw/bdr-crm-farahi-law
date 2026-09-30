@@ -25,6 +25,7 @@ import { isIntakeOnly } from "@shared/permissions";
 import { runDueJobs } from "../dataSync";
 import { syncRepPhotosIfDue } from "../repPhotos";
 import { syncFacilityLogosIfDue } from "../facilityLogos";
+import { backfillFrRepsOnce, ensureFrRepColumn } from "../facilityReps";
 // Note: RingCentral auto-connect via JWT has been removed.
 // Agents now log in to RingCentral directly through the embedded widget UI.
 // The server still stores tokens when agents connect via OAuth through the widget.
@@ -94,6 +95,11 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // facilities.frRepName must exist before any request selects facilities
+  // (drizzle names every column). No database, no column — carry on regardless.
+  await ensureFrRepColumn().catch((e) => console.warn("[facilityReps] column check failed:", e?.message ?? e));
+  void backfillFrRepsOnce();
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
