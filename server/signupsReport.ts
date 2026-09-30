@@ -393,19 +393,16 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
       });
     }
   }
-  const order = (role: TeamRole, name: string) => {
-    const i = CURRENT_TEAM[role]?.indexOf(name) ?? -1;
-    return i < 0 ? 100 : i;   // current team in the sheet's order, former reps after
-  };
   const scorecard = {
     months: monthsInRange,
     // When the range starts mid-month: its days, and the share of a month's target they carry.
     prorated: prorated ? { days: days.length, share: Math.round(targetMonths * 1000) / 1000 } : null,
     groups: (["FR", "BDR", "Intake"] as const).map((role) => {
       const perRepTarget = MONTHLY_SIGNUP_TARGET[role];
+      // Best results first (Youssef, 2026-09-30): most sign-ups, then conversion, then leads.
+      // Every rep on a team has the same target, so this is also the order by % of target.
       const rows = Array.from(scoreStats.values())
         .filter((s) => s.role === role)
-        .sort((a, b) => order(role, a.name) - order(role, b.name) || a.name.localeCompare(b.name))
         .map((s) => {
           const signedN = s.signedReferred + s.signedInHouse;
           const target = perRepTarget ? Math.round(perRepTarget * targetMonths * 10) / 10 : null;
@@ -415,7 +412,8 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
             signedReferred: s.signedReferred, unique: s.accidents.size, signedInHouse: s.signedInHouse, signed: signedN,
             target, achieved: target ? pctOf(signedN, target) : null, conversion: pctOf(signedN, s.leads),
           };
-        });
+        })
+        .sort((a, b) => b.signed - a.signed || (b.conversion ?? 0) - (a.conversion ?? 0) || b.leads - a.leads || a.name.localeCompare(b.name));
       const sum = (k: "leads" | "open" | "rejected" | "referredOut" | "notInterested" | "signedReferred" | "unique" | "signedInHouse" | "signed") =>
         rows.reduce((a, r) => a + r[k], 0);
       // Rounded: prorated targets are tenths, and a sum of tenths picks up float noise (14.100000000000001).
