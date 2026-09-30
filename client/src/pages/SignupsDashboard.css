@@ -661,3 +661,66 @@ table.sr-mo-t td.tot { font-weight: 600; color: var(--ink); }
 .dark .sr .rp-stats > div, .dark .sr .rp-partner, .dark .sr .rp-recap { background: rgba(255, 255, 255, .04); }
 .dark .sr .rp-partner:hover { background: rgba(255, 255, 255, .08); }
 .dark .sr .rp-photo { box-shadow: 0 0 0 5px rgba(255, 255, 255, .08); }
+
+/* ---- one pinned bar for every control (.sr is the scroller, so sticky pins to it) */
+.sr-bar {
+  position: sticky; top: 0; z-index: 30; padding: 10px 34px;
+  background: rgba(244, 244, 241, .84); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.dark .sr .sr-bar { background: rgba(22, 22, 20, .84); }
+.sr-bar-in { max-width: 1260px; margin: 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sr-bar .sr-actions { margin-left: auto; }
+.sr-bar .sr-btn1, .sr-bar .sr-btn2 { height: 36px; padding: 0 16px; font-size: 13px; }
+.sr-bar .sr-fresh { margin-left: 0; }
+.sr-fresh-bad { color: var(--bad); }
+.sr-hero-slim { margin: 0 0 16px; }
+
+/* ---- tabs */
+.sr-tabs { display: flex; gap: 4px; margin: 0 0 18px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.sr-tabs button {
+  border: 0; background: none; padding: 10px 14px; margin-bottom: -1px; font: 500 14px/1 var(--ui); color: var(--mute);
+  border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap;
+}
+.sr-tabs button:hover { color: var(--ink); }
+.sr-tabs button.on { color: var(--ink); border-bottom-color: var(--char); }
+.sr-tab-h { margin: 0 0 12px; flex-wrap: wrap; }
+.sr-note { display: flex; gap: 8px; align-items: flex-start; font: 13px/1.45 var(--ui); color: var(--ink2); background: var(--sun-t); border-radius: var(--rad-s); padding: 10px 14px; margin: 0 0 16px; }
+.sr-note svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+
+/* ---- overview */
+.sr-headline { display: flex; flex-direction: column; gap: 22px; padding: 22px; }
+.sr-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0 0 16px; }
+.sr-split .sr-panel { margin: 0; }
+.sr-split-s { display: flex; gap: 22px; margin: 0; flex-wrap: wrap; }
+.sr-split-s dt { font: 12px var(--ui); color: var(--mute); }
+.sr-split-s dd { margin: 2px 0 0; font: 500 17px var(--ui); color: var(--ink); font-variant-numeric: tabular-nums; }
+.sr-board .sr-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sr-t-fit { width: 100%; }
+
+/* ---- error instead of endless skeletons */
+.sr-err { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.sr-err > svg { width: 22px; height: 22px; color: var(--bad); flex: none; }
+.sr-err > div { flex: 1; min-width: 200px; }
+.sr-err p { margin: 2px 0 0; color: var(--mute); font-size: 13px; }
+
+/* ---- team scorecard with the page's extras */
+table.sr-sct.rich { min-width: 980px; }
+table.sr-sct.rich td.l .sr-who i { font-size: 11.5px; color: var(--mute); font-style: normal; }
+
+/* ---- phone: no page-wide tables; the scorecard keeps name, leads, signed and the percentages */
+@media (max-width: 720px) {
+  .sr-bar { padding: 8px 14px; }
+  .sr-bar-in { gap: 8px; }
+  .sr-bar .sr-seg { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .sr-bar .sr-actions { margin-left: 0; width: 100%; }
+  .sr-bar .sr-actions > * { flex: 1; justify-content: center; }
+  .sr-dates .sr-input { padding: 0 8px; }
+  .sr-split, .sr-board .sr-features { grid-template-columns: minmax(0, 1fr); }
+  table.sr-sct, table.sr-sct.rich { min-width: 0; }
+  table.sr-sct .opt { display: none; }
+  table.sr-sct .l { padding-left: 10px; white-space: normal; }
+  .sr-t-fit { min-width: 0; }
+  .sr-big .n { font-size: 40px; }
+  .sr-bigs { flex-wrap: wrap; }
+}

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import { trpc } from "@/lib/trpc";
+import { LoadError } from "./LoadError";
 
 type Monthly = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["signupsMonthly"]>;
 type Group = Monthly["groups"][number];
@@ -32,12 +33,12 @@ const ROWS: { key: keyof Row; label: string; pct?: boolean; strong?: boolean; hi
 
 const cell = (r: Row, key: keyof Row, pct?: boolean) => {
   const v = r[key] as number | null;
-  return v == null ? "—" : pct ? `${v}%` : num(v);
+  return v == null ? "—" : pct ? `${v.toFixed(1)}%` : num(v);
 };
 
 export function MonthlyPanel({ role, team, member }: { role: "all" | "BDR" | "FR" | "Intake"; team: "all" | "current"; member?: string }) {
   const [year, setYear] = useState<number>();
-  const { data, isPlaceholderData } = trpc.teamReports.signupsMonthly.useQuery(
+  const { data, isPlaceholderData, isError, error, refetch } = trpc.teamReports.signupsMonthly.useQuery(
     { ...(year ? { year } : {}), ...(role !== "all" ? { role } : {}), team, ...(member ? { member } : {}) },
     { placeholderData: (prev) => prev },
   );
@@ -59,7 +60,9 @@ export function MonthlyPanel({ role, team, member }: { role: "all" | "BDR" | "FR
         Lead Docket doesn't record injuries or treatment, so a qualified lead counts unless intake turned it down for one of them.
         Hover a row name for how it's counted.
       </p>
-      {!data ? (
+      {!data && isError ? (
+        <LoadError what="the monthly summary" message={error?.message} onRetry={() => refetch()} />
+      ) : !data ? (
         <div className="sr-skel" style={{ height: 320 }} />
       ) : data.groups.length === 0 ? (
         <p className="sr-nil">No leads in {data.year}.</p>

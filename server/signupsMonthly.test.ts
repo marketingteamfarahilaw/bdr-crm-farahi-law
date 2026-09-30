@@ -39,7 +39,7 @@ describe("classifyLead", () => {
 describe("withRates", () => {
   it("uses the team sheet's formulas", () => {
     const r = withRates({ leads: 94, partnerNamed: 77, qualified: 58, quality: 36, signed: 39, signedReferral: 3 });
-    expect(r).toMatchObject({ totalSigned: 42, pctPartnerNamed: 82, pctSignedToLeads: 45, pctQuality: 38, pctSignedToQuality: 108 });
+    expect(r).toMatchObject({ totalSigned: 42, pctPartnerNamed: 81.9, pctSignedToLeads: 44.7, pctQuality: 38.3, pctSignedToQuality: 108.3 });
     expect(withRates({ leads: 0, partnerNamed: 0, qualified: 0, quality: 0, signed: 0, signedReferral: 0 }).pctQuality).toBeNull();
   });
 });

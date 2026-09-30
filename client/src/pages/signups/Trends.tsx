@@ -8,6 +8,7 @@
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import { trpc } from "@/lib/trpc";
+import { LoadError } from "./LoadError";
 
 type Trends = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["signupsTrends"]>;
 type View = Trends["week"];
@@ -16,7 +17,7 @@ type Unit = "week" | "month" | "year";
 const num = (n: number) => n.toLocaleString("en-US");
 
 export function TrendsPanel({ role, team, member }: { role: "all" | "BDR" | "FR" | "Intake"; team: "all" | "current"; member?: string }) {
-  const { data, isPlaceholderData } = trpc.teamReports.signupsTrends.useQuery(
+  const { data, isPlaceholderData, isError, error, refetch } = trpc.teamReports.signupsTrends.useQuery(
     { ...(role !== "all" ? { role } : {}), team, ...(member ? { member } : {}) },
     { placeholderData: (prev) => prev },
   );
@@ -33,7 +34,9 @@ export function TrendsPanel({ role, team, member }: { role: "all" | "BDR" | "FR"
         Sign-ups by week, month and year ({scope}) — the whole history, whatever the dates above. The forecast is what's
         signed so far plus the rest of the period at the last {data?.paceWeeks ?? 8} weeks' pace, weekday by weekday.
       </p>
-      {!data ? (
+      {!data && isError ? (
+        <LoadError what="the trends" message={error?.message} onRetry={() => refetch()} />
+      ) : !data ? (
         <div className="sr-trend-grid">{[0, 1, 2].map((i) => <div key={i} className="sr-skel" style={{ height: 300 }} />)}</div>
       ) : (
         <div className="sr-trend-grid">

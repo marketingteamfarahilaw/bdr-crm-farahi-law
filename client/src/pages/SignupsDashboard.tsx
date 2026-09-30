@@ -6,7 +6,7 @@ import type { AppRouter } from "../../../server/routers";
 import { trpc } from "@/lib/trpc";
 import { LeadDocketSyncButton } from "@/components/DataSyncPanel";
 import {
-  Inbox, CheckCircle2, User, Download, ArrowUpRight, Loader2,
+  Inbox, CheckCircle2, Download, ArrowUpRight, Loader2,
   Trophy, Percent, Users, TrendingUp, Handshake, Info, X, Link2, Pencil, Presentation,
 } from "lucide-react";
 import { enterFullscreen, exitFullscreenSoon } from "./signups/fullscreen";
@@ -16,6 +16,7 @@ import { RepFace, PartnerLogo } from "@/components/RepFace";
 import { PartnerPicker } from "./signups/PartnerPicker";
 import { TrendsPanel } from "./signups/Trends";
 import { MonthlyPanel } from "./signups/Monthly";
+import { LoadError } from "./signups/LoadError";
 
 // The look lives in SignupsDashboard.css (the Voice Agents board style).
 
@@ -86,9 +87,12 @@ export function teamTops(reps: { name: string; role: string; signed: number }[])
 
 export const roleName = (role: string) => (role === "FR" ? "Field Representative" : role === "BDR" ? "Business Development Rep." : role);
 
-type Role = "all" | "BDR" | "FR" | "Intake";
+type Role = "all" | "BDR" | "FR";
 type Team = "all" | "current";
 export type ReportData = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["signupsDashboard"]>;
+
+/** Conversion and share of target, the one way the report writes them: one decimal. */
+export const pct1 = (v: number | null | undefined) => (v == null ? "—" : `${v.toFixed(1)}%`);
 
 /** Common reporting windows, so nobody has to type dates for the usual questions. */
 export function presets(today: Date) {
@@ -107,16 +111,38 @@ export function presets(today: Date) {
   ];
 }
 
+const TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "team", label: "Team" },
+  { id: "trends", label: "Trends" },
+  { id: "partners", label: "Partners & sources" },
+  { id: "leads", label: "Leads" },
+] as const;
+type Tab = (typeof TABS)[number]["id"];
+
 export default function SignupsDashboard() {
   const today = new Date();
-  // Opens on the current month — what the team reviews day to day — or on the
-  // dates a rep's profile came back with.
-  const linked = new URLSearchParams(useSearch());
-  const [from, setFrom] = useState(linked.get("from") || iso(new Date(today.getFullYear(), today.getMonth(), 1)));
-  const [to, setTo] = useState(linked.get("to") || iso(today));
-  const [role, setRole] = useState<Role>("all");
-  const [team, setTeam] = useState<Team>("all");
-  const { data, isLoading, isFetching, isPlaceholderData } = trpc.teamReports.signupsDashboard.useQuery(
+  // The filters and the tab live in the address, so a reload, a shared link or
+  // the way back from a rep's profile opens the report as it was left. Without
+  // them it opens on the current month — what the team reviews day to day.
+  const search = useSearch();
+  const [, navigate] = useLocation();
+  const q = new URLSearchParams(search);
+  const from = q.get("from") || iso(new Date(today.getFullYear(), today.getMonth(), 1));
+  const to = q.get("to") || iso(today);
+  const role: Role = q.get("role") === "BDR" ? "BDR" : q.get("role") === "FR" ? "FR" : "all";
+  const team: Team = q.get("team") === "current" ? "current" : "all";
+  const tab: Tab = TABS.find((t) => t.id === q.get("tab"))?.id ?? "overview";
+  // Replace, not push: Back leaves the report instead of stepping through every filter click.
+  const setParams = (patch: Record<string, string | null>) => {
+    const next = new URLSearchParams(search);
+    for (const [k, v] of Object.entries(patch)) (v ? next.set(k, v) : next.delete(k));
+    const s = next.toString();
+    navigate(`/signups-report${s ? `?${s}` : ""}`, { replace: true });
+  };
+  const setTab = (t: Tab) => setParams({ tab: t === "overview" ? null : t });
+
+  const { data, isLoading, isFetching, isPlaceholderData, isError, error, refetch } = trpc.teamReports.signupsDashboard.useQuery(
     { from, to, ...(role !== "all" ? { role } : {}), team },
     // Keep the last report on screen while a new filter loads, instead of flashing skeletons.
     { placeholderData: (prev) => prev },
@@ -154,10 +180,9 @@ export default function SignupsDashboard() {
 
   const periods = presets(today);
   const activePreset = periods.find((p) => p.from === from && p.to === to)?.label;
-  const period = data?.period.firstLead
-    ? `${monthLabel(data.period.firstLead)} – ${monthLabel(data.period.lastLead ?? data.period.firstLead)}`
-    : `${from} – ${to}`;
-  const scope = [role === "all" ? "all roles" : role, team === "current" ? "current team only" : "including former representatives"].join(" · ");
+  const scope = [role === "all" ? "BDR and FR" : role, team === "current" ? "current team only" : "including former representatives"].join(" · ");
+  // A rep's profile, with everything needed to come back to this exact view.
+  const openRep = (rep: string) => navigate(`/signups-report/rep/${encodeURIComponent(rep)}?${new URLSearchParams({ ...Object.fromEntries(q), from, to })}`);
 
   const exportCsv = () => {
     if (!data) return;
@@ -165,22 +190,22 @@ export default function SignupsDashboard() {
     const lines = [
       `Sign-ups report,${from} to ${to},${q(scope)}`, "",
       "Summary,Value",
-      `Total leads,${data.totals.leads}`,
+      `Leads,${data.totals.leads}`,
       `Signed,${data.totals.signed}`,
-      `Conversion,${data.totals.signedPct}%`,
-      ...data.roles.map((r) => `${r.role} sign-ups,${r.signed} (${r.share}% of sign-ups; ${r.conversion}% conversion)`),
+      `Conversion,${pct1(data.totals.signedPct)}`,
+      ...data.roles.filter((r) => r.leads > 0).map((r) => `${r.role} sign-ups,${r.signed} (${pct1(r.share)} of sign-ups; ${pct1(r.conversion)} conversion)`),
       `Leads naming a referring partner,${data.totals.attributed}`, "",
       "Representative,Role,Status,Leads,Signed,Conversion %",
-      ...data.reps.map((r) => [q(r.name), r.role, r.current ? "current" : "former", r.leads, r.signed, r.conversion].join(",")), "",
+      ...data.reps.map((r) => [q(r.name), r.role, r.current ? "current" : "former", r.leads, r.signed, r.conversion.toFixed(1)].join(",")), "",
       ["Sign-ups by month", ...data.repMonths.months.map(monthShort), "Total"].map(q).join(","),
       ...data.repMonths.rows.map((r) => [q(r.name), ...r.cells, r.total].join(",")),
       ["TOTAL", ...data.months.map((m) => m.signed), data.totals.signed].join(","), "",
       "Month,Leads,Signed,Conversion %",
-      ...data.months.map((m) => [monthLabel(m.month), m.leads, m.signed, m.conversion].join(",")), "",
+      ...data.months.map((m) => [monthLabel(m.month), m.leads, m.signed, m.conversion.toFixed(1)].join(",")), "",
       "Referring partner,Territory,Leads,Signed,Conversion %",
-      ...data.partners.map((p) => [q(p.name), q(p.territory ?? ""), p.leads, p.signed, p.conversion].join(",")), "",
+      ...data.partners.map((p) => [q(p.name), q(p.territory ?? ""), p.leads, p.signed, p.conversion.toFixed(1)].join(",")), "",
       "Case type,Leads,Signed,Conversion %",
-      ...data.caseTypes.map((c) => [q(c.name), c.leads, c.signed, c.conversion].join(",")), "",
+      ...data.caseTypes.map((c) => [q(c.name), c.leads, c.signed, c.conversion.toFixed(1)].join(",")), "",
       "Lead,Case type,Representative,Role,Date,Outcome,Referring partner,Lead Docket referral text",
       ...data.leadList.map((l) => [q(l.name), q(l.caseType), q(l.member), l.role, l.date ? l.date.slice(0, 10) : "", q(l.outcome), q(l.partner ?? ""), q(l.referredBy ?? "")].join(",")),
     ];
@@ -194,61 +219,82 @@ export default function SignupsDashboard() {
 
   return (
     <div className="sr">
+      {/* One bar for every control, pinned while the report scrolls under it. */}
+      <div className="sr-bar">
+        <div className="sr-bar-in">
+          <div className="sr-seg" role="group" aria-label="Period">
+            {periods.map((p) => (
+              <button key={p.label} className={p.label === activePreset ? "on" : ""} onClick={() => setParams({ from: p.from, to: p.to })}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <span className="sr-dates">
+            <DateInput value={from} onChange={(v) => setParams({ from: v })} label="From" />
+            –
+            <DateInput value={to} onChange={(v) => setParams({ to: v })} label="To" />
+          </span>
+          <div className="sr-seg" role="group" aria-label="Role">
+            {([["all", "All"], ["BDR", "BDR"], ["FR", "FR"]] as const).map(([v, label]) => (
+              <button key={v} className={role === v ? "on" : ""} onClick={() => setParams({ role: v === "all" ? null : v })}>{label}</button>
+            ))}
+          </div>
+          <select className="sr-input" value={team} onChange={(e) => setParams({ team: e.target.value === "current" ? "current" : null })} aria-label="Representatives">
+            <option value="all">Include former reps</option>
+            <option value="current">Current team only</option>
+          </select>
+          {isFetching && <span className="sr-fresh"><Loader2 size={13} className="sr-spin" /> Updating…</span>}
+          {isError && data && !isFetching && <span className="sr-fresh sr-fresh-bad">Couldn't refresh — showing the last numbers</span>}
+          <div className="sr-actions">
+            {/* Disabled while a new filter loads, so it never presents the old filter's numbers under the new label. */}
+            <button ref={presentBtn} className="sr-btn2" onClick={present} disabled={!data || isPlaceholderData}
+              onPointerEnter={prefetchPresentation} onFocus={prefetchPresentation}
+              title="Show this report full screen, one slide at a time">
+              <Presentation /> Present
+            </button>
+            <button className="sr-btn2" onClick={exportCsv} disabled={!data}><Download /> Export</button>
+            <LeadDocketSyncButton className="sr-btn1" hintClassName="sr-hint" />
+          </div>
+        </div>
+      </div>
+
       <div className="sr-canvas">
         <div className="sr-inner">
-          {/* Filters */}
-          <div className="sr-top">
-            <div className="sr-seg" role="group" aria-label="Period">
-              {periods.map((p) => (
-                <button key={p.label} className={p.label === activePreset ? "on" : ""} onClick={() => { setFrom(p.from); setTo(p.to); }}>
-                  {p.label}
-                </button>
-              ))}
-            </div>
-            <div className="sr-seg" role="group" aria-label="Team">
-              {([["all", "All"], ["BDR", "BDR"], ["FR", "FR"]] as const).map(([v, label]) => (
-                <button key={v} className={role === v ? "on" : ""} onClick={() => setRole(v)}>{label}</button>
-              ))}
-            </div>
-            <select className="sr-input" value={team} onChange={(e) => setTeam(e.target.value as Team)} aria-label="Representatives">
-              <option value="all">Include former reps</option>
-              <option value="current">Current team only</option>
-            </select>
-            <span className="sr-dates">
-              <DateInput value={from} onChange={setFrom} label="From" />
-              –
-              <DateInput value={to} onChange={setTo} label="To" />
-            </span>
-            {isFetching && <span className="sr-fresh"><Loader2 size={13} className="sr-spin" /> Updating…</span>}
+          <header className="sr-hero sr-hero-slim">
+            <h1>Sign-ups report</h1>
+            <p className="sr-lead">{rangeLabel(from, to)} · {scope} · from Lead Docket</p>
+          </header>
+
+          <div className="sr-tabs" role="tablist" aria-label="Report sections">
+            {TABS.map((t) => (
+              <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
+                {t.label}
+              </button>
+            ))}
           </div>
 
-          {/* Hero */}
-          <section className="sr-hero">
-            <div className="sr-hero-top">
-              <div>
-                <h1>Sign-ups report</h1>
-                <p className="sr-lead">BD / FR leads and sign-ups from Lead Docket · {period}</p>
-              </div>
-              <div className="sr-actions">
-                {/* Disabled while a new filter loads, so it never presents the old filter's numbers under the new label. */}
-                <button ref={presentBtn} className="sr-btn2" onClick={present} disabled={!data || isPlaceholderData}
-                  onPointerEnter={prefetchPresentation} onFocus={prefetchPresentation}
-                  title="Show this report full screen, one slide at a time">
-                  <Presentation /> Present
-                </button>
-                <button className="sr-btn2" onClick={exportCsv} disabled={!data}><Download /> Export CSV</button>
-                <LeadDocketSyncButton className="sr-btn1" hintClassName="sr-hint" />
-              </div>
-            </div>
-            {data && <HeroBottom data={data} />}
-          </section>
-
-          {isLoading || !data ? (
-            <div className="sr-features">
-              {[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 270 }} />)}
-            </div>
+          {tab === "trends" ? (
+            // These read their own data, so they show whether or not the report above loaded.
+            <>
+              <p className="sr-note">
+                <Info /> Fixed periods: these charts always show this week, this month, this year and each month of the year —
+                the dates picked above don't change them. The role and representative filters do.
+              </p>
+              <TrendsPanel role={role} team={team} />
+              <MonthlyPanel role={role} team={team} />
+            </>
+          ) : !data ? (
+            isError && !isLoading
+              ? <LoadError what="the sign-ups report" message={error?.message} onRetry={() => refetch()} />
+              : <div className="sr-features">{[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 270 }} />)}</div>
+          ) : tab === "team" ? (
+            <TeamTab data={data} from={from} to={to} onRep={openRep} />
+          ) : tab === "partners" ? (
+            <PartnersTab data={data} />
+          ) : tab === "leads" ? (
+            <LeadList leads={data.leadList} />
           ) : (
-            <Report data={data} from={from} to={to} role={role} team={team} />
+            <Overview data={data} onRep={openRep} onPartners={() => setTab("partners")} />
           )}
         </div>
       </div>
@@ -263,22 +309,25 @@ export default function SignupsDashboard() {
   );
 }
 
-/** Where the period's leads ended up, plus the three headline counts. */
-function HeroBottom({ data }: { data: ReportData }) {
+/** Where the period's leads ended up, plus the headline counts. */
+function Headline({ data }: { data: ReportData }) {
   const fr = data.roles.find((r) => r.role === "FR")?.signed ?? 0;
   const bdr = data.roles.find((r) => r.role === "BDR")?.signed ?? 0;
-  const intake = data.roles.find((r) => r.role === "Intake")?.signed ?? 0;
   const total = data.totals.leads;
-  const share = (n: number) => (total ? `${Math.round((n / total) * 1000) / 10}%` : "0%");
+  const share = (n: number) => pct1(total ? (n / total) * 100 : 0);
   const segments = [
     { label: "FR signed", n: fr, cls: "sr-s-dark" },
     { label: "BDR signed", n: bdr, cls: "sr-s-sun" },
-    { label: "Intake signed", n: intake, cls: "sr-s-hatch" },
     { label: "Not signed", n: total - data.totals.signed, cls: "sr-s-line" },
   ].filter((s) => s.n > 0);
 
   return (
-    <div className="sr-hero-bot">
+    <div className="sr-panel sr-headline">
+      <div className="sr-bigs">
+        <Big n={fmt(total)} label="Leads" icon={<Inbox />} />
+        <Big n={fmt(data.totals.signed)} label="Signed" icon={<CheckCircle2 />} />
+        <Big n={pct1(data.totals.signedPct)} label="Conversion" icon={<Percent />} />
+      </div>
       <div className="sr-segbar">
         {segments.length === 0 ? <p className="sr-nil">No leads in this period.</p> : segments.map((s) => (
           <div key={s.label} className="sr-sg" style={{ flex: `${s.n} 1 0` }} title={`${fmt(s.n)} leads`}>
@@ -287,23 +336,40 @@ function HeroBottom({ data }: { data: ReportData }) {
           </div>
         ))}
       </div>
-      <div className="sr-bigs">
-        <Big n={fmt(total)} label="Leads" icon={<Inbox />} />
-        <Big n={fmt(data.totals.signed)} label="Signed" icon={<CheckCircle2 />} />
-        <Big n={fmt(data.reps.length)} label="Representatives" icon={<User />} />
-      </div>
     </div>
   );
 }
 
-function Report({ data, from, to, role, team }: { data: ReportData; from: string; to: string; role: Role; team: Team }) {
-  const partnersRef = useRef<HTMLDivElement>(null);
-  // A rep opens their profile page; one of their monthly numbers, the clients behind it.
-  const [focus, setFocus] = useState<{ rep: string; role: string; month?: string } | null>(null);
-  const [, navigate] = useLocation();
-  const openRep = (rep: string) => navigate(`/signups-report/rep/${encodeURIComponent(rep)}?from=${from}&to=${to}`);
+const TEAM_NAME: Record<string, string> = { FR: "Field Representatives", BDR: "Business Development Reps" };
+
+/** FR and BDR side by side: what each team signed, from how many leads, against its target. */
+function RoleSplit({ data }: { data: ReportData }) {
+  const roles = (["FR", "BDR"] as const)
+    .map((role) => data.roles.find((r) => r.role === role))
+    .filter((r): r is ReportData["roles"][number] => !!r && r.leads > 0);
+  if (!roles.length) return null;
+  return (
+    <div className="sr-split">
+      {roles.map((r) => {
+        const t = data.scorecard.groups.find((g) => g.role === r.role)?.total;
+        return (
+          <div key={r.role} className="sr-panel sr-split-c">
+            <div className="sr-bh"><h2>{TEAM_NAME[r.role]}</h2><span className="sr-badge sr-b-grey">{pct1(r.share)} of sign-ups</span></div>
+            <div className="sr-kv"><span className="n">{fmt(r.signed)}</span><span className="u">signed from<br />{fmt(r.leads)} leads</span></div>
+            <dl className="sr-split-s">
+              <div><dt>Conversion</dt><dd>{pct1(r.conversion)}</dd></div>
+              {t?.target != null && <div><dt>Target</dt><dd>{fmt(t.target)}</dd></div>}
+              {t?.target != null && <div><dt>Achieved</dt><dd>{pct1(t.achieved)}</dd></div>}
+            </dl>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Overview({ data, onRep, onPartners }: { data: ReportData; onRep: (rep: string) => void; onPartners: () => void }) {
   const avg = data.totals.signedPct;
-  const tops = teamTops(data.reps);
   const top = data.reps[0];
   const converter = data.reps.filter((r) => r.leads >= 10).sort((a, b) => b.conversion - a.conversion)[0];
 
@@ -312,11 +378,241 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
   const perMonth = data.months.length ? Math.round(data.totals.signed / data.months.length) : 0;
 
   const R = 70, CIRC = 2 * Math.PI * R;
+  const insightIcons = [CheckCircle2, Trophy, Percent, Users, TrendingUp, Handshake, Info];
 
-  const lastMonth = data.repMonths.months[data.repMonths.months.length - 1];
+  return (
+    <div className="sr-board">
+      <div style={{ minWidth: 0 }}>
+        <Headline data={data} />
+        <RoleSplit data={data} />
+
+        <div className="sr-features">
+          {top ? (
+            <div className="sr-spot sr-click" style={hueStyle(top.name)} onClick={() => onRep(top.name)} title={`Open ${top.name}'s profile`}>
+              <span className="sr-spot-tag">Top representative</span>
+              <div className="sr-spot-ini"><RepFace name={top.name} fallback={initials(top.name)} className="sr-spot-photo" /></div>
+              <div className="sr-spot-foot">
+                <div><b>{top.name}</b><i>{roleName(top.role)}</i></div>
+                <span className="sr-spot-pill">{fmt(top.signed)} signed</span>
+              </div>
+            </div>
+          ) : (
+            <div className="sr-card"><div className="sr-bh"><h2>Top representative</h2></div><p className="sr-nil">No sign-ups in this period.</p></div>
+          )}
+
+          <div className="sr-card">
+            <div className="sr-bh"><h2>Conversion</h2></div>
+            <div className="sr-ring">
+              <svg viewBox="0 0 164 164">
+                <circle className="trk" cx="82" cy="82" r={R} />
+                {avg > 0 && <circle className="val" cx="82" cy="82" r={R} strokeDasharray={`${(CIRC * Math.min(avg, 100)) / 100} ${CIRC}`} />}
+              </svg>
+              <div className="sr-ring-c"><b>{pct1(avg)}</b><span>of leads signed</span></div>
+            </div>
+            <p className="sr-dial-note">
+              {converter ? `${converter.name} converts best, at ${pct1(converter.conversion)}.` : "The share of leads that signed."}
+            </p>
+          </div>
+
+          <div className="sr-card">
+            <div className="sr-bh"><h2>Signed by month</h2></div>
+            <div className="sr-kv"><span className="n">{perMonth}</span><span className="u">average<br />per month</span></div>
+            {recent.length === 0 ? <p className="sr-nil">No sign-ups in this period.</p> : (
+              <div className="sr-cols">
+                {recent.map((m, i) => {
+                  const hot = i === recent.length - 1;
+                  return (
+                    <div key={m.month} className={`sr-col ${hot ? "hot" : ""}`} title={`${monthLabel(m.month)}: ${m.signed} signed of ${m.leads} leads (${pct1(m.conversion)})`}>
+                      {hot && <span className="sr-tipp">{m.signed}</span>}
+                      <div className="sr-stick"><i style={{ height: `${Math.max(6, (m.signed / stickMax) * 100)}%` }} /></div>
+                      <span className="sr-lab">{monthAbbr(m.month)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="sr-card">
+            <div className="sr-bh">
+              <h2>Top partners</h2>
+              <button className="sr-arr" aria-label="See all referring partners" onClick={onPartners}><ArrowUpRight /></button>
+            </div>
+            <div className="sr-kv"><span className="n">{fmt(data.totals.attributed)}</span><span className="u">leads name a<br />referring partner</span></div>
+            {data.partners.length === 0 ? <p className="sr-nil">None in this period.</p> : (
+              <div className="sr-minis">
+                {data.partners.slice(0, 3).map((p, i) => (
+                  <div key={p.facilityId} className={`sr-m ${["sr-s-sun", "sr-s-dark", "sr-m-grey"][i]}`} title={`${p.name}: ${p.signed} signed of ${p.leads} leads`}>
+                    <span>{p.signed}</span><i>{p.name}</i>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <aside>
+        <div className="sr-panel sr-queue">
+          <div className="sr-panel-h"><h2>Executive briefing</h2><span className="sr-qn">{data.insights.length}</span></div>
+          <div className="sr-qis">
+            {data.insights.map((text, n) => {
+              const Icon = insightIcons[n % insightIcons.length];
+              return (
+                <div key={n} className="sr-qi">
+                  <span className="sr-qi-ic"><Icon /></span>
+                  <p>{text}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="sr-panel">
+          <div className="sr-panel-h"><h2>Recommendations</h2></div>
+          {data.recommendations.length === 0 ? <p className="sr-nil">Nothing flagged for this period.</p> : data.recommendations.map((r, n) => (
+            <div key={n} className="sr-coach"><span>Recommendation {n + 1}</span><b>{r}</b></div>
+          ))}
+        </div>
+
+        <div className="sr-panel">
+          <div className="sr-panel-h"><h2>How these numbers are built</h2></div>
+          <details className="sr-acc">
+            <summary><span>Where leads come from</span></summary>
+            <p>
+              Leads and sign-ups come from Lead Docket. A lead belongs to a representative when its Marketing Source names
+              them — "BDR Miguel Flores", "Field Representative Lupe Campos". Marketing, intake and website leads are not counted.
+            </p>
+          </details>
+          <details className="sr-acc">
+            <summary><span>When a lead counts as signed</span></summary>
+            <p>When it has a sign-up date, even if the case later closed. Months are by sign-up date for signed leads.</p>
+          </details>
+          <details className="sr-acc">
+            <summary><span>Partner, type and territory</span></summary>
+            <p>
+              These come from Lead Docket's "Referred by". {fmt(data.totals.attributed)} of {fmt(data.totals.leads)} leads
+              name a partner we can match; the rest still count for the representative.
+            </p>
+          </details>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+/**
+ * Every rep in one place: the team's scorecard (their sheet's columns, a TOTAL
+ * per team) with each rep's standing, or the same reps month by month. A rep
+ * opens their profile; a month, the clients behind it.
+ */
+function TeamTab({ data, from, to, onRep }: { data: ReportData; from: string; to: string; onRep: (rep: string) => void }) {
+  const [view, setView] = useState<"scorecard" | "months">("scorecard");
+  const [focus, setFocus] = useState<{ rep: string; role: string; month?: string } | null>(null);
+  const avg = data.totals.signedPct;
+  const tops = teamTops(data.reps);
+  const sc = data.scorecard;
+
   const cellMax = Math.max(1, ...data.repMonths.rows.flatMap((r) => r.cells));
   const level = (v: number) => (!v ? "" : v / cellMax <= 0.25 ? "l1" : v / cellMax <= 0.5 ? "l2" : v / cellMax <= 0.75 ? "l3" : "l4");
 
+  return (
+    <>
+      <div className="sr-panel-h sr-tab-h">
+        <div className="sr-ttl"><h2>Representatives</h2><span className="sr-count">{data.reps.length}</span></div>
+        <div className="sr-seg" role="group" aria-label="View">
+          <button className={view === "scorecard" ? "on" : ""} onClick={() => setView("scorecard")}>Scorecard</button>
+          <button className={view === "months" ? "on" : ""} onClick={() => setView("months")}>By month</button>
+        </div>
+      </div>
+
+      {view === "scorecard" ? (
+        !sc.groups.length ? <div className="sr-panel"><p className="sr-nil">No leads in this period.</p></div> : (
+          <div className="sr-sc-wrap">
+            {sc.groups.map((g) => (
+              <div key={g.role} className="sr-sc">
+                <div className="sr-sc-title">{rangeLabel(from, to)}</div>
+                <div className="sr-sc-band">{SC_TITLE[g.role] ?? g.role}</div>
+                <div className="sr-scroll">
+                  <ScorecardTable role={g.role} rows={g.rows} total={g.total} onRep={(rep) => onRep(rep)} rich={{ avg, tops }} />
+                </div>
+              </div>
+            ))}
+            <p className="sr-sub" style={{ margin: "2px 4px 18px" }}>
+              Each lead counts once, in the column for where it ended up — so the columns add up to Leads.
+              Lost counts as Rejected. Referred Out = referred to another firm without signing; Signed Referred Out = signed first,
+              then referred. Unique = different accidents behind the sign-ups: a driver and passengers Lead Docket links are one case.{" "}
+              {sc.prorated
+                ? `Targets: FR 20, BDR 5 a month per rep, prorated to these ${sc.prorated.days} days (FR ${Math.round(20 * sc.prorated.share * 10) / 10}, BDR ${Math.round(5 * sc.prorated.share * 10) / 10} each).`
+                : `Targets: FR ${20 * sc.months}, BDR ${5 * sc.months} a month per rep${sc.months > 1 ? ` (× ${sc.months} months)` : ""}.`}
+              {" "}Standing compares a rep's conversion with the whole report's ({pct1(avg)}). Click a rep to open their profile.
+            </p>
+          </div>
+        )
+      ) : (
+        <div className="sr-panel">
+          {data.repMonths.rows.length === 0 ? <p className="sr-nil">No sign-ups in this period.</p> : (
+            <>
+              <p className="sr-sub">Sign-ups per rep and month. Click a number for the clients behind it, a name for the rep's profile.</p>
+              <div className="sr-scroll">
+                <table className="sr-grid">
+                  <thead>
+                    <tr>
+                      <th className="name" />
+                      {data.repMonths.months.map((m) => <th key={m}>{monthShort(m)}</th>)}
+                      <th style={{ textAlign: "right" }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.repMonths.rows.map((r) => (
+                      <tr key={r.name} className={r.current ? "" : "former"}>
+                        <td className="name sr-click" title={`Open ${r.name}'s profile`} onClick={() => onRep(r.name)}>{r.name}<i>{r.role}</i></td>
+                        {r.cells.map((v, i) => (
+                          <td key={i} className={`cell ${level(v)} ${v ? "sr-click" : ""}`}
+                            title={v ? `${r.name} · ${monthLabel(data.repMonths.months[i])}: see the ${v} sign-up${v === 1 ? "" : "s"}` : undefined}
+                            onClick={v ? () => setFocus({ rep: r.name, role: r.role, month: data.repMonths.months[i] }) : undefined}>
+                            {v || "·"}
+                          </td>
+                        ))}
+                        <td className="tot sr-click" onClick={() => setFocus({ rep: r.name, role: r.role })}>{r.total}</td>
+                      </tr>
+                    ))}
+                    <tr className="foot">
+                      <td className="name">Signed</td>
+                      {data.months.map((m) => <td key={m.month} className="cell">{m.signed}</td>)}
+                      <td className="tot">{fmt(data.totals.signed)}</td>
+                    </tr>
+                    <tr className="soft">
+                      <td className="name">Leads</td>
+                      {data.months.map((m) => <td key={m.month} className="cell">{m.leads}</td>)}
+                      <td className="tot">{fmt(data.totals.leads)}</td>
+                    </tr>
+                    <tr className="soft">
+                      <td className="name">Conversion</td>
+                      {data.months.map((m) => <td key={m.month} className="cell">{pct1(m.conversion)}</td>)}
+                      <td className="tot">{pct1(avg)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="sr-legend">
+                <span><i style={{ background: "rgba(28,28,28,.07)" }} /> A few</span>
+                <span><i style={{ background: "#fdf3cc" }} /> Some</span>
+                <span><i style={{ background: "#f6cf4b" }} /> Many</span>
+                <span><i style={{ background: "#262626" }} /> Most in the period</span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+      {focus && <RepClients focus={focus} leads={data.leadList} onClose={() => setFocus(null)} />}
+    </>
+  );
+}
+
+/** Where the leads came from: partners, their type and territory, and the case types. */
+function PartnersTab({ data }: { data: ReportData }) {
+  const avg = data.totals.signedPct;
   // Facility type / territory only describe leads whose referring partner we
   // could match, so "N/A" is left out of the bars and explained instead.
   const types = data.byType.filter((t) => t.name !== "N/A");
@@ -324,331 +620,89 @@ function Report({ data, from, to, role, team }: { data: ReportData; from: string
   const typeMax = Math.max(1, ...types.map((t) => t.leads));
   const terrMax = Math.max(1, ...territories.map((t) => t.leads));
 
-  const insightIcons = [CheckCircle2, Trophy, Percent, Users, TrendingUp, Handshake, Info];
-
+  // Two balanced columns, each card only as tall as itself — side-by-side cards
+  // stretched to their neighbour's height sat half empty. The browser picks the split.
   return (
-    <>
-      <Scorecard sc={data.scorecard} label={rangeLabel(from, to)} onRep={(rep) => openRep(rep)} />
-      <TrendsPanel role={role} team={team} />
-      <MonthlyPanel role={role} team={team} />
-
-      {/* Feature row */}
-      <div className="sr-features">
-        {top ? (
-          <div className="sr-spot" style={hueStyle(top.name)}>
-            <span className="sr-spot-tag">Top representative</span>
-            <div className="sr-spot-ini"><RepFace name={top.name} fallback={initials(top.name)} className="sr-spot-photo" /></div>
-            <div className="sr-spot-foot">
-              <div><b>{top.name}</b><i>{roleName(top.role)}</i></div>
-              <span className="sr-spot-pill">{fmt(top.signed)} signed</span>
-            </div>
+    <div className="sr-flow">
+      <div className="sr-panel">
+        <div className="sr-panel-h">
+          <div className="sr-ttl"><h2>Top referring partners</h2><span className="sr-count">{data.partners.length}</span></div>
+        </div>
+        <p className="sr-sub">
+          From the {fmt(data.totals.attributed)} leads whose "Referred by" in Lead Docket matches a partner in the CRM.
+          {data.totals.leads > data.totals.attributed && (
+            <> The other {fmt(data.totals.leads - data.totals.attributed)} name none we can match — <Link href="/data-check">link them in Data Check</Link>.</>
+          )}
+        </p>
+        {data.partners.length === 0 ? <p className="sr-nil">No leads in this period name a partner we can match.</p> : (
+          <div className="sr-scroll">
+            <table className="sr-t sr-t-fit">
+              <thead>
+                <tr><th>Partner</th><th className="num">Leads</th><th className="num">Signed</th><th className="num">Conversion</th></tr>
+              </thead>
+              <tbody>
+                {data.partners.map((p) => (
+                  <tr key={p.facilityId}>
+                    <td>
+                      <div className="sr-who">
+                        <span className="sr-av" style={hueStyle(p.name)}><PartnerLogo facilityId={p.facilityId} fallback={initials(p.name)} /></span>
+                        <div><Link href={`/crm/facilities/${p.facilityId}`}><b>{p.name}</b></Link><i>{p.territory ?? "No territory"}</i></div>
+                      </div>
+                    </td>
+                    <td className="num">{p.leads}</td>
+                    <td className="num"><span className="sr-score">{p.signed}</span></td>
+                    <td className="num"><span className={`sr-badge ${p.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{pct1(p.conversion)}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          <div className="sr-card"><div className="sr-bh"><h2>Top representative</h2></div><p className="sr-nil">No sign-ups in this period.</p></div>
         )}
-
-        <div className="sr-card">
-          <div className="sr-bh"><h2>Sign-ups by month</h2></div>
-          <div className="sr-kv"><span className="n">{perMonth}</span><span className="u">average<br />per month</span></div>
-          {recent.length === 0 ? <p className="sr-nil">No sign-ups in this period.</p> : (
-            <div className="sr-cols">
-              {recent.map((m, i) => {
-                const hot = i === recent.length - 1;
-                return (
-                  <div key={m.month} className={`sr-col ${hot ? "hot" : ""}`} title={`${monthLabel(m.month)}: ${m.signed} signed of ${m.leads} leads (${m.conversion}%)`}>
-                    {hot && <span className="sr-tipp">{m.signed}</span>}
-                    <div className="sr-stick"><i style={{ height: `${Math.max(6, (m.signed / stickMax) * 100)}%` }} /></div>
-                    <span className="sr-lab">{monthAbbr(m.month)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="sr-card">
-          <div className="sr-bh"><h2>Conversion</h2></div>
-          <div className="sr-ring">
-            <svg viewBox="0 0 164 164">
-              <circle className="trk" cx="82" cy="82" r={R} />
-              {avg > 0 && <circle className="val" cx="82" cy="82" r={R} strokeDasharray={`${(CIRC * Math.min(avg, 100)) / 100} ${CIRC}`} />}
-            </svg>
-            <div className="sr-ring-c"><b>{avg}%</b><span>of leads signed</span></div>
-          </div>
-          <p className="sr-dial-note">
-            {converter ? `${converter.name} converts best, at ${converter.conversion}%.` : "The share of leads that signed."}
-          </p>
-        </div>
-
-        <div className="sr-card">
-          <div className="sr-bh">
-            <h2>Top partners</h2>
-            <button className="sr-arr" aria-label="See all referring partners" onClick={() => partnersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>
-              <ArrowUpRight />
-            </button>
-          </div>
-          <div className="sr-kv"><span className="n">{fmt(data.totals.attributed)}</span><span className="u">leads name a<br />referring partner</span></div>
-          {data.partners.length === 0 ? <p className="sr-nil">None in this period.</p> : (
-            <div className="sr-minis">
-              {data.partners.slice(0, 3).map((p, i) => (
-                <div key={p.facilityId} className={`sr-m ${["sr-s-sun", "sr-s-dark", "sr-m-grey"][i]}`} title={`${p.name}: ${p.signed} signed of ${p.leads} leads`}>
-                  <span>{p.signed}</span><i>{p.name}</i>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
-
-      <div className="sr-board">
-        <div style={{ minWidth: 0 }}>
-          {/* Representatives */}
-          <div className="sr-panel">
-            <div className="sr-panel-h">
-              <div className="sr-ttl"><h2>Representatives</h2><span className="sr-count">{data.reps.length}</span></div>
-            </div>
-            {data.reps.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
-              <div className="sr-scroll">
-                <table className="sr-t" style={{ minWidth: 640 }}>
-                  <thead>
-                    <tr>
-                      <th>Representative</th>
-                      <th className="num">Leads</th>
-                      <th className="num">Signed</th>
-                      <th className="num">Conversion</th>
-                      <th>Standing</th>
-                      {lastMonth && <th className="mid">{monthAbbr(lastMonth)}</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.reps.map((r) => {
-                      const s = standing(r.conversion, avg);
-                      const isTop = tops.has(r.name);
-                      const latest = data.repMonths.rows.find((x) => x.name === r.name)?.cells.at(-1) ?? 0;
-                      return (
-                        <tr key={r.name} className={`sr-click ${r.current ? "" : "former"}`} title={`Open ${r.name}'s profile`}
-                          onClick={() => openRep(r.name)}>
-                          <td>
-                            <div className="sr-who">
-                              <span className="sr-av" style={hueStyle(r.name)}><RepFace name={r.name} fallback={initials(r.name)} /></span>
-                              <div>
-                                <b>{r.name}{isTop && <span className="sr-award" title={`Most sign-ups among the ${r.role}s`}><Trophy /> Top {r.role}</span>}</b>
-                                <i>{roleName(r.role)}{r.current ? "" : " · former"}</i>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="num">{fmt(r.leads)}</td>
-                          <td className="num"><span className="sr-score">{fmt(r.signed)}</span></td>
-                          <td className="num"><span className={`sr-score ${s.score}`}>{r.conversion}%</span></td>
-                          <td><span className={`sr-badge ${s.badge}`}>{s.label}</span></td>
-                          {lastMonth && (
-                            <td className="mid" onClick={(e) => { e.stopPropagation(); setFocus({ rep: r.name, role: r.role, month: lastMonth }); }}>
-                              <span className={`sr-flag ${latest ? "" : "zero"}`}>{latest}</span>
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+      <div className="sr-panel">
+        <div className="sr-panel-h"><h2>Referring partner type</h2></div>
+        <p className="sr-sub">Leads with a matched referring partner.</p>
+        {types.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
+          <div className="sr-hb">
+            {types.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={typeMax} lead={i === 0} />)}
           </div>
-
-          {/* Rep × month */}
-          <div className="sr-panel">
-            <div className="sr-panel-h"><div className="sr-ttl"><h2>Sign-ups by representative and month</h2></div></div>
-            {data.repMonths.rows.length === 0 ? <p className="sr-nil">No sign-ups in this period.</p> : (
-              <>
-                <div className="sr-scroll">
-                  <table className="sr-grid">
-                    <thead>
-                      <tr>
-                        <th className="name" />
-                        {data.repMonths.months.map((m) => <th key={m}>{monthShort(m)}</th>)}
-                        <th style={{ textAlign: "right" }}>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.repMonths.rows.map((r) => (
-                        <tr key={r.name} className={r.current ? "" : "former"}>
-                          <td className="name sr-click" title={`Open ${r.name}'s profile`} onClick={() => openRep(r.name)}>{r.name}<i>{r.role}</i></td>
-                          {r.cells.map((v, i) => (
-                            <td key={i} className={`cell ${level(v)} ${v ? "sr-click" : ""}`}
-                              title={v ? `${r.name} · ${monthLabel(data.repMonths.months[i])}: see the ${v} sign-up${v === 1 ? "" : "s"}` : undefined}
-                              onClick={v ? () => setFocus({ rep: r.name, role: r.role, month: data.repMonths.months[i] }) : undefined}>
-                              {v || "·"}
-                            </td>
-                          ))}
-                          <td className="tot sr-click" onClick={() => setFocus({ rep: r.name, role: r.role })}>{r.total}</td>
-                        </tr>
-                      ))}
-                      <tr className="foot">
-                        <td className="name">Signed</td>
-                        {data.months.map((m) => <td key={m.month} className="cell">{m.signed}</td>)}
-                        <td className="tot">{fmt(data.totals.signed)}</td>
-                      </tr>
-                      <tr className="soft">
-                        <td className="name">All leads</td>
-                        {data.months.map((m) => <td key={m.month} className="cell">{m.leads}</td>)}
-                        <td className="tot">{fmt(data.totals.leads)}</td>
-                      </tr>
-                      <tr className="soft">
-                        <td className="name">Conversion</td>
-                        {data.months.map((m) => <td key={m.month} className="cell">{Math.round(m.conversion)}%</td>)}
-                        <td className="tot">{avg}%</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div className="sr-legend">
-                  <span><i style={{ background: "rgba(28,28,28,.07)" }} /> A few</span>
-                  <span><i style={{ background: "#fdf3cc" }} /> Some</span>
-                  <span><i style={{ background: "#f6cf4b" }} /> Many</span>
-                  <span><i style={{ background: "#262626" }} /> Most in the period</span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Right rail */}
-        <aside>
-          <div className="sr-panel sr-queue">
-            <div className="sr-panel-h"><h2>Executive briefing</h2><span className="sr-qn">{data.insights.length}</span></div>
-            <div className="sr-qis">
-              {data.insights.map((text, n) => {
-                const Icon = insightIcons[n % insightIcons.length];
-                return (
-                  <div key={n} className="sr-qi">
-                    <span className="sr-qi-ic"><Icon /></span>
-                    <p>{text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="sr-panel">
-            <div className="sr-panel-h"><h2>Recommendations</h2></div>
-            {data.recommendations.length === 0 ? <p className="sr-nil">Nothing flagged for this period.</p> : data.recommendations.map((r, n) => (
-              <div key={n} className="sr-coach"><span>Recommendation {n + 1}</span><b>{r}</b></div>
-            ))}
-          </div>
-
-          <div className="sr-panel">
-            <div className="sr-panel-h"><h2>How these numbers are built</h2></div>
-            <details className="sr-acc">
-              <summary><span>Where leads come from</span></summary>
-              <p>
-                Leads and sign-ups come from Lead Docket. A lead belongs to a representative when its Marketing Source names
-                them — "BDR Miguel Flores", "Field Representative Lupe Campos". Marketing, intake (including leads Malvin Rosales,
-                the Intake Department Manager, brings in) and website leads are not counted.
-              </p>
-            </details>
-            <details className="sr-acc">
-              <summary><span>When a lead counts as signed</span></summary>
-              <p>When it has a sign-up date, even if the case later closed. Months are by sign-up date for signed leads.</p>
-            </details>
-            <details className="sr-acc">
-              <summary><span>Partner, type and territory</span></summary>
-              <p>
-                These come from Lead Docket's "Referred by". {fmt(data.totals.attributed)} of {fmt(data.totals.leads)} leads
-                name a partner we can match; the rest still count for the representative.
-              </p>
-            </details>
-          </div>
-        </aside>
+        )}
       </div>
-
-      {/* Below the side column: the four lists as two balanced columns, each card
-          only as tall as itself — side-by-side cards stretched to their
-          neighbour's height sat half empty. The browser picks the split. */}
-      <div className="sr-flow">
-        <div className="sr-panel" ref={partnersRef} style={{ scrollMarginTop: 16 }}>
-          <div className="sr-panel-h">
-            <div className="sr-ttl"><h2>Top referring partners</h2><span className="sr-count">{data.partners.length}</span></div>
+      <div className="sr-panel">
+        <div className="sr-panel-h">
+          <div className="sr-ttl"><h2>Case types</h2><span className="sr-count">{data.caseTypes.length}</span></div>
+        </div>
+        <p className="sr-sub">As classified in Lead Docket.</p>
+        {data.caseTypes.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
+          <div className="sr-scroll">
+            <table className="sr-t sr-t-fit">
+              <thead>
+                <tr><th>Case type</th><th className="num">Leads</th><th className="num">Signed</th><th className="num">Conversion</th></tr>
+              </thead>
+              <tbody>
+                {data.caseTypes.map((c) => (
+                  <tr key={c.name}>
+                    <td><b style={{ color: "var(--ink)", fontWeight: 600 }}>{c.name}</b></td>
+                    <td className="num">{fmt(c.leads)}</td>
+                    <td className="num"><span className="sr-score">{fmt(c.signed)}</span></td>
+                    <td className="num"><span className={`sr-badge ${c.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{pct1(c.conversion)}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <p className="sr-sub">
-            From the {fmt(data.totals.attributed)} leads whose "Referred by" in Lead Docket matches a partner in the CRM.
-            {data.totals.leads > data.totals.attributed && (
-              <> The other {fmt(data.totals.leads - data.totals.attributed)} name none we can match — <Link href="/data-check">link them in Data Check</Link>.</>
-            )}
-          </p>
-          {data.partners.length === 0 ? <p className="sr-nil">No leads in this period name a partner we can match.</p> : (
-            <div className="sr-scroll">
-              <table className="sr-t" style={{ minWidth: 560 }}>
-                <thead>
-                  <tr><th>Partner</th><th className="num">Leads</th><th className="num">Signed</th><th>Conversion</th></tr>
-                </thead>
-                <tbody>
-                  {data.partners.map((p) => (
-                    <tr key={p.facilityId}>
-                      <td>
-                        <div className="sr-who">
-                          <span className="sr-av" style={hueStyle(p.name)}><PartnerLogo facilityId={p.facilityId} fallback={initials(p.name)} /></span>
-                          <div><Link href={`/crm/facilities/${p.facilityId}`}><b>{p.name}</b></Link><i>{p.territory ?? "No territory"}</i></div>
-                        </div>
-                      </td>
-                      <td className="num">{p.leads}</td>
-                      <td className="num"><span className="sr-score">{p.signed}</span></td>
-                      <td><span className={`sr-badge ${p.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{p.conversion}%</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-        <div className="sr-panel">
-          <div className="sr-panel-h"><h2>Referring partner type</h2></div>
-          <p className="sr-sub">Leads with a matched referring partner.</p>
-          {types.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
-            <div className="sr-hb">
-              {types.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={typeMax} lead={i === 0} />)}
-            </div>
-          )}
-        </div>
-        <div className="sr-panel">
-          <div className="sr-panel-h">
-            <div className="sr-ttl"><h2>Case types</h2><span className="sr-count">{data.caseTypes.length}</span></div>
-          </div>
-          <p className="sr-sub">As classified in Lead Docket.</p>
-          {data.caseTypes.length === 0 ? <p className="sr-nil">No leads in this period.</p> : (
-            <div className="sr-scroll">
-              <table className="sr-t" style={{ minWidth: 330 }}>
-                <thead>
-                  <tr><th>Case type</th><th className="num">Leads</th><th className="num">Signed</th><th>Conversion</th></tr>
-                </thead>
-                <tbody>
-                  {data.caseTypes.map((c) => (
-                    <tr key={c.name}>
-                      <td><b style={{ color: "var(--ink)", fontWeight: 600 }}>{c.name}</b></td>
-                      <td className="num">{fmt(c.leads)}</td>
-                      <td className="num"><span className="sr-score">{fmt(c.signed)}</span></td>
-                      <td><span className={`sr-badge ${c.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{c.conversion}%</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-        <div className="sr-panel">
-          <div className="sr-panel-h"><h2>Territory</h2></div>
-          <p className="sr-sub">Where the referring partner is; top 10.</p>
-          {territories.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
-            <div className="sr-hb">
-              {territories.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={terrMax} lead={i === 0} />)}
-            </div>
-          )}
-        </div>
+        )}
       </div>
-
-      {/* Every lead by name — full width, so long client names have room */}
-      <LeadList leads={data.leadList} />
-      {focus && <RepClients focus={focus} leads={data.leadList} onClose={() => setFocus(null)} />}
-    </>
+      <div className="sr-panel">
+        <div className="sr-panel-h"><h2>Territory</h2></div>
+        <p className="sr-sub">Where the referring partner is; top 10.</p>
+        {territories.length === 0 ? <p className="sr-nil">No partner-attributed leads.</p> : (
+          <div className="sr-hb">
+            {territories.map((t, i) => <HBar key={t.name} label={t.name} value={t.leads} max={terrMax} lead={i === 0} />)}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -710,90 +764,85 @@ export function rangeLabel(from: string, to: string) {
 }
 
 export const SC_TITLE: Record<string, string> = { FR: "FRS", BDR: "BDRS", Intake: "INTAKE" };
-export const pctText = (v: number | null) => (v == null ? "—" : `${v.toFixed(2)}%`);
+export const pctText = (v: number | null) => pct1(v);
 
 type ScorecardGroup = ReportData["scorecard"]["groups"][number];
 
 /**
  * One team's sheet: the columns the team knows, in their order. Shared with the
- * presentation deck, so a column change reaches both. Rows open a rep's clients
+ * presentation deck, so a column change reaches both. Rows open a rep's profile
  * only when onRep is given (never in the deck); TOTAL shows only when given, so
- * the deck can page a long team and total it once, on the last page.
+ * the deck can page a long team and total it once, on the last page. `rich`
+ * adds the page's extras — photo, trophy, standing — and lets a phone drop the
+ * detail columns.
  */
-export function ScorecardTable({ role, rows, total, onRep, pct = pctText, targets = true }: {
+export function ScorecardTable({ role, rows, total, onRep, pct = pctText, targets = true, rich }: {
   role: string; rows: ScorecardGroup["rows"]; total?: ScorecardGroup["total"]; onRep?: (rep: string, role: string) => void;
-  /** How Achieved and Conversion read. The deck shows fewer decimals, so its larger numbers fit their columns. */
+  /** How Achieved and Conversion read. The deck rounds Achieved down, so a team that is short never reads 100%. */
   pct?: (v: number | null, of: "achieved" | "conversion") => string;
   /** False leaves out Target and Achieved (the deck does, for All time). */
   targets?: boolean;
+  rich?: { avg: number; tops: Set<string> };
 }) {
+  // Nothing lands in Not Interested today, so an empty column is left out rather
+  // than shown as a wall of zeros. It comes back by itself if one ever does.
+  const ni = [...rows, ...(total ? [total] : [])].some((r) => r.notInterested > 0);
   return (
-    <table className="sr-sct">
+    <table className={`sr-sct${rich ? " rich" : ""}`}>
       <thead>
         <tr>
-          <th className="l">Name</th><th>Total Leads</th><th>Open</th><th>Rejected</th><th>Referred Out</th><th>Not Interested</th>
-          <th className="cyan">Signed Referred Out</th><th className="green">Sign-up Unique Count</th><th className="yellow">Signed In-House</th>
-          <th className="tot">Total Signed</th>{targets && <><th>Target</th><th>Achieved</th></>}<th>Lead vs Sign Up Conversion</th>
+          <th className="l">Name</th><th>Leads</th><th className="opt">Open</th><th className="opt">Rejected</th><th className="opt">Referred Out</th>
+          {ni && <th className="opt">Not Interested</th>}
+          <th className="cyan opt">Signed Referred Out</th><th className="green opt">Unique</th><th className="yellow opt">Signed In-House</th>
+          <th className="tot">Signed</th>{targets && <><th className="opt">Target</th><th>Achieved</th></>}<th>Conversion</th>
+          {rich && <th className="opt">Standing</th>}
         </tr>
       </thead>
       <tbody>
         {rows.map((r) => {
           const [first, ...rest] = r.name.split(" ");
+          const s = rich && standing(r.conversion ?? 0, rich.avg);
           return (
-            <tr key={r.name} {...(onRep ? { className: "sr-click", title: `See ${r.name}'s clients`, onClick: () => onRep(r.name, role) } : {})}>
-              <td className="l"><b>{first}</b> <span className="last">{rest.join(" ")}</span>{!r.current && <span className="former">former</span>}</td>
-              <td>{r.leads}</td><td>{r.open}</td><td>{r.rejected}</td><td>{r.referredOut}</td><td>{r.notInterested}</td>
-              <td className="cyan">{r.signedReferred}</td>
-              <td className="green strong">{r.unique}</td>
-              <td className="yellow em">{r.signedInHouse}</td>
+            <tr key={r.name} {...(onRep ? { className: "sr-click", title: `Open ${r.name}'s profile`, onClick: () => onRep(r.name, role) } : {})}>
+              <td className="l">
+                {rich ? (
+                  <div className="sr-who">
+                    <span className="sr-av" style={hueStyle(r.name)}><RepFace name={r.name} fallback={initials(r.name)} /></span>
+                    <div>
+                      <b>{r.name}{rich.tops.has(r.name) && <span className="sr-award" title={`Most sign-ups among the ${role}s`}><Trophy /> Top {role}</span>}</b>
+                      {!r.current && <i>former</i>}
+                    </div>
+                  </div>
+                ) : (
+                  <><b>{first}</b> <span className="last">{rest.join(" ")}</span>{!r.current && <span className="former">former</span>}</>
+                )}
+              </td>
+              <td>{r.leads}</td><td className="opt">{r.open}</td><td className="opt">{r.rejected}</td><td className="opt">{r.referredOut}</td>
+              {ni && <td className="opt">{r.notInterested}</td>}
+              <td className="cyan opt">{r.signedReferred}</td>
+              <td className="green strong opt">{r.unique}</td>
+              <td className="yellow em opt">{r.signedInHouse}</td>
               <td className="tot blue">{r.signed}</td>
-              {targets && <><td>{r.target ?? "—"}</td><td>{pct(r.achieved, "achieved")}</td></>}
+              {targets && <><td className="opt">{r.target ?? "—"}</td><td>{pct(r.achieved, "achieved")}</td></>}
               <td>{pct(r.conversion, "conversion")}</td>
+              {s && <td className="opt"><span className={`sr-badge ${s.badge}`}>{s.label}</span></td>}
             </tr>
           );
         })}
         {total && (
           <tr className="total">
             <td className="l">TOTAL</td>
-            <td>{total.leads}</td><td>{total.open}</td><td>{total.rejected}</td><td>{total.referredOut}</td><td>{total.notInterested}</td>
-            <td>{total.signedReferred}</td><td>{total.unique}</td><td>{total.signedInHouse}</td>
+            <td>{total.leads}</td><td className="opt">{total.open}</td><td className="opt">{total.rejected}</td><td className="opt">{total.referredOut}</td>
+            {ni && <td className="opt">{total.notInterested}</td>}
+            <td className="opt">{total.signedReferred}</td><td className="opt">{total.unique}</td><td className="opt">{total.signedInHouse}</td>
             <td className="big">{total.signed}</td>
-            {targets && <><td className="big">{total.target ?? "—"}</td><td className="big">{pct(total.achieved, "achieved")}</td></>}
+            {targets && <><td className="big opt">{total.target ?? "—"}</td><td className="big">{pct(total.achieved, "achieved")}</td></>}
             <td className="big">{pct(total.conversion, "conversion")}</td>
+            {rich && <td className="opt" />}
           </tr>
         )}
       </tbody>
     </table>
-  );
-}
-
-/**
- * The team's scorecard, laid out like their sheet so the numbers read the same
- * way: one table per team, a rep per row, a TOTAL row. Click a rep for the names.
- */
-function Scorecard({ sc, label, onRep }: { sc: ReportData["scorecard"]; label: string; onRep: (rep: string, role: string) => void }) {
-  if (!sc.groups.length) return null;
-  return (
-    <div className="sr-sc-wrap">
-      {sc.groups.map((g) => (
-        <div key={g.role} className="sr-sc">
-          <div className="sr-sc-title">{label}</div>
-          <div className="sr-sc-band">{SC_TITLE[g.role] ?? g.role}</div>
-          <div className="sr-scroll">
-            <ScorecardTable role={g.role} rows={g.rows} total={g.total} onRep={onRep} />
-          </div>
-        </div>
-      ))}
-      <p className="sr-sub" style={{ margin: "2px 4px 18px" }}>
-        From Lead Docket. Each lead counts once, in the column for where it ended up — so the columns add up to Total Leads.
-        Lost counts as Rejected. Referred Out = referred to another firm without signing; Signed Referred Out = signed first,
-        then referred. Sign-up Unique Count = different accidents behind the sign-ups: a driver and passengers Lead Docket links are one case.{" "}
-        {sc.prorated
-          ? `Targets: FR 20, BDR 5 a month per rep, prorated to these ${sc.prorated.days} days (FR ${Math.round(20 * sc.prorated.share * 10) / 10}, BDR ${Math.round(5 * sc.prorated.share * 10) / 10} each).`
-          : `Targets: FR ${20 * sc.months}, BDR ${5 * sc.months} a month per rep${sc.months > 1 ? ` (× ${sc.months} months)` : ""}.`}
-        {" "}Click a rep to open their profile.
-      </p>
-    </div>
   );
 }
 

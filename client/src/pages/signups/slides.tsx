@@ -15,7 +15,7 @@ import { RepFace, PartnerLogo } from "@/components/RepFace";
 import { CheckCircle2, Handshake, Info, Percent, TrendingUp, Trophy, Users } from "lucide-react";
 import { MONTHLY_SIGNUP_TARGET, type TeamRole } from "@shared/team";
 import {
-  SC_TITLE, ScorecardTable, fmt, hueStyle, initials, iso, monthAbbr, monthLabel, rangeLabel, roleName, teamTops,
+  SC_TITLE, ScorecardTable, fmt, pct1, hueStyle, initials, iso, monthAbbr, monthLabel, rangeLabel, roleName, teamTops,
   type ReportData,
 } from "../SignupsDashboard";
 
@@ -282,7 +282,7 @@ function Cover({ data, ctx, meta, pos }: { data: ReportData; ctx: DeckContext; m
           </div>
           <div className="sr-cv-stats">
             <div><b>{fmt(data.totals.leads)}</b><span>Leads</span></div>
-            <div><b>{data.totals.signedPct}%</b><span>Conversion</span></div>
+            <div><b>{pct1(data.totals.signedPct)}</b><span>Conversion</span></div>
           </div>
         </div>
         <div className="sr-cv-side">
@@ -318,7 +318,7 @@ function Split({ data, meta, pos }: { data: ReportData; meta: Meta; pos: Pos }) 
     ? "No sign-ups yet in this period"
     : b && a.signed === b.signed
       ? `${a.role} and ${b.role} signed the same number`
-      : `${TEAM[a.role] ?? a.role} signed ${a.share}% of sign-ups`;
+      : `${TEAM[a.role] ?? a.role} signed ${pct1(a.share)} of sign-ups`;
   const signedRoles = roles.filter((r) => r.signed > 0);
 
   return (
@@ -331,10 +331,10 @@ function Split({ data, meta, pos }: { data: ReportData; meta: Meta; pos: Pos }) 
               <div key={r.role} className={`sr-sp-card ${r.role.toLowerCase()}`}>
                 <div className="sr-sp-name">{TEAM[r.role] ?? r.role}</div>
                 <div className="sr-sp-n">{fmt(r.signed)}</div>
-                <div className="sr-sp-share">{r.signed === 1 ? "sign-up" : "sign-ups"} · {r.share}% of all</div>
+                <div className="sr-sp-share">{r.signed === 1 ? "sign-up" : "sign-ups"} · {pct1(r.share)} of all</div>
                 <div className="sr-sp-stats">
                   <div><b>{fmt(r.leads)}</b><span>Leads</span></div>
-                  <div><b>{r.conversion}%</b><span>Conversion</span></div>
+                  <div><b>{pct1(r.conversion)}</b><span>Conversion</span></div>
                   {meta.targets && t?.target ? <div><b>{pctDown(t.achieved)}</b><span>of target ({fmt(t.signed)} of {fmt(t.target)})</span></div> : null}
                 </div>
               </div>
@@ -344,7 +344,7 @@ function Split({ data, meta, pos }: { data: ReportData; meta: Meta; pos: Pos }) 
         {signedRoles.length > 0 && (
           <div className="sr-sp-bar" aria-hidden="true">
             {signedRoles.map((r) => (
-              <i key={r.role} className={r.role.toLowerCase()} style={{ flexGrow: r.signed }}>{r.role} {r.share}%</i>
+              <i key={r.role} className={r.role.toLowerCase()} style={{ flexGrow: r.signed }}>{r.role} {pct1(r.share)}</i>
             ))}
           </div>
         )}
@@ -449,7 +449,7 @@ function Leaders({ reps, page, part, meta, pos }: {
                   {tops.has(r.name) && <span className="sr-award"><Trophy /> Top {r.role}</span>}
                   {!r.current && <span className="sr-deck-former">former</span>}
                 </b>
-                <i>{roleName(r.role)} · {count(r.leads, "lead")} · {r.conversion}% conversion</i>
+                <i>{roleName(r.role)} · {count(r.leads, "lead")} · {pct1(r.conversion)} conversion</i>
               </div>
               <div className="sr-deck-bar-t"><i style={{ width: `${(r.signed / max) * 100}%` }} /></div>
               <span className="sr-ld-n">{fmt(r.signed)}</span>
@@ -535,7 +535,7 @@ function Partners({ data, meta, pos }: { data: ReportData; meta: Meta; pos: Pos 
             <span className="sr-deck-av" style={hueStyle(p.name)}><PartnerLogo facilityId={p.facilityId} fallback={initials(p.name)} /></span>
             <div className="sr-pt-who"><b>{p.name}</b><i>{p.territory || "No territory"}</i></div>
             <div className="sr-deck-bar-t"><i style={{ width: `${(p.signed / max) * 100}%` }} /></div>
-            <div className="sr-pt-n"><b>{fmt(p.signed)}</b><span>of {count(p.leads, "lead")} · {p.conversion}%</span></div>
+            <div className="sr-pt-n"><b>{fmt(p.signed)}</b><span>of {count(p.leads, "lead")} · {pct1(p.conversion)}</span></div>
           </div>
         ))}
       </div>
@@ -574,7 +574,7 @@ function CaseTypes({ data, meta, pos }: { data: ReportData; meta: Meta; pos: Pos
               <i className="s" style={{ width: `${(c.signed / max) * 100}%` }} />
             </div>
             <span className="sr-ct-of">{fmt(c.signed)} of {fmt(c.leads)} signed</span>
-            <span className={`sr-badge ${c.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{c.conversion}%</span>
+            <span className={`sr-badge ${c.conversion >= avg ? "sr-b-ok" : "sr-b-grey"}`}>{pct1(c.conversion)}</span>
           </div>
         ))}
       </div>

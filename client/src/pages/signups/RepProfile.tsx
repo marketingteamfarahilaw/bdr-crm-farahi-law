@@ -16,10 +16,11 @@ import {
 import { trpc } from "@/lib/trpc";
 import { RepFace, PartnerLogo } from "@/components/RepFace";
 import {
-  Big, DateInput, HBar, LeadList, SC_TITLE, ScorecardTable, fmt, hueStyle, initials, iso, pctText, presets, rangeLabel, roleName, teamTops,
+  Big, DateInput, HBar, LeadList, SC_TITLE, ScorecardTable, fmt, hueStyle, initials, iso, pct1, pctText, presets, rangeLabel, roleName, teamTops,
 } from "../SignupsDashboard";
 import { TrendsPanel } from "./Trends";
 import { MonthlyPanel } from "./Monthly";
+import { LoadError } from "./LoadError";
 import "../SignupsDashboard.css";
 
 type Act = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["repActivity"]>;
@@ -59,7 +60,8 @@ export default function RepProfile() {
   const isTop = team.data ? teamTops(team.data.reps).has(member) : false;
   const conv = d?.totals.signedPct ?? 0;
 
-  const back = `/signups-report?from=${from}&to=${to}`;
+  // Back to the report as it was left: its role, team and tab rode along in the link, plus the dates picked here.
+  const back = `/signups-report?${new URLSearchParams({ ...Object.fromEntries(query), from, to })}`;
   return (
     <div className="sr">
       <div className="sr-canvas">
@@ -109,7 +111,7 @@ export default function RepProfile() {
               <Big n={fmt(d?.totals.leads ?? 0)} label="Leads" icon={<Inbox />} />
               <Big n={fmt(d?.totals.signed ?? 0)} label="Signed" icon={<CheckCircle2 />} />
               <Big n={fmt(row?.unique ?? 0)} label="Unique cases" icon={<Layers />} />
-              <Big n={`${conv}%`} label={roleConv != null ? `Conversion · ${role}s ${roleConv}%` : "Conversion"} icon={<Percent />} />
+              <Big n={pct1(conv)} label={roleConv != null ? `Conversion · ${role}s ${pct1(roleConv)}` : "Conversion"} icon={<Percent />} />
               {row?.target != null && <Big n={pctText(row.achieved)} label={`Of the ${fmt(row.target)} target`} icon={<Target />} />}
             </div>
           </section>
@@ -119,7 +121,9 @@ export default function RepProfile() {
             <PartnersList member={member} partners={a.assignedPartners} period={d?.partners ?? []} periodLabel={rangeLabel(from, to)} onClose={() => setOpen(null)} />
           )}
 
-          {!d ? (
+          {!d && mine.isError ? (
+            <LoadError what={`${member}'s numbers`} message={mine.error?.message} onRetry={() => mine.refetch()} />
+          ) : !d ? (
             <div className="sr-features">{[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 240 }} />)}</div>
           ) : (
             <>

@@ -57,7 +57,7 @@ const empty = (): MonthCounts => ({ leads: 0, partnerNamed: 0, qualified: 0, qua
 /** The sheet's rows from the counts. The two "to quality" and "to leads" rates use the sheet's own formulas. */
 export function withRates(c: MonthCounts) {
   const totalSigned = c.signed + c.signedReferral;
-  const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : null);
+  const pct = (a: number, b: number) => (b ? Math.round((a / b) * 1000) / 10 : null);
   return {
     ...c,
     totalSigned,
