@@ -106,7 +106,8 @@ import { getAdminOverview } from "./adminOverview";
 import { getExpensesView } from "./expensesView";
 import { getRepActivity, getRepReview } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
-import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret, timeeroSample, getFieldTime } from "./timeero";
+import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret, timeeroSample, getFieldTime, getFieldToday } from "./timeero";
+import { getPartnerReferralsReport } from "./partnerReferralsReport";
 import { getSystemHealth } from "./systemHealth";
 import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
 import { getRepPhotos } from "./repPhotos";
@@ -941,6 +942,9 @@ export const appRouter = router({
       fieldTime: bdProcedure
         .input(z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), member: z.string().max(120).optional() }))
         .query(async ({ ctx, input }) => { mgrOnly(ctx); return getFieldTime(input.from, input.to, input.member); }),
+      // Today's (Pacific) Timeero shifts for the map: who is clocked in and
+      // where each shift was clocked in / out. Not live GPS.
+      fieldToday: bdProcedure.query(async ({ ctx }) => { mgrOnly(ctx); return getFieldToday(); }),
       // Pick a lead's referring partner by hand from the report's lead lists.
       partnerOptions: bdProcedure.query(async ({ ctx }) => { mgrOnly(ctx); return getPartnerOptions(); }),
       linkLeadPartner: bdProcedure
@@ -1610,6 +1614,15 @@ export const appRouter = router({
 
     // Reporting aggregates
     stats: bdProcedure.query(async () => getReferralStats()),
+    // Partner Referrals Report: sent / received / signed for the dates picked.
+    // Agents get only their own referrals; managers everyone's (or one rep's).
+    report: bdProcedure
+      .input(z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), rep: z.string().max(120).optional() }))
+      .query(async ({ ctx, input }) => {
+        const range = { from: laDate(`${input.from}T00:00:00`), to: laEnd(input.to) };
+        if (!seesAllData(ctx.user.role)) return getPartnerReferralsReport(range, ownerNameCandidates(ctx.user));
+        return getPartnerReferralsReport(range, input.rep ? [input.rep] : null);
+      }),
   }),
 });
 

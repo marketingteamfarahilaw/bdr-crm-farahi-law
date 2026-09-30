@@ -34,8 +34,10 @@ export default function CheckinReport() {
 
   // Summary distribution (the sheet's top tables): per rep, how many facilities
   // got exactly 1 / 2 / 3 / 4+ check-ins or visits (= distinct days).
+  // A BDR whose only calls were about FR partners has an empty `rows` — they
+  // have no BDR facilities to count here, so they stay out of this table.
   const distOf = (bs: any[] | undefined) => {
-    const rows = (bs ?? []).map((b: any) => {
+    const rows = (bs ?? []).filter((b: any) => b.rows.length > 0).map((b: any) => {
       const dist = [0, 0, 0, 0];
       for (const r of b.rows) dist[Math.min(r.checkIns.length, 4) - 1]++;
       return { rep: b.rep, facilities: b.rows.length, dist, calls: b.totals.calls };
@@ -52,16 +54,25 @@ export default function CheckinReport() {
   const exportCsv = () => {
     if (!blocks?.length && !visitBlocks?.length) return;
     const rows: any[][] = [];
+    const pushMatrix = (list: any[], word: string) => {
+      rows.push(["#", "FACILITY NAME / PHONE", ...Array.from({ length: MAX_COLS }, (_, i) => [`${ORDINAL[i]} ${word}`, "#"]).flat(), `TOTAL ${word}`]);
+      list.forEach((r: any, i: number) => {
+        const cells: any[] = [i + 1, r.label];
+        for (let k = 0; k < MAX_COLS; k++) { const c = r.checkIns[k]; cells.push(c ? dayLabel(c.date) : "", c ? c.count : ""); }
+        cells.push(r.total);
+        rows.push(cells);
+      });
+    };
     const pushBlocks = (bs: any[], word: string) => {
       for (const b of bs) {
         rows.push([b.rep.toUpperCase()]);
-        rows.push(["#", "FACILITY NAME / PHONE", ...Array.from({ length: MAX_COLS }, (_, i) => [`${ORDINAL[i]} ${word}`, "#"]).flat(), `TOTAL ${word}`]);
-        b.rows.forEach((r: any, i: number) => {
-          const cells: any[] = [i + 1, r.label];
-          for (let k = 0; k < MAX_COLS; k++) { const c = r.checkIns[k]; cells.push(c ? dayLabel(c.date) : "", c ? c.count : ""); }
-          cells.push(r.total);
-          rows.push(cells);
-        });
+        if (b.frRows) rows.push([`${b.totals.calls} calls to their own partners · ${b.frTotals.calls} calls about FR partners`]);
+        if (b.rows.length || !b.frRows?.length) pushMatrix(b.rows, word);
+        if (b.frRows?.length) {
+          rows.push([]);
+          rows.push([`${b.rep.toUpperCase()} — CALLS ABOUT FR FACILITIES`]);
+          pushMatrix(b.frRows, word);
+        }
         rows.push([]);
       }
     };
@@ -108,7 +119,7 @@ export default function CheckinReport() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>Check-In Report</h1>
-          <p className="text-sm text-muted-foreground mt-1">Every facility called in the month — each date is a check-in, with the number of calls that day. Calls that didn't match a partner show by phone number.</p>
+          <p className="text-sm text-muted-foreground mt-1">Every facility called in the month — each date is a check-in, with the number of calls that day. Each BDR's calls to their own partners are counted apart from their calls about partners a Field Rep owns.</p>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
           {isMgr && (
@@ -285,52 +296,79 @@ function NewFacGroup({ label, facLabel, rows, total }: { label: string; facLabel
 }
 
 function RepBlock({ block, word = "CHECK-IN" }: { block: any; word?: string }) {
-  const [, nav] = useLocation();
-  const cols = Math.min(MAX_COLS, Math.max(1, ...block.rows.map((r: any) => r.checkIns.length)));
+  // Visit blocks carry no frRows; check-in blocks split the BDR's own partners
+  // from the FR partners they called about.
+  const fr: any[] = block.frRows ?? [];
+  const hasSplit = block.frRows !== undefined;
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
           <h2 className="font-bold text-foreground uppercase tracking-wide flex items-center gap-2"><Users2 className="w-4 h-4 text-primary" /> {block.rep}</h2>
-          <span className="text-xs text-muted-foreground">{block.totals.facilities} facilities · {block.totals.calls} {word === "VISIT" ? "visits" : "calls"}</span>
+          {hasSplit
+            ? <span className="text-xs text-muted-foreground">{block.totals.calls} calls to their own partners · {block.frTotals.calls} calls about FR partners</span>
+            : <span className="text-xs text-muted-foreground">{block.totals.facilities} facilities · {block.totals.calls} {word === "VISIT" ? "visits" : "calls"}</span>}
         </div>
-        <div className="rounded-xl border border-border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-card hover:bg-card border-border">
-                <TableHead className="text-muted-foreground text-xs w-8">#</TableHead>
-                <TableHead className="text-muted-foreground text-xs min-w-[220px]">FACILITY NAME</TableHead>
-                {Array.from({ length: cols }, (_, i) => (
-                  <TableHead key={i} className="text-muted-foreground text-xs whitespace-nowrap" colSpan={2}>{ORDINAL[i]} {word} · #</TableHead>
-                ))}
-                <TableHead className="text-xs font-semibold text-primary bg-primary/10 text-right whitespace-nowrap">TOTAL {word}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {block.rows.map((r: any, i: number) => (
-                <TableRow key={r.label + i} className={`border-border ${r.facilityId ? "cursor-pointer hover:bg-card/60" : ""}`} onClick={() => r.facilityId && nav(`/crm/facilities/${r.facilityId}`)}>
-                  <TableCell className="py-1.5 text-xs text-muted-foreground">{i + 1}</TableCell>
-                  <TableCell className="py-1.5 text-sm font-medium text-foreground max-w-[320px]">
-                    {r.isPhoneOnly
-                      ? <span className="flex items-center gap-1.5 text-muted-foreground" title="Not linked to a partner in the CRM — the name is RingCentral's caller ID"><Phone className="w-3 h-3 shrink-0" /> <span className="truncate">{r.label}</span></span>
-                      : <span className="block truncate" title={r.label}>{r.label}</span>}
-                  </TableCell>
-                  {Array.from({ length: cols }, (_, k) => {
-                    const c = r.checkIns[k];
-                    return [
-                      <TableCell key={`d${k}`} className="py-1.5 text-xs text-muted-foreground whitespace-nowrap">{c ? dayLabel(c.date) : ""}</TableCell>,
-                      <TableCell key={`n${k}`} className="py-1.5 text-xs font-semibold text-foreground bg-amber-500/5">{c ? c.count : ""}</TableCell>,
-                    ];
-                  })}
-                  <TableCell className="py-1.5 text-sm font-bold text-primary bg-primary/10 text-right">
-                    {r.total}{r.checkIns.length > cols && <span className="text-[10px] font-normal text-muted-foreground ml-1">(+{r.checkIns.length - cols} more days)</span>}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        {hasSplit && (
+          <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">
+            BDR facilities <span className="font-normal normal-case text-muted-foreground">· {block.totals.facilities} facilities · {block.totals.calls} calls</span>
+          </p>
+        )}
+        {block.rows.length > 0 || !hasSplit
+          ? <MatrixTable rows={block.rows} word={word} />
+          : <p className="text-sm text-muted-foreground rounded-xl border border-dashed border-border px-3 py-2">No calls to their own partners this month.</p>}
+        {fr.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">
+              Calls about FR facilities <span className="font-normal normal-case text-muted-foreground">· partners a Field Rep owns · {block.frTotals.facilities} facilities · {block.frTotals.calls} calls</span>
+            </p>
+            <MatrixTable rows={fr} word={word} />
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function MatrixTable({ rows, word }: { rows: any[]; word: string }) {
+  const [, nav] = useLocation();
+  const cols = Math.min(MAX_COLS, Math.max(1, ...rows.map((r: any) => r.checkIns.length)));
+  return (
+    <div className="rounded-xl border border-border overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-card hover:bg-card border-border">
+            <TableHead className="text-muted-foreground text-xs w-8">#</TableHead>
+            <TableHead className="text-muted-foreground text-xs min-w-[220px]">FACILITY NAME</TableHead>
+            {Array.from({ length: cols }, (_, i) => (
+              <TableHead key={i} className="text-muted-foreground text-xs whitespace-nowrap" colSpan={2}>{ORDINAL[i]} {word} · #</TableHead>
+            ))}
+            <TableHead className="text-xs font-semibold text-primary bg-primary/10 text-right whitespace-nowrap">TOTAL {word}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((r: any, i: number) => (
+            <TableRow key={r.label + i} className={`border-border ${r.facilityId ? "cursor-pointer hover:bg-card/60" : ""}`} onClick={() => r.facilityId && nav(`/crm/facilities/${r.facilityId}`)}>
+              <TableCell className="py-1.5 text-xs text-muted-foreground">{i + 1}</TableCell>
+              <TableCell className="py-1.5 text-sm font-medium text-foreground max-w-[320px]">
+                {r.isPhoneOnly
+                  ? <span className="flex items-center gap-1.5 text-muted-foreground" title="Not linked to a partner in the CRM — the name is RingCentral's caller ID"><Phone className="w-3 h-3 shrink-0" /> <span className="truncate">{r.label}</span></span>
+                  : <span className="block truncate" title={r.label}>{r.label}</span>}
+              </TableCell>
+              {Array.from({ length: cols }, (_, k) => {
+                const c = r.checkIns[k];
+                return [
+                  <TableCell key={`d${k}`} className="py-1.5 text-xs text-muted-foreground whitespace-nowrap">{c ? dayLabel(c.date) : ""}</TableCell>,
+                  <TableCell key={`n${k}`} className="py-1.5 text-xs font-semibold text-foreground bg-amber-500/5">{c ? c.count : ""}</TableCell>,
+                ];
+              })}
+              <TableCell className="py-1.5 text-sm font-bold text-primary bg-primary/10 text-right">
+                {r.total}{r.checkIns.length > cols && <span className="text-[10px] font-normal text-muted-foreground ml-1">(+{r.checkIns.length - cols} more days)</span>}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

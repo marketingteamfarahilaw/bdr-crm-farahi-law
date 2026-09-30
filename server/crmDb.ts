@@ -609,6 +609,9 @@ export async function setExpenseReimbursement(kind: "FR" | "BDR", id: number, st
 // One row per BDR partner called in the month — never a Field Rep's partner or
 // a number that isn't a partner in the CRM. Each distinct DAY is a check-in
 // column with the number of calls placed that day; TOTAL sums the month.
+// frRows is the same matrix for the Field Reps' partners a BDR called: the team
+// tracks calls to a BDR's own partners apart from calls made about FR partners
+// (Youssef, 2026-09-30), so those land beside `rows`, never in it.
 export async function getCheckinMatrix(month: string, agentNames?: string[] | null) {
   const db = await getDb();
   if (!db) return [];
@@ -633,6 +636,7 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
 
   type Row = { key: string; label: string; facilityId: number | null; days: Map<string, number> };
   const reps = new Map<string, Map<string, Row>>();
+  const frReps = new Map<string, Map<string, Row>>();
   // One block per PERSON: merge rep-name variants ("LUPE", "Lupe", "Lupe Campos")
   // by first name; display the longest nicely-cased variant seen.
   const repDisplay = new Map<string, string>();
@@ -646,9 +650,9 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
     if (!prev || title.length > prev.length) repDisplay.set(key, title);
     return key;
   };
-  const bucket = (repKey: string, key: string, label: string, facilityId: number | null, day: string) => {
-    if (!reps.has(repKey)) reps.set(repKey, new Map());
-    const rows = reps.get(repKey)!;
+  const bucket = (repKey: string, key: string, label: string, facilityId: number | null, day: string, into = reps) => {
+    if (!into.has(repKey)) into.set(repKey, new Map());
+    const rows = into.get(repKey)!;
     if (!rows.has(key)) rows.set(key, { key, label, facilityId, days: new Map() });
     const r = rows.get(key)!;
     r.days.set(day, (r.days.get(day) ?? 0) + 1);
@@ -662,9 +666,16 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
     for (const n of [u.name, u.agentName]) if (repFirst(n)) frFirst.add(repFirst(n));
   }
   const isFrPartner = (owner?: string | null) => frFirst.has(repFirst(owner));
+  // A Field Rep calling their own partner is ordinary FR work, not a BDR call
+  // about an FR partner, so only non-FR callers get FR rows.
+  const addCall = (rawRep: string | null | undefined, facilityId: number, label: string, owner: string | null | undefined, day: string) => {
+    const repKey = canonRep(rawRep);
+    if (!isFrPartner(owner)) bucket(repKey, `f:${facilityId}`, label, facilityId, day);
+    else if (!frFirst.has(repKey)) bucket(repKey, `f:${facilityId}`, label, facilityId, day, frReps);
+  };
   for (const c of calls) {
-    if (!c.contactDate || isFrPartner(c.owner)) continue;
-    bucket(canonRep(c.repName), `f:${c.facilityId}`, c.facilityName ?? `Facility #${c.facilityId}`, c.facilityId, dayOf(c.contactDate as Date));
+    if (!c.contactDate) continue;
+    addCall(c.repName, c.facilityId, c.facilityName ?? `Facility #${c.facilityId}`, c.owner, dayOf(c.contactDate as Date));
   }
   // A call the sync couldn't match may still be to a partner: its number was
   // added to the partner later, sits in a second phone field, or belonged to a
@@ -693,7 +704,7 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
     if (!p) continue;
     const day = dayOf(u.startTime as Date);
     const partner = partnerByPhone.get(p);
-    if (partner && !isFrPartner(partner.owner)) bucket(canonRep(u.agentName), `f:${partner.id}`, partner.name, partner.id, day);
+    if (partner) addCall(u.agentName, partner.id, partner.name, partner.owner, day);
   }
 
   // Agent scoping: match rep blocks by full name or first name (case-insensitive)
@@ -702,16 +713,22 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
   const wanted = agentNames?.map(norm).filter(Boolean) ?? null;
   const repMatches = (rep: string) => !wanted || wanted.some((w) => norm(rep) === w || first(rep) === first(w));
 
+  const toList = (rows: Map<string, Row> | undefined) => Array.from(rows?.values() ?? []).map((r) => {
+    const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
+    return { label: r.label, facilityId: r.facilityId, isPhoneOnly: r.facilityId == null, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
+  }).sort((a, b) => (a.checkIns[0]?.date ?? "").localeCompare(b.checkIns[0]?.date ?? "") || b.total - a.total);
+  const totalsOf = (list: ReturnType<typeof toList>) => ({ facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) });
+
+  // A BDR who only called about FR partners this month still gets a block
+  // (with empty `rows`), or those calls would never show.
   const out = [];
-  for (const [rep, rows] of Array.from(reps.entries())) {
+  for (const rep of Array.from(new Set([...Array.from(reps.keys()), ...Array.from(frReps.keys())]))) {
     if (!repMatches(rep) || isNonReportingRep(rep)) continue; // dev/test traffic stays out of team reports
-    const list = Array.from(rows.values()).map((r) => {
-      const checkIns = Array.from(r.days.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? -1 : 1));
-      return { label: r.label, facilityId: r.facilityId, isPhoneOnly: r.facilityId == null, checkIns, total: checkIns.reduce((s, c) => s + c.count, 0) };
-    }).sort((a, b) => (a.checkIns[0]?.date ?? "").localeCompare(b.checkIns[0]?.date ?? "") || b.total - a.total);
-    out.push({ rep: repDisplay.get(rep) ?? rep, rows: list, totals: { facilities: list.length, calls: list.reduce((s, r) => s + r.total, 0) } });
+    const list = toList(reps.get(rep));
+    const frList = toList(frReps.get(rep));
+    out.push({ rep: repDisplay.get(rep) ?? rep, rows: list, totals: totalsOf(list), frRows: frList, frTotals: totalsOf(frList) });
   }
-  return out.sort((a, b) => b.totals.calls - a.totals.calls);
+  return out.sort((a, b) => b.totals.calls - a.totals.calls || b.frTotals.calls - a.frTotals.calls);
 }
 
 // ── FR Visit matrix (the sheet's FIELD REPRESENTATIVES side) ─────────────────

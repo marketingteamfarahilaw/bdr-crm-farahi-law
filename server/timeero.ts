@@ -21,7 +21,7 @@ import type { Express, Request, Response } from "express";
 import axios, { type AxiosError } from "axios";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { fromZonedTime } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getDb, getSetting, setSetting } from "./db";
 import { decryptKey, encryptKey } from "./_core/claude";
 import { CURRENT_TEAM, FR_CONTRACT } from "@shared/team";
@@ -466,6 +466,24 @@ export function summarise(list: { rep: string; day: string; seconds: number; mil
   }).sort((x, y) => Number(y.current) - Number(x.current) || y.total - x.total || y.hours - x.hours);
 }
 
+/** CRM partners with a location, and the nearest one to a point within maxKm. */
+async function partnerFinder() {
+  const db = await getDb();
+  const [facs] = db ? ((await db.execute(sql`SELECT id, name, latitude, longitude FROM facilities WHERE latitude IS NOT NULL AND longitude IS NOT NULL`)) as any) : [[]];
+  const partners = (facs as any[]).map((f) => ({ id: Number(f.id), name: String(f.name), at: [Number(f.latitude), Number(f.longitude)] as [number, number] }));
+  const nearest = (lat: unknown, lng: unknown, maxKm: number) => {
+    const p: [number, number] = [Number(lat), Number(lng)];
+    if (!isFinite(p[0]) || !isFinite(p[1]) || (p[0] === 0 && p[1] === 0)) return null;
+    let best: { id: number; name: string; km: number } | null = null;
+    for (const f of partners) {
+      const d = km(p, f.at);
+      if (d <= maxKm && (!best || d < best.km)) best = { id: f.id, name: f.name, km: d };
+    }
+    return best ? { id: best.id, name: best.name, meters: Math.round(best.km * 1000) } : null;
+  };
+  return { partners, nearest };
+}
+
 /**
  * Timesheets from Timeero for the dates picked (from/to are Pacific days,
  * "YYYY-MM-DD"). Timeero writes clock times as the rep's local wall clock
@@ -478,18 +496,8 @@ export async function getFieldTime(from: string, to: string, member?: string) {
   const db = await getDb();
   if (!db) return { reps: [], rows: [] };
   const [rows] = (await db.execute(sql`SELECT data FROM timeero_records WHERE kind = 'timesheets' AND deleted = 0 AND data IS NOT NULL`)) as any;
-  const [facs] = (await db.execute(sql`SELECT id, name, latitude, longitude FROM facilities WHERE latitude IS NOT NULL AND longitude IS NOT NULL`)) as any;
-  const partners = (facs as any[]).map((f) => ({ id: Number(f.id), name: String(f.name), at: [Number(f.latitude), Number(f.longitude)] as [number, number] }));
-  const nearest = (lat: unknown, lng: unknown) => {
-    const p: [number, number] = [Number(lat), Number(lng)];
-    if (!isFinite(p[0]) || !isFinite(p[1]) || (p[0] === 0 && p[1] === 0)) return null;
-    let best: { id: number; name: string; km: number } | null = null;
-    for (const f of partners) {
-      const d = km(p, f.at);
-      if (d <= NEAR_KM && (!best || d < best.km)) best = { id: f.id, name: f.name, km: d };
-    }
-    return best ? { id: best.id, name: best.name, meters: Math.round(best.km * 1000) } : null;
-  };
+  const { partners, nearest: within } = await partnerFinder();
+  const nearest = (lat: unknown, lng: unknown) => within(lat, lng, NEAR_KM);
   const want = member ? member.trim().toLowerCase().split(/\s+/)[0] : null;
 
   // Timeero jobs are partner locations (a name, GPS and a geofence radius).
@@ -609,4 +617,75 @@ async function withCrmLogs(reps: ReturnType<typeof summarise>, from: string, to:
     });
   }
   return out.sort((x, y) => Number(y.current) - Number(x.current) || y.total - x.total || y.hours - x.hours);
+}
+
+const LA = "America/Los_Angeles";
+
+/**
+ * Today's shifts for the FR Field Time map (owner, 2026-09-30: "a map of who
+ * is clocked in right now and where they clocked in, plus today's shifts").
+ * Positions are the clock-in and clock-out points Timeero recorded, not live
+ * GPS. "Today" is the Pacific day, which is how Timeero writes clock_in_time.
+ * A shift still open from yesterday is kept (work past midnight, or a
+ * forgotten clock-out) so the map never hides a rep who reads as clocked in.
+ */
+export async function getFieldToday() {
+  await ensureTable();
+  const db = await getDb();
+  const now = new Date();
+  const today = formatInTimeZone(now, LA, "yyyy-MM-dd");
+  const yesterday = formatInTimeZone(new Date(now.getTime() - 86_400_000), LA, "yyyy-MM-dd");
+  const nearMeters = Math.round(NEAR_KM * 1000);
+  if (!db) return { today, asOf: now.toISOString(), nearMeters, shifts: [] };
+  // A shift clocked in since yesterday was written since then, so updatedAt
+  // narrows the scan to a handful of rows — the page polls this every minute.
+  const since = fromZonedTime(`${yesterday} 00:00:00`, LA);
+  const [rows] = (await db.execute(sql`SELECT data FROM timeero_records WHERE kind = 'timesheets' AND deleted = 0 AND data IS NOT NULL AND updatedAt >= ${since}`)) as any;
+  const { nearest } = await partnerFinder();
+  const point = (lat: unknown, lng: unknown) => {
+    const p = { lat: Number(lat), lng: Number(lng) };
+    return lat != null && lng != null && isFinite(p.lat) && isFinite(p.lng) && (p.lat !== 0 || p.lng !== 0) ? p : null;
+  };
+  const instant = (wall: string) => {
+    const d = fromZonedTime(wall, LA);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const shifts = [];
+  for (const r of rows as any[]) {
+    let t: any;
+    try { t = JSON.parse(r.data); } catch { continue; }
+    const inTime = String(t.clock_in_time ?? "").slice(0, 19);
+    const day = inTime.slice(0, 10);
+    const open = !t.clock_out_time;
+    if (day !== today && !(open && day === yesterday)) continue;
+    const raw = [t.first_name, t.last_name].filter(Boolean).join(" ").trim() || `Timeero user ${t.user_id ?? "?"}`;
+    const outTime = open ? null : String(t.clock_out_time).slice(0, 19);
+    const inAt = instant(inTime);
+    const worked = Math.max(0, toSec(t.duration) - Number(t.break_in_seconds ?? 0));
+    shifts.push({
+      id: String(t.id),
+      // Shown under the CRM's name for the rep, as in getFieldTime.
+      rep: FR_BY_FIRST.get(raw.toLowerCase().split(/\s+/)[0]) ?? raw,
+      day, open,
+      clockIn: inTime, clockInAt: inAt?.toISOString() ?? null,
+      clockOut: outTime, clockOutAt: outTime ? instant(outTime)?.toISOString() ?? null : null,
+      // Closed shifts use Timeero's worked time (breaks excluded); open ones
+      // count from clock-in to now, and the page keeps that ticking.
+      seconds: open ? (inAt ? Math.max(0, Math.round((now.getTime() - inAt.getTime()) / 1000)) : 0) : worked,
+      inPoint: point(t.clock_in_latitude, t.clock_in_longitude),
+      inAddress: t.clock_in_address ? String(t.clock_in_address) : null,
+      outPoint: open ? null : point(t.clock_out_latitude, t.clock_out_longitude),
+      outAddress: !open && t.clock_out_address ? String(t.clock_out_address) : null,
+      // The nearest partner within 1 km with its distance; the page says "at"
+      // a partner only inside the ~150 m the rest of the report uses.
+      inPartner: nearest(t.clock_in_latitude, t.clock_in_longitude, 1),
+      outPartner: open ? null : nearest(t.clock_out_latitude, t.clock_out_longitude, 1),
+      job: t.job_name ? String(t.job_name) : null,
+      task: t.task_name ? String(t.task_name) : null,
+    });
+  }
+  // Clocked-in reps first, then the latest clock-in.
+  shifts.sort((a, b) => Number(b.open) - Number(a.open) || b.clockIn.localeCompare(a.clockIn));
+  return { today, asOf: now.toISOString(), nearMeters, shifts };
 }
