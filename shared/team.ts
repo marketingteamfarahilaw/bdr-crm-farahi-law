@@ -46,3 +46,14 @@ const CURRENT = new Set(
 /** True for a member of today's team (case-insensitive, full name). */
 export const isCurrentRep = (name?: string | null) =>
   CURRENT.has(String(name ?? "").trim().toLowerCase());
+
+/**
+ * Each Field Rep's contract, as the team's FR summary sheet lists it
+ * (Youssef, 2026-09-30). Weekly hours, for FR Field Time. Update with the team.
+ */
+export const FR_CONTRACT: Readonly<Record<string, { label: string; hoursPerWeek: number }>> = {
+  "Jezel Mercado": { label: "PT (20 hrs/wk)", hoursPerWeek: 20 },
+  "Zulema Salas": { label: "PT (20 hrs/wk)", hoursPerWeek: 20 },
+  "Lupe Campos": { label: "PT (40 hrs/wk)", hoursPerWeek: 40 },
+  "Marisol Lopez": { label: "PT (40 hrs/wk)", hoursPerWeek: 40 },
+};

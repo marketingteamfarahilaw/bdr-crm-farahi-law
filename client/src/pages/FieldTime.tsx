@@ -23,6 +23,15 @@ const dayLabel = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en
 const short = (a: string | null) => (a ? a.replace(/, United States of America$/, "").replace(/, CA \d{5}$/, "") : "—");
 
 type Place = { id: number; name: string } | null;
+const days = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+const CATEGORY: Record<string, { label: string; cls: string }> = {
+  visit: { label: "Facility visit", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30" },
+  lunch: { label: "Lunch", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30" },
+  event: { label: "Marketing event", cls: "bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/30" },
+  errand: { label: "FR errand", cls: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30" },
+  investigation: { label: "Office investigation", cls: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30" },
+  field: { label: "In the field", cls: "bg-muted text-muted-foreground border-border" },
+};
 
 function Where({ partner, address, job }: { partner: Place; address: string | null; job?: string | null }) {
   if (partner) {
@@ -67,15 +76,19 @@ export default function FieldTime() {
 
   const rows = useMemo(() => (data?.rows ?? []).filter((r) => !rep || r.rep === rep), [data, rep]);
   const reps = (data?.reps ?? []).filter((r) => !rep || r.rep === rep);
-  const totals = reps.reduce((a, r) => ({ hours: a.hours + r.hours, miles: a.miles + r.miles, days: a.days + r.days, shifts: a.shifts + r.shifts, at: a.at + r.atPartners }),
-    { hours: 0, miles: 0, days: 0, shifts: 0, at: 0 });
+  const sum = (k: "fieldDays" | "errandDays" | "totalDays" | "visits" | "lunches" | "events" | "total" | "errands" | "hours" | "miles" | "shifts") =>
+    reps.reduce((a, r) => a + r[k], 0);
+  const grand = {
+    fieldDays: sum("fieldDays"), errandDays: sum("errandDays"), totalDays: sum("totalDays"), visits: sum("visits"), lunches: sum("lunches"),
+    events: sum("events"), total: sum("total"), errands: sum("errands"), hours: sum("hours"), miles: sum("miles"), shifts: sum("shifts"),
+  };
   const shown = showAll ? rows : rows.slice(0, 100);
 
   const exportCsv = () => {
     const c = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines = [
-      ["Day", "Representative", "Clock in", "Clock out", "Hours", "Miles", "Started at", "Ended at", "Job", "Notes", "Flagged"].join(","),
-      ...rows.map((r) => [r.day, c(r.rep), clock(r.clockIn), r.open ? "still in" : clock(r.clockOut), (r.seconds / 3600).toFixed(2), r.miles,
+      ["Day", "Representative", "Counted as", "Clock in", "Clock out", "Hours", "Miles", "Started at", "Ended at", "Job", "Notes", "Flagged"].join(","),
+      ...rows.map((r) => [r.day, c(r.rep), c(CATEGORY[r.category].label), clock(r.clockIn), r.open ? "still in" : clock(r.clockOut), (r.seconds / 3600).toFixed(2), r.miles,
         c(r.jobPartner?.name ?? r.inPartner?.name ?? r.inAddress), c(r.outPartner?.name ?? r.outAddress), c(r.job), c(r.notes), r.flagged ? "yes" : ""].join(",")),
     ];
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
@@ -129,99 +142,133 @@ export default function FieldTime() {
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <Stat icon={Clock} label="Hours worked" value={totals.hours.toFixed(1)} sub={totals.days ? `${(totals.hours / totals.days).toFixed(1)} h per working day` : undefined} />
-            <Stat icon={CalendarDays} label="Working days" value={String(totals.days)} sub={`${totals.shifts} shift${totals.shifts === 1 ? "" : "s"}`} />
-            <Stat icon={Car} label="Miles driven" value={totals.miles.toLocaleString("en-US")} />
-            <Stat icon={Building2} label="Shifts at a partner" value={`${totals.at} of ${totals.shifts}`} sub="GPS near a CRM partner, or a Timeero job" />
-            <Stat icon={Users} label="Field Reps" value={String(reps.length)} />
+            <Stat icon={CalendarDays} label="Field days" value={days(grand.fieldDays)} sub={grand.errandDays ? `+ ${days(grand.errandDays)} errand days` : undefined} />
+            <Stat icon={Building2} label="Facility visits" value={String(grand.visits)} sub={`${grand.total} with lunches & events`} />
+            <Stat icon={Users} label="Average visits / day" value={grand.fieldDays ? (grand.total / grand.fieldDays).toFixed(1) : "—"} />
+            <Stat icon={Clock} label="Hours worked" value={grand.hours.toFixed(1)} sub={`${grand.shifts} shift${grand.shifts === 1 ? "" : "s"}`} />
+            <Stat icon={Car} label="Miles driven" value={grand.miles.toLocaleString("en-US")} />
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] gap-5 items-start">
-            {/* By representative */}
-            <Card className="bg-card border-border overflow-hidden">
-              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Users className="w-4 h-4" /> By representative</CardTitle></CardHeader>
-              {!data.reps.length ? <CardContent className="text-sm text-muted-foreground">No Timeero shifts in these dates.</CardContent> : (
+          {/* The team's FR summary sheet, column for column */}
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Users className="w-4 h-4" /> FR summary <span className="text-xs font-normal text-muted-foreground">· click a rep to see their shifts</span></CardTitle></CardHeader>
+            {!data.reps.length ? <CardContent className="text-sm text-muted-foreground">No Timeero shifts in these dates.</CardContent> : (
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                      <th className="text-left px-3 py-2 font-medium">Representative</th>
-                      <th className="text-right px-3 py-2 font-medium">Days</th>
-                      <th className="text-right px-3 py-2 font-medium">Hours</th>
-                      <th className="text-right px-3 py-2 font-medium">/ day</th>
-                      <th className="text-right px-3 py-2 font-medium">Miles</th>
+                    <tr className="border-b border-border bg-sky-500/10 text-xs text-foreground">
+                      <th className="text-left px-3 py-2 font-semibold">FR Name</th>
+                      <th className="text-right px-3 py-2 font-semibold">Field Days</th>
+                      <th className="text-right px-3 py-2 font-semibold">FR Errands</th>
+                      <th className="text-right px-3 py-2 font-semibold" title="Field days + errand days">Total Field Days inc. FR Errands</th>
+                      <th className="text-right px-3 py-2 font-semibold">Facility Visit</th>
+                      <th className="text-right px-3 py-2 font-semibold">Offsite/ Onsite Lunch</th>
+                      <th className="text-right px-3 py-2 font-semibold">Marketing Events</th>
+                      <th className="text-right px-3 py-2 font-semibold">Total</th>
+                      <th className="text-right px-3 py-2 font-semibold">Office Investigations/ FR Errands</th>
+                      <th className="text-right px-3 py-2 font-semibold bg-yellow-300/40" title="Total ÷ field days">Average Facility Visit/Day</th>
+                      <th className="text-right px-3 py-2 font-semibold">Hours</th>
+                      <th className="text-left px-3 py-2 font-semibold bg-yellow-300/40">Contract</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.reps.map((r) => (
                       <tr key={r.rep} onClick={() => set({ rep: rep === r.rep ? null : r.rep })}
-                        className={`border-b border-border/50 cursor-pointer transition-colors ${rep === r.rep ? "bg-primary/10" : "hover:bg-muted/20"}`}
+                        className={`border-b border-border/50 cursor-pointer transition-colors ${rep === r.rep ? "bg-primary/10" : "hover:bg-muted/20"} ${r.current ? "" : "opacity-60"}`}
                         title={rep === r.rep ? "Show every rep" : "Show only this rep's shifts"}>
-                        <td className="px-3 py-2 font-medium text-foreground">{r.rep}{r.flagged ? <span className="ml-1.5 text-[10px] text-destructive">{r.flagged} flagged</span> : null}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{r.days}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.hours.toFixed(1)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{r.avgHoursPerDay.toFixed(1)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{r.miles.toLocaleString("en-US")}</td>
+                        <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">{r.rep}{r.current ? null : <span className="ml-1.5 text-[10px] text-muted-foreground">not on the team</span>}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">{days(r.fieldDays)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-blue-600 dark:text-blue-400">{days(r.errandDays)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">{days(r.totalDays)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.visits}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{r.lunches}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{r.events}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">{r.total}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.errands}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400 bg-yellow-300/10">{r.fieldDays ? Math.round(r.avgPerDay) : "—"}</td>
+                        <td className="px-3 py-2 text-right tabular-nums" title={r.contractHours ? `Contract: ${r.contractHours} h/week` : undefined}>{r.hours.toFixed(1)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap bg-yellow-300/10">{r.contract ?? "—"}</td>
                       </tr>
                     ))}
+                    <tr className="bg-emerald-600 text-white font-bold">
+                      <td className="px-3 py-2">Grand Total</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{days(grand.fieldDays)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{days(grand.errandDays)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{days(grand.totalDays)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{grand.visits}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{grand.lunches}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{grand.events}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{grand.total}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{grand.errands}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{grand.fieldDays ? Math.round(grand.total / grand.fieldDays) : "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{grand.hours.toFixed(1)}</td>
+                      <td className="px-3 py-2" />
+                    </tr>
                   </tbody>
                 </table>
-              )}
-            </Card>
+              </div>
+            )}
+          </Card>
 
-            {/* Shifts */}
-            <Card className="bg-card border-border overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><Clock className="w-4 h-4" /> Shifts <span className="text-xs font-normal text-muted-foreground">· {rows.length} · newest first</span></CardTitle>
-              </CardHeader>
-              {!rows.length ? <CardContent className="text-sm text-muted-foreground">No shifts.</CardContent> : (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-border bg-muted/30 text-muted-foreground">
-                          <th className="text-left px-3 py-2 font-medium whitespace-nowrap">Day</th>
-                          <th className="text-left px-3 py-2 font-medium">Rep</th>
-                          <th className="text-left px-3 py-2 font-medium whitespace-nowrap">In – Out</th>
-                          <th className="text-right px-3 py-2 font-medium">Worked</th>
-                          <th className="text-right px-3 py-2 font-medium">Miles</th>
-                          <th className="text-left px-3 py-2 font-medium">Started at</th>
-                          <th className="text-left px-3 py-2 font-medium">Ended at</th>
-                          <th className="text-left px-3 py-2 font-medium">Notes</th>
+          {/* Shifts */}
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><Clock className="w-4 h-4" /> Shifts <span className="text-xs font-normal text-muted-foreground">· {rows.length}{rep ? ` · ${rep}` : ""} · newest first</span></CardTitle>
+            </CardHeader>
+            {!rows.length ? <CardContent className="text-sm text-muted-foreground">No shifts.</CardContent> : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30 text-muted-foreground">
+                        <th className="text-left px-3 py-2 font-medium whitespace-nowrap">Day</th>
+                        <th className="text-left px-3 py-2 font-medium">Rep</th>
+                        <th className="text-left px-3 py-2 font-medium">Counted as</th>
+                        <th className="text-left px-3 py-2 font-medium whitespace-nowrap">In – Out</th>
+                        <th className="text-right px-3 py-2 font-medium">Worked</th>
+                        <th className="text-right px-3 py-2 font-medium">Miles</th>
+                        <th className="text-left px-3 py-2 font-medium">Started at</th>
+                        <th className="text-left px-3 py-2 font-medium">Ended at</th>
+                        <th className="text-left px-3 py-2 font-medium">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shown.map((r) => (
+                        <tr key={r.id} className="border-b border-border/50 hover:bg-muted/20 align-top">
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{dayLabel(r.day)}</td>
+                          <td className="px-3 py-2 whitespace-nowrap font-medium text-foreground">{r.rep}</td>
+                          <td className="px-3 py-2 whitespace-nowrap" title={r.task ? `Timeero task: ${r.task}` : undefined}>
+                            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${CATEGORY[r.category].cls}`}>{CATEGORY[r.category].label}</span>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+                            {clock(r.clockIn)} – {r.open ? <span className="text-amber-600 dark:text-amber-400 font-medium">still in</span> : clock(r.clockOut)}
+                          </td>
+                          <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums font-semibold">{hm(r.seconds)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{r.miles ? r.miles.toFixed(1) : "—"}</td>
+                          <td className="px-3 py-2"><Where partner={r.jobPartner ?? r.inPartner} address={r.inAddress} job={r.job} /></td>
+                          <td className="px-3 py-2"><Where partner={r.outPartner} address={r.outAddress} /></td>
+                          <td className="px-3 py-2 min-w-[180px] max-w-[320px] text-muted-foreground">
+                            {r.flagged && <span className="inline-flex items-center gap-1 mr-1 text-destructive font-medium"><AlertTriangle className="w-3 h-3" /> flagged</span>}
+                            <span className="line-clamp-2" title={r.notes ?? undefined}>{r.notes ?? ""}</span>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {shown.map((r) => (
-                          <tr key={r.id} className="border-b border-border/50 hover:bg-muted/20 align-top">
-                            <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{dayLabel(r.day)}</td>
-                            <td className="px-3 py-2 whitespace-nowrap font-medium text-foreground">{r.rep}</td>
-                            <td className="px-3 py-2 whitespace-nowrap tabular-nums">
-                              {clock(r.clockIn)} – {r.open ? <span className="text-amber-600 dark:text-amber-400 font-medium">still in</span> : clock(r.clockOut)}
-                            </td>
-                            <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums font-semibold">{hm(r.seconds)}</td>
-                            <td className="px-3 py-2 text-right tabular-nums">{r.miles ? r.miles.toFixed(1) : "—"}</td>
-                            <td className="px-3 py-2"><Where partner={r.jobPartner ?? r.inPartner} address={r.inAddress} job={r.job} /></td>
-                            <td className="px-3 py-2"><Where partner={r.outPartner} address={r.outAddress} /></td>
-                            <td className="px-3 py-2 min-w-[180px] max-w-[320px] text-muted-foreground">
-                              {r.flagged && <span className="inline-flex items-center gap-1 mr-1 text-destructive font-medium"><AlertTriangle className="w-3 h-3" /> flagged</span>}
-                              <span className="line-clamp-2" title={r.notes ?? undefined}>{r.notes ?? ""}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {rows.length > shown.length && (
+                  <div className="p-3 flex justify-center border-t border-border">
+                    <Button variant="outline" size="sm" onClick={() => setShowAll(true)}>Show all {rows.length} shifts</Button>
                   </div>
-                  {rows.length > shown.length && (
-                    <div className="p-3 flex justify-center border-t border-border">
-                      <Button variant="outline" size="sm" onClick={() => setShowAll(true)}>Show all {rows.length} shifts</Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </Card>
-          </div>
+                )}
+              </>
+            )}
+          </Card>
           <p className="text-xs text-muted-foreground">
-            From Timeero timesheets, updated live as reps clock in and out. Hours exclude breaks. "Started at" / "Ended at" show the CRM
-            partner when the clock-in or clock-out was within about 150 m of one (or the shift was clocked to a Timeero job), otherwise Timeero's address.
+            From Timeero, updated live as reps clock in and out. A facility visit is a clock-in to a Timeero job (a partner), once per partner per day;
+            lunches, marketing events, errands and office investigations come from the task picked at clock-in. A day counts as a field day or an
+            errand day by where most of its hours went, and as ½ when under 4 hours were worked. Hours exclude breaks. "Started at" / "Ended at"
+            show the CRM partner within about 150 m, otherwise Timeero's address.
           </p>
         </>
       )}

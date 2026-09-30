@@ -23,6 +23,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 import { sql } from "drizzle-orm";
 import { getDb, getSetting, setSetting } from "./db";
 import { decryptKey, encryptKey } from "./_core/claude";
+import { CURRENT_TEAM, FR_CONTRACT } from "@shared/team";
 
 const BASE = "https://api.timeero.app/api/public";
 const KEY_SETTING = "timeero_api_key_enc";
@@ -405,6 +406,64 @@ const km = (a: [number, number], b: [number, number]) => {
   return 2 * R * Math.asin(Math.sqrt(h));
 };
 const NEAR_KM = 0.15;   // a clock-in within ~150 m of a partner is at that partner
+const FR_BY_FIRST = new Map(CURRENT_TEAM.FR.map((n) => [n.toLowerCase().split(/\s+/)[0], n] as const));
+
+/**
+ * What a shift was, from the Timeero task the rep picked (Youssef,
+ * 2026-09-30: lunches, marketing events, errands and office investigations
+ * are tasks; a clock-in to a job — a partner — is a facility visit).
+ */
+type Category = "visit" | "lunch" | "event" | "errand" | "investigation" | "field";
+export function categoryOf(task: unknown, hasJob: boolean): Category {
+  const t = String(task ?? "").toLowerCase();
+  if (/lunch/.test(t)) return "lunch";
+  if (/market|event/.test(t)) return "event";
+  if (/investigat|office/.test(t)) return "investigation";
+  if (/errand/.test(t)) return "errand";
+  return hasJob ? "visit" : "field";
+}
+
+/**
+ * The FR summary sheet's row per rep. A day counts as a field day or an
+ * errand day by where most of its hours went, and as ½ when under 4 hours
+ * were worked. Visits are distinct partners per day.
+ */
+export function summarise(list: { rep: string; day: string; seconds: number; miles: number; category: Category; jobId: string | null; flagged: boolean }[]) {
+  type Acc = { rep: string; seconds: number; miles: number; shifts: number; flagged: number;
+    days: Map<string, { field: number; errand: number }>; visits: Set<string>; lunch: number; event: number; errandTasks: number };
+  const by = new Map<string, Acc>();
+  for (const r of list) {
+    const a = by.get(r.rep) ?? { rep: r.rep, seconds: 0, miles: 0, shifts: 0, flagged: 0, days: new Map(), visits: new Set(), lunch: 0, event: 0, errandTasks: 0 };
+    a.seconds += r.seconds; a.miles += r.miles; a.shifts++;
+    if (r.flagged) a.flagged++;
+    const d = a.days.get(r.day) ?? { field: 0, errand: 0 };
+    if (r.category === "errand" || r.category === "investigation") { d.errand += r.seconds; a.errandTasks++; }
+    else d.field += r.seconds;
+    a.days.set(r.day, d);
+    if (r.category === "visit") a.visits.add(`${r.day}|${r.jobId}`);
+    if (r.category === "lunch") a.lunch++;
+    if (r.category === "event") a.event++;
+    by.set(r.rep, a);
+  }
+  return Array.from(by.values()).map((a) => {
+    let fieldDays = 0, errandDays = 0;
+    for (const d of Array.from(a.days.values())) {
+      const share = d.field + d.errand < 4 * 3600 ? 0.5 : 1;
+      if (d.errand > d.field) errandDays += share; else fieldDays += share;
+    }
+    const visits = a.visits.size;
+    const total = visits + a.lunch + a.event;
+    const contract = FR_CONTRACT[a.rep] ?? null;
+    return {
+      rep: a.rep, fieldDays, errandDays, totalDays: fieldDays + errandDays,
+      visits, lunches: a.lunch, events: a.event, total, errands: a.errandTasks,
+      avgPerDay: fieldDays ? Math.round((total / fieldDays) * 10) / 10 : 0,
+      contract: contract?.label ?? null, contractHours: contract?.hoursPerWeek ?? null,
+      hours: Math.round((a.seconds / 3600) * 10) / 10, miles: Math.round(a.miles), shifts: a.shifts, flagged: a.flagged,
+      current: FR_CONTRACT[a.rep] != null || CURRENT_TEAM.FR.includes(a.rep),
+    };
+  }).sort((x, y) => Number(y.current) - Number(x.current) || y.total - x.total || y.hours - x.hours);
+}
 
 /**
  * Timesheets from Timeero for the dates picked (from/to are Pacific days,
@@ -461,7 +520,9 @@ export async function getFieldTime(from: string, to: string, member?: string) {
     const inTime = String(t.clock_in_time ?? "");
     const day = inTime.slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < from || day > to) continue;
-    const name = [t.first_name, t.last_name].filter(Boolean).join(" ").trim() || `Timeero user ${t.user_id ?? "?"}`;
+    const raw = [t.first_name, t.last_name].filter(Boolean).join(" ").trim() || `Timeero user ${t.user_id ?? "?"}`;
+    // Shown under the CRM's name for the rep ("Lupe" in Timeero → Lupe Campos).
+    const name = FR_BY_FIRST.get(raw.toLowerCase().split(/\s+/)[0]) ?? raw;
     if (want && name.toLowerCase().split(/\s+/)[0] !== want) continue;
     const worked = Math.max(0, toSec(t.duration) - Number(t.break_in_seconds ?? 0));
     list.push({
@@ -475,22 +536,13 @@ export async function getFieldTime(from: string, to: string, member?: string) {
       job: t.job_name || null, jobPartner: t.job_id ? jobPartner.get(String(t.job_id)) ?? null : null,
       notes: t.notes ? String(t.notes) : null,
       approved: !!t.approved, flagged: !!t.flagged, open: !t.clock_out_time,
+      task: t.task_name ? String(t.task_name) : null,
+      category: categoryOf(t.task_name, !!t.job_id),
+      jobId: t.job_id ? String(t.job_id) : null,
     });
   }
   list.sort((a, b) => (b.clockIn ?? "").localeCompare(a.clockIn ?? ""));
 
-  const byRep = new Map<string, { rep: string; days: Set<string>; seconds: number; miles: number; shifts: number; atPartners: number; flagged: number }>();
-  for (const r of list) {
-    const k = r.rep;
-    const s = byRep.get(k) ?? { rep: k, days: new Set(), seconds: 0, miles: 0, shifts: 0, atPartners: 0, flagged: 0 };
-    s.days.add(r.day); s.seconds += r.seconds; s.miles += r.miles; s.shifts++;
-    if (r.inPartner || r.outPartner || r.jobPartner || r.job) s.atPartners++;
-    if (r.flagged) s.flagged++;
-    byRep.set(k, s);
-  }
-  const reps = Array.from(byRep.values())
-    .map((s) => ({ rep: s.rep, days: s.days.size, hours: Math.round((s.seconds / 3600) * 10) / 10, miles: Math.round(s.miles), shifts: s.shifts, atPartners: s.atPartners, flagged: s.flagged,
-      avgHoursPerDay: s.days.size ? Math.round((s.seconds / 3600 / s.days.size) * 10) / 10 : 0 }))
-    .sort((a, b) => b.hours - a.hours);
+  const reps = summarise(list);
   return { reps, rows: list };
 }
