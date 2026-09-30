@@ -21,9 +21,10 @@
  * so it can be fixed in the sheet rather than silently vanish.
  */
 import { formatInTimeZone } from "date-fns-tz";
-import { getDb, getSetting } from "./db";
+import { getDb, getSetting, ensureReferralTrackerSchema } from "./db";
 import { bdrExpenses, fieldVisits, frErrands, frExpenses, inboundLeads, referralRewards, referralTracker } from "../drizzle/schema";
 import { CURRENT_TEAM, type TeamRole } from "@shared/team";
+import { referralStatus as currentReferralStatus } from "@shared/referralTracker";
 
 const TZ = "America/Los_Angeles";
 const day = (d: Date | string | null | undefined) => (d ? formatInTimeZone(new Date(d), TZ, "yyyy-MM-dd") : null);
@@ -83,6 +84,8 @@ export type AdminRange = { from: string; to: string } | null;
 export async function getAdminOverview(range: AdminRange) {
   const db = await getDb();
   if (!db) return null;
+  // select() below names the tracker's runtime-added column.
+  await ensureReferralTrackerSchema();
   const [visits, frExp, bdrExp, rewards, errands, trackers, inbound] = await Promise.all([
     db.select().from(fieldVisits),
     db.select().from(frExpenses),
@@ -169,12 +172,13 @@ export async function getAdminOverview(range: AdminRange) {
     // The tracker has months, not days: its "latest" is a month ("2026-03").
     const m0 = monthKey(r.month), m = m0 && sane(`${m0}-01`) ? m0 : null; seen("referrals", m);
     if (!inMonth(m)) continue;
-    const ok = r.status === "Successful Sent";
+    const status = currentReferralStatus(r.status);   // sheet-era values read as today's four
+    const ok = status === "Successful";
     const t = rep(r.bdrAssigned);
     k.referrals++; if (ok) k.referralsSuccessful++;
     const mm = month(m && `${m}-01`); mm.referrals++; if (ok) mm.referralsSuccessful++;
     t.referrals++; if (ok) t.referralsSuccessful++;
-    referralStatus.set(r.status, (referralStatus.get(r.status) ?? 0) + 1);
+    referralStatus.set(status, (referralStatus.get(status) ?? 0) + 1);
   }
   for (const l of inbound) if (inDay(day(l.dateReceived))) k.leadsFromPartners++;
 

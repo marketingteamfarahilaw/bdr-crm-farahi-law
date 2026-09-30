@@ -1,7 +1,8 @@
 /**
  * Rebuild the BDR/FR operational tables from the Centralized BDR/FR Reports
- * workbook: FR + BDR expenses, referral rewards, the referral-friendly tracker,
- * FR errands and field visits.
+ * workbook: FR + BDR expenses, referral rewards, FR errands and field visits.
+ * The referral-friendly tab feeds only the Partner Referral Tracker now; the
+ * Referral-Friendly List itself lives in the CRM (see referral_tracker below).
  *
  * Each importer clears only its own table, so it is safe to re-run.
  *
@@ -219,7 +220,7 @@ const sum = (a) => a.reduce((t, x) => t + (x.amount || 0), 0).toFixed(2);
 console.log("FR expenses      : " + frExpenses.length + " rows  ($" + sum(frExpenses) + ")");
 console.log("BDR expenses     : " + bdrExpenses.length + " rows  ($" + sum(bdrExpenses) + ")");
 console.log("Referral rewards : " + rewards.length + " rows");
-console.log("Referral tracker : " + tracker.length + " rows");
+console.log("Referral tracker : " + tracker.length + " rows (Partner Referral Tracker only — referral_tracker is not touched)");
 console.log("FR errands       : " + errands.length + " rows");
 console.log("Field visits     : " + visits.length + " rows");
 
@@ -258,12 +259,12 @@ await load("referral_rewards", rewards, (r) => [
   "INSERT INTO referral_rewards (agentName, sud, referralType, facilityId, facilityName, clientName, clientTier, payoutAmount, status, caseNumber, coordinator, deliveryType, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())",
   [clamp(r.agent, 255), clamp(r.sud, 100), r.refType, facId(r.facility, ""), clamp(r.facility, 255), clamp(r.client || "(unknown)", 255), r.tier, r.payout, r.status, clamp(r.caseNumber, 100), clamp(r.coordinator, 255), clamp(r.delivery, 100), text(r.notes)]]);
 
-// createdAt is the referral's own date, not the import time: the tracker's
-// year and date filters read it.
-await load("referral_tracker", tracker, (t) => [
-  "INSERT INTO referral_tracker (month, clientName, pdCoordinator, partnerStatus, facilityId, facilityName, facilityType, bdrAssigned, status, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW())",
-  [clamp(t.month, 20), clamp(t.client, 255), clamp(t.coordinator, 255), clamp(t.partnerStatus, 100), facId(t.facility, ""), clamp(t.facility, 255), clamp(t.facilityType, 100), clamp(t.bdr, 255), t.status, text(t.notes),
-    t.sent ?? t.monthDate ?? t.sud ?? new Date()]]);
+// referral_tracker (the Referral-Friendly List) is NOT loaded from the sheet any
+// more: the CRM became its source of truth on 2026-09-30 (Youssef), and the
+// team now enters rows in the app. Wiping and re-importing it here would erase
+// that work every 8 hours, so the sync leaves the table alone — no delete, no
+// insert. The tab is still parsed above because the Partner Referral Tracker
+// block below reads it.
 
 // ─── Partner Referral Tracker (outbound_referrals) ────────────────────────────
 // The team logs the clients it refers out to partners in this sheet, so the
