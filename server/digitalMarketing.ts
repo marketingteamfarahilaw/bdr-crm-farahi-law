@@ -33,6 +33,7 @@ import { loadSpend, type SpendRow } from "./marketing/spend";
 import { accidentKeys, isSigned, targetPeriod } from "./signupsReport";
 import { classifyLead, isAcceptedCaseType } from "./signupsMonthly";
 import { ensureDigitalColumns } from "../scripts/migration/leaddocket-digital.mjs";
+import { ensureLiabilityColumns } from "../scripts/migration/leaddocket-liability.mjs";
 
 // ── pure: one lead ──
 
@@ -418,7 +419,11 @@ export function ensureDigitalReady() {
   ready ??= (async () => {
     const db = await getDb();
     if (!db) throw new Error("Database unavailable");
-    await ensureDigitalColumns(async (q) => rowsOf(await db.execute(sql.raw(q))));
+    const run = async (q: string) => rowsOf(await db.execute(sql.raw(q)));
+    // phoneKey (read here to spot the same client twice) arrives with the
+    // liability columns, which only the sync or the Intake case page added.
+    await ensureLiabilityColumns(run);
+    await ensureDigitalColumns(run);
   })().catch((e) => { ready = null; throw e; });
   return ready;
 }
