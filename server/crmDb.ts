@@ -605,17 +605,10 @@ export async function setExpenseReimbursement(kind: "FR" | "BDR", id: number, st
   else await db.update(bdrExpenses).set({ reimbursementStatus: status }).where(eq(bdrExpenses.id, id));
 }
 
-/** "+14247580000" → "(424) 758-0000"; anything else as it came. */
-function formatPhone(raw: string) {
-  const d = raw.replace(/\D/g, "");
-  const ten = d.length === 11 && d.startsWith("1") ? d.slice(1) : d;
-  return ten.length === 10 ? `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}` : raw;
-}
-
 // ── BDR Check-In matrix (replicates the MTD CHECK-IN sheet) ───────────────────
-// One row per facility called in the month (or per phone number when the call
-// never matched a facility). Each distinct DAY is a check-in column with the
-// number of calls placed that day; TOTAL sums the month.
+// One row per BDR partner called in the month — never a Field Rep's partner or
+// a number that isn't a partner in the CRM. Each distinct DAY is a check-in
+// column with the number of calls placed that day; TOTAL sums the month.
 export async function getCheckinMatrix(month: string, agentNames?: string[] | null) {
   const db = await getDb();
   if (!db) return [];
@@ -630,7 +623,7 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
   // Matched calls → facility rows
   const calls = await db.select({
     facilityId: contactLogs.facilityId, contactDate: contactLogs.contactDate, repName: contactLogs.repName,
-    facilityName: facilities.name,
+    facilityName: facilities.name, owner: facilities.assignedRepName,
   }).from(contactLogs).leftJoin(facilities, eq(contactLogs.facilityId, facilities.id))
     .where(and(eq(contactLogs.contactType, "call"), gte(contactLogs.contactDate, start), lte(contactLogs.contactDate, end)));
 
@@ -660,30 +653,38 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
     const r = rows.get(key)!;
     r.days.set(day, (r.days.get(day) ?? 0) + 1);
   };
+  // BDR check-ins are calls to BDR partners (Youssef, 2026-09-30: "just BDR
+  // facilities, no FR facilities"): a partner a Field Rep owns, and a number
+  // that isn't a partner in the CRM, stay out of this table.
+  const frFirst = new Set(CURRENT_TEAM.FR.map((n) => repFirst(n)));
+  for (const u of await db.select({ name: users.name, agentName: users.agentName }).from(users)
+    .where(inArray(users.role, ["fr_agent", "fr_manager"]))) {
+    for (const n of [u.name, u.agentName]) if (repFirst(n)) frFirst.add(repFirst(n));
+  }
+  const isFrPartner = (owner?: string | null) => frFirst.has(repFirst(owner));
   for (const c of calls) {
-    if (!c.contactDate) continue;
+    if (!c.contactDate || isFrPartner(c.owner)) continue;
     bucket(canonRep(c.repName), `f:${c.facilityId}`, c.facilityName ?? `Facility #${c.facilityId}`, c.facilityId, dayOf(c.contactDate as Date));
   }
   // A call the sync couldn't match may still be to a partner: its number was
   // added to the partner later, sits in a second phone field, or belonged to a
-  // partner since merged into another. Those join the partner's row. The rest
-  // show the name RingCentral's caller ID gave, not a bare number.
-  const partnerByPhone = new Map<string, { id: number; name: string }>();
+  // partner since merged into another. Those join the partner's row; numbers
+  // that aren't a partner at all are left out.
+  const partnerByPhone = new Map<string, { id: number; name: string; owner: string | null }>();
   if (unmatched.length) {
-    const facs = await db.select({ id: facilities.id, name: facilities.name, phone: facilities.phone, phone2: facilities.phone2, phone3: facilities.phone3, contactPhone: facilities.contactPhone }).from(facilities);
+    const facs = await db.select({ id: facilities.id, name: facilities.name, owner: facilities.assignedRepName, phone: facilities.phone, phone2: facilities.phone2, phone3: facilities.phone3, contactPhone: facilities.contactPhone }).from(facilities);
     const byId = new Map(facs.map((f) => [f.id, f]));
     for (const f of facs) for (const ph of [f.phone, f.phone2, f.phone3, f.contactPhone]) {
       const k = last10(ph);
-      if (k.length === 10 && !partnerByPhone.has(k)) partnerByPhone.set(k, { id: f.id, name: f.name });
+      if (k.length === 10 && !partnerByPhone.has(k)) partnerByPhone.set(k, { id: f.id, name: f.name, owner: f.owner });
     }
     const redirects = await db.select({ value: facilityRedirects.value, facilityId: facilityRedirects.facilityId })
       .from(facilityRedirects).where(eq(facilityRedirects.kind, "phone"));
     for (const r of redirects) {
       const k = last10(r.value), f = r.facilityId != null ? byId.get(r.facilityId) : undefined;
-      if (k.length === 10 && f && !partnerByPhone.has(k)) partnerByPhone.set(k, { id: f.id, name: f.name });
+      if (k.length === 10 && f && !partnerByPhone.has(k)) partnerByPhone.set(k, { id: f.id, name: f.name, owner: f.owner });
     }
   }
-  const looksLikeNumber = (s: string) => /^[\d\s()+.-]*$/.test(s);
   for (const u of unmatched) {
     if (!u.startTime) continue;
     const inbound = u.direction === "Inbound";
@@ -692,13 +693,7 @@ export async function getCheckinMatrix(month: string, agentNames?: string[] | nu
     if (!p) continue;
     const day = dayOf(u.startTime as Date);
     const partner = partnerByPhone.get(p);
-    if (partner) { bucket(canonRep(u.agentName), `f:${partner.id}`, partner.name, partner.id, day); continue; }
-    const shown = formatPhone(external ?? p);
-    const callerId = String((inbound ? u.fromName : u.toName) ?? "").trim();
-    const label = p.length < 10 ? `Internal extension ${p}`
-      : callerId && !looksLikeNumber(callerId) && repFirst(callerId) !== repFirst(u.agentName) ? `${callerId} · ${shown}`
-      : `Not in the CRM · ${shown}`;
-    bucket(canonRep(u.agentName), `p:${p}`, label, null, day);
+    if (partner && !isFrPartner(partner.owner)) bucket(canonRep(u.agentName), `f:${partner.id}`, partner.name, partner.id, day);
   }
 
   // Agent scoping: match rep blocks by full name or first name (case-insensitive)
