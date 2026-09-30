@@ -170,8 +170,7 @@ export default function ReferralRewards() {
           ) : !rewards || rewards.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">No referral rewards found. Adjust filters or click "Add Referral".</p>
           ) : (
-            {/* Compact: each column only as wide as it needs; a long SUD entry is cut
-                (full text on hover) instead of stretching its column. */}
+            // Compact: a long SUD entry is cut (full text on hover) instead of stretching its column.
             <Table className="text-sm [&_td]:py-1.5 [&_td]:px-2 [&_th]:py-1.5 [&_th]:px-2">
               <TableHeader>
                 <TableRow>
