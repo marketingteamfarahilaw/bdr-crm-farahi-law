@@ -3,7 +3,8 @@
  * dates picked — hours worked, miles driven, and where each shift started and
  * ended, tied to the CRM partner there when there is one. Managers only.
  * Laid out like the other desktop reports (BDR Reports, Facilities): a compact
- * header, a row of stat cards and dense tables.
+ * header, a row of stat cards and dense tables. The "Today" map on top is
+ * always today, whatever dates are picked.
  */
 import { useMemo, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { iso, presets, rangeLabel } from "./SignupsDashboard";
+import FieldTodayMap from "@/components/FieldTodayMap";
 
 const hm = (sec: number) => `${Math.floor(sec / 3600)}h ${String(Math.floor((sec % 3600) / 60)).padStart(2, "0")}m`;
 // Timeero writes the rep's wall-clock time with no zone; read it as written.
@@ -129,6 +131,9 @@ export default function FieldTime() {
           <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportCsv} disabled={!rows.length}><Download className="w-4 h-4" /> Export CSV</Button>
         </div>
       </div>
+
+      {/* Right now, whatever dates are picked below */}
+      <FieldTodayMap />
 
       {!data ? (
         isError && !isLoading ? (
