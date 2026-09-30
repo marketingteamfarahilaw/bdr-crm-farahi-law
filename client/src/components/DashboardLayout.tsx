@@ -22,13 +22,12 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import Login from "@/pages/Login";
-import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation, Handshake, Target, CalendarClock, GraduationCap, Trophy, CalendarDays, Car, ListChecks, FileText, Megaphone, Clock } from "lucide-react";
+import { Search, Bookmark, History, LogOut, PanelLeft, Scale, Building2, LayoutDashboard, Phone, BarChart3, Map, Users, UserRound, Link2, Activity, MapPin, Receipt, CreditCard, Gift, ClipboardList, Network, ArrowLeftRight, FileBarChart2, PieChart, Plus, Shield, Workflow, Sun, Moon, UtensilsCrossed, Settings, Sparkles, Inbox, PhoneCall, ScanSearch, Bot, Navigation, Handshake, Target, CalendarClock, GraduationCap, Trophy, CalendarDays, Car, ListChecks, FileText, Megaphone, Clock, ChevronDown } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { CommandPalette } from "./CommandPalette";
 import { QuickAdd } from "./QuickAdd";
-import { NotificationBell } from "./NotificationBell";
 import { useBrand, DEFAULT_LOGO, DEFAULT_MARK } from "@/hooks/useBranding";
 import { SystemAlert } from "@/components/SystemHealth";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -37,7 +36,7 @@ import { canSeeBDR, canSeeFR, canManage, canAssignRoles, canSeeIntake, isIntakeO
 type NavLevel = "all" | "bdr" | "fr" | "manage" | "super" | "intake" | "marketing";
 
 // `also`: pages that now live inside this item as a tab, so it stays highlighted there.
-const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: string; level: NavLevel; also?: string[] }[] }[] = [
+const NAV_SECTIONS: { title: string; folder?: boolean; items: { icon: any; label: string; path: string; level: NavLevel; also?: string[] }[] }[] = [
   // Intake — a separate world. Intake roles see ONLY this section (plus their
   // profile); BD/FR roles never see it. The super admin sees both sides.
   { title: "Intake — AI Case Desk", items: [
@@ -54,72 +53,36 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
   { title: "Lead Scraper", items: [
     { icon: Map, label: "Partner Map", path: "/map", level: "bdr", also: ["/search", "/saved-leads", "/saved-searches"] },
   ] },
-  { title: "Marketing", items: [
-    { icon: Megaphone, label: "Marketing Report", path: "/marketing-report", level: "marketing" },
-  ] },
   { title: "Facility Partner CRM", items: [
     // { icon: Workflow, label: "Pipeline", path: "/crm/pipeline", level: "all" },
     // Territories opens from a button on the Facilities page (Sept 2026: "it does
     // not need its own spot on the left menu").
     { icon: Building2, label: "Facilities", path: "/crm/facilities", level: "bdr", also: ["/territories"] },
-    // RingCentral is a tab in Settings and Uber Eats one in Expenses (per request,
-    // Sept 2026); their old addresses open those tabs.
-    // { icon: Car, label: "PD Car Tracker", path: "/pd-tracker", level: "bdr" },
-    { icon: PhoneCall, label: "Check-In Report", path: "/checkin-report", level: "bdr" },
-    { icon: FileBarChart2, label: "Sign-ups Report", path: "/signups-report", level: "manage" },
-    // Lead Docket leads that need an answer (a partner, "none", a duplicate) — reps see their own.
-    { icon: ListChecks, label: "Data Check", path: "/data-check", level: "all" },
-    { icon: BarChart3, label: "BDR Reports", path: "/crm/reports", level: "manage" },
-  ] },
-  // Hidden for now (per request). Pages/routes still exist — just removed from the
-  // sidebar. To restore, uncomment this section.
-  // { title: "FR/BDR Partnership", items: [
-  //   { icon: PhoneCall, label: "BDR Desk", path: "/partnership/bdr-desk", level: "bdr" },
-  //   { icon: Network, label: "Coordinated Loop", path: "/partnership/loop", level: "all" },
-  //   { icon: Target, label: "Shared Quota", path: "/partnership/quota", level: "all" },
-  //   { icon: CalendarClock, label: "Visits & Briefings", path: "/partnership/visits", level: "all" },
-  //   { icon: Handshake, label: "Team Pods", path: "/partnership/pods", level: "manage" },
-  //   { icon: GraduationCap, label: "QA Coach", path: "/partnership/qa", level: "manage" },
-  //   { icon: Trophy, label: "Leadership", path: "/partnership/leadership", level: "manage" },
-  // ] },
-  { title: "Representative Tools", items: [
-    // Daily Work, Task Board and FileVine Note hidden (per request, Sept 2026).
-    // Pages/routes still exist; uncomment to restore.
-    // { icon: LayoutDashboard, label: "Daily Work", path: "/daily-work", level: "all" },
-    // Daily Activity Log hidden too (per request, Sept 2026); /daily-log still works.
-    // { icon: CalendarDays, label: "Daily Activity Log", path: "/daily-log", level: "all" },
-    // { icon: ListChecks, label: "Task Board", path: "/tasks", level: "all" },
-    // { icon: FileText, label: "FileVine Note", path: "/filevine-note", level: "all" },
-    { icon: BarChart3, label: "Reports", path: "/reports", level: "all" },
-    { icon: FileBarChart2, label: "Team Reports", path: "/team-reports", level: "manage" },
-    { icon: Phone, label: "Call Analytics", path: "/call-analytics", level: "all" },
-    { icon: ClipboardList, label: "Call Logs", path: "/call-logs", level: "all" },
-    { icon: Sparkles, label: "Representative Performance", path: "/agent-performance", level: "all" },
-    { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
-    { icon: Clock, label: "FR Field Time", path: "/fr-field-time", level: "manage" },
-    // FR-only items hidden for now (per request) — BDR focus. Pages/routes still
-    // exist; uncomment to restore.
-    // { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },
-    // { icon: Navigation, label: "Field Mode (Mobile)", path: "/field", level: "fr" },
-    { icon: Receipt, label: "Expenses", path: "/bdr/expenses", level: "all", also: ["/crm/uber-eats"] },
-    { icon: Gift, label: "Referral Rewards", path: "/bdr/referral-rewards", level: "bdr" },
-    // { icon: ClipboardList, label: "FR Errands", path: "/bdr/fr-errands", level: "fr" },
     { icon: Network, label: "Referral-Friendly List", path: "/bdr/referral-tracker", level: "bdr" },
-    // { icon: Trophy, label: "Team Trivia", path: "/trivia", level: "all" },
   ] },
-  { title: "Partner Referrals", items: [
-    { icon: ArrowLeftRight, label: "Partner Referrals", path: "/referral/tracker", level: "manage" },
-    { icon: FileBarChart2, label: "Referral Reports", path: "/referral/reports", level: "manage" },
+  // One REPORTS folder for every reporting tool (the team's Sept 30 2026 list).
+  // Hidden from the menu then, routes kept so links and bookmarks still open:
+  // Data Check, Team Reports, Representative Performance, Referral Reports,
+  // Partner Referrals (the tracker), Call Logs (a tab of Call Analytics now).
+  { title: "Reports", folder: true, items: [
+    { icon: PhoneCall, label: "Check-In Reports", path: "/checkin-report", level: "bdr" },
+    { icon: BarChart3, label: "BDR Call Reports", path: "/crm/reports", level: "manage" },
+    { icon: FileBarChart2, label: "Sign-ups Report", path: "/signups-report", level: "manage", also: ["/signups-report/rep"] },
+    { icon: Megaphone, label: "Marketing Report", path: "/marketing-report", level: "marketing" },
+    { icon: Phone, label: "Call Analytics", path: "/call-analytics", level: "all", also: ["/call-logs"] },
+    { icon: Clock, label: "FR Field Time", path: "/fr-field-time", level: "manage" },
+    { icon: Receipt, label: "Expenses Report", path: "/bdr/expenses", level: "all", also: ["/crm/uber-eats"] },
+    { icon: Gift, label: "Referral Rewards Report", path: "/bdr/referral-rewards", level: "bdr" },
+    // { icon: ArrowLeftRight, label: "Partner Referrals Report", path: "/partner-referrals-report", level: "manage" },  // coming with its page
+    { icon: BarChart3, label: "Reports Center", path: "/reports", level: "all" },
+    // Left as is for now (pending FR visit updates).
+    { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
   ] },
-  { title: "Team & Integrations", items: [
-    { icon: Shield, label: "Team & Roles", path: "/team", level: "manage" },
-    { icon: Users, label: "Representative Zones", path: "/agents", level: "manage" },
-    // Hidden for now (per request): Filevine + PI Clients. Pages/routes still
-    // exist and the Filevine sync keeps running — uncomment to restore.
-    // { icon: UserRound, label: "PI Clients", path: "/pi-clients", level: "manage" },
-    // { icon: Link2, label: "Filevine", path: "/filevine", level: "manage" },
+  // Team & Roles and Representative Zones are tabs of Settings now; their
+  // addresses open those tabs.
+  { title: "Settings", items: [
     // Open to BDRs as well: their RingCentral connection is here now.
-    { icon: Settings, label: "Settings", path: "/settings", level: "bdr", also: ["/crm/ringcentral"] },
+    { icon: Settings, label: "Settings", path: "/settings", level: "bdr", also: ["/crm/ringcentral", "/team", "/agents"] },
   ] },
 ];
 
@@ -205,6 +168,18 @@ function DashboardLayoutContent({
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
+  // Folders (Reports) open and close; the choice is remembered on this device,
+  // and a folder always opens when the page shown is one of its items.
+  const [closedFolders, setClosedFolders] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("nav-closed-folders") || "[]"); } catch { return []; }
+  });
+  const toggleFolder = (title: string) => setClosedFolders((prev) => {
+    const next = prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title];
+    try { localStorage.setItem("nav-closed-folders", JSON.stringify(next)); } catch { /* private window */ }
+    return next;
+  });
+  const folderOpen = (title: string, items: { path: string; also?: string[] }[]) =>
+    !closedFolders.includes(title) || items.some((it) => isAt(it, location));
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const allMenuItems = ALL_NAV;
@@ -328,10 +303,16 @@ function DashboardLayoutContent({
                 <div key={section.title}>
                   <div className="h-1" />
                   <div className="px-3 pt-1 pb-3">
-                    {!isCollapsed && (
+                    {!isCollapsed && (section.folder ? (
+                      <button type="button" onClick={() => toggleFolder(section.title)} aria-expanded={folderOpen(section.title, items)}
+                        className="w-full flex items-center justify-between text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground/80 hover:text-foreground px-3.5 pt-2 pb-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg">
+                        <span>{section.title}</span>
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${folderOpen(section.title, items) ? "" : "-rotate-90"}`} />
+                      </button>
+                    ) : (
                       <p className="text-[11.5px] font-medium text-muted-foreground/70 px-3.5 pt-2 pb-1.5">{section.title}</p>
-                    )}
-                    <SidebarMenu>
+                    ))}
+                    {(isCollapsed || !section.folder || folderOpen(section.title, items)) && <SidebarMenu>
                       {items.map((item) => {
                         const isActive = isAt(item, location);
                         return (
@@ -348,7 +329,7 @@ function DashboardLayoutContent({
                           </SidebarMenuItem>
                         );
                       })}
-                    </SidebarMenu>
+                    </SidebarMenu>}
                   </div>
                 </div>
               );
@@ -356,7 +337,6 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
-            {!intakeOnly && <NotificationBell />}
             {toggleTheme && (
               <button
                 onClick={toggleTheme}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Building2, Phone, ClipboardList, ArrowLeft, Search } from "lucide-react";
+import { Building2, ClipboardList, ArrowLeft, Search } from "lucide-react";
 
 // Open from anywhere: dispatch `new CustomEvent("open-quick-add")`.
 export function QuickAdd() {
@@ -66,9 +66,7 @@ export function QuickAdd() {
             <button onClick={() => { reset(); navigate("/crm/facilities/new"); }} className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-secondary text-left transition-colors">
               <Building2 className="w-5 h-5 text-primary" /><div><div className="text-sm font-medium text-foreground">New Facility</div><div className="text-xs text-muted-foreground">Add a partner facility</div></div>
             </button>
-            <button onClick={() => setMode("call")} className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-secondary text-left transition-colors">
-              <Phone className="w-5 h-5 text-cyan-400" /><div><div className="text-sm font-medium text-foreground">Log a Call</div><div className="text-xs text-muted-foreground">Record a contact on a facility</div></div>
-            </button>
+            {/* "Log a Call" removed (the team's Sept 30 2026 list): calls come from RingCentral. */}
             <button onClick={() => setMode("task")} className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-secondary text-left transition-colors">
               <ClipboardList className="w-5 h-5 text-orange-400" /><div><div className="text-sm font-medium text-foreground">Add a Task</div><div className="text-xs text-muted-foreground">Create a follow-up on a facility</div></div>
             </button>

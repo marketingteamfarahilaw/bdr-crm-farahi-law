@@ -12,29 +12,37 @@ import { DataSyncPanel } from "@/components/DataSyncPanel";
 import { SystemHealthCard } from "@/components/SystemHealth";
 import { PageTabs } from "@/components/PageTabs";
 import RingCentralSettings from "./crm/RingCentralSettings";
+import TeamRolesPage from "./crm/TeamRoles";
+import AgentsPage from "./Agents";
 
 const RC_PATH = "/crm/ringcentral";
 
 /**
- * Settings: branding and the data sync (managers), and each rep's RingCentral
- * connection — its own menu item until Sept 2026; /crm/ringcentral opens that
- * tab (the RingCentral sign-in returns there). BDRs see only RingCentral.
+ * Settings: branding and the data sync (managers), the team's roles and
+ * representative zones (managers — their own menu items until Sept 30 2026,
+ * the team's list moved them here), and each rep's RingCentral connection.
+ * The old addresses open their tab: /team, /agents, /crm/ringcentral (the
+ * RingCentral sign-in returns there). BDRs see only RingCentral.
  */
+const TAB_PATHS = { brand: "/settings", team: "/team", zones: "/agents", rc: RC_PATH } as const;
+type SettingsTab = keyof typeof TAB_PATHS;
+
 export default function SettingsPage() {
   const { user } = useAuth();
   const [location, navigate] = useLocation();
   const isManager = canManage(user?.role);
-  const tab = !isManager || location.startsWith(RC_PATH) ? "rc" : "brand";
+  const tab: SettingsTab = !isManager || location.startsWith(RC_PATH) ? "rc"
+    : location.startsWith("/team") ? "team" : location.startsWith("/agents") ? "zones" : "brand";
   return (
     <div className="relative">
       {isManager && (
         <PageTabs
-          tabs={[["brand", "Branding & data"], ["rc", "RingCentral"]] as const}
+          tabs={[["brand", "Branding & data"], ["team", "Team & Roles"], ["zones", "Representative Zones"], ["rc", "RingCentral"]] as const}
           active={tab}
-          onChange={(k) => navigate(k === "rc" ? RC_PATH : "/settings")}
+          onChange={(k) => navigate(TAB_PATHS[k])}
         />
       )}
-      {tab === "rc" ? <RingCentralSettings /> : <BrandingSettings />}
+      {tab === "rc" ? <RingCentralSettings /> : tab === "team" ? <TeamRolesPage /> : tab === "zones" ? <AgentsPage /> : <BrandingSettings />}
     </div>
   );
 }

@@ -14,7 +14,6 @@ import FacilityProfilePage from "./pages/crm/FacilityProfile";
 import MarketingReportPage from "./pages/MarketingReport";
 import FacilityFormPage from "./pages/crm/FacilityForm";
 import ManagementDashboardPage from "./pages/crm/ManagementDashboard";
-import TeamRolesPage from "./pages/crm/TeamRoles";
 import BdrReportsPage from "./pages/crm/BdrReports";
 import PartnershipPodsPage from "./pages/partnership/Pods";
 import PartnershipQuotaPage from "./pages/partnership/Quota";
@@ -44,15 +43,13 @@ import ReferralTrackerPage from "./pages/ReferralTracker";
 import PartnerReferralTrackerPage from "./pages/PartnerReferralTracker";
 import ReferralReportsPage from "./pages/ReferralReports";
 import BdrAdminDashboardPage from "./pages/BdrAdminDashboard";
-import AgentsPage from "./pages/Agents";
 import PiClientsPage from "./pages/PiClients";
 import FilevineSettingsPage from "./pages/FilevineSettings";
 import SettingsPage from "./pages/Settings";
 import ProfilePage from "./pages/Profile";
 import ReportsCenter from "./pages/ReportsCenter";
 import TeamReports from "./pages/TeamReports";
-import CallAnalytics from "./pages/CallAnalytics";
-import CallLogs from "./pages/CallLogs";
+import CallsHub from "./pages/CallsHub";
 import AgentPerformance from "./pages/AgentPerformance";
 import FieldTime from "./pages/FieldTime";
 import RingCentralCallback from "./pages/RingCentralCallback";
@@ -131,7 +128,7 @@ function Router() {
         <Route path="/crm/facilities/:id/edit">{(p) => <FacilityFormPage key={p.id} />}</Route>
         <Route path="/crm/facilities/:id" component={FacilityProfilePage} />
         <Route path="/crm/dashboard" component={ManagementDashboardPage} />
-        <Route path="/team" component={TeamRolesPage} />
+        <Route path="/team" component={SettingsPage} />
         {/* Tabs of Settings and Expenses now (Sept 2026). */}
         <Route path="/crm/ringcentral" component={SettingsPage} />
         <Route path="/crm/uber-eats" component={ExpensesPage} />
@@ -191,7 +188,7 @@ function Router() {
         <Route path="/referral/reports" component={ReferralReportsPage} />
 
         {/* Agent Management */}
-        <Route path="/agents" component={AgentsPage} />
+        <Route path="/agents" component={SettingsPage} />
 
         {/* PI Clients */}
         <Route path="/pi-clients" component={PiClientsPage} />
@@ -210,10 +207,10 @@ function Router() {
         <Route path="/team-reports" component={TeamReports} />
 
         {/* Call Analytics */}
-        <Route path="/call-analytics" component={CallAnalytics} />
+        <Route path="/call-analytics" component={CallsHub} />
 
         {/* Call Logs */}
-        <Route path="/call-logs" component={CallLogs} />
+        <Route path="/call-logs" component={CallsHub} />
 
         {/* Agent Performance (AI review) */}
         <Route path="/agent-performance" component={AgentPerformance} />
