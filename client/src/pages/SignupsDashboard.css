@@ -732,11 +732,3 @@ table.sr-sct.rich td.l .sr-who i { font-size: 11.5px; color: var(--mute); font-s
 .rp-review-days span { flex: none; width: 56px; color: var(--mute); }
 .rp-review-days p { margin: 0; color: var(--ink2); }
 
-/* ---- FR field time (FieldTime.tsx) */
-.ft-t td { vertical-align: top; }
-.ft-partner { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--ink); text-decoration: none; }
-.ft-partner:hover { text-decoration: underline; }
-.ft-partner svg, .ft-addr svg { width: 13px; height: 13px; flex: none; }
-.ft-addr { display: inline-flex; align-items: center; gap: 5px; color: var(--mute); max-width: 260px; line-height: 1.35; }
-.ft-notes { min-width: 200px; max-width: 360px; color: var(--ink2); line-height: 1.4; }
-.ft-notes .sr-badge svg { width: 11px; height: 11px; }
