@@ -404,7 +404,7 @@ export default function Facilities() {
                     >
                       Category <SortIcon col="category" />
                     </TableHead>
-                    <TableHead className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs">Contact</TableHead>
+                    <TableHead className="w-px whitespace-nowrap pr-2 text-muted-foreground text-xs">Contact</TableHead>
                     <TableHead className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs">Location</TableHead>
                     <TableHead
                       className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
@@ -463,11 +463,11 @@ export default function Facilities() {
                         <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {CATEGORY_LABELS[facility.category] ?? facility.category}
                         </TableCell>
-                        <TableCell className="py-1.5 text-xs text-muted-foreground">
+                        <TableCell className="py-1.5 pr-2 text-xs text-muted-foreground">
                           {facility.contactName ? (
                             <div className="flex items-center gap-1">
                               <User className="w-3 h-3 flex-shrink-0" />
-                              <span className="block max-w-[140px] truncate" title={facility.contactName}>{facility.contactName}</span>
+                              <span className="block max-w-[96px] truncate" title={facility.contactName}>{facility.contactName}</span>
                             </div>
                           ) : (
                             <span className="opacity-40">—</span>
