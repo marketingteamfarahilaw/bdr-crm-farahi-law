@@ -157,6 +157,13 @@ export async function setUserRole(id: number, role: string) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   await db.update(users).set({ role: role as any }).where(eq(users.id, id));
+  // The same person can have two rows with one email (a password account plus a
+  // Google sign-in), and login picks one by its own rules (getUserByEmail). A
+  // role set on the other row did nothing: a super admin still signed in as a
+  // rep. The role follows the email, so every row of that person gets it.
+  const [row] = await db.select({ email: users.email }).from(users).where(eq(users.id, id)).limit(1);
+  const email = row?.email?.trim().toLowerCase();
+  if (email) await db.update(users).set({ role: role as any }).where(sql`LOWER(TRIM(${users.email})) = ${email}`);
 }
 
 export async function setUserPassword(id: number, passwordHash: string) {

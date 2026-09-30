@@ -159,14 +159,21 @@ export default function TeamRoles() {
                 </tr>
               </thead>
               <tbody>
-                {(users ?? []).map((u: any) => {
+                {(users ?? []).map((u: any, _i: number, all: any[]) => {
                   const r = normalizeRole(u.role);
+                  // Two rows for one person: login lands on only one of them, so say which.
+                  const key = (x: any) => String(x.email ?? "").trim().toLowerCase();
+                  const twin = !!key(u) && all.some((o) => o.id !== u.id && key(o) === key(u));
                   return (
                     <tr key={u.id} className="border-b border-border/50 hover:bg-secondary/30">
                       <td className="px-4 py-2.5 font-medium text-foreground">
                         <span className="inline-flex max-w-[200px] items-center">
                           <span className="truncate" title={u.name || undefined}>{u.name || "—"}</span>
                           {u.id === user?.id && <span className="ml-2 shrink-0 text-[10px] text-primary">(you)</span>}
+                        </span>
+                        <span className="block text-[11px] font-normal text-muted-foreground">
+                          {u.lastSignedIn ? `Last sign-in ${new Date(u.lastSignedIn).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "Never signed in"}
+                          {twin && <span className="ml-1 text-amber-600 dark:text-amber-400" title="Another account has the same email. A role change now applies to both.">· duplicate account</span>}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-xs">
