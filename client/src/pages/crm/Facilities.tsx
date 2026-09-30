@@ -374,9 +374,9 @@ export default function Facilities() {
             </div>
           ) : (
             <div className="rounded-xl border border-border overflow-x-auto">
-              {/* Each column as wide as its content (w-px on the headers), so the
-                  spare width sits after Last Visit instead of between columns. */}
-              <Table className="[&_td]:whitespace-nowrap [&_td]:px-2 [&_td]:py-1 [&_th]:px-2 [&_th]:h-8">
+              {/* As wide as its content, not the screen: a full-width table spread
+                  its spare width between every column. One line per row. */}
+              <Table className="w-auto [&_td]:whitespace-nowrap [&_td]:px-2 [&_td]:py-1 [&_th]:px-2 [&_th]:h-8">
                 <TableHeader>
                   <TableRow className="bg-card hover:bg-card border-border">
                     <TableHead className="w-10">
@@ -455,12 +455,6 @@ export default function Facilities() {
                             )}
                             <span className="font-medium text-foreground text-sm block max-w-[240px] truncate" title={facility.name}>{facility.name}</span>
                           </div>
-                          {facility.phone && (
-                            <div className="flex items-center gap-1 text-[11px] leading-tight text-muted-foreground">
-                              <Phone className="w-3 h-3" />
-                              <span>{facility.phone}</span>
-                            </div>
-                          )}
                         </TableCell>
                         <TableCell className="py-1.5 text-xs"><RepCell name={reps.bdr} /></TableCell>
                         <TableCell className="py-1.5 text-xs"><RepCell name={reps.fr} /></TableCell>
@@ -488,7 +482,7 @@ export default function Facilities() {
                           )}
                         </TableCell>
                         <TableCell className="py-1.5">
-                          <Badge className={`text-xs border ${status.color}`}>
+                          <Badge className={`text-[11px] px-1.5 py-0 border ${status.color}`}>
                             {status.label}
                           </Badge>
                         </TableCell>
@@ -500,7 +494,7 @@ export default function Facilities() {
                         <TableCell className="py-1.5 text-xs text-muted-foreground"><DaysAgoCell date={facility.lastVisitDate} /></TableCell>
                         <TableCell className="py-1.5" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-0.5">
-                            {facility.phone && <ClickToCallButton phoneNumber={facility.phone} facilityId={facility.id} />}
+                            {facility.phone && <ClickToCallButton phoneNumber={facility.phone} facilityId={facility.id} className="text-xs mr-1" />}
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Tasks" onClick={() => navigate(`/crm/facilities/${facility.id}?tab=tasks`)}><ListChecks className="w-3.5 h-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Expenses" onClick={() => navigate(`/crm/facilities/${facility.id}?tab=expenses`)}><Receipt className="w-3.5 h-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Open profile" onClick={() => navigate(`/crm/facilities/${facility.id}`)}><ArrowRight className="w-3.5 h-3.5" /></Button>
