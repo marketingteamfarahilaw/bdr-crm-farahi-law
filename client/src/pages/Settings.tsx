@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { canAssignRoles, canManage } from "@shared/permissions";
-import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock, Sparkles, CheckCircle2 } from "lucide-react";
+import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock, Sparkles, CheckCircle2, MapPin, Copy, Download, RotateCw } from "lucide-react";
 import { DEFAULT_LOGO } from "@/hooks/useBranding";
 import { DataSyncPanel } from "@/components/DataSyncPanel";
 import { SystemHealthCard } from "@/components/SystemHealth";
@@ -224,6 +224,121 @@ function ClaudeCard() {
   );
 }
 
+/**
+ * Timeero, the Field Reps' GPS time tracking (server/timeero.ts). A super admin
+ * connects the API key here, then pastes the webhook address and secret shown
+ * below into Timeero → Integrations → Public API → Configuration.
+ */
+function TimeeroCard() {
+  const utils = trpc.useUtils();
+  const status = trpc.settings.timeeroStatus.useQuery();
+  const [key, setKey] = useState("");
+  const refresh = () => utils.settings.timeeroStatus.invalidate();
+  const save = trpc.settings.saveTimeeroKey.useMutation({
+    onSuccess: (r, v) => {
+      if (!r.ok) return void toast.error(r.error);
+      if (!v.key) toast.success("Timeero disconnected.");
+      else if ("warning" in r && r.warning) toast.warning(`Key saved, but the test call failed: ${r.warning}`);
+      else toast.success("Timeero is connected — the key works.");
+      setKey("");
+      refresh();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const test = trpc.settings.testTimeero.useMutation({
+    onSuccess: (r) => (r.ok ? toast.success(`Timeero answered — ${r.users} user${r.users === 1 ? "" : "s"} on the first page.`) : toast.error(r.error)),
+    onError: (e) => toast.error(e.message),
+  });
+  const imp = trpc.settings.importTimeero.useMutation({
+    onSuccess: (r) => {
+      const n = Object.entries(r.imported).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ");
+      toast.success(n ? `Imported ${n}.` : "Nothing to import yet.");
+      if (r.errors.length) toast.error(r.errors.join(" · "));
+      refresh();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const secret = trpc.settings.newTimeeroSecret.useMutation({ onSuccess: () => { toast.success("New secret made — paste it into Timeero."); refresh(); } });
+  const s = status.data;
+  const busy = save.isPending || test.isPending || imp.isPending;
+  const url = `${window.location.origin}${s?.webhookPath ?? "/api/webhooks/timeero"}`;
+  const copy = (text: string, what: string) => navigator.clipboard.writeText(text).then(() => toast.success(`${what} copied.`), () => toast.error("Couldn't copy — select it and copy instead."));
+  const counts = Object.entries(s?.counts ?? {}).filter(([, n]) => n);
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><MapPin className="w-4 h-4" /></span>
+        <div className="text-sm font-semibold text-foreground">Timeero — FR time &amp; GPS tracking</div>
+        {s?.connected && (
+          <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Connected{s.keyTail ? ` · key ending ${s.keyTail}` : ""}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        Brings the Field Reps' Timeero clock-ins, timesheets, jobs and schedules into the CRM. Paste the API key from Timeero →
+        Integrations → Public API (Generate API key). It's stored encrypted and never shown again.
+      </p>
+      {!s?.fromServer && (
+        <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (key.trim()) save.mutate({ key: key.trim() }); }}>
+          <Input type="password" autoComplete="new-password" spellCheck={false} value={key} onChange={(e) => setKey(e.target.value)}
+            placeholder={s?.connected ? "Paste a new key to replace it" : "Timeero API key"} aria-label="Timeero API key" className="bg-card border-border max-w-sm" />
+          <Button type="submit" size="sm" className="gap-1.5" disabled={!key.trim() || busy}>
+            {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {s?.connected ? "Replace key" : "Connect"}
+          </Button>
+        </form>
+      )}
+      {s?.connected && (
+        <>
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <Button size="sm" variant="outline" className="border-border" disabled={busy} onClick={() => test.mutate()}>
+              {test.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Test
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5 border-border" disabled={busy} onClick={() => imp.mutate()}>
+              {imp.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Import history
+            </Button>
+            {!s.fromServer && (
+              <Button size="sm" variant="outline" className="gap-1.5 border-border" disabled={busy} onClick={() => save.mutate({ key: null })}>
+                <Trash2 className="w-3.5 h-3.5" /> Disconnect
+              </Button>
+            )}
+          </div>
+
+          <div className="mt-5 rounded-xl border border-border bg-secondary/30 p-4 text-xs space-y-3">
+            <div className="font-semibold text-foreground text-sm">Webhook — paste these into Timeero → Configuration</div>
+            <div>
+              <div className="text-muted-foreground mb-1">URL</div>
+              <div className="flex items-center gap-2">
+                <code className="px-2 py-1 rounded bg-card border border-border break-all">{url}</code>
+                <Button size="sm" variant="outline" className="h-7 px-2 border-border" onClick={() => copy(url, "URL")}><Copy className="w-3.5 h-3.5" /></Button>
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground mb-1">Secret key</div>
+              {s.secret ? (
+                <div className="flex items-center gap-2">
+                  <code className="px-2 py-1 rounded bg-card border border-border break-all">{s.secret}</code>
+                  <Button size="sm" variant="outline" className="h-7 px-2 border-border" onClick={() => copy(s.secret!, "Secret")}><Copy className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="outline" className="h-7 px-2 gap-1 border-border" disabled={secret.isPending} onClick={() => secret.mutate()} title="Make a new secret (then paste it into Timeero again)"><RotateCw className="w-3.5 h-3.5" /> New</Button>
+                </div>
+              ) : <span className="text-muted-foreground">Made when the key is connected.</span>}
+            </div>
+            <div className="text-muted-foreground">Events: tick <b className="text-foreground">All</b>, then press Subscribe.</div>
+            <div className="text-muted-foreground">
+              {s.webhook
+                ? <>Received {s.webhook.received}{s.webhook.rejected ? `, rejected ${s.webhook.rejected}` : ""} · last {s.webhook.lastAt ? new Date(s.webhook.lastAt).toLocaleString() : "—"}{s.webhook.lastEvent ? ` (${s.webhook.lastEvent})` : ""}{s.webhook.lastError ? <span className="text-amber-600 dark:text-amber-400"> · {s.webhook.lastError}</span> : null}</>
+                : "Nothing received from Timeero yet."}
+            </div>
+            {counts.length > 0 && <div className="text-muted-foreground">In the CRM: {counts.map(([k, n]) => `${n} ${k}`).join(" · ")}</div>}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function BrandingSettings() {
   const { user } = useAuth();
   const isManager = canManage(user?.role);
@@ -288,6 +403,7 @@ function BrandingSettings() {
       {isManager && <DataSyncPanel />}
       {canAssignRoles(user?.role) && <SystemHealthCard />}
       {canAssignRoles(user?.role) && <ClaudeCard />}
+      {canAssignRoles(user?.role) && <TimeeroCard />}
 
       {!isManager && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm mb-6">

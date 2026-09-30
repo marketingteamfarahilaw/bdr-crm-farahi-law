@@ -9,6 +9,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { registerMapsProxy } from "./mapsProxy";
 import { registerUberWebhook } from "./uberWebhook";
 import { registerGoogleAuth } from "./googleAuth";
+import { registerTimeeroWebhook } from "../timeero";
 import { registerRecordingProxy } from "./recordingProxy";
 import { registerVoiceAgentWebhook } from "./voiceAgentWebhook";
 import { appRouter } from "../routers";
@@ -71,6 +72,7 @@ async function startServer() {
   registerGoogleAuth(app);
   registerRecordingProxy(app);
   registerVoiceAgentWebhook(app);
+  registerTimeeroWebhook(app);
   // tRPC API
   app.use(
     "/api/trpc",

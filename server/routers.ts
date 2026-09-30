@@ -106,6 +106,7 @@ import { getAdminOverview } from "./adminOverview";
 import { getExpensesView } from "./expensesView";
 import { getRepActivity, getRepReview } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
+import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret } from "./timeero";
 import { getSystemHealth } from "./systemHealth";
 import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
 import { getRepPhotos } from "./repPhotos";
@@ -270,6 +271,14 @@ export const appRouter = router({
     // Claude (Anthropic) writes the AI performance review once a key is connected
     // (server/_core/claude.ts). Super admins only; the key never comes back out.
     claudeStatus: protectedProcedure.query(({ ctx }) => { superOnly(ctx); return claudeStatus(); }),
+    // Timeero (the FRs' GPS time tracking): super admin only — the status carries the webhook secret.
+    timeeroStatus: protectedProcedure.query(({ ctx }) => { superOnly(ctx); return timeeroStatus(); }),
+    saveTimeeroKey: protectedProcedure
+      .input(z.object({ key: z.string().max(400).nullable() }))
+      .mutation(({ ctx, input }) => { superOnly(ctx); return saveTimeeroKey(input.key); }),
+    testTimeero: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return testTimeero(); }),
+    importTimeero: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return importTimeero(); }),
+    newTimeeroSecret: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return newTimeeroSecret(); }),
     saveClaudeKey: protectedProcedure
       .input(z.object({ key: z.string().max(400).nullable() }))
       .mutation(({ ctx, input }) => { superOnly(ctx); return saveClaudeKey(input.key); }),
