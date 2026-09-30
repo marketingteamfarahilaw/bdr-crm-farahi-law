@@ -1205,6 +1205,13 @@ export const leaddocketLeads = mysqlTable("leaddocket_leads", {
   teamRep: varchar("teamRep", { length: 120 }),
   teamRole: varchar("teamRole", { length: 20 }),
   lastUpdate: varchar("lastUpdate", { length: 40 }),
+  // Lead Docket's "Status of Liability During Intake" and the client's phone
+  // (last ten digits), which is how the Intake case page finds its Lead Docket
+  // lead. An intake case fact: read only by the Intake side, never by the
+  // Marketing Report's BD/FR queries. Both are added at runtime if missing —
+  // scripts/migration/leaddocket-liability.mjs, with an index on phoneKey.
+  liabilityStatus: varchar("liabilityStatus", { length: 255 }),
+  phoneKey: varchar("phoneKey", { length: 10 }),
   syncedAt: timestamp("syncedAt").defaultNow().onUpdateNow().notNull(),
 });
 

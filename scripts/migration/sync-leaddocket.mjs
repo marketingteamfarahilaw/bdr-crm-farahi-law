@@ -38,6 +38,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import { creditFor, outcomeFor, str } from "./leaddocket-rules.mjs";
 import { ldInstant, pacificYmd } from "./dates.mjs";
+import { liabilityStatusFrom, phoneKey, ensureLiabilityColumns } from "./leaddocket-liability.mjs";
 
 const BASE = process.env.LEADDOCKET_BASE_URL || "https://farahi.leaddocket.com";
 const KEY = process.env.LEADDOCKET_API_KEY || "";
@@ -140,6 +141,8 @@ if (c) {
 // so it counts as unread until it is stored — the history run fills the table.
 const stored = new Set();
 if (c) {
+  // liabilityStatus / phoneKey arrived after the table did; deploys run no migrations.
+  await ensureLiabilityColumns(async (q) => (await c.query(q))[0]);
   const [m] = await c.query("SELECT leadId FROM leaddocket_leads");
   for (const r of m) stored.add(String(r.leadId));
 }
@@ -312,6 +315,11 @@ async function storeMarketing(d, row) {
     teamRep: rep ? rep.member.slice(0, 120) : null,
     teamRole: rep ? rep.role : null,
     lastUpdate: stamp(row).slice(0, 40),
+    // An intake case fact, for the Intake side's case page only — matched to
+    // its callers by phone. Leads stored before this only gain it when Lead
+    // Docket next reports a change to them.
+    liabilityStatus: cut(liabilityStatusFrom(d), 255),
+    phoneKey: phoneKey(contact.MobilePhone || contact.PhoneNumber || contact.HomePhone || contact.WorkPhone),
   };
   const cols = Object.keys(vals);
   await c.query(
