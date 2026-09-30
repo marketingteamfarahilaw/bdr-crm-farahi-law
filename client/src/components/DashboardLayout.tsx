@@ -96,7 +96,7 @@ const NAV_SECTIONS: { title: string; items: { icon: any; label: string; path: st
     { icon: ClipboardList, label: "Call Logs", path: "/call-logs", level: "all" },
     { icon: Sparkles, label: "Representative Performance", path: "/agent-performance", level: "all" },
     { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },
-    { icon: Clock, label: "FR Field Time", path: "/field-time", level: "manage" },
+    { icon: Clock, label: "FR Field Time", path: "/fr-field-time", level: "manage" },
     // FR-only items hidden for now (per request) — BDR focus. Pages/routes still
     // exist; uncomment to restore.
     // { icon: MapPin, label: "Field Visits", path: "/bdr/field-visits", level: "fr" },

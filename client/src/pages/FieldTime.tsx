@@ -67,7 +67,7 @@ export default function FieldTime() {
   const set = (patch: Record<string, string | null>) => {
     const next = new URLSearchParams(q);
     for (const [k, v] of Object.entries(patch)) (v ? next.set(k, v) : next.delete(k));
-    navigate(`/field-time?${next}`, { replace: true });
+    navigate(`/fr-field-time?${next}`, { replace: true });
   };
   const periods = presets(today);
   const active = periods.find((p) => p.from === from && p.to === to)?.label;

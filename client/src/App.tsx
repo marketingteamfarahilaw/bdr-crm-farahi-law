@@ -217,7 +217,8 @@ function Router() {
 
         {/* Agent Performance (AI review) */}
         <Route path="/agent-performance" component={AgentPerformance} />
-        <Route path="/field-time" component={FieldTime} />
+        <Route path="/fr-field-time" component={FieldTime} />
+        <Route path="/field-time">{() => <Redirect to="/fr-field-time" />}</Route>
 
         <Route path="/ringcentral-callback" component={RingCentralCallback} />
         <Route path="/404" component={NotFound} />
