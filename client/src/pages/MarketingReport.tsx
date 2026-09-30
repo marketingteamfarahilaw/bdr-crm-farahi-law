@@ -10,8 +10,14 @@
  * Every clickable number hands a DrillLink to openDrill, and the one clients
  * window below shows the leads behind it. Present opens the report as a deck
  * (./marketing/Presentation), as the Sign-ups Report's Present does.
+ *
+ * Two more views sit beside it (Youssef, 2026-09-30): the digital team's
+ * "Digital MTD summary" and its "Data audit" (DigitalMarketingReport.tsx). The
+ * view, its tab and the period live in the address (?view=digital&from=…), so
+ * the period carries across views and a link opens the same report.
  */
-import { lazy, Suspense, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
@@ -45,6 +51,7 @@ import { SPEND_EDITOR_ID, SpendAccordion, SpendEditor } from "./marketing/SpendE
 import { Clients, LeadList, LoadFailed } from "./marketing/Clients";
 import { Rejected } from "./marketing/Rejected";
 import "./marketing/MarketingReport.css";
+import { DigitalView, ViewSwitch, tabOf, type DigitalTab, type PageView } from "./DigitalMarketingReport";
 
 type Out = inferRouterOutputs<AppRouter>["marketing"];
 type Data = NonNullable<Out["dashboard"]>;
@@ -86,9 +93,28 @@ export default function MarketingReport() {
   const { user } = useAuth();
   const allowed = canSeeMarketing(user?.role);
   const today = new Date();
-  // Opens on the current month, like the Sign-ups Report.
-  const [from, setFrom] = useState(iso(new Date(today.getFullYear(), today.getMonth(), 1)));
-  const [to, setTo] = useState(iso(today));
+  const search = useSearch();
+  const [, navigate] = useLocation();
+  const params = new URLSearchParams(search);
+  const day = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+  const pageView: PageView = params.get("view") === "digital" ? "digital" : params.get("view") === "audit" ? "audit" : "all";
+  const digitalTab: DigitalTab = tabOf(params.get("tab"));
+  // Opens on the current month, like the Sign-ups Report — or on the period in the address.
+  const [from, setFrom] = useState(day(params.get("from")) ?? iso(new Date(today.getFullYear(), today.getMonth(), 1)));
+  const [to, setTo] = useState(day(params.get("to")) ?? iso(today));
+  // Replace, not push: Back leaves the report instead of stepping through every click.
+  const setParams = (patch: Record<string, string | null>) => {
+    const next = new URLSearchParams(search);
+    for (const [k, v] of Object.entries(patch)) (v ? next.set(k, v) : next.delete(k));
+    const s = next.toString();
+    if (s !== search.replace(/^\?/, "")) navigate(`/marketing-report${s ? `?${s}` : ""}`, { replace: true });
+  };
+  // The period follows into the address, whichever view set it.
+  useEffect(() => {
+    if (params.get("from") !== from || params.get("to") !== to) setParams({ from, to });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to]);
+  const setView = (v: PageView) => setParams({ view: v === "all" ? null : v, tab: null });
   // Channels group Lead Docket's per-contract and per-listing sources ("Walker Advertising Contract 26").
   const [group, setGroup] = useState<Group>("channel");
   // "Digital only": the firm's own online channels (shared/marketing.ts isDigitalSource).
@@ -103,7 +129,8 @@ export default function MarketingReport() {
   const input: Input = { from, to, group, compare, digital };
   const { data, isLoading, isFetching, isPlaceholderData, isError, refetch } = trpc.marketing.dashboard.useQuery(
     input,
-    { enabled: allowed, placeholderData: (prev) => prev },
+    // Only the All marketing view shows it; the digital views read their own.
+    { enabled: allowed && pageView === "all", placeholderData: (prev) => prev },
   );
   // placeholderData keeps the last numbers on screen while a new period, grouping or comparison loads. Until the
   // new ones arrive, the labels, drills and export must describe the numbers shown — a Sep cell asked for with
@@ -156,6 +183,16 @@ export default function MarketingReport() {
     );
   }
 
+  if (pageView !== "all") {
+    return (
+      <div className="sr">
+        <DigitalView view={pageView} onView={setView} from={from} to={to}
+          onRange={(f, t) => { setFrom(f); setTo(t); setCmp(compareDefault(periods.find((p) => p.from === f && p.to === t)?.label)); }}
+          tab={digitalTab} onTab={(t) => setParams({ tab: t === "overview" ? null : t })} canSync={canManage(user?.role)} />
+      </div>
+    );
+  }
+
   // The window's note when the leads it lists reach back past what Lead Docket has loaded. A month-grid cell
   // lists only its month, so that month's first day is where it starts, not the range's.
   const cov = data?.coverage;
@@ -173,6 +210,7 @@ export default function MarketingReport() {
       <div className="sr-canvas">
         <div className="sr-inner">
           <div className="sr-top">
+            <ViewSwitch view="all" onView={setView} from={from} to={to} />
             <div className="sr-seg" role="group" aria-label="Period">
               {periods.map((p) => (
                 <button key={p.label} className={p.label === activePreset ? "on" : ""}
@@ -186,7 +224,7 @@ export default function MarketingReport() {
             <div className="sr-seg" role="group" aria-label="Which sources">
               <button className={!digital ? "on" : ""} onClick={() => setDigital(false)}>All sources</button>
               <button className={digital ? "on" : ""} onClick={() => setDigital(true)}
-                title="Google Business listings, websites and website chat, search and ads, email, online directories, social">Digital only</button>
+                title="The digital team's channels, as the Digital MTD summary counts them: Google Business Profile, the SEO websites (chat, search, email, directories) and paid ads">Digital only</button>
             </div>
             <VsControl value={cmp} onChange={setCmp} allTime={allTime} />
             <span className="sr-dates">

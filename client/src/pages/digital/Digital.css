@@ -1,0 +1,98 @@
+/*
+ * Digital Marketing Report (Marketing Report → Digital MTD summary / Data
+ * audit). Built on the Sign-ups Report's board (SignupsDashboard.css, .sr-*);
+ * these are the few extra pieces, scoped .dm-*.
+ */
+.dm { --dm-ads: #8a887f; --dm-pace: #a6a59e; --dm-leads: rgba(28, 28, 28, .16); }
+.dark .sr .dm { --dm-ads: #b5b2a8; --dm-pace: #77756d; --dm-leads: rgba(255, 255, 255, .2); }
+
+/* the view switch: All marketing | Digital MTD summary | Data audit */
+.dm-views { display: inline-flex; }
+.sr .dm-views button { font-weight: 600; }
+
+/* the team sheet, with every count a button that opens its clients */
+.sr .dm-cell {
+  border: 0; background: none; padding: 2px 6px; margin: -2px -6px; border-radius: 8px; cursor: pointer;
+  font: inherit; color: inherit; font-variant-numeric: tabular-nums;
+}
+.sr .dm-cell:hover:not(:disabled) { background: rgba(28, 28, 28, .08); text-decoration: underline; }
+.dark .sr .dm-cell:hover:not(:disabled) { background: rgba(255, 255, 255, .1); }
+.sr .dm-cell:disabled { cursor: default; }
+table.sr-sct tr.total .dm-cell:hover:not(:disabled) { background: rgba(255, 255, 255, .16); }
+table.sr-sct.dm-sct { min-width: 1040px; }
+table.sr-sct td.l small { display: block; font-size: 11px; color: var(--mute); font-weight: 400; }
+table.sr-sct tr.total td.l small { color: inherit; opacity: .75; }
+
+/* headline numbers with their change */
+.dm-bigs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.dm-big { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dm-big .sr-big .n { font-size: 56px; }
+.dm-big-sub { font: 12px/1.4 var(--ui); color: var(--mute); }
+.dm-big-sub b { color: var(--ink2); font-weight: 600; }
+
+/* KPI strip: the sheet's one-row summaries */
+.dm-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin: 8px 0 4px; }
+.dm-kpi { padding: 12px 14px; border-radius: var(--rad-s); background: rgba(255, 255, 255, .55); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.dm-kpi b { font: 300 26px/1.1 var(--disp); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.dm-kpi span { font: 12px/1.3 var(--ui); color: var(--mute); }
+.dm-kpi.hl { background: var(--char); }
+.dm-kpi.hl b, .dm-kpi.hl span { color: #fff; }
+.dark .sr .dm-kpi { background: rgba(255, 255, 255, .04); }
+.dark .sr .dm-kpi.hl b, .dark .sr .dm-kpi.hl span { color: #161613; }
+
+/* compact tables inside panels */
+table.sr-t.dm-t td { padding: 9px 12px; }
+table.sr-t.dm-t td.l b { color: var(--ink); font-weight: 600; }
+table.sr-t.dm-t tr.foot td { background: var(--char); color: #fff; font-weight: 600; }
+.dark .sr table.sr-t.dm-t tr.foot td { color: #161613; }
+table.sr-t.dm-t tr.none td { opacity: .55; }
+table.sr-t.dm-t .muted { color: var(--mute2); }
+.dm-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; margin-left: 8px; border-radius: 99px; font: 600 11px var(--ui); white-space: nowrap; vertical-align: 1px; }
+.dm-tag.warn { background: var(--sun-t); color: var(--sun-d); }
+.dm-tag.grey { background: rgba(28, 28, 28, .07); color: var(--ink2); }
+.dark .sr .dm-tag.grey { background: rgba(255, 255, 255, .08); }
+.dm-foot { margin: 8px 2px 0; font: 12px/1.5 var(--ui); color: var(--mute); }
+
+/* charts (recharts): quiet axes, the report's fonts */
+.dm-chart { width: 100%; min-width: 0; }
+.dm-chart .recharts-cartesian-axis-tick text { font: 11px var(--ui); fill: var(--mute); }
+.dm-chart .recharts-legend-item-text { font: 12px var(--ui); color: var(--ink2) !important; }
+.dm-tip { padding: 8px 10px; border-radius: 10px; background: var(--char); color: #fff; font: 500 12px/1.45 var(--ui); box-shadow: var(--lift); }
+.dark .sr .dm-tip { color: #161613; }
+.dm-tip b { display: block; margin-bottom: 2px; }
+.dm-tip i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+.dm-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.dm-grid2 > .sr-panel { margin: 0 0 16px; }
+.dm-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.dm-grid3 > .sr-panel { margin: 0 0 16px; }
+
+/* the Audit view */
+.dm-drop {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px; border-radius: var(--rad-m);
+  border: 1.5px dashed rgba(28, 28, 28, .2); background: rgba(255, 255, 255, .4);
+}
+.dm-drop.over { border-color: var(--char); background: var(--sun-t); }
+.dark .sr .dm-drop { border-color: rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .03); }
+.dm-diff-bad { color: var(--bad); font-weight: 700; }
+.dm-diff-ok { color: var(--ok); }
+.dm-names { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.dm-names ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 360px; overflow: auto; }
+.dm-names li { font: 13px/1.35 var(--ui); color: var(--ink2); padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, .55); }
+.dm-names li i { display: block; font-style: normal; font-size: 11.5px; color: var(--mute); }
+.dark .sr .dm-names li { background: rgba(255, 255, 255, .04); }
+.dm-names h3 { margin: 0; font: 600 13px var(--ui); color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.dm-srclist { display: flex; flex-wrap: wrap; gap: 6px; }
+.dm-src { display: inline-flex; gap: 6px; align-items: baseline; padding: 4px 10px; border-radius: 99px; background: rgba(28, 28, 28, .06); font: 12.5px var(--ui); color: var(--ink2); }
+.dm-src i { font-style: normal; color: var(--mute); font-size: 11.5px; }
+.dark .sr .dm-src { background: rgba(255, 255, 255, .06); }
+.dm-sub-row td { background: transparent !important; padding-top: 0 !important; }
+.dm-count-badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 6px; border-radius: 99px; background: var(--sun); color: #1c1c1c; font: 700 11px var(--ui); }
+
+@media (max-width: 1100px) {
+  .dm-grid2, .dm-grid3, .dm-names { grid-template-columns: minmax(0, 1fr); }
+  .dm-bigs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .dm-big .sr-big .n { font-size: 40px; }
+  table.sr-sct.dm-sct { min-width: 0; }
+}

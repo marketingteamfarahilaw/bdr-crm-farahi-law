@@ -24,6 +24,7 @@ import {
   type DrillScope, type ReasonKey, type ScoreBucket,
 } from "./common";
 import { reasonOf } from "./reasons";
+import { dmBucketOf, dmOutcomeOf } from "./digital";
 
 export type LeadQuery = DrillScope & {
   from: Date; to: Date;
@@ -67,7 +68,7 @@ export const EXPORT_CAP = 50_000;
 export type Triple = { outcome: string | null; status: string | null; subStatus: string | null; n: number };
 
 /** The filters that depend on where a lead ended up, which SQL can't judge the way the dashboard does. */
-export type OutcomeFilter = Pick<LeadQuery, "status" | "bucket" | "reasons" | "subStatus">;
+export type OutcomeFilter = Pick<LeadQuery, "status" | "bucket" | "reasons" | "subStatus" | "dmBucket" | "dmOutcome">;
 
 const reasonText = (subStatus: string | null) => clean(subStatus) || NO_REASON;
 
@@ -77,7 +78,7 @@ const reasonText = (subStatus: string | null) => clean(subStatus) || NO_REASON;
  * is how the Why panel asks for the leads with no reason recorded.
  */
 export function hasOutcomeFilter(q: OutcomeFilter) {
-  return (q.status ?? "all") !== "all" || !!q.bucket || !!q.reasons?.length || q.subStatus != null;
+  return (q.status ?? "all") !== "all" || !!q.bucket || !!q.reasons?.length || q.subStatus != null || !!q.dmBucket || !!q.dmOutcome;
 }
 
 /**
@@ -94,6 +95,9 @@ export function keepsTriple(t: Pick<Triple, "outcome" | "status" | "subStatus">,
   if (q.bucket && bucket !== q.bucket) return false;
   if (q.reasons?.length && !q.reasons.includes(reasonOf(bucket, t.status, t.subStatus))) return false;
   if (q.subStatus != null && keyOf(reasonText(t.subStatus)) !== keyOf(reasonText(q.subStatus))) return false;
+  // The Digital Marketing Report's columns and outcome rows, by the functions it counts with.
+  if (q.dmBucket && dmBucketOf(t.outcome, t.status) !== q.dmBucket) return false;
+  if (q.dmOutcome && dmOutcomeOf(t.outcome, t.status, t.subStatus) !== q.dmOutcome) return false;
   return true;
 }
 

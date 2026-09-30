@@ -163,7 +163,16 @@ export type DrillScope = {
   campaigns?: string[];
   /** Only the firm's digital channels (the page's "Digital only" switch). */
   digital?: boolean;
+  /** The Digital Marketing Report's team-table column (server/marketing/digital.ts). */
+  dmBucket?: "open" | "rejected" | "referredOut" | "lostNI" | "signedReferred" | "signedInHouse";
+  /** The Digital Marketing Report's GBP outcome row (server/marketing/digital.ts). */
+  dmOutcome?: "open" | "lostNI" | "rejected" | "referred" | "pendingReferral" | "referredDeclined"
+    | "referredPendingReview" | "referredReviewing" | "referredSignedUp" | "signedInHouse";
 };
 
 /** A clickable number: what the clients modal shows and asks the server for. */
-export type DrillLink = { title: string; chips?: string[]; scope: DrillScope; status?: "signed" | "all" };
+export type DrillLink = {
+  title: string; chips?: string[]; scope: DrillScope; status?: "signed" | "all";
+  /** What the leads are fixed to when the scope names it in a way the window can't word (a Digital Marketing column). */
+  fixed?: string;
+};

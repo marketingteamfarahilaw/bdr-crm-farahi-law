@@ -39,6 +39,7 @@ import mysql from "mysql2/promise";
 import { creditFor, outcomeFor, str } from "./leaddocket-rules.mjs";
 import { ldInstant, pacificYmd } from "./dates.mjs";
 import { liabilityStatusFrom, phoneKey, ensureLiabilityColumns } from "./leaddocket-liability.mjs";
+import { caseValueFrom, ensureDigitalColumns } from "./leaddocket-digital.mjs";
 
 const BASE = process.env.LEADDOCKET_BASE_URL || "https://farahi.leaddocket.com";
 const KEY = process.env.LEADDOCKET_API_KEY || "";
@@ -143,6 +144,8 @@ const stored = new Set();
 if (c) {
   // liabilityStatus / phoneKey arrived after the table did; deploys run no migrations.
   await ensureLiabilityColumns(async (q) => (await c.query(q))[0]);
+  // caseValue / incidentDate / relatedLeadIds, for the Digital Marketing Report.
+  await ensureDigitalColumns(async (q) => (await c.query(q))[0]);
   const [m] = await c.query("SELECT leadId FROM leaddocket_leads");
   for (const r of m) stored.add(String(r.leadId));
 }
@@ -320,6 +323,14 @@ async function storeMarketing(d, row) {
     // Docket next reports a change to them.
     liabilityStatus: cut(liabilityStatusFrom(d), 255),
     phoneKey: phoneKey(contact.MobilePhone || contact.PhoneNumber || contact.HomePhone || contact.WorkPhone),
+    // The Digital Marketing Report's: Lead Docket's Case Value, and the accident
+    // (its day and the leads intake linked to it) for the "Sign-up Unique Count",
+    // as store() keeps them for the team. Leads stored before this gain them when
+    // Lead Docket next reports a change to them.
+    caseValue: cut(caseValueFrom(d), 40),
+    incidentDate: pacificYmd(ldInstant(d.IncidentDate)),
+    relatedLeadIds: [...new Set((d.RelatedContacts ?? []).map((r) => String(r?.PromotedLeadId ?? "")).filter((id) => id && id !== String(d.Id)))]
+      .join(",").slice(0, 500) || null,
   };
   const cols = Object.keys(vals);
   await c.query(

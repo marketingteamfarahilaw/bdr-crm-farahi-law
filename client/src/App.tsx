@@ -158,6 +158,8 @@ function Router() {
         <Route path="/signups-report/rep/:name" component={RepProfilePage} />
         <Route path="/data-check" component={DataCheckPage} />
         <Route path="/marketing-report" component={MarketingReportPage} />
+        {/* The Digital Marketing Report is a view of the Marketing Report. */}
+        <Route path="/digital-marketing-report">{() => <Redirect to="/marketing-report?view=digital" replace />}</Route>
 
         {/* FileVine Note Generator */}
         {/* FileVine Note off for now (Sept 2026); the page is kept for later. */}

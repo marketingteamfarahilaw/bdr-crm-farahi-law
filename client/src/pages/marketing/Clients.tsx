@@ -130,7 +130,7 @@ export function ExportButton({ input, name, total }: { input: ExportInput; name:
 
 /** The clients behind a clicked number, with why the unsigned ones didn't sign. */
 export function Clients({ drill, from, to, loadingNote, onClose }: ClientsProps) {
-  const fixed = fixedLabel(drill.scope);
+  const fixed = fixedLabel(drill.scope) ?? drill.fixed ?? null;
   const [pick, setPick] = useState<"signed" | "all">(drill.status ?? "signed");
   const status = fixed ? "all" : pick;
   const box = useRef<HTMLDivElement>(null);

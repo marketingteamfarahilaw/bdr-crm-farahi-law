@@ -32,13 +32,20 @@ const NOT_PI_REASON = /not a pi case|employment law|work comp|med mal|medical ma
 /** Turned down for a quality criterion: no injuries, property damage only, no treatment, or a gap in treatment. */
 const NOT_QUALITY_REASON = /no injur|minimal pd|pd only|no treatment|gap in treatment/i;
 
+/**
+ * A personal-injury case type the firm accepts — the case-type half of
+ * "qualified". The Digital Marketing Report splits its outcomes into PI and
+ * non-PI cases by this, so both reports mean the same thing by a PI case.
+ */
+export const isAcceptedCaseType = (caseType: unknown) => QUALIFIED_TYPE.test(String(caseType ?? "").trim());
+
 export type MonthlyLead = { outcome: string | null; classification: string | null; disposition: string | null; facility: string | null };
 
 /** Where one lead lands in the summary. Sign-ups are judged by case type only: their sub-statuses are paperwork steps. */
 export function classifyLead(l: MonthlyLead) {
   const signed = isSigned(l.outcome);
   const reason = signed ? "" : String(l.disposition ?? "");
-  const qualified = QUALIFIED_TYPE.test(String(l.classification ?? "").trim()) && !NOT_PI_REASON.test(reason);
+  const qualified = isAcceptedCaseType(l.classification) && !NOT_PI_REASON.test(reason);
   const pdOnly = !signed && /^rejected\s*-\s*pd/i.test(String(l.outcome ?? ""));
   const quality = qualified && !pdOnly && !NOT_QUALITY_REASON.test(reason);
   const referral = String(l.outcome ?? "").toLowerCase().replace(/[_\s]+/g, " ").trim() === "signed referred out";

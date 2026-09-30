@@ -114,6 +114,44 @@ export function accidentKeys(leads: { id: number; externalId: string | null; rel
   return leads.map((l) => find(node(l)));
 }
 
+/**
+ * The share of the monthly targets a range carries — the Sign-ups scorecard's
+ * rule, shared with the Digital Marketing Report so both prorate alike.
+ */
+export function targetPeriod(range?: { from?: Date; to?: Date }, fallbackMonths = 1, now = new Date()) {
+  // A range that isn't whole months (This week, Last week, custom dates) gets its
+  // share of the monthly target — each day counts 1/(days in its month) — so a
+  // week is measured against about a quarter of a month, not all of it (Youssef,
+  // 2026-09-25: the team presents weekly). Whole months — from the 1st to a
+  // month's end, or to today (month-to-date, as the team's sheet does) — keep
+  // whole targets. A week that happens to start on the 1st is still a week.
+  const pacificDay = (d: Date) => formatInTimeZone(d, "America/Los_Angeles", "yyyy-MM-dd");
+  const days: string[] = [];
+  if (range?.from && range?.to) {
+    // Calendar days, counted on the calendar: stepping 24 hours at a time repeats
+    // or skips a day where daylight saving changes.
+    const [fy, fm, fd] = pacificDay(range.from).split("-").map(Number);
+    const last = pacificDay(range.to);
+    for (let i = 0; i < 20000; i++) {
+      const d = new Date(Date.UTC(fy, fm - 1, fd + i)).toISOString().slice(0, 10);
+      if (d > last) break;
+      days.push(d);
+    }
+  }
+  // Targets are per rep per month, so a range covering two months doubles them.
+  // Counted from the calendar days: stepping 24 hours from a range's start ran
+  // one step past a month's last day, so Last month counted two months.
+  const monthsInRange = days.length ? new Set(days.map((d) => d.slice(0, 7))).size : Math.max(1, fallbackMonths);
+  const daysIn = (d: string) => new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate();
+  const lastDay = days[days.length - 1];
+  // "To today" allows for a browser ahead of California (the Philippines), whose today is our tomorrow.
+  const wholeMonths = days.length > 0 && days[0].endsWith("-01")
+    && (Number(lastDay.slice(8)) === daysIn(lastDay) || lastDay >= pacificDay(now));
+  const prorated = days.length > 0 && !wholeMonths;
+  const targetMonths = prorated ? days.reduce((a, d) => a + 1 / daysIn(d), 0) : monthsInRange;
+  return { days, monthsInRange, lastDay, prorated, targetMonths };
+}
+
 export type SignupsDashboard = Awaited<ReturnType<typeof getSignupsDashboard>>;
 
 export type SignupsFilter = {
@@ -347,36 +385,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     .slice(0, 15);
 
   // ── team scorecard (FRs, BDRs, Intake — as the team's sheet lays it out) ──
-  // A range that isn't whole months (This week, Last week, custom dates) gets its
-  // share of the monthly target — each day counts 1/(days in its month) — so a
-  // week is measured against about a quarter of a month, not all of it (Youssef,
-  // 2026-09-25: the team presents weekly). Whole months — from the 1st to a
-  // month's end, or to today (month-to-date, as the team's sheet does) — keep
-  // whole targets. A week that happens to start on the 1st is still a week.
-  const pacificDay = (d: Date) => formatInTimeZone(d, "America/Los_Angeles", "yyyy-MM-dd");
-  const days: string[] = [];
-  if (range?.from && range?.to) {
-    // Calendar days, counted on the calendar: stepping 24 hours at a time repeats
-    // or skips a day where daylight saving changes.
-    const [fy, fm, fd] = pacificDay(range.from).split("-").map(Number);
-    const last = pacificDay(range.to);
-    for (let i = 0; i < 20000; i++) {
-      const d = new Date(Date.UTC(fy, fm - 1, fd + i)).toISOString().slice(0, 10);
-      if (d > last) break;
-      days.push(d);
-    }
-  }
-  // Targets are per rep per month, so a range covering two months doubles them.
-  // Counted from the calendar days: stepping 24 hours from a range's start ran
-  // one step past a month's last day, so Last month counted two months.
-  const monthsInRange = days.length ? new Set(days.map((d) => d.slice(0, 7))).size : Math.max(1, months.length);
-  const daysIn = (d: string) => new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate();
-  const lastDay = days[days.length - 1];
-  // "To today" allows for a browser ahead of California (the Philippines), whose today is our tomorrow.
-  const wholeMonths = days.length > 0 && days[0].endsWith("-01")
-    && (Number(lastDay.slice(8)) === daysIn(lastDay) || lastDay >= pacificDay(new Date()));
-  const prorated = days.length > 0 && !wholeMonths;
-  const targetMonths = prorated ? days.reduce((a, d) => a + 1 / daysIn(d), 0) : monthsInRange;
+  const { days, monthsInRange, lastDay, prorated, targetMonths } = targetPeriod(range, months.length);
   const pctOf = (a: number, b: number) => (b ? Math.round((a / b) * 10000) / 100 : null);
   // Every current rep has a row, even with no leads yet, as the team's own
   // sheet lists them (Youssef, 2026-09-28: Marisol, the new hire, at 0) — but

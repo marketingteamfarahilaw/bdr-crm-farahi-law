@@ -1212,6 +1212,13 @@ export const leaddocketLeads = mysqlTable("leaddocket_leads", {
   // scripts/migration/leaddocket-liability.mjs, with an index on phoneKey.
   liabilityStatus: varchar("liabilityStatus", { length: 255 }),
   phoneKey: varchar("phoneKey", { length: 10 }),
+  // For the Digital Marketing Report: Lead Docket's Case Value (Low / Medium /
+  // High / Rank X / Rank U), and the accident — its Pacific day and the leads
+  // intake linked to it — as lead_intake keeps them, for the "Sign-up Unique
+  // Count". Added at runtime if missing (scripts/migration/leaddocket-digital.mjs).
+  caseValue: varchar("caseValue", { length: 40 }),
+  incidentDate: varchar("incidentDate", { length: 10 }),
+  relatedLeadIds: varchar("relatedLeadIds", { length: 500 }),
   syncedAt: timestamp("syncedAt").defaultNow().onUpdateNow().notNull(),
 });
 

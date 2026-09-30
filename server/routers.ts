@@ -129,6 +129,9 @@ import { getFacilityLogos } from "./facilityLogos";
 import { getMarketingDashboard, listMarketingSpend } from "./marketingReport";
 import { REASON_KEYS, TZ as MARKETING_TZ } from "./marketing/common";
 import { getMarketingLeads, exportMarketingLeads } from "./marketing/leadFilter";
+import { DM_BUCKETS, DM_OUTCOMES } from "./marketing/digital";
+import { getDigitalMarketingReport } from "./digitalMarketing";
+import { getDigitalAudit } from "./digitalAudit";
 import { listSourceNames, setSpendOne, setSpendMany, copySpend } from "./marketing/spend";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -876,6 +879,8 @@ export const appRouter = router({
       status: z.enum(["all", "signed", "open"]).default("all"),
       search: z.string().max(100).optional(),
       digital: z.boolean().optional(),
+      dmBucket: z.enum(DM_BUCKETS).optional(),
+      dmOutcome: z.enum(DM_OUTCOMES).optional(),
     });
     // Who changed the spend, as setSpend has always recorded it.
     const byOf = (u: { name?: string | null; email?: string | null; id: unknown }) => String(u.name || u.email || `user ${u.id}`);
@@ -901,6 +906,15 @@ export const appRouter = router({
       exportLeads: marketingProcedure
         .input(leadScope)
         .query(({ ctx, input }) => exportMarketingLeads({ ...input, ...toRange(input), caseFacts: marketingCaseFacts(ctx.user.role) })),
+      // Digital Marketing Report — the digital team's MTD summary, from the same leads.
+      digital: marketingProcedure
+        .input(range)
+        .query(({ input }) => getDigitalMarketingReport({ ...toRange(input), fromDay: input.from, toDay: input.to },
+          formatInTimeZone(new Date(), MARKETING_TZ, "yyyy-MM-dd"))),
+      // Its Audit tab: leads Lead Docket may have credited to the wrong source, and source-name hygiene.
+      digitalAudit: marketingProcedure
+        .input(range.extend({ scope: z.enum(["period", "12m", "all"]).default("period") }))
+        .query(({ input }) => getDigitalAudit({ ...toRange(input), fromDay: input.from, toDay: input.to }, input.scope)),
       spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
       sourceNames: marketingProcedure.query(() => listSourceNames()),
       setSpend: spendProcedure
