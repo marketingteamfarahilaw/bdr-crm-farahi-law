@@ -251,22 +251,105 @@ export async function testTimeero(): Promise<{ ok: true; users: number } | { ok:
   }
 }
 
+// Some lists (schedules) refuse to answer without a date range ("The date range
+// field is required"), and the docs we can read don't give its format, so the
+// import tries the usual ones and remembers the one Timeero accepts.
+const RANGE_SETTING = "timeero_range_style";
+const RANGE_STYLES: Record<string, (from: string, to: string) => Record<string, unknown>> = {
+  dash: (f, t) => ({ date_range: `${f} - ${t}` }),
+  comma: (f, t) => ({ date_range: `${f},${t}` }),
+  array: (f, t) => ({ date_range: [f, t] }),
+  startEnd: (f, t) => ({ start_date: f, end_date: t }),
+  fromTo: (f, t) => ({ from: f, to: t }),
+};
+const needsRange = (e: unknown) => {
+  const r = (e as AxiosError).response;
+  return r?.status === 422 && /date.?range|start.?date|end.?date/i.test(JSON.stringify(r.data ?? ""));
+};
+
+async function rangedGet(kind: string, from: string, to: string, page: number) {
+  const known = await getSetting(RANGE_SETTING);
+  const order = known && RANGE_STYLES[known] ? [known, ...Object.keys(RANGE_STYLES).filter((k) => k !== known)] : Object.keys(RANGE_STYLES);
+  let last: unknown;
+  for (const style of order) {
+    try {
+      const body = await apiGet(`/${kind}`, { page, per_page: 100, ...RANGE_STYLES[style](from, to) });
+      if (style !== known) await setSetting(RANGE_SETTING, style);
+      return body;
+    } catch (e) {
+      last = e;
+      const st = (e as AxiosError).response?.status;
+      if (st !== 422 && st !== 400) throw e;
+    }
+  }
+  throw last;
+}
+
+/** Month by month, newest first, for the last `months` months (Pacific calendar is close enough here). */
+function monthRanges(months: number) {
+  const out: [string, string][] = [];
+  const now = new Date();
+  for (let i = 0; i < months; i++) {
+    const first = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    const last = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i + 1, 0));
+    out.push([first.toISOString().slice(0, 10), last.toISOString().slice(0, 10)]);
+  }
+  return out;
+}
+
+const lastPage = (body: any, page: number, items: any[]) => {
+  const last = body?.last_page ?? body?.meta?.last_page ?? body?.data?.last_page;
+  if (!items.length || (last && page >= Number(last))) return true;
+  const next = body?.next_page_url ?? body?.links?.next ?? body?.data?.next_page_url;
+  return next === null || (next === undefined && items.length < 100);
+};
+
 /** History before the webhook: every page of each list, kept like webhook records. */
 export async function importTimeero(): Promise<{ ok: true; imported: Record<string, number>; errors: string[] }> {
   const imported: Record<string, number> = {};
   const errors: string[] = [];
+  const seen = new Set<string>();   // the plain and dated lists overlap: count each record once
+  const keep = async (kind: string, items: any[]) => {
+    for (const it of items) {
+      const id = idOf(it);
+      if (!id) continue;
+      await upsert(kind, id, it, { updatedAt: whenOf(it) });
+      if (!seen.has(`${kind}:${id}`)) { seen.add(`${kind}:${id}`); imported[kind]++; }
+    }
+  };
   for (const kind of KINDS) {
     imported[kind] = 0;
     try {
+      let ranged = false;
       for (let page = 1; page <= 200; page++) {
-        const body = await apiGet(`/${kind}`, { page, per_page: 100 });
-        const items = itemsOf(body);
-        for (const it of items) {
-          const id = idOf(it);
-          if (id) { await upsert(kind, id, it, { updatedAt: whenOf(it) }); imported[kind]++; }
+        let body: any;
+        try {
+          body = await apiGet(`/${kind}`, { page, per_page: 100 });
+        } catch (e) {
+          if (page === 1 && needsRange(e)) { ranged = true; break; }
+          throw e;
         }
-        const last = body?.last_page ?? body?.meta?.last_page ?? body?.data?.last_page;
-        if (!items.length || (last && page >= Number(last)) || !(body?.next_page_url ?? body?.links?.next ?? body?.data?.next_page_url ?? items.length >= 100)) break;
+        const items = itemsOf(body);
+        await keep(kind, items);
+        if (lastPage(body, page, items)) break;
+      }
+      // Dated lists: the last 12 months, a month at a time. Timesheets too, as
+      // their plain list may only cover the current pay period.
+      if (ranged || kind === "timesheets") {
+        for (const [from, to] of monthRanges(12)) {
+          for (let page = 1; page <= 200; page++) {
+            let body: any;
+            try {
+              body = await rangedGet(kind, from, to, page);
+            } catch (e) {
+              if (!ranged) break;   // timesheets that take no range: the plain list above was all of it
+              throw e;
+            }
+            const items = itemsOf(body);
+            await keep(kind, items);
+            if (lastPage(body, page, items)) break;
+          }
+        }
       }
     } catch (e) {
       const status = (e as AxiosError).response?.status;
