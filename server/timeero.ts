@@ -21,6 +21,7 @@ import type { Express, Request, Response } from "express";
 import axios, { type AxiosError } from "axios";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { sql } from "drizzle-orm";
+import { fromZonedTime } from "date-fns-tz";
 import { getDb, getSetting, setSetting } from "./db";
 import { decryptKey, encryptKey } from "./_core/claude";
 import { CURRENT_TEAM, FR_CONTRACT } from "@shared/team";
@@ -543,6 +544,69 @@ export async function getFieldTime(from: string, to: string, member?: string) {
   }
   list.sort((a, b) => (b.clockIn ?? "").localeCompare(a.clockIn ?? ""));
 
-  const reps = summarise(list);
+  const reps = await withCrmLogs(summarise(list), from, to, want);
   return { reps, rows: list };
+}
+
+/**
+ * The FRs clock in once a day in Timeero without picking a job or a task
+ * (seen 2026-09-30), so visits and errands come from what they log in the
+ * CRM too — Field Mode's "Log today's visit" and the workbook's Visits and
+ * FR Errand tabs, as the team's FR summary sheet counted them. Each column
+ * takes the larger of the two sources rather than their sum, so a visit
+ * logged in both places counts once.
+ */
+async function withCrmLogs(reps: ReturnType<typeof summarise>, from: string, to: string, want: string | null) {
+  const db = await getDb();
+  if (!db) return reps;
+  // Pacific days; the stored instants are UTC.
+  const start = fromZonedTime(`${from} 00:00:00`, "America/Los_Angeles");
+  const end = fromZonedTime(`${to} 23:59:59.999`, "America/Los_Angeles");
+  const [visitRows] = (await db.execute(sql`SELECT agentName, visitDate, facilitiesVisited FROM field_visits
+    WHERE visitDate >= ${start} AND visitDate <= ${end}`)) as any;
+  const [logRows] = (await db.execute(sql`SELECT repName AS agentName, contactDate AS visitDate, facilityId FROM contact_logs
+    WHERE contactType = 'visit' AND contactDate >= ${start} AND contactDate <= ${end}`)) as any;
+  const [errandRows] = (await db.execute(sql`SELECT agentName, status FROM fr_errands
+    WHERE errandDate >= ${start} AND errandDate <= ${end}`)) as any;
+
+  const first = (n: unknown) => String(n ?? "").trim().toLowerCase().split(/\s+/)[0] ?? "";
+  const pDay = (d: unknown) => new Date(d as string).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  const crm = new Map<string, { visits: Set<string>; days: Set<string>; errands: number }>();
+  const get = (n: unknown) => {
+    const k = first(n);
+    if (!crm.has(k)) crm.set(k, { visits: new Set(), days: new Set(), errands: 0 });
+    return crm.get(k)!;
+  };
+  for (const v of visitRows as any[]) {
+    let facs: any[] = [];
+    try { facs = typeof v.facilitiesVisited === "string" ? JSON.parse(v.facilitiesVisited) : v.facilitiesVisited ?? []; } catch { /* none */ }
+    const day = pDay(v.visitDate), c = get(v.agentName);
+    c.days.add(day);
+    for (const f of Array.isArray(facs) ? facs : []) c.visits.add(`${day}|${String(f?.id ?? f?.name ?? "").toLowerCase()}`);
+  }
+  for (const v of logRows as any[]) { const day = pDay(v.visitDate), c = get(v.agentName); c.days.add(day); c.visits.add(`${day}|${v.facilityId}`); }
+  for (const e of errandRows as any[]) if (e.status !== "Not Completed") get(e.agentName).errands++;
+
+  const out = reps.map((r) => {
+    const c = crm.get(first(r.rep));
+    crm.delete(first(r.rep));
+    if (!c) return r;
+    const visits = Math.max(r.visits, c.visits.size);
+    const errands = Math.max(r.errands, c.errands);
+    const fieldDays = r.fieldDays || c.days.size;
+    const total = visits + r.lunches + r.events;
+    return { ...r, visits, errands, fieldDays, totalDays: fieldDays + r.errandDays, total, avgPerDay: fieldDays ? Math.round((total / fieldDays) * 10) / 10 : 0 };
+  });
+  // Current FRs who logged visits but never clocked in to Timeero in these dates.
+  for (const [k, c] of Array.from(crm.entries())) {
+    const rep = FR_BY_FIRST.get(k);
+    if (!rep || (want && k !== want) || (!c.visits.size && !c.errands)) continue;
+    const contract = FR_CONTRACT[rep] ?? null;
+    out.push({
+      rep, fieldDays: c.days.size, errandDays: 0, totalDays: c.days.size, visits: c.visits.size, lunches: 0, events: 0, total: c.visits.size,
+      errands: c.errands, avgPerDay: c.days.size ? Math.round((c.visits.size / c.days.size) * 10) / 10 : 0,
+      contract: contract?.label ?? null, contractHours: contract?.hoursPerWeek ?? null, hours: 0, miles: 0, shifts: 0, flagged: 0, current: true,
+    });
+  }
+  return out.sort((x, y) => Number(y.current) - Number(x.current) || y.total - x.total || y.hours - x.hours);
 }

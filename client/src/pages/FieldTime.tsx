@@ -265,8 +265,9 @@ export default function FieldTime() {
             )}
           </Card>
           <p className="text-xs text-muted-foreground">
-            From Timeero, updated live as reps clock in and out. A facility visit is a clock-in to a Timeero job (a partner), once per partner per day;
-            lunches, marketing events, errands and office investigations come from the task picked at clock-in. A day counts as a field day or an
+            Days and hours come from Timeero, updated live as reps clock in and out. Facility visits are the partners logged in the CRM
+            (Field Mode and the workbook's Visits tab) or clocked into as a Timeero job, once per partner per day; errands come from the
+            FR Errands log or Timeero tasks, and lunches and marketing events from the Timeero task picked at clock-in. A day counts as a field day or an
             errand day by where most of its hours went, and as ½ when under 4 hours were worked. Hours exclude breaks. "Started at" / "Ended at"
             show the CRM partner within about 150 m, otherwise Timeero's address.
           </p>
