@@ -323,7 +323,9 @@ export default function Facilities() {
             </div>
           ) : (
             <div className="rounded-xl border border-border overflow-x-auto">
-              <Table>
+              {/* Each column as wide as its content (w-px on the headers), so the
+                  spare width sits after Last Contact instead of between columns. */}
+              <Table className="[&_td]:whitespace-nowrap">
                 <TableHeader>
                   <TableRow className="bg-card hover:bg-card border-border">
                     <TableHead className="w-10">
@@ -332,34 +334,34 @@ export default function Facilities() {
                         onChange={(e) => setSelected(e.target.checked ? new Map(sorted.map((f) => [f.id, f] as [number, any])) : new Map())} />
                     </TableHead>
                     <TableHead
-                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("name")}
                     >
                       Facility <SortIcon col="name" />
                     </TableHead>
                     <TableHead
-                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("assignedRepName")}
                     >
                       Responsible <SortIcon col="assignedRepName" />
                     </TableHead>
                     <TableHead
-                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("category")}
                     >
                       Category <SortIcon col="category" />
                     </TableHead>
-                    <TableHead className="text-muted-foreground text-xs">Contact</TableHead>
-                    <TableHead className="text-muted-foreground text-xs">Location</TableHead>
+                    <TableHead className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs">Contact</TableHead>
+                    <TableHead className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs">Location</TableHead>
                     <TableHead
-                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("relationshipStatus")}
                     >
                       Status <SortIcon col="relationshipStatus" />
                     </TableHead>
-                    <TableHead className="text-muted-foreground text-xs text-right" title="Referrals sent to / received from this partner">Sent / Recv</TableHead>
+                    <TableHead className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs text-right" title="Referrals sent to / received from this partner">Sent / Recv</TableHead>
                     <TableHead
-                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      className="w-px whitespace-nowrap pr-5 text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("lastContact")}
                     >
                       Last Contact <SortIcon col="lastContact" />
@@ -388,7 +390,7 @@ export default function Facilities() {
                             {facility.managementFlag === 1 && (
                               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                             )}
-                            <span className="font-medium text-foreground text-sm">{facility.name}</span>
+                            <span className="font-medium text-foreground text-sm block max-w-[260px] truncate" title={facility.name}>{facility.name}</span>
                           </div>
                           {facility.phone && (
                             <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
@@ -419,7 +421,7 @@ export default function Facilities() {
                           {facility.contactName ? (
                             <div className="flex items-center gap-1">
                               <User className="w-3 h-3 flex-shrink-0" />
-                              <span>{facility.contactName}</span>
+                              <span className="block max-w-[140px] truncate" title={facility.contactName}>{facility.contactName}</span>
                             </div>
                           ) : (
                             <span className="opacity-40">—</span>
@@ -429,7 +431,7 @@ export default function Facilities() {
                           {facility.city ? (
                             <div className="flex items-center gap-1">
                               <MapPin className="w-3 h-3 flex-shrink-0" />
-                              <span>{facility.city}</span>
+                              <span className="whitespace-nowrap">{facility.city}</span>
                             </div>
                           ) : (
                             <span className="opacity-40">—</span>
