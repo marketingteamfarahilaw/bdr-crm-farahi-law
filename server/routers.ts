@@ -63,6 +63,10 @@ import {
   createReferralTracker,
   updateReferralTracker,
   deleteReferralTracker,
+  searchLeadsByName,
+  getLeadName,
+  searchFacilitiesByName,
+  getFacilityName,
   getAgentDashboardKpis,
   getAllOutboundReferrals,
   createOutboundReferral,
@@ -89,6 +93,7 @@ import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS 
 import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+import { REFERRAL_STATUSES } from "@shared/referralTracker";
 
 /** Interpret a "YYYY-MM-DDTHH:mm:ss" report-range boundary as California
  *  (Pacific) local time, returning the matching UTC instant for DB comparison. */
@@ -97,6 +102,15 @@ const laDate = (s: string) => fromZonedTime(s, "America/Los_Angeles");
  *  as the day's first instant silently dropped the last day of every period on
  *  Representative Performance, Call Analytics, Call Logs and the Reports Center. */
 const laEnd = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? laDate(`${s}T23:59:59.999`) : laDate(s));
+
+/** The Referral-Friendly List's picked day ("YYYY-MM-DD") as the row's date —
+ *  Pacific noon, as the sheet import stored its dates — and its month label
+ *  ("September 2026"), which the Admin Overview counts by. */
+const referralDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const referralDateFields = (d: string) => {
+  const at = laDate(`${d}T12:00:00`);
+  return { createdAt: at, month: formatInTimeZone(at, "America/Los_Angeles", "MMMM yyyy") };
+};
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
 import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
@@ -1373,52 +1387,79 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllReferralTracker(scopeAgentFilter(ctx, input))),
+      // The client and facility come only from the pickers: the ids are sent and
+      // the names read back here, so a row always names a real lead and facility.
       create: bdProcedure
         .input(z.object({
-          reportMonth: z.string().optional(),
-          clientName: z.string().optional(),
-          pdCoordinator: z.string().optional(),
-          partnerStatus: z.string().optional(),
-          facilityName: z.string().optional(),
-          bdrAgent: z.string().optional(),
-          status: z.enum(["Successful Sent", "Demo Sent", "Pending", "Unsuccessful", "In Progress"]).optional(),
+          referralDate: referralDay,
+          leadId: z.number().int(),
+          facilityId: z.number().int(),
+          pdCoordinator: z.string().max(255).optional(),
+          facilityType: z.string().max(100).optional(),
+          bdrAgent: z.string().max(255).optional(),
+          status: z.enum(REFERRAL_STATUSES).optional(),
           notes: z.string().optional(),
         }))
         .mutation(async ({ input }) => {
+          const [clientName, facilityName] = await Promise.all([getLeadName(input.leadId), getFacilityName(input.facilityId)]);
+          if (!clientName) throw new TRPCError({ code: "BAD_REQUEST", message: "Pick the client from the lead suggestions." });
+          if (!facilityName) throw new TRPCError({ code: "BAD_REQUEST", message: "Pick the facility from the suggestions." });
           await createReferralTracker({
-            month: input.reportMonth,
-            clientName: input.clientName ?? "",
+            ...referralDateFields(input.referralDate),
+            leadId: input.leadId,
+            clientName,
             pdCoordinator: input.pdCoordinator,
-            partnerStatus: input.partnerStatus,
-            facilityName: input.facilityName,
+            facilityId: input.facilityId,
+            facilityName,
+            facilityType: input.facilityType,
             bdrAssigned: input.bdrAgent,
             status: input.status ?? "Pending",
             notes: input.notes,
           });
           return { success: true };
         }),
+      // Sheet-era rows have no lead and maybe no facility id; they can still be
+      // edited without re-picking them, so the ids are optional here.
       update: bdProcedure
         .input(z.object({
           id: z.number(),
-          reportMonth: z.string().optional(),
-          clientName: z.string().optional(),
-          pdCoordinator: z.string().optional(),
-          partnerStatus: z.string().optional(),
-          facilityName: z.string().optional(),
-          bdrAgent: z.string().optional(),
-          status: z.enum(["Successful Sent", "Demo Sent", "Pending", "Unsuccessful", "In Progress"]).optional(),
+          referralDate: referralDay.optional(),
+          leadId: z.number().int().optional(),
+          facilityId: z.number().int().optional(),
+          pdCoordinator: z.string().max(255).optional(),
+          facilityType: z.string().max(100).optional(),
+          bdrAgent: z.string().max(255).optional(),
+          status: z.enum(REFERRAL_STATUSES).optional(),
           notes: z.string().optional(),
         }))
         .mutation(async ({ ctx, input }) => {
           mgrOnly(ctx);
-          const { id, reportMonth, bdrAgent, ...rest } = input;
+          const { id, referralDate, leadId, facilityId, bdrAgent, ...rest } = input;
+          const clientName = leadId !== undefined ? await getLeadName(leadId) : undefined;
+          if (clientName === null) throw new TRPCError({ code: "BAD_REQUEST", message: "Pick the client from the lead suggestions." });
+          const facilityName = facilityId !== undefined ? await getFacilityName(facilityId) : undefined;
+          if (facilityName === null) throw new TRPCError({ code: "BAD_REQUEST", message: "Pick the facility from the suggestions." });
           await updateReferralTracker(id, {
             ...rest,
-            ...(reportMonth !== undefined ? { month: reportMonth } : {}),
+            ...(referralDate ? referralDateFields(referralDate) : {}),
+            ...(clientName !== undefined ? { leadId, clientName } : {}),
+            ...(facilityName !== undefined ? { facilityId, facilityName } : {}),
             ...(bdrAgent !== undefined ? { bdrAssigned: bdrAgent } : {}),
           });
           return { success: true };
         }),
+      // Suggestions for the entry form's pickers: names and a hint to tell them
+      // apart, nothing more (no contact details or case facts).
+      searchLeads: bdProcedure
+        .input(z.object({ q: z.string().trim().min(2).max(100) }))
+        .query(async ({ input }) => (await searchLeadsByName(input.q, 10)).map((l) => ({
+          id: l.id,
+          name: l.name,
+          subtitle: [l.caseType?.trim(), l.leadDate ? formatInTimeZone(l.leadDate, "America/Los_Angeles", "MMM d, yyyy") : null].filter(Boolean).join(" · "),
+        }))),
+      searchFacilities: bdProcedure
+        .input(z.object({ q: z.string().trim().min(2).max(100) }))
+        .query(async ({ input }) => searchFacilitiesByName(input.q, 10)),
       delete: bdProcedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteReferralTracker(input.id); return { success: true }; }),

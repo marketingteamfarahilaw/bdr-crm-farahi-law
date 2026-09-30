@@ -1,7 +1,8 @@
-import { eq, and, or, desc, sql, gte, lte, like } from "drizzle-orm";
+import { eq, and, or, asc, desc, sql, gte, lte, like, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { createPool } from "mysql2";
-import { InsertUser, users, appSettings, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead } from "../drizzle/schema";
+import { InsertUser, users, appSettings, savedLeads, savedSearches, InsertSavedLead, InsertSavedSearch, agentZones, InsertAgentZone, piClients, InsertPiClient, filevineSettings, InsertFilevineSettings, piClientCallLogs, InsertPiClientCallLog, fieldVisits, InsertFieldVisit, frExpenses, InsertFrExpense, bdrExpenses, InsertBdrExpense, referralRewards, InsertReferralReward, frErrands, InsertFrErrand, referralTracker, InsertReferralTracker, outboundReferrals, InsertOutboundReferral, inboundLeads, InsertInboundLead, leadIntake, facilities } from "../drizzle/schema";
+import { REFERRAL_STATUS_ENUM, referralStatus, storedStatusesFor } from "@shared/referralTracker";
 import { ENV } from './_core/env';
 import { TRPCError } from "@trpc/server";
 
@@ -626,12 +627,45 @@ export async function deleteFrErrand(id: number) {
 
 // ─── Referral Tracker ─────────────────────────────────────────────────────────
 
+/**
+ * Deploys have no migration step, so the Referral-Friendly List's new column
+ * (leadId) and statuses are added here, once per process, before the table is
+ * read or written. Each change runs only when the live table lacks it, so this
+ * is safe to repeat and never drops a column or a row. ADD COLUMN IF NOT EXISTS
+ * isn't reliable on TiDB, hence the information_schema check.
+ */
+let referralTrackerReady: Promise<void> | null = null;
+export function ensureReferralTrackerSchema() {
+  referralTrackerReady ??= (async () => {
+    const db = await getDb();
+    if (!db) return;
+    const [rows] = (await db.execute(sql`SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'referral_tracker'`)) as any;
+    const cols = new Map<string, string>((rows as any[]).map((r) => [String(r.name), String(r.type)]));
+    if (!cols.size) return;   // table not visible — leave it rather than guess
+    if (!cols.has("leadId")) {
+      await db.execute(sql`ALTER TABLE referral_tracker ADD COLUMN leadId INT NULL AFTER clientName`);
+    }
+    const status = cols.get("status") ?? "";
+    // Appending enum members keeps every stored value; the old ones stay listed.
+    if (!REFERRAL_STATUS_ENUM.every((v) => status.includes(`'${v}'`))) {
+      // Written out rather than bound: DDL takes no placeholders. The values are
+      // our own constants, with no quotes in them.
+      const list = REFERRAL_STATUS_ENUM.map((v) => `'${v}'`).join(", ");
+      await db.execute(sql.raw(`ALTER TABLE referral_tracker MODIFY COLUMN status ENUM(${list}) NOT NULL DEFAULT 'Pending'`));
+    }
+  })().catch((e) => { referralTrackerReady = null; throw e; });
+  return referralTrackerReady;
+}
+
 export async function getAllReferralTracker(filters: BdrFilters = {}) {
   const db = await getDb();
   if (!db) return [];
+  await ensureReferralTrackerSchema();
   const conditions = [];
   if (filters.agent) conditions.push(agentMatches(referralTracker.bdrAssigned, filters.agent));
-  if (filters.status) conditions.push(eq(referralTracker.status, filters.status as "Successful Sent" | "Demo Sent" | "Pending" | "Unsuccessful" | "In Progress"));
+  // The filter offers the four current statuses; sheet-era rows match theirs.
+  if (filters.status) conditions.push(inArray(referralTracker.status, storedStatusesFor(referralStatus(filters.status))));
   if (filters.month) conditions.push(like(referralTracker.month, `%${filters.month}%`));
   if (filters.search) conditions.push(like(referralTracker.clientName, `%${filters.search}%`));
   if (filters.dateFrom) conditions.push(gte(referralTracker.createdAt, new Date(filters.dateFrom)));
@@ -651,12 +685,14 @@ export async function getAllReferralTracker(filters: BdrFilters = {}) {
 export async function createReferralTracker(data: InsertReferralTracker) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureReferralTrackerSchema();
   await db.insert(referralTracker).values(data);
 }
 
 export async function updateReferralTracker(id: number, data: Partial<InsertReferralTracker>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureReferralTrackerSchema();
   await db.update(referralTracker).set(data).where(eq(referralTracker.id, id));
 }
 
@@ -664,6 +700,49 @@ export async function deleteReferralTracker(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(referralTracker).where(eq(referralTracker.id, id));
+}
+
+/** "%text%" for LIKE, with the user's own % and _ matched literally. */
+const containing = (q: string) => `%${q.trim().toLowerCase().replace(/[\\%_]/g, (c) => "\\" + c)}%`;
+
+/**
+ * The team's leads (lead_intake — Lead Docket's, as the Sign-ups Report reads
+ * them) whose name contains `q`, newest first, for the list's client picker.
+ * LOWER() because TiDB's default collation is case-sensitive.
+ */
+export async function searchLeadsByName(q: string, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: leadIntake.id, name: leadIntake.leadName, caseType: leadIntake.classification, leadDate: leadIntake.leadDate })
+    .from(leadIntake)
+    .where(sql`LOWER(${leadIntake.leadName}) LIKE ${containing(q)}`)
+    .orderBy(desc(leadIntake.leadDate), desc(leadIntake.id))
+    .limit(limit);
+}
+
+export async function getLeadName(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select({ name: leadIntake.leadName }).from(leadIntake).where(eq(leadIntake.id, id)).limit(1);
+  return row?.name ?? null;
+}
+
+/** Facilities whose name contains `q`, for the list's facility picker. */
+export async function searchFacilitiesByName(q: string, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: facilities.id, name: facilities.name, city: facilities.city })
+    .from(facilities)
+    .where(sql`LOWER(${facilities.name}) LIKE ${containing(q)}`)
+    .orderBy(asc(facilities.name))
+    .limit(limit);
+}
+
+export async function getFacilityName(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select({ name: facilities.name }).from(facilities).where(eq(facilities.id, id)).limit(1);
+  return row?.name ?? null;
 }
 
 // ─── Agent Dashboard KPIs ─────────────────────────────────────────────────────

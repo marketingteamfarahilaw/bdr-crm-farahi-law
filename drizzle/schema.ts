@@ -630,15 +630,22 @@ export type FrErrand = typeof frErrands.$inferSelect;
 export type InsertFrErrand = typeof frErrands.$inferInsert;
 
 /**
- * Referral-Friendly Tracker — tracks which facility each client was referred to
- * Mirrors the referral-friendly Excel sheet
+ * Referral-Friendly Tracker — tracks which facility each client was referred to.
+ * Imported once from the referral-friendly Excel sheet; the CRM has been the
+ * source of truth since 2026-09-30 and the sheets sync no longer touches it.
+ *
+ * leadId and the last two status values are added at runtime by
+ * ensureReferralTrackerSchema (server/db.ts) — there is no migration step.
+ * The status keeps the sheet's old values so existing rows stay valid; see
+ * shared/referralTracker.ts for how they read today.
  */
 export const referralTracker = mysqlTable("referral_tracker", {
   id: int("id").autoincrement().primaryKey(),
   month: varchar("month", { length: 20 }), // e.g. "May 2026"
   clientName: varchar("clientName", { length: 255 }).notNull(),
-  pdCoordinator: varchar("pdCoordinator", { length: 255 }),
-  partnerStatus: varchar("partnerStatus", { length: 100 }), // e.g. "Partner", "Non-Partner"
+  leadId: int("leadId"), // lead_intake.id; null on rows from the sheet
+  pdCoordinator: varchar("pdCoordinator", { length: 255 }), // "Case Manager / PD Coordinator"
+  partnerStatus: varchar("partnerStatus", { length: 100 }), // sheet-era only; no longer shown or edited
   facilityId: int("facilityId"),
   facilityName: varchar("facilityName", { length: 255 }),
   facilityType: varchar("facilityType", { length: 100 }), // e.g. "Chiro", "Body Shop"
@@ -649,12 +656,16 @@ export const referralTracker = mysqlTable("referral_tracker", {
     "Pending",
     "Unsuccessful",
     "In Progress",
+    "Appointment/Delivery Scheduled",
+    "Successful",
   ]).default("Pending").notNull(),
   notes: text("notes"),
+  // The referral's date (Pacific noon of the day picked), not the insert time:
+  // the page's year and date filters read it, as the sheet import set it.
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-export type ReferralTracker = typeof referralTracker.$inferSelect;
+export type ReferralTracker =typeof referralTracker.$inferSelect;
 export type InsertReferralTracker = typeof referralTracker.$inferInsert;
 
 /**
