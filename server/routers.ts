@@ -131,7 +131,7 @@ import { REASON_KEYS, TZ as MARKETING_TZ } from "./marketing/common";
 import { getMarketingLeads, exportMarketingLeads } from "./marketing/leadFilter";
 import { DM_BUCKETS, DM_OUTCOMES } from "./marketing/digital";
 import { getDigitalMarketingReport } from "./digitalMarketing";
-import { getDigitalAudit } from "./digitalAudit";
+import { getDigitalAudit, getSourceDirectory } from "./digitalAudit";
 import { listSourceNames, setSpendOne, setSpendMany, copySpend } from "./marketing/spend";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -915,6 +915,8 @@ export const appRouter = router({
       digitalAudit: marketingProcedure
         .input(range.extend({ scope: z.enum(["period", "12m", "all"]).default("period") }))
         .query(({ input }) => getDigitalAudit({ ...toRange(input), fromDay: input.from, toDay: input.to }, input.scope)),
+      // Every Marketing Source, Contact Source and Campaign in Lead Docket, all time — the shareable directory.
+      sourceDirectory: marketingProcedure.query(() => getSourceDirectory()),
       spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
       sourceNames: marketingProcedure.query(() => listSourceNames()),
       setSpend: spendProcedure

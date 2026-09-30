@@ -20,11 +20,11 @@
  *
  * The rules are pure and tested (digitalAudit.test.ts); the loader only reads.
  */
-import { and, gte, lte, sql } from "drizzle-orm";
+import { and, gte, lte, sql, type AnyColumn } from "drizzle-orm";
 import { fromZonedTime } from "date-fns-tz";
 import { getDb } from "./db";
 import { leaddocketLeads } from "../drizzle/schema";
-import { DIGITAL_GROUPS, NO_SOURCE, TEAM_CHANNEL, TOLL_FREE, digitalGroupOf, isTollFreeLine, sourceCategoryOf, type DigitalGroup } from "@shared/marketing";
+import { DIGITAL_GROUPS, NO_SOURCE, TEAM_CHANNEL, TOLL_FREE, channelOfSource, digitalGroupOf, isTollFreeLine, sourceCategoryOf, type DigitalGroup } from "@shared/marketing";
 import { TZ, clean, notBdFr, sourceOf } from "./marketing/common";
 import { routeOf } from "./marketing/routes";
 import { isSigned } from "./signupsReport";
@@ -261,5 +261,72 @@ export async function getDigitalAudit(range: { from: Date; to: Date; fromDay: st
     checked: leads.length,
     ...misregistered(leads),
     hygiene: sourceHygiene(names.map((n) => ({ source: clean(n.source), leads: Number(n.leads) || 0, first: day(n.first), last: day(n.last) }))),
+  };
+}
+
+// ── Lead Docket sources directory ──
+
+/**
+ * Every Marketing Source, Contact Source and Campaign Lead Docket has ever
+ * used, with how many leads and sign-ups each carries and where the CRM files
+ * it — the list the team shares as a PDF (Youssef, 2026-09-30: "all the
+ * channels and sources in Lead Docket in a PDF to share with the team").
+ * All leads, BD/FR included, so nothing in Lead Docket is missing from it.
+ * Names and counts only: no client appears.
+ */
+export type DirectoryRow = { name: string; leads: number; signed: number; first: string | null; last: string | null; category: string; detail: string };
+
+function classifyMarketing(name: string, bdFr: boolean): { category: string; detail: string } {
+  if (!name) return { category: "No source", detail: NO_SOURCE };
+  if (bdFr) return { category: "BD/FR team", detail: TEAM_CHANNEL };
+  if (isTollFreeLine(name)) return { category: "Toll-free line", detail: TOLL_FREE };
+  const c = sourceCategoryOf(name);
+  if (c.kind === "digital") return { category: `Digital · ${c.group}`, detail: c.label };
+  if (c.kind === "merch") return { category: "Merch & print", detail: c.label };
+  return { category: "Other", detail: channelOfSource(name) };
+}
+
+export async function getSourceDirectory() {
+  const db = await getDb();
+  if (!db) return null;
+  const field = (col: AnyColumn) =>
+    db.select({
+      name: sql<string>`TRIM(${col})`, outcome: L.outcome, bdFr: sql<number>`MAX(${L.teamRole} IN ('BDR', 'FR'))`,
+      leads: sql<number>`COUNT(*)`, first: sql<Date | null>`MIN(${L.leadDate})`, last: sql<Date | null>`MAX(${L.leadDate})`,
+    }).from(L).groupBy(sql`TRIM(${col})`, L.outcome);
+
+  const [ms, cs, cp] = await Promise.all([field(L.marketingSource), field(L.contactSource), field(L.campaign)]);
+
+  // Fold the outcome split back into one row per name, counting the signed ones.
+  const fold = (rows: Awaited<ReturnType<typeof field>>, classify: (name: string, bdFr: boolean) => { category: string; detail: string }) => {
+    const by = new Map<string, { name: string; leads: number; signed: number; first: number | null; last: number | null; bdFr: boolean }>();
+    for (const r of rows) {
+      const name = clean(r.name);
+      const key = name.toLowerCase();
+      const e = by.get(key) ?? { name, leads: 0, signed: 0, first: null, last: null, bdFr: false };
+      const n = Number(r.leads) || 0;
+      e.leads += n;
+      if (isSigned(r.outcome)) e.signed += n;
+      if (Number(r.bdFr)) e.bdFr = true;
+      const f = r.first ? new Date(r.first).getTime() : null, l = r.last ? new Date(r.last).getTime() : null;
+      if (f != null && (e.first == null || f < e.first)) e.first = f;
+      if (l != null && (e.last == null || l > e.last)) e.last = l;
+      by.set(key, e);
+    }
+    return Array.from(by.values())
+      .map((e): DirectoryRow => ({
+        name: e.name || NO_SOURCE, leads: e.leads, signed: e.signed,
+        first: e.first == null ? null : new Date(e.first).toISOString(), last: e.last == null ? null : new Date(e.last).toISOString(),
+        ...classify(e.name, e.bdFr),
+      }))
+      .sort((a, b) => b.leads - a.leads || a.name.localeCompare(b.name));
+  };
+  const plain = (name: string) => (name ? { category: isTollFreeLine(name) ? "Toll-free line" : "", detail: "" } : { category: "Not recorded", detail: "" });
+
+  return {
+    generated: new Date().toISOString(),
+    marketing: fold(ms, classifyMarketing),
+    contact: fold(cs, plain),
+    campaign: fold(cp, plain),
   };
 }

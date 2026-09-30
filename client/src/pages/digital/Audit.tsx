@@ -9,7 +9,7 @@
  */
 import { Fragment, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { ChevronDown, FileSpreadsheet, Info, Loader2, Upload } from "lucide-react";
+import { ChevronDown, FileSpreadsheet, Info, Loader2, Printer, Upload } from "lucide-react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import type { DrillLink } from "../../../../server/marketing/common";
@@ -33,6 +33,7 @@ export function AuditView({ from, to, report }: { from: string; to: string; repo
       </p>
       <SheetCompare to={to} report={report} />
       <Misregistered from={from} to={to} />
+      <SourceDirectory />
     </>
   );
 }
@@ -382,4 +383,111 @@ function NameTable({ rows, empty }: { rows: Hyg["lookDigital"]; empty: string })
       <tbody>{rows.map((n) => <tr key={n.source}><td className="l"><b>{n.source}</b></td><td className="num">{fmt(n.leads)}</td><td className="nowrap">{span(n)}</td></tr>)}</tbody>
     </table>
   );
+}
+
+// ── 4. every source in Lead Docket, shareable as a PDF ──
+
+type Directory = NonNullable<inferRouterOutputs<AppRouter>["marketing"]["sourceDirectory"]>;
+type DirRow = Directory["marketing"][number];
+const DIR_TABLES = [
+  ["marketing", "Marketing Sources", "How each lead is credited — the field every marketing report counts by."],
+  ["contact", "Contact Sources", "How the lead reached the firm (phone, web form, chat, walk-in…)."],
+  ["campaign", "Campaigns", "Lead Docket's campaign field."],
+] as const;
+
+function SourceDirectory() {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<(typeof DIR_TABLES)[number][0]>("marketing");
+  const { data, isLoading, isFetching, isError, error, refetch } = trpc.marketing.sourceDirectory.useQuery(undefined, { enabled: open, staleTime: 5 * 60_000 });
+  const t = DIR_TABLES.find((x) => x[0] === tab)!;
+  return (
+    <div className="sr-panel">
+      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
+        <div className="sr-ttl"><h2>Lead Docket sources directory</h2>{isFetching && <Loader2 size={13} className="sr-spin" />}</div>
+        {open && data && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className="sr-seg" role="group" aria-label="Which field">
+              {DIR_TABLES.map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l} ({data[k].length})</button>)}
+            </div>
+            <button className="sr-btn2" onClick={() => printDirectory(data)}><Printer size={14} /> Save as PDF</button>
+          </div>
+        )}
+      </div>
+      <p className="sr-sub">
+        Every Marketing Source, Contact Source and Campaign ever used in Lead Docket, all time and all teams, with lead and sign-up counts and where
+        this CRM files each one. Names and counts only — no clients — so it's safe to share. <b>Save as PDF</b> prints all three lists; choose
+        "Save as PDF" as the printer.
+      </p>
+      {!open ? (
+        <button className="sr-btn2" onClick={() => setOpen(true)}><ChevronDown size={14} /> Show the directory</button>
+      ) : !data ? (
+        isError && !isLoading ? <LoadError what="the sources directory" message={error?.message} onRetry={() => refetch()} /> : <div className="sr-skel" style={{ height: 160 }} />
+      ) : (
+        <>
+          <p className="sr-sub">{t[2]}</p>
+          <div style={{ maxHeight: 640, overflow: "auto" }}>
+            <table className="sr-t dm-t">
+              <thead><tr><th>{t[1].replace(/s$/, "")}</th><th className="num">Leads</th><th className="num">Signed</th><th>First – last lead</th>{tab === "marketing" && <th>Filed in the CRM as</th>}</tr></thead>
+              <tbody>
+                {data[tab].map((r) => (
+                  <tr key={r.name}>
+                    <td className="l"><b>{r.name}</b></td>
+                    <td className="num">{fmt(r.leads)}</td>
+                    <td className="num">{fmt(r.signed)}</td>
+                    <td className="nowrap">{span(r)}</td>
+                    {tab === "marketing" && <td>{r.category}{r.detail && r.detail !== r.name ? <span className="sr-sub"> · {r.detail}</span> : null}</td>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+/** A clean print-only page of all three lists, so the browser's "Save as PDF" gives the team a document. */
+function printDirectory(d: Directory) {
+  const w = window.open("", "_blank");
+  if (!w) { toast.error("Allow pop-ups for this site to save the PDF."); return; }
+  const total = (rows: DirRow[]) => rows.reduce((a, r) => [a[0] + r.leads, a[1] + r.signed], [0, 0]);
+  // Marketing Sources grouped by where the CRM files them, biggest group first.
+  const groups = new Map<string, DirRow[]>();
+  for (const r of d.marketing) groups.set(r.category, [...(groups.get(r.category) ?? []), r]);
+  const ordered = Array.from(groups.entries()).sort((a, b) => total(b[1])[0] - total(a[1])[0]);
+  const table = (rows: DirRow[], withDetail: boolean) => `<table><thead><tr><th>Name</th><th class="n">Leads</th><th class="n">Signed</th><th>First – last lead</th>${withDetail ? "<th>CRM row</th>" : ""}</tr></thead><tbody>${
+    rows.map((r) => `<tr><td><b>${esc(r.name)}</b></td><td class="n">${fmt(r.leads)}</td><td class="n">${fmt(r.signed)}</td><td class="d">${esc(span(r))}</td>${withDetail ? `<td>${esc(r.detail && r.detail !== r.name ? r.detail : "")}</td>` : ""}</tr>`).join("")
+  }</tbody></table>`;
+  const [ml, msg] = total(d.marketing);
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Lead Docket Sources Directory</title><style>
+    @page { size: letter; margin: 14mm 12mm; }
+    body { font: 10px/1.35 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1c1c1e; margin: 0; }
+    h1 { font-size: 20px; margin: 0 0 2px; } h2 { font-size: 14px; margin: 18px 0 4px; border-bottom: 2px solid #1c1c1e; padding-bottom: 3px; break-after: avoid; }
+    h3 { font-size: 11px; margin: 12px 0 3px; break-after: avoid; } h3 span { font-weight: 400; color: #666; }
+    .meta { color: #666; margin-bottom: 10px; } .kpis { display: flex; gap: 10px; margin: 8px 0 4px; }
+    .kpis div { border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; } .kpis b { display: block; font-size: 15px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 4px; } th { text-align: left; font-size: 9px; text-transform: uppercase; color: #666; border-bottom: 1px solid #bbb; padding: 3px 4px; }
+    td { padding: 2px 4px; border-bottom: 1px solid #eee; vertical-align: top; } tr { break-inside: avoid; } .n { text-align: right; white-space: nowrap; } .d { white-space: nowrap; color: #555; }
+    .note { color: #555; margin: 2px 0 6px; } .pb { break-before: page; }
+  </style></head><body>
+    <h1>Lead Docket Sources Directory</h1>
+    <div class="meta">Farahi Law · every Marketing Source, Contact Source and Campaign in Lead Docket, all time, all teams · generated ${esc(new Date(d.generated).toLocaleString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short" }))} Pacific · names and counts only, no client data</div>
+    <div class="kpis"><div><b>${fmt(d.marketing.length)}</b>Marketing Sources</div><div><b>${fmt(d.contact.length)}</b>Contact Sources</div><div><b>${fmt(d.campaign.length)}</b>Campaigns</div><div><b>${fmt(ml)}</b>leads · ${fmt(msg)} signed</div></div>
+    <h2>1. Marketing Sources, by where the CRM files them</h2>
+    <p class="note">The field every marketing report counts by. "Digital" rows are what the Digital Marketing Report counts; "Other" is everything else (vendors, referrals, staff…), shown with the channel it rolls up into.</p>
+    ${ordered.map(([cat, rows]) => { const [l, s] = total(rows); return `<h3>${esc(cat)} <span>· ${rows.length} names · ${fmt(l)} leads · ${fmt(s)} signed</span></h3>${table(rows, true)}`; }).join("")}
+    <h2 class="pb">2. Contact Sources</h2><p class="note">How each lead reached the firm.</p>${table(d.contact, false)}
+    <h2 class="pb">3. Campaigns</h2><p class="note">Lead Docket's campaign field.</p>${table(d.campaign, false)}
+  </body></html>`;
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  // document.write doesn't always fire onload, so print once on whichever comes first.
+  let done = false;
+  const go = () => { if (done) return; done = true; try { w.focus(); w.print(); } catch { /* the window was closed */ } };
+  w.onload = go;
+  setTimeout(go, 600);
 }
