@@ -18,6 +18,11 @@ describe("Timeero webhook signature", () => {
     expect(signatureMatches(secret, "1727712001", body, good)).toBe(false);
     expect(signatureMatches(secret, ts, body, "")).toBe(false);
   });
+  it("rejects, never throws, on a signature of non-ASCII characters", () => {
+    // 64 characters but 128 bytes: timingSafeEqual would throw and stop the server.
+    expect(() => signatureMatches(secret, ts, body, "é".repeat(64))).not.toThrow();
+    expect(signatureMatches(secret, ts, body, "é".repeat(64))).toBe(false);
+  });
 });
 
 import { categoryOf, summarise } from "./timeero";

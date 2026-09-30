@@ -25,6 +25,7 @@ import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getDb, getSetting, setSetting } from "./db";
 import { decryptKey, encryptKey } from "./_core/claude";
 import { CURRENT_TEAM, FR_CONTRACT } from "@shared/team";
+import { facilityNameKey, fieldVisitFacilityIds, getFacilityNameIndex } from "./crmDb";
 
 const BASE = "https://api.timeero.app/api/public";
 const KEY_SETTING = "timeero_api_key_enc";
@@ -151,7 +152,10 @@ export function signatureMatches(secret: string, ts: string, raw: Buffer, sig: s
   const plain = createHash("sha256").update(ts + body + secret).digest();
   candidates.push(plain.toString("hex"), plain.toString("base64"));
   const got = sig.trim().replace(/^sha256=/i, "");
-  return candidates.some((c) => c.length === got.length && timingSafeEqual(Buffer.from(c), Buffer.from(got)));
+  // Compared as bytes: a header of non-ASCII characters has more bytes than
+  // characters, and timingSafeEqual throws on unequal lengths.
+  const g = Buffer.from(got);
+  return candidates.some((c) => { const b = Buffer.from(c); return b.length === g.length && timingSafeEqual(b, g); });
 }
 
 type Stats = { received: number; rejected: number; lastAt: string | null; lastEvent: string | null; lastError: string | null };
@@ -165,13 +169,24 @@ async function noteWebhook(patch: Partial<Stats> & { ok: boolean }) {
 }
 
 export function registerTimeeroWebhook(app: Express) {
-  app.post(TIMEERO_WEBHOOK_PATH, async (req: Request, res: Response) => {
+  app.post(TIMEERO_WEBHOOK_PATH, (req: Request, res: Response) => {
+    // Nothing thrown here may reach Express 4 unhandled: it would stop the server.
+    handleWebhook(req, res).catch((e) => {
+      console.warn("[timeero] webhook failed:", (e as Error)?.message ?? e);
+      if (!res.headersSent) res.status(500).json({ error: "failed" });
+    });
+  });
+  console.log(`[timeero] webhook at ${TIMEERO_WEBHOOK_PATH}`);
+}
+
+async function handleWebhook(req: Request, res: Response) {
+  {
     const secret = await webhookSecret().catch(() => null);
     const raw: Buffer = (req as any).rawBody ?? Buffer.from(JSON.stringify(req.body ?? {}));
     const ts = String(req.header("x-webhook-timestamp") ?? "");
     const sig = String(req.header("x-webhook-signature") ?? "");
     if (!secret || !ts || !sig || !signatureMatches(secret, ts, raw, sig)) {
-      await noteWebhook({ ok: false, lastError: !secret ? "No webhook secret saved in the CRM yet." : "A call arrived with a signature that didn't match the secret." }).catch(() => {});
+      // Not recorded: anyone can post here, and each record is a database write.
       res.status(401).json({ error: "invalid signature" });
       return;
     }
@@ -200,16 +215,16 @@ export function registerTimeeroWebhook(app: Express) {
       if (/deleted$/i.test(op)) await upsert(kind, id, undefined, { deleted: true, updatedAt: at });
       else {
         const full = await apiGet(`/${kind}/${encodeURIComponent(id)}`).catch(() => null);
-        // Keep what the webhook said even when the fetch fails, so nothing is lost.
-        await upsert(kind, id, full?.data && !Array.isArray(full.data) ? full.data : full ?? { webhook: b }, { updatedAt: at });
+        // A failed fetch keeps what's stored (undefined leaves data as it is),
+        // rather than replacing a full timesheet with the webhook's stub.
+        await upsert(kind, id, full ? (full.data && !Array.isArray(full.data) ? full.data : full) : undefined, { updatedAt: at });
       }
       await noteWebhook({ ok: true, lastEvent: `${event} ${op}`.trim() });
     } catch (e) {
       console.warn("[timeero] webhook:", (e as Error)?.message ?? e);
       await noteWebhook({ ok: true, lastEvent: `${event} ${op}`.trim(), lastError: (e as Error)?.message ?? String(e) }).catch(() => {});
     }
-  });
-  console.log(`[timeero] webhook at ${TIMEERO_WEBHOOK_PATH}`);
+  }
 }
 
 // ── Settings: status, connect, test, import ──────────────────────────────────
@@ -585,12 +600,18 @@ async function withCrmLogs(reps: ReturnType<typeof summarise>, from: string, to:
     if (!crm.has(k)) crm.set(k, { visits: new Set(), days: new Set(), errands: 0 });
     return crm.get(k)!;
   };
+  // Sheet visits name a facility, sometimes without its id: resolve names to
+  // ids (as Last Visit does) so the same visit logged in Field Mode counts once.
+  const idByName = await getFacilityNameIndex();
   for (const v of visitRows as any[]) {
-    let facs: any[] = [];
+    let facs: unknown = [];
     try { facs = typeof v.facilitiesVisited === "string" ? JSON.parse(v.facilitiesVisited) : v.facilitiesVisited ?? []; } catch { /* none */ }
     const day = pDay(v.visitDate), c = get(v.agentName);
     c.days.add(day);
-    for (const f of Array.isArray(facs) ? facs : []) c.visits.add(`${day}|${String(f?.id ?? f?.name ?? "").toLowerCase()}`);
+    const ids = fieldVisitFacilityIds(facs, idByName);
+    for (const id of ids) c.visits.add(`${day}|${id}`);
+    // A name that matches no facility still counts once, by its name.
+    if (Array.isArray(facs)) for (const f of facs as any[]) if (!(Number(f?.id) > 0) && f?.name && !idByName.get(facilityNameKey(f.name))) c.visits.add(`${day}|n:${facilityNameKey(f.name)}`);
   }
   for (const v of logRows as any[]) { const day = pDay(v.visitDate), c = get(v.agentName); c.days.add(day); c.visits.add(`${day}|${v.facilityId}`); }
   for (const e of errandRows as any[]) if (e.status !== "Not Completed") get(e.agentName).errands++;

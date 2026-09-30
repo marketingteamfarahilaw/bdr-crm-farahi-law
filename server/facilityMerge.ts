@@ -47,7 +47,7 @@ const STATUS_RANK: Record<string, number> = { priority_partner: 5, active_partne
 export function mergedFields(keep: Fac, drop: Fac) {
   const out: Record<string, any> = {};
   for (const col of ["address", "city", "zipCode", "serviceArea", "website", "contactName", "contactTitle", "contactPhone", "contactEmail",
-    "preferredContactMethod", "assignedRepName", "assignedRepId", "placeId", "latitude", "longitude", "territory", "managedBy", "lastPartnerInFLF", "loopStage"])
+    "preferredContactMethod", "assignedRepName", "assignedRepId", "frRepName", "placeId", "latitude", "longitude", "territory", "managedBy", "lastPartnerInFLF", "loopStage"])
     if (blank(keep[col]) && !blank(drop[col])) out[col] = drop[col];
 
   const phones: string[] = [];
