@@ -282,6 +282,12 @@ function assertRcRedirectUri(redirectUri: string): void {
 
 /** Name candidates a facility might be assigned under for an agent — their agent
  *  name, full name, and first names — used for owner-by-name facility scoping. */
+/** The rep filter a user may use: any for managers; for a rep, always themselves ("~nobody" when we can't tell who). */
+function ownRep(user: { role?: string | null; name?: string | null; agentName?: string | null }, asked?: string) {
+  if (seesAllData(user.role)) return asked;
+  return ownerNameCandidates(user)[0] ?? "~nobody";
+}
+
 export function ownerNameCandidates(user: { name?: string | null; agentName?: string | null }): string[] {
   const out = new Set<string>();
   const add = (s?: string | null) => {
@@ -1592,17 +1598,18 @@ export const crmRouter = router({
 
   // ─── BDR Reports ─────────────────────────────────────────────────────────────
   bdrReports: router({
+    // Managers see the whole team; a rep only ever sees their own numbers.
     callActivity: crmProcedure
       .input(z.object({ repName: z.string().optional(), month: z.string().optional() }))
-      .query(async ({ input }) => getBdrCallActivity(input)),
+      .query(async ({ ctx, input }) => getBdrCallActivity({ ...input, repName: ownRep(ctx.user, input.repName) })),
 
     partnerCheckins: crmProcedure
       .input(z.object({ repName: z.string().optional() }))
-      .query(async ({ input }) => getBdrPartnerCheckins(input)),
+      .query(async ({ ctx, input }) => getBdrPartnerCheckins({ repName: ownRep(ctx.user, input.repName) })),
 
     topFacilities: crmProcedure
-      .input(z.object({ limit: z.number().min(1).max(100).default(20) }))
-      .query(async ({ input }) => getBdrTopFacilities(input.limit)),
+      .input(z.object({ limit: z.number().min(1).max(100).default(20), repName: z.string().optional(), month: z.string().optional() }))
+      .query(async ({ ctx, input }) => getBdrTopFacilities(input.limit, { ...input, repName: ownRep(ctx.user, input.repName) })),
 
     // MTD Check-In matrix — per rep, one row per facility (or phone when the
     // call never matched), each distinct day = a check-in with its call count.

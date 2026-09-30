@@ -12,8 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { toast } from "sonner";
+import { CURRENT_TEAM } from "@shared/team";
 
-const AGENTS = ["All", "Ally", "Gracel", "Queenie", "Miguel", "Rupert"];
+// Reps are matched by first name: the server merges "Queenie", "QUEENIE" and
+// "Queenie Miranda" into one person, shown under the full name.
+const firstOf = (s?: string | null) => String(s ?? "").trim().toLowerCase().split(/\s+/)[0] ?? "";
+const NO_REP = "No rep recorded";
+const monthName = (m: string, style: "long" | "short" = "long") =>
+  new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1).toLocaleDateString("en-US", { year: "numeric", month: style });
 
 const CALL_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   partner_checkin: { label: "Partner Check-In", color: "bg-emerald-500/20 text-emerald-400" },
@@ -47,7 +53,7 @@ function ActivePartnersTable({ agentFilter }: { agentFilter?: string }) {
   const { data: allFacilities, isLoading } = trpc.crm.facilities.list.useQuery({});
   const facilities = allFacilities?.filter((f: any) =>
     (f.partnerStatus === "active_partner" || f.partnerStatus === "priority_partner") &&
-    (!agentFilter || f.assignedRepName === agentFilter)
+    (!agentFilter || firstOf(f.assignedRepName) === firstOf(agentFilter))
   );
 
   if (isLoading) return <Skeleton className="h-64 rounded-xl" />;
@@ -140,38 +146,50 @@ export default function BdrReports() {
   const agentFilter = selectedAgent === "All" ? undefined : selectedAgent;
   const monthFilter = selectedMonth === "all" ? undefined : selectedMonth;
 
-  const { data: callActivity, isLoading: loadingCalls } = trpc.crm.bdrReports.callActivity.useQuery({
-    repName: agentFilter,
-    month: monthFilter,
-  });
+  // Every rep and month in one fetch, filtered here: the month list and the rep
+  // list stay whole whatever is picked (picking a month used to shrink the
+  // month list to that one month).
+  const { data: allActivity, isLoading: loadingCalls } = trpc.crm.bdrReports.callActivity.useQuery({});
+  const callActivity = useMemo(
+    () => allActivity?.filter((r) => (!agentFilter || firstOf(r.repName) === firstOf(agentFilter)) && (!monthFilter || r.month === monthFilter)),
+    [allActivity, agentFilter, monthFilter],
+  );
+  const repOptions = useMemo(() => {
+    const team = [...CURRENT_TEAM.BDR, ...CURRENT_TEAM.FR];
+    const former = Array.from(new Set((allActivity ?? []).filter((r) => !r.current && r.repName !== NO_REP).map((r) => r.repName)))
+      .filter((n) => !team.some((t) => firstOf(t) === firstOf(n)))
+      .sort();
+    return { team, former };
+  }, [allActivity]);
   const { data: partnerCheckins, isLoading: loadingCheckins } = trpc.crm.bdrReports.partnerCheckins.useQuery({
     repName: agentFilter,
   });
-  const { data: topFacilities, isLoading: loadingTop } = trpc.crm.bdrReports.topFacilities.useQuery({ limit: 20 });
+  const { data: topFacilities, isLoading: loadingTop } = trpc.crm.bdrReports.topFacilities.useQuery({ limit: 20, repName: agentFilter, month: monthFilter });
 
   // Derive available months from call activity
   const availableMonths = useMemo(() => {
-    if (!callActivity) return [];
-    const months = new Set(callActivity.map((r) => r.month));
+    if (!allActivity) return [];
+    const months = new Set(allActivity.map((r) => r.month));
     return Array.from(months).sort((a, b) => b.localeCompare(a));
-  }, [callActivity]);
+  }, [allActivity]);
 
   // Aggregate totals for the summary row
   const totals = useMemo(() => {
-    if (!callActivity) return null;
+    if (!callActivity || callActivity.length === 0) return null;
     return callActivity.reduce(
       (acc, r) => ({
         total: acc.total + r.total,
         connected: acc.connected + r.connected,
         voicemail: acc.voicemail + r.voicemail,
         noAnswer: acc.noAnswer + r.noAnswer,
+        unlinked: acc.unlinked + r.unlinked,
         partnerCheckin: acc.partnerCheckin + r.partnerCheckin,
         bdrCheckin: acc.bdrCheckin + r.bdrCheckin,
         frCheckin: acc.frCheckin + r.frCheckin,
         internal: acc.internal + r.internal,
         potentialLead: acc.potentialLead + r.potentialLead,
       }),
-      { total: 0, connected: 0, voicemail: 0, noAnswer: 0, partnerCheckin: 0, bdrCheckin: 0, frCheckin: 0, internal: 0, potentialLead: 0 }
+      { total: 0, connected: 0, voicemail: 0, noAnswer: 0, unlinked: 0, partnerCheckin: 0, bdrCheckin: 0, frCheckin: 0, internal: 0, potentialLead: 0 }
     );
   }, [callActivity]);
 
@@ -187,6 +205,7 @@ export default function BdrReports() {
         map[row.repName].connected += row.connected;
         map[row.repName].voicemail += row.voicemail;
         map[row.repName].noAnswer += row.noAnswer;
+        map[row.repName].unlinked += row.unlinked;
         map[row.repName].partnerCheckin += row.partnerCheckin;
         map[row.repName].bdrCheckin += row.bdrCheckin;
         map[row.repName].frCheckin += row.frCheckin;
@@ -198,17 +217,18 @@ export default function BdrReports() {
     return map;
   }, [callActivity]);
 
-  const agentRows = Object.values(byAgent).sort((a, b) => b.connected - a.connected);
+  // Calls with no rep on them count in the totals but aren't anyone's rank.
+  const agentRows = Object.values(byAgent).filter((a) => a.repName !== NO_REP).sort((a, b) => b.connected - a.connected);
 
   function exportCsv() {
-    const headers = ["Representative", "Total Calls", "Connected", "Voicemail", "No Answer", "Check-ins", "Potential Leads", "Connect %"];
-    const rows = agentRows.map((a) => [a.repName, a.total, a.connected, a.voicemail, a.noAnswer, a.partnerCheckin + a.bdrCheckin + a.frCheckin, a.potentialLead, a.total ? Math.round((a.connected / a.total) * 100) + "%" : "0%"]);
+    const headers = ["Representative", "Total Calls", "Connected", "Voicemail", "No Answer", "Not linked to a partner", "Check-in calls", "Potential Leads", "Connect %"];
+    const rows = Object.values(byAgent).map((a) => [a.repName, a.total, a.connected, a.voicemail, a.noAnswer, a.unlinked, a.partnerCheckin + a.bdrCheckin + a.frCheckin, a.potentialLead, a.total ? ((a.connected / a.total) * 100).toFixed(1) + "%" : "0.0%"]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `bdr-report-${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `bdr-report-${monthFilter ?? "all-months"}${agentFilter ? `-${firstOf(agentFilter)}` : ""}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${rows.length} agent${rows.length !== 1 ? "s" : ""}`);
@@ -223,18 +243,18 @@ export default function BdrReports() {
             BDR Reports
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Call activity, partner check-ins, and facility engagement metrics.
+            Calls, partner check-ins and partner coverage, from RingCentral and the team's call sheet. Months are Pacific time.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-            <SelectTrigger className="w-36 bg-card border-border">
+            <SelectTrigger className="w-48 bg-card border-border">
               <SelectValue placeholder="All Representatives" />
             </SelectTrigger>
             <SelectContent>
-              {AGENTS.map((a) => (
-                <SelectItem key={a} value={a}>{a === "All" ? "All Representatives" : a}</SelectItem>
-              ))}
+              <SelectItem value="All">All Representatives</SelectItem>
+              {repOptions.team.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              {repOptions.former.map((a) => <SelectItem key={a} value={a}>{a} (former)</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -244,9 +264,7 @@ export default function BdrReports() {
             <SelectContent>
               <SelectItem value="all">All Months</SelectItem>
               {availableMonths.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {new Date(m + "-01").toLocaleDateString("en-US", { year: "numeric", month: "long" })}
-                </SelectItem>
+                <SelectItem key={m} value={m}>{monthName(m)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -263,18 +281,19 @@ export default function BdrReports() {
         </div>
       ) : totals ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={Phone} label="Total Calls" value={totals.total} color="text-primary" />
-          <StatCard icon={CheckCircle2} label="Connected" value={totals.connected}
-            sub={`${totals.total > 0 ? Math.round((totals.connected / totals.total) * 100) : 0}% connect rate`}
+          <StatCard icon={Phone} label="Total Calls" value={totals.total.toLocaleString("en-US")} color="text-primary"
+            sub={totals.unlinked ? `${totals.unlinked.toLocaleString("en-US")} to numbers not linked to a partner` : undefined} />
+          <StatCard icon={CheckCircle2} label="Connected" value={totals.connected.toLocaleString("en-US")}
+            sub={`${totals.total > 0 ? ((totals.connected / totals.total) * 100).toFixed(1) : "0.0"}% connect rate`}
             color="text-emerald-600 dark:text-emerald-400" />
-          <StatCard icon={PhoneCall} label="Partner Check-Ins" value={totals.partnerCheckin + totals.bdrCheckin + totals.frCheckin} />
+          <StatCard icon={PhoneCall} label="Check-in calls" value={(totals.partnerCheckin + totals.bdrCheckin + totals.frCheckin).toLocaleString("en-US")} sub="calls to partners" />
           <StatCard icon={TrendingUp} label="Potential Leads" value={totals.potentialLead} color="text-amber-600 dark:text-amber-400" />
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
           <BarChart3 className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
-          <p className="text-sm font-medium text-foreground">No call activity data yet</p>
-          <p className="text-xs text-muted-foreground mt-1">Log calls from facility profiles to see reports here.</p>
+          <p className="text-sm font-medium text-foreground">No calls for this selection</p>
+          <p className="text-xs text-muted-foreground mt-1">Pick another month or representative.</p>
         </div>
       )}
 
@@ -283,7 +302,7 @@ export default function BdrReports() {
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-primary" /> Agent Leaderboard
+              <Trophy className="w-4 h-4 text-primary" /> Representative Leaderboard
               <span className="text-xs font-normal text-muted-foreground">· ranked by connected calls</span>
             </CardTitle>
           </CardHeader>
@@ -291,7 +310,7 @@ export default function BdrReports() {
             {agentRows.map((a, i) => {
               const max = agentRows[0]?.connected || 1;
               return (
-                <div key={a.repName} className="flex items-center gap-3">
+                <div key={a.repName} className={`flex items-center gap-3 ${a.current ? "" : "opacity-60"}`} title={a.current ? undefined : "Former representative"}>
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? "bg-primary/20 text-primary" : i < 3 ? "bg-secondary text-foreground" : "text-muted-foreground"}`}>{i + 1}</span>
                   <span className="w-28 truncate text-sm font-medium text-foreground">{a.repName}</span>
                   <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
@@ -326,6 +345,7 @@ export default function BdrReports() {
                       <CardTitle className="text-sm flex items-center gap-2">
                         <Users className="w-4 h-4 text-muted-foreground" />
                         {agent.repName}
+                        {!agent.current && agent.repName !== NO_REP && <span className="text-[10px] font-normal text-muted-foreground">former</span>}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-1.5 text-xs">
@@ -342,7 +362,11 @@ export default function BdrReports() {
                         <span className="text-amber-600 dark:text-amber-400">{agent.voicemail}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Partner Check-Ins</span>
+                        <span className="text-muted-foreground" title="Calls to numbers not linked to a partner in the CRM yet">Not linked to a partner</span>
+                        <span className="text-muted-foreground">{agent.unlinked}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Check-in calls</span>
                         <span className="text-blue-600 dark:text-blue-400">{agent.partnerCheckin + agent.bdrCheckin + agent.frCheckin}</span>
                       </div>
                       <div className="flex justify-between">
@@ -352,7 +376,7 @@ export default function BdrReports() {
                       <div className="flex justify-between pt-1 border-t border-border">
                         <span className="text-muted-foreground">Connect Rate</span>
                         <span className="font-medium text-foreground">
-                          {agent.total > 0 ? Math.round((agent.connected / agent.total) * 100) : 0}%
+                          {agent.total > 0 ? ((agent.connected / agent.total) * 100).toFixed(1) : "0.0"}%
                         </span>
                       </div>
                     </CardContent>
@@ -381,6 +405,7 @@ export default function BdrReports() {
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Total</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Connected</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Voicemail</th>
+                      <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium" title="Calls to numbers not linked to a partner">Not linked</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Partner CI</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">BDR CI</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">FR CI</th>
@@ -395,17 +420,18 @@ export default function BdrReports() {
                           <span className="block max-w-[10rem] truncate" title={row.repName}>{row.repName}</span>
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
-                          {new Date(row.month + "-01").toLocaleDateString("en-US", { year: "numeric", month: "short" })}
+                          {monthName(row.month, "short")}
                         </td>
                         <td className="px-4 py-2.5 text-right font-bold text-primary">{row.total}</td>
                         <td className="px-4 py-2.5 text-right text-emerald-600 dark:text-emerald-400">{row.connected}</td>
                         <td className="px-4 py-2.5 text-right text-amber-600 dark:text-amber-400">{row.voicemail}</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">{row.unlinked}</td>
                         <td className="px-4 py-2.5 text-right text-blue-600 dark:text-blue-400">{row.partnerCheckin}</td>
                         <td className="px-4 py-2.5 text-right text-purple-600 dark:text-purple-400">{row.bdrCheckin}</td>
                         <td className="px-4 py-2.5 text-right text-indigo-600 dark:text-indigo-400">{row.frCheckin}</td>
                         <td className="px-4 py-2.5 text-right text-amber-600 dark:text-amber-400">{row.potentialLead}</td>
                         <td className="px-4 py-2.5 text-right text-foreground">
-                          {row.total > 0 ? `${Math.round((row.connected / row.total) * 100)}%` : "—"}
+                          {row.total > 0 ? `${((row.connected / row.total) * 100).toFixed(1)}%` : "—"}
                         </td>
                       </tr>
                     ))}
@@ -416,8 +442,8 @@ export default function BdrReports() {
           ) : (
             <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
               <Phone className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
-              <p className="text-sm font-medium text-foreground">No call activity logged yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Logged calls will appear in this monthly breakdown.</p>
+              <p className="text-sm font-medium text-foreground">No calls for this selection</p>
+              <p className="text-xs text-muted-foreground mt-1">Pick another month or representative.</p>
             </div>
           )}
 
@@ -439,7 +465,7 @@ export default function BdrReports() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
-                  Partner Check-In Status by Agent
+                  Partner Check-Ins by Representative
                 </CardTitle>
               </CardHeader>
               <div className="overflow-x-auto">
@@ -447,7 +473,7 @@ export default function BdrReports() {
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
                       <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Representative</th>
-                      <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Total Partners</th>
+                      <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Active Partners</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Check-Ins (This Month)</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Check-Ins (30 Days)</th>
                       <th className="text-right px-4 py-2.5 text-xs text-muted-foreground font-medium">Need Check-In</th>
@@ -494,7 +520,9 @@ export default function BdrReports() {
               <div className="px-4 py-3 border-t border-border bg-muted/10">
                 <p className="text-xs text-muted-foreground">
                   <AlertCircle className="w-3.5 h-3.5 inline mr-1 text-amber-600 dark:text-amber-400" />
-                  "Need Check-In" = partners with no contact in the last 30 days. Coverage = partners checked in / total partners.
+                  Active and priority partners assigned to each rep. A check-in is a day with a check-in call from that rep to one of
+                  their partners. "Need Check-In" = no call or visit from anyone in the last 30 days; Coverage = the share contacted
+                  in the last 30 days. Always today's picture — the month filter doesn't apply here.
                 </p>
               </div>
             </Card>
@@ -521,7 +549,7 @@ export default function BdrReports() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
-                  Most Contacted Facilities
+                  Most Called Partners{monthFilter ? ` · ${monthName(monthFilter)}` : " · all months"}{agentFilter ? ` · ${agentFilter}` : ""}
                 </CardTitle>
               </CardHeader>
               <div className="overflow-x-auto">

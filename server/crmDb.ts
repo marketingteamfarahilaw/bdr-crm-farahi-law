@@ -36,6 +36,7 @@ import {
   type InsertUserRingcentralToken,
 } from "../drizzle/schema";
 import { isNonReportingRep } from "@shared/permissions";
+import { CURRENT_TEAM, isCurrentRep } from "@shared/team";
 import { getDb } from "./db";
 
 // ─── Facilities ───────────────────────────────────────────────────────────────
@@ -1348,169 +1349,206 @@ export async function getNotificationsForUser(
 // ─── BDR Reports ─────────────────────────────────────────────────────────────
 
 /** Call activity summary grouped by rep and month from contact_logs */
+// ── BDR Reports (/crm/reports) ────────────────────────────────────────────────
+// One person per row: RingCentral writes "Queenie Miranda", older sheet rows and
+// manual logs "Queenie" or "QUEENIE", so reps are merged by first name — as the
+// Check-In Report does — and shown under their full name from @shared/team.
+const BDR_LA = "America/Los_Angeles";
+const repFirst = (s?: string | null) => String(s ?? "").trim().toLowerCase().split(/\s+/)[0] ?? "";
+const TEAM_BY_FIRST = new Map(
+  [...CURRENT_TEAM.BDR, ...CURRENT_TEAM.FR, ...CURRENT_TEAM.Intake].map((n) => [repFirst(n), n] as const),
+);
+const NO_REP = "~none";
+function repNamer() {
+  const seen = new Map<string, string>();
+  return {
+    /** The merge key for a raw rep name ("" when there is none). */
+    key(raw?: string | null) {
+      const name = String(raw ?? "").trim();
+      const k = repFirst(name);
+      if (!k) return "";
+      const nice = name === name.toUpperCase() || name === name.toLowerCase()
+        ? name.toLowerCase().replace(/\b[a-z]/g, (ch) => ch.toUpperCase()) : name;
+      const prev = seen.get(k);
+      if (!prev || nice.length > prev.length) seen.set(k, nice);
+      return k;
+    },
+    display: (k: string) => (k === NO_REP ? "No rep recorded" : TEAM_BY_FIRST.get(k) ?? seen.get(k) ?? k),
+  };
+}
+/** A rep filter from the page matches any spelling of that person. */
+const repWanted = (filter?: string) => {
+  const f = repFirst(filter);
+  return (raw?: string | null) => !f || repFirst(raw) === f;
+};
+/** Sheet imports store mapped results; live RingCentral stores its own words. */
+function callOutcome(r?: string | null): "connected" | "voicemail" | "no_answer" | "other" {
+  const t = String(r ?? "").toLowerCase();
+  if (t === "connected" || t === "call connected" || t === "accepted") return "connected";
+  if (t.includes("voicemail")) return "voicemail";
+  if (t === "no_answer" || t === "missed" || t === "no answer" || t === "busy" || t === "rejected") return "no_answer";
+  return "other";
+}
+
+/**
+ * Calls per rep per month (Pacific). Every call the Check-In Report counts:
+ * calls logged against a partner, plus calls to numbers not linked to one yet
+ * (rc_unmatched_calls still unassigned — assigned ones already moved into
+ * contact_logs). Only calls against a partner carry a call type.
+ */
 export async function getBdrCallActivity(filters?: { repName?: string; month?: string }) {
   const db = await getDb();
   if (!db) return [];
+  const wanted = repWanted(filters?.repName);
 
-  const conditions: any[] = [eq(contactLogs.contactType, "call")];
-  if (filters?.repName) conditions.push(eq(contactLogs.repName, filters.repName));
-
-  const rows = await db
-    .select({
-      repName: contactLogs.repName,
-      callType: contactLogs.callType,
-      callResult: contactLogs.callResult,
-      contactDate: contactLogs.contactDate,
-    })
+  const logged = await db
+    .select({ repName: contactLogs.repName, callType: contactLogs.callType, callResult: contactLogs.callResult, contactDate: contactLogs.contactDate })
     .from(contactLogs)
-    .where(and(...conditions))
-    .orderBy(desc(contactLogs.contactDate));
+    .where(eq(contactLogs.contactType, "call"));
+  const unlinked = await db
+    .select({ repName: rcUnmatchedCalls.agentName, callResult: rcUnmatchedCalls.callResult, contactDate: rcUnmatchedCalls.startTime })
+    .from(rcUnmatchedCalls)
+    .where(eq(rcUnmatchedCalls.status, "unassigned"));
 
-  // Aggregate in JS for flexibility
-  const byRepMonth: Record<string, Record<string, {
-    total: number; connected: number; voicemail: number; noAnswer: number;
+  type Cell = {
+    total: number; connected: number; voicemail: number; noAnswer: number; unlinked: number;
     partnerCheckin: number; bdrCheckin: number; frCheckin: number; internal: number; potentialLead: number;
-  }>> = {};
+  };
+  const names = repNamer();
+  const cells = new Map<string, Cell>();
+  const add = (row: { repName: string | null; callType?: string | null; callResult: string | null; contactDate: Date | null }, isUnlinked: boolean) => {
+    if (!row.contactDate || !wanted(row.repName)) return;
+    // A call with no rep on it still counts for the team, on its own row.
+    const rep = names.key(row.repName) || NO_REP;
+    if (isNonReportingRep(rep)) return; // dev/test traffic stays out of team reports
+    const month = formatInTimeZone(row.contactDate, BDR_LA, "yyyy-MM");
+    if (filters?.month && month !== filters.month) return;
+    const k = `${rep}|${month}`;
+    const c = cells.get(k) ?? { total: 0, connected: 0, voicemail: 0, noAnswer: 0, unlinked: 0, partnerCheckin: 0, bdrCheckin: 0, frCheckin: 0, internal: 0, potentialLead: 0 };
+    c.total++;
+    const o = callOutcome(row.callResult);
+    if (o === "connected") c.connected++;
+    else if (o === "voicemail") c.voicemail++;
+    else if (o === "no_answer") c.noAnswer++;
+    if (isUnlinked) c.unlinked++;
+    if (row.callType === "partner_checkin") c.partnerCheckin++;
+    if (row.callType === "bdr_checkin") c.bdrCheckin++;
+    if (row.callType === "fr_checkin") c.frCheckin++;
+    if (row.callType === "internal") c.internal++;
+    if (row.callType === "potential_lead") c.potentialLead++;
+    cells.set(k, c);
+  };
+  for (const r of logged) add(r, false);
+  for (const r of unlinked) add({ ...r, callType: null }, true);
 
-  for (const row of rows) {
-    const rep = row.repName ?? "Unknown";
-    const d = row.contactDate ? new Date(row.contactDate) : new Date();
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    if (filters?.month && monthKey !== filters.month) continue;
-
-    if (!byRepMonth[rep]) byRepMonth[rep] = {};
-    if (!byRepMonth[rep][monthKey]) byRepMonth[rep][monthKey] = {
-      total: 0, connected: 0, voicemail: 0, noAnswer: 0,
-      partnerCheckin: 0, bdrCheckin: 0, frCheckin: 0, internal: 0, potentialLead: 0,
-    };
-    const cell = byRepMonth[rep][monthKey];
-    cell.total++;
-    if (row.callResult === "connected") cell.connected++;
-    if (row.callResult === "voicemail") cell.voicemail++;
-    if (row.callResult === "no_answer") cell.noAnswer++;
-    if (row.callType === "partner_checkin") cell.partnerCheckin++;
-    if (row.callType === "bdr_checkin") cell.bdrCheckin++;
-    if (row.callType === "fr_checkin") cell.frCheckin++;
-    if (row.callType === "internal") cell.internal++;
-    if (row.callType === "potential_lead") cell.potentialLead++;
-  }
-
-  const result: Array<{
-    repName: string; month: string; total: number; connected: number; voicemail: number; noAnswer: number;
-    partnerCheckin: number; bdrCheckin: number; frCheckin: number; internal: number; potentialLead: number;
-  }> = [];
-  for (const [rep, months] of Object.entries(byRepMonth)) {
-    if (isNonReportingRep(rep)) continue; // dev/test traffic stays out of team reports
-    for (const [month, stats] of Object.entries(months)) {
-      result.push({ repName: rep, month, ...stats });
-    }
-  }
-  return result.sort((a, b) => b.month.localeCompare(a.month) || a.repName.localeCompare(b.repName));
+  return Array.from(cells.entries())
+    .map(([k, c]) => {
+      const [rep, month] = k.split("|");
+      const repName = names.display(rep);
+      return { repName, current: isCurrentRep(repName), month, ...c };
+    })
+    .sort((a, b) => b.month.localeCompare(a.month) || a.repName.localeCompare(b.repName));
 }
 
-/** Partner check-in summary per rep: target vs actual */
+/**
+ * Each rep's active and priority partners, and how many they checked in on.
+ * A check-in is a day with a check-in call to that partner (the Check-In
+ * Report's rule), by the rep who owns it. "Needs check-in" = no call or visit
+ * by anyone in the last 30 days.
+ */
 export async function getBdrPartnerCheckins(filters?: { repName?: string }) {
   const db = await getDb();
   if (!db) return [];
+  const wanted = repWanted(filters?.repName);
 
-  // Count facilities per rep (active partners)
-  const allFacilities = await db
-    .select({
-      assignedRepName: facilities.assignedRepName,
-      id: facilities.id,
-      name: facilities.name,
-      category: facilities.category,
-      partnerStatus: facilities.partnerStatus,
-      lastContactDate: facilities.lastContactDate,
-    })
+  const partners = await db
+    .select({ id: facilities.id, rep: facilities.assignedRepName, lastContactDate: facilities.lastContactDate })
     .from(facilities)
     .where(sql`${facilities.partnerStatus} IN ('active_partner', 'priority_partner')`);
-
-  // Count check-in calls per rep from contact_logs
-  const checkinLogs = await db
-    .select({
-      repName: contactLogs.repName,
-      facilityId: contactLogs.facilityId,
-      contactDate: contactLogs.contactDate,
-    })
+  const ids = partners.map((f) => f.id);
+  const logs = ids.length ? await db
+    .select({ facilityId: contactLogs.facilityId, repName: contactLogs.repName, contactType: contactLogs.contactType, callType: contactLogs.callType, contactDate: contactLogs.contactDate })
     .from(contactLogs)
-    .where(eq(contactLogs.callType, "partner_checkin"));
-
-  const repStats: Record<string, {
-    repName: string; totalPartners: number; checkinsThisMonth: number;
-    checkinsLast30Days: number; facilitiesNeedingCheckin: number;
-  }> = {};
+    .where(inArray(contactLogs.facilityId, ids)) : [];
 
   const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  for (const f of allFacilities) {
-    const rep = f.assignedRepName ?? "Unassigned";
-    if (filters?.repName && rep !== filters.repName) continue;
-    if (!repStats[rep]) repStats[rep] = { repName: rep, totalPartners: 0, checkinsThisMonth: 0, checkinsLast30Days: 0, facilitiesNeedingCheckin: 0 };
-    repStats[rep].totalPartners++;
-    const lastContact = f.lastContactDate ? new Date(f.lastContactDate) : null;
-    if (!lastContact || lastContact < thirtyDaysAgo) repStats[rep].facilitiesNeedingCheckin++;
+  const since30 = new Date(now.getTime() - 30 * 86400000);
+  const thisMonth = formatInTimeZone(now, BDR_LA, "yyyy-MM");
+  const lastTouch = new Map<number, number>();
+  const checkinDays = new Map<number, { repKey: string; day: string }[]>();
+  for (const l of logs) {
+    if (!l.contactDate) continue;
+    const t = new Date(l.contactDate).getTime();
+    lastTouch.set(l.facilityId, Math.max(lastTouch.get(l.facilityId) ?? 0, t));
+    if (l.contactType === "call" && ["partner_checkin", "bdr_checkin", "fr_checkin"].includes(String(l.callType))) {
+      const list = checkinDays.get(l.facilityId) ?? [];
+      list.push({ repKey: repFirst(l.repName), day: formatInTimeZone(l.contactDate, BDR_LA, "yyyy-MM-dd") });
+      checkinDays.set(l.facilityId, list);
+    }
   }
 
-  for (const log of checkinLogs) {
-    const rep = log.repName ?? "Unknown";
-    if (filters?.repName && rep !== filters.repName) continue;
-    if (!repStats[rep]) continue;
-    const d = log.contactDate ? new Date(log.contactDate) : null;
-    if (!d) continue;
-    if (d >= thisMonthStart) repStats[rep].checkinsThisMonth++;
-    if (d >= thirtyDaysAgo) repStats[rep].checkinsLast30Days++;
+  const names = repNamer();
+  const stats = new Map<string, { totalPartners: number; checkinsThisMonth: number; checkinsLast30Days: number; facilitiesNeedingCheckin: number }>();
+  const since30Day = formatInTimeZone(since30, BDR_LA, "yyyy-MM-dd");
+  for (const f of partners) {
+    if (!wanted(f.rep)) continue;
+    const rep = names.key(f.rep) || "unassigned";
+    if (isNonReportingRep(rep)) continue;
+    const s = stats.get(rep) ?? { totalPartners: 0, checkinsThisMonth: 0, checkinsLast30Days: 0, facilitiesNeedingCheckin: 0 };
+    s.totalPartners++;
+    const last = Math.max(lastTouch.get(f.id) ?? 0, f.lastContactDate ? new Date(f.lastContactDate).getTime() : 0);
+    if (last < since30.getTime()) s.facilitiesNeedingCheckin++;
+    const days = new Set((checkinDays.get(f.id) ?? []).filter((c) => c.repKey === rep).map((c) => c.day));
+    for (const d of Array.from(days)) {
+      if (d.startsWith(thisMonth)) s.checkinsThisMonth++;
+      if (d >= since30Day) s.checkinsLast30Days++;
+    }
+    stats.set(rep, s);
   }
-
-  return Object.values(repStats)
-    .filter((r) => !isNonReportingRep(r.repName))
+  return Array.from(stats.entries())
+    .map(([k, s]) => ({ repName: k === "unassigned" ? "Unassigned" : names.display(k), ...s }))
     .sort((a, b) => b.totalPartners - a.totalPartners);
 }
 
-/** Top facilities by contact frequency */
-export async function getBdrTopFacilities(limit = 20) {
+/** The partners called most, for the rep and month picked (Pacific months). */
+export async function getBdrTopFacilities(limit = 20, filters?: { repName?: string; month?: string }) {
   const db = await getDb();
   if (!db) return [];
+  const wanted = repWanted(filters?.repName);
 
   const rows = await db
-    .select({
-      facilityId: contactLogs.facilityId,
-      repName: contactLogs.repName,
-    })
+    .select({ facilityId: contactLogs.facilityId, repName: contactLogs.repName, contactDate: contactLogs.contactDate })
     .from(contactLogs)
     .where(eq(contactLogs.contactType, "call"));
 
-  const counts: Record<number, { count: number; reps: Set<string> }> = {};
+  const names = repNamer();
+  const counts = new Map<number, { count: number; reps: Set<string> }>();
   for (const row of rows) {
-    if (!counts[row.facilityId]) counts[row.facilityId] = { count: 0, reps: new Set() };
-    counts[row.facilityId].count++;
-    if (row.repName) counts[row.facilityId].reps.add(row.repName);
+    if (!wanted(row.repName)) continue;
+    const rep = names.key(row.repName);
+    if (rep && isNonReportingRep(rep)) continue;
+    if (filters?.month && (!row.contactDate || formatInTimeZone(row.contactDate, BDR_LA, "yyyy-MM") !== filters.month)) continue;
+    const c = counts.get(row.facilityId) ?? { count: 0, reps: new Set<string>() };
+    c.count++;
+    if (rep) c.reps.add(rep);
+    counts.set(row.facilityId, c);
   }
 
-  const sorted = Object.entries(counts)
-    .sort(([, a], [, b]) => b.count - a.count)
-    .slice(0, limit);
-
-  const facilityIds = sorted.map(([id]) => Number(id));
+  const sorted = Array.from(counts.entries()).sort(([, a], [, b]) => b.count - a.count).slice(0, limit);
+  const facilityIds = sorted.map(([id]) => id);
   if (facilityIds.length === 0) return [];
-
-  const facilityRows = await db.select().from(facilities).where(
-    sql`${facilities.id} IN (${sql.join(facilityIds.map((id) => sql`${id}`), sql`, `)})`
-  );
-
+  const facilityRows = await db.select().from(facilities).where(inArray(facilities.id, facilityIds));
   const facilityMap = new Map(facilityRows.map((f) => [f.id, f]));
   return sorted.map(([id, stats]) => {
-    const f = facilityMap.get(Number(id));
+    const f = facilityMap.get(id);
     return {
-      facilityId: Number(id),
+      facilityId: id,
       name: f?.name ?? "Unknown",
       category: f?.category ?? "other",
       city: f?.city ?? "",
-      assignedRepName: f?.assignedRepName ?? "",
+      assignedRepName: f?.assignedRepName ? names.display(repFirst(f.assignedRepName)) : "",
       callCount: stats.count,
-      reps: Array.from(stats.reps).join(", "),
+      reps: Array.from(stats.reps).map((k) => names.display(k)).join(", "),
     };
   });
 }
