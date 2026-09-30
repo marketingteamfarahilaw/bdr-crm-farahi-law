@@ -11,9 +11,10 @@ import { Link, useRoute, useSearch } from "wouter";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import {
-  ArrowLeft, Building2, CheckCircle2, ChevronRight, Inbox, Layers, Loader2, MapPin, Percent, Phone, PhoneCall, Search, Target, Trophy, X,
+  ArrowLeft, Building2, RotateCw, Sparkles, CheckCircle2, ChevronRight, Inbox, Layers, Loader2, MapPin, Percent, Phone, PhoneCall, Search, Target, Trophy, X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { RepFace, PartnerLogo } from "@/components/RepFace";
 import {
   Big, DateInput, HBar, LeadList, SC_TITLE, ScorecardTable, fmt, hueStyle, initials, iso, pct1, pctText, presets, rangeLabel, roleName, teamTops,
@@ -143,6 +144,7 @@ export default function RepProfile() {
               <div className="sr-board">
                 <div style={{ minWidth: 0 }}>
                   <LeadList leads={d.leadList} showRep={false} />
+                  {!!(a?.calls.total || a?.recaps.count) && <RepReview member={member} from={from} to={to} />}
                   {!!a?.recaps.count && <Recaps recaps={a.recaps.latest} total={a.recaps.count} />}
                 </div>
                 <aside>
@@ -224,6 +226,75 @@ function Activity({ a }: { a: Act | undefined }) {
 }
 
 /** The latest call recaps: what was said with which partner. */
+const RATING: Record<string, { label: string; badge: string }> = {
+  strong: { label: "Strong", badge: "sr-b-ok" },
+  solid: { label: "Solid", badge: "sr-b-grey" },
+  needs_improvement: { label: "Needs improvement", badge: "sr-b-sun" },
+};
+
+/**
+ * The AI performance review for this rep and the dates picked above — written
+ * from their call recaps, as on the Representative Performance page. It opens
+ * by itself; the server keeps it a few hours, and Regenerate writes a new one.
+ */
+function RepReview({ member, from, to }: { member: string; from: string; to: string }) {
+  const utils = trpc.useUtils();
+  const input = { member, from, to };
+  const q = trpc.teamReports.repReview.useQuery(input, { staleTime: Infinity, retry: false, refetchOnWindowFocus: false });
+  const [regenerating, setRegenerating] = useState(false);
+  const regenerate = async () => {
+    setRegenerating(true);
+    try {
+      utils.teamReports.repReview.setData(input, await utils.teamReports.repReview.fetch({ ...input, fresh: true }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't write the review.");
+    } finally {
+      setRegenerating(false);
+    }
+  };
+  const r = q.data;
+  const rating = r ? RATING[r.performanceRating] ?? RATING.solid : null;
+  const busy = q.isFetching || regenerating;
+  return (
+    <div className="sr-panel rp-review">
+      <div className="sr-panel-h">
+        <div className="sr-ttl"><h2><Sparkles className="rp-review-ic" /> Performance review</h2>{rating && <span className={`sr-badge ${rating.badge}`}>{rating.label}</span>}</div>
+        {r && <button className="sr-btn2" onClick={regenerate} disabled={busy}>{busy ? <Loader2 className="sr-spin" /> : <RotateCw />} Regenerate</button>}
+      </div>
+      <p className="sr-sub">{rangeLabel(from, to)} · written by AI from {member}'s calls and call recaps in these dates.</p>
+      {busy && !r ? (
+        <p className="sr-nil" style={{ display: "flex", gap: 8, alignItems: "center" }}><Loader2 className="sr-spin" size={14} /> Reading the call recaps and writing the review…</p>
+      ) : q.isError && !r ? (
+        <LoadError what="the review" message={q.error.message} onRetry={() => q.refetch()} />
+      ) : r ? (
+        <div className="rp-review-b" style={regenerating ? { opacity: 0.6 } : undefined}>
+          <p className="rp-review-sum">{r.overallSummary}</p>
+          {([["Strengths", r.strengths, "ok"], ["Challenges", r.challenges, "bad"], ["Recommendations", r.recommendations, "sun"]] as const)
+            .filter(([, items]) => items.length)
+            .map(([title, items, tone]) => (
+              <div key={title} className={`rp-review-l ${tone}`}>
+                <h3>{title}</h3>
+                <ul>{items.map((x, i) => <li key={i}>{x}</li>)}</ul>
+              </div>
+            ))}
+          {r.daily.length > 0 && (
+            <details className="sr-acc">
+              <summary><span>Day by day</span></summary>
+              <div className="rp-review-days">
+                {r.daily.map((d, i) => <div key={i}><span>{dayLabel(d.date)}</span><p>{d.summary}</p></div>)}
+              </div>
+            </details>
+          )}
+          <p className="sr-sub" style={{ marginTop: 10 }}>
+            From {fmt(r.basedOnRecaps)} call recap{r.basedOnRecaps === 1 ? "" : "s"}{r.writtenBy ? ` · ${r.writtenBy}` : ""}
+            {" "}· {new Date(r.generatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function Recaps({ recaps, total }: {
   recaps: { date: string; facilityId: number | null; facility: string; summary: string; sentiment: string }[];
   total: number;

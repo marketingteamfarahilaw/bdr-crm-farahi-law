@@ -104,7 +104,7 @@ import { getSignupsTrends } from "./signupsTrends";
 import { getSignupsMonthly } from "./signupsMonthly";
 import { getAdminOverview } from "./adminOverview";
 import { getExpensesView } from "./expensesView";
-import { getRepActivity } from "./repProfile";
+import { getRepActivity, getRepReview } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
 import { getSystemHealth } from "./systemHealth";
 import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
@@ -921,6 +921,10 @@ export const appRouter = router({
       repActivity: bdProcedure
         .input(range.extend({ member: z.string().min(1).max(120) }))
         .query(async ({ ctx, input }) => { mgrOnly(ctx); return getRepActivity(input.member, toRange(input)); }),
+      // The AI performance review for the profile's rep and dates (kept a few hours; fresh on Regenerate).
+      repReview: bdProcedure
+        .input(range.extend({ member: z.string().min(1).max(120), fresh: z.boolean().optional() }))
+        .query(async ({ ctx, input }) => { mgrOnly(ctx); return getRepReview(input.member, toRange(input), input.fresh); }),
       // Pick a lead's referring partner by hand from the report's lead lists.
       partnerOptions: bdProcedure.query(async ({ ctx }) => { mgrOnly(ctx); return getPartnerOptions(); }),
       linkLeadPartner: bdProcedure
