@@ -240,6 +240,11 @@ export default function IntakeLeadDetail() {
                     <Fact label="Injuries">{lead.injuries ?? "—"}{lead.injurySeverity && lead.injurySeverity !== "unknown" ? ` (${lead.injurySeverity})` : ""}</Fact>
                     <Fact label="Treatment">{(TREATMENT_OPTS.find(([k]) => k === lead.treatmentStatus)?.[1]) ?? "Unknown"}{lead.treatmentDetails ? ` — ${lead.treatmentDetails}` : ""}</Fact>
                     <Fact label="Liability">{(LIABILITY_OPTS.find(([k]) => k === lead.liabilityAssessment)?.[1]) ?? "Unknown"}{lead.liabilityNotes ? ` — ${lead.liabilityNotes}` : ""}</Fact>
+                    {/* Lead Docket's "Status of Liability During Intake", from the lead with this phone. Read-only: it's edited in Lead Docket. */}
+                    <Fact label="Liability status (intake)">
+                      {data?.leadDocket?.liabilityStatus ?? "—"}
+                      {data?.leadDocket && <span className="text-[11px] text-muted-foreground"> · Lead Docket #{data.leadDocket.leadId}</span>}
+                    </Fact>
                     <Fact label="Police report">{ynu(lead.policeReport)}</Fact>
                     <Fact label="Their insurance">{lead.defendantInsurer ?? "Unknown"}</Fact>
                     <Fact label="Client insurance">{[lead.clientInsurer, lead.healthInsurance && `health: ${lead.healthInsurance}`].filter(Boolean).join(" · ") || "Unknown"}</Fact>

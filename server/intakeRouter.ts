@@ -33,6 +33,7 @@ import {
 } from "./intakeDb";
 import { analyzeIntakeTranscript, INTAKE_CASE_TYPES } from "./intakeAI";
 import { syncIntakeCalls } from "./intakeSync";
+import { leadDocketLiabilityForPhone } from "./leaddocketLiability";
 import { getValidRCTokenForUser } from "./crmRouter";
 import { sendIntakeLeadToWebhook, getIntakeWebhookUrl, type IntakeLeadPayload } from "./filevineHook";
 
@@ -165,11 +166,13 @@ export const intakeRouter = router({
       .query(async ({ input }) => {
         const lead = await getIntakeLead(input.id);
         if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found." });
-        const [calls, events] = await Promise.all([
+        const [calls, events, leadDocket] = await Promise.all([
           listIntakeCalls({ leadId: input.id }),
           listLeadEvents(input.id),
+          // Lead Docket's "Status of Liability During Intake", matched by phone.
+          leadDocketLiabilityForPhone(lead.phone),
         ]);
-        return { lead, calls, events };
+        return { lead, calls, events, leadDocket };
       }),
 
     create: intakeProcedure
