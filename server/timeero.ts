@@ -175,13 +175,21 @@ export function registerTimeeroWebhook(app: Express) {
     }
     res.status(200).json({ ok: true });   // answer first; Timeero doesn't wait on the fetch below
 
-    const b = req.body ?? {};
-    const event = String(b.event ?? "");
-    const id = String(b.id ?? "");
-    const op = String(b.operation ?? "");
+    // Timeero's docs show {event, id, operation, last_updated_at}; accept the
+    // same fields wrapped in "data" or under their other usual names too.
+    const top = req.body ?? {};
+    const b = top.event || top.type || top.event_type ? top : top.data && typeof top.data === "object" ? top.data : top;
+    const event = String(b.event ?? b.type ?? b.event_type ?? b.resource ?? "");
+    const id = String(b.id ?? b.data_id ?? b.resource_id ?? b.record_id ?? "");
+    const op = String(b.operation ?? b.action ?? "");
     const kind = kindOf(event);
     try {
-      if (!kind || !id) throw new Error(`unrecognised event "${event}"`);
+      if (!kind || !id) {
+        // Keep what came, so we can see it on the Settings card and teach the CRM to read it.
+        const sample = JSON.stringify(top).slice(0, 500);
+        await noteWebhook({ ok: true, lastEvent: event || "(no event name)", lastError: `Not recognised yet — Timeero sent: ${sample || "(empty body)"}` });
+        return;
+      }
       const at = whenOf(b);
       if (/deleted$/i.test(op)) await upsert(kind, id, undefined, { deleted: true, updatedAt: at });
       else {
