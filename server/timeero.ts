@@ -358,3 +358,22 @@ export async function importTimeero(): Promise<{ ok: true; imported: Record<stri
   }
   return { ok: true, imported, errors };
 }
+
+/**
+ * For Settings: the fields of the newest record of a kind, so we can see what
+ * Timeero actually sends before building reports on it. Long values are cut.
+ */
+export async function timeeroSample(kind: string) {
+  await ensureTable();
+  const db = await getDb();
+  const [rows] = (await db!.execute(sql`SELECT data FROM timeero_records WHERE kind = ${kind} AND deleted = 0 AND data IS NOT NULL ORDER BY updatedAt DESC, id DESC LIMIT 1`)) as any;
+  const raw = (rows as any[])[0]?.data;
+  if (!raw) return null;
+  const cut = (v: unknown, depth = 0): unknown => {
+    if (typeof v === "string") return v.length > 120 ? `${v.slice(0, 120)}…` : v;
+    if (Array.isArray(v)) return depth > 3 ? `[${v.length} items]` : v.slice(0, 3).map((x) => cut(x, depth + 1));
+    if (v && typeof v === "object") return depth > 3 ? "{…}" : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, cut(x, depth + 1)]));
+    return v;
+  };
+  return JSON.stringify(cut(JSON.parse(raw)), null, 2);
+}

@@ -106,7 +106,7 @@ import { getAdminOverview } from "./adminOverview";
 import { getExpensesView } from "./expensesView";
 import { getRepActivity, getRepReview } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
-import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret } from "./timeero";
+import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret, timeeroSample } from "./timeero";
 import { getSystemHealth } from "./systemHealth";
 import { addPartnerForWords, answerWords, dismissDuplicate, forgetWords, getDataCheck, repNameFor, repOfLead } from "./dataCheck";
 import { getRepPhotos } from "./repPhotos";
@@ -279,6 +279,9 @@ export const appRouter = router({
     testTimeero: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return testTimeero(); }),
     importTimeero: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return importTimeero(); }),
     newTimeeroSecret: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return newTimeeroSecret(); }),
+    timeeroSample: protectedProcedure
+      .input(z.object({ kind: z.enum(["users", "groups", "jobs", "tasks", "timesheets", "schedules"]) }))
+      .mutation(({ ctx, input }) => { superOnly(ctx); return timeeroSample(input.kind); }),
     saveClaudeKey: protectedProcedure
       .input(z.object({ key: z.string().max(400).nullable() }))
       .mutation(({ ctx, input }) => { superOnly(ctx); return saveClaudeKey(input.key); }),

@@ -258,6 +258,8 @@ function TimeeroCard() {
     },
     onError: (e) => toast.error(e.message),
   });
+  const [sampleKind, setSampleKind] = useState<"timesheets" | "users" | "jobs">("timesheets");
+  const sample = trpc.settings.timeeroSample.useMutation({ onError: (e) => toast.error(e.message) });
   const secret = trpc.settings.newTimeeroSecret.useMutation({ onSuccess: () => { toast.success("New secret made — paste it into Timeero."); refresh(); } });
   const s = status.data;
   const busy = save.isPending || test.isPending || imp.isPending;
@@ -333,6 +335,25 @@ function TimeeroCard() {
             </div>
             {counts.length > 0 && <div className="text-muted-foreground">In the CRM: {counts.map(([k, n]) => `${n} ${k}`).join(" · ")}</div>}
           </div>
+
+          {counts.length > 0 && (
+            <div className="mt-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground">What Timeero sends:</span>
+                {(["timesheets", "users", "jobs"] as const).map((k) => (
+                  <Button key={k} size="sm" variant={sampleKind === k && sample.data !== undefined ? "default" : "outline"} className="h-7 px-2 border-border"
+                    disabled={sample.isPending} onClick={() => { setSampleKind(k); sample.mutate({ kind: k }); }}>
+                    Show a sample {k.replace(/s$/, "")}
+                  </Button>
+                ))}
+              </div>
+              {sample.data !== undefined && (
+                <pre className="mt-2 max-h-80 overflow-auto rounded-lg border border-border bg-secondary/30 p-3 text-[11px] leading-snug whitespace-pre-wrap">
+                  {sample.data ?? `No ${sampleKind} yet.`}
+                </pre>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
