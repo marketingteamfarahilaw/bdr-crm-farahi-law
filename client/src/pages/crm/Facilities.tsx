@@ -25,6 +25,16 @@ import FacilitiesMap from "@/components/FacilitiesMap";
 import { DeleteFacilitiesDialog, MergeFacilitiesDialog } from "./FacilityMergeDelete";
 
 import { STATUS_LABELS } from "@/lib/crmMeta";
+import { RepFace } from "@/components/RepFace";
+import { CURRENT_TEAM } from "@shared/team";
+
+// Who is responsible for a partner, and on which team: facilities store the
+// name as the rep wrote it ("Lupe" or "Lupe Campos"), so match on first name.
+const firstName = (s?: string | null) => String(s ?? "").trim().toLowerCase().split(/\s+/)[0] ?? "";
+const TEAM_OF = new Map<string, { full: string; role: "BDR" | "FR" }>([
+  ...CURRENT_TEAM.BDR.map((n) => [firstName(n), { full: n, role: "BDR" as const }] as const),
+  ...CURRENT_TEAM.FR.map((n) => [firstName(n), { full: n, role: "FR" as const }] as const),
+]);
 
 const CATEGORY_LABELS: Record<string, string> = {
   body_shop: "Body Shop",
@@ -329,6 +339,12 @@ export default function Facilities() {
                     </TableHead>
                     <TableHead
                       className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("assignedRepName")}
+                    >
+                      Responsible <SortIcon col="assignedRepName" />
+                    </TableHead>
+                    <TableHead
+                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("category")}
                     >
                       Category <SortIcon col="category" />
@@ -340,12 +356,6 @@ export default function Facilities() {
                       onClick={() => handleSort("relationshipStatus")}
                     >
                       Status <SortIcon col="relationshipStatus" />
-                    </TableHead>
-                    <TableHead
-                      className="text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
-                      onClick={() => handleSort("assignedRepName")}
-                    >
-                      BD Rep <SortIcon col="assignedRepName" />
                     </TableHead>
                     <TableHead className="text-muted-foreground text-xs text-right" title="Referrals sent to / received from this partner">Sent / Recv</TableHead>
                     <TableHead
@@ -387,6 +397,21 @@ export default function Facilities() {
                             </div>
                           )}
                         </TableCell>
+                        <TableCell className="py-1.5 text-xs">
+                          {facility.assignedRepName ? (() => {
+                            const who = TEAM_OF.get(firstName(facility.assignedRepName));
+                            const name = who?.full ?? facility.assignedRepName;
+                            return (
+                              <div className="flex items-center gap-2 whitespace-nowrap">
+                                <span className="w-6 h-6 rounded-full overflow-hidden bg-secondary flex items-center justify-center text-[10px] font-semibold text-foreground shrink-0 [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
+                                  <RepFace name={name} fallback={String(name).split(/\s+/).map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()} />
+                                </span>
+                                <span className="font-medium text-foreground">{name}</span>
+                                {who && <span className="text-[10px] font-semibold text-muted-foreground border border-border rounded-full px-1.5 py-px">{who.role}</span>}
+                              </div>
+                            );
+                          })() : <span className="text-muted-foreground opacity-60">Unassigned</span>}
+                        </TableCell>
                         <TableCell className="py-1.5 text-xs text-muted-foreground">
                           {CATEGORY_LABELS[facility.category] ?? facility.category}
                         </TableCell>
@@ -414,9 +439,6 @@ export default function Facilities() {
                           <Badge className={`text-xs border ${status.color}`}>
                             {status.label}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="py-1.5 text-xs text-muted-foreground">
-                          {facility.assignedRepName ?? <span className="opacity-40">—</span>}
                         </TableCell>
                         <TableCell className="py-1.5 text-xs text-right">
                           <span className="font-medium text-foreground">{(facility as any).referralsSent ?? 0}</span>
