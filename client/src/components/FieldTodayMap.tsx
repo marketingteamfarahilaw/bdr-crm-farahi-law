@@ -178,7 +178,24 @@ export default function FieldTodayMap() {
           </div>
           <div className="max-h-[280px] overflow-y-auto rounded-lg border border-border divide-y divide-border">
             {!shifts.length ? (
-              <p className="p-3 text-sm text-muted-foreground">{isLoading ? "Loading…" : "No shifts yet today."}</p>
+              <div className="p-3 text-sm text-muted-foreground">
+                <p>{isLoading ? "Loading…" : "No one is on shift today in Timeero."}</p>
+                {!!data?.lastShifts?.length && (
+                  <>
+                    <p className="mt-3 mb-1.5 text-xs font-medium text-foreground">Last shift per Field Rep</p>
+                    <ul className="space-y-1.5">
+                      {data.lastShifts.map((l) => (
+                        <li key={l.rep} className="text-xs">
+                          <span className="font-medium text-foreground">{l.rep}</span>{" · "}
+                          {new Date(`${l.day}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                          {", "}{new Date(l.clockIn).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                          {l.address && <span className="block truncate" title={l.address}>{l.address.replace(/, United States of America$/, "")}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
             ) : shifts.map((s) => (
               <div key={s.id} className="px-3 py-2 text-xs">
                 <div className="flex items-center justify-between gap-2">

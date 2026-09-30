@@ -636,7 +636,8 @@ export async function getFieldToday() {
   const today = formatInTimeZone(now, LA, "yyyy-MM-dd");
   const yesterday = formatInTimeZone(new Date(now.getTime() - 86_400_000), LA, "yyyy-MM-dd");
   const nearMeters = Math.round(NEAR_KM * 1000);
-  if (!db) return { today, asOf: now.toISOString(), nearMeters, shifts: [] };
+  if (!db) return { today, asOf: now.toISOString(), nearMeters, shifts: [], lastShifts: [] as { rep: string; day: string; clockIn: string; address: string | null }[] };
+  await pullRecentTimesheets(yesterday, today);
   // A shift clocked in since yesterday was written since then, so updatedAt
   // narrows the scan to a handful of rows — the page polls this every minute.
   const since = fromZonedTime(`${yesterday} 00:00:00`, LA);
@@ -687,5 +688,56 @@ export async function getFieldToday() {
   }
   // Clocked-in reps first, then the latest clock-in.
   shifts.sort((a, b) => Number(b.open) - Number(a.open) || b.clockIn.localeCompare(a.clockIn));
-  return { today, asOf: now.toISOString(), nearMeters, shifts };
+
+  // With no one on shift, each current FR's last clock-in, so the section
+  // still says something useful ("Lupe — last shift Sep 29, Fullerton").
+  const lastShifts: { rep: string; day: string; clockIn: string; address: string | null }[] = [];
+  if (!shifts.length) {
+    const [recent] = (await db.execute(sql`SELECT data FROM timeero_records WHERE kind = 'timesheets' AND deleted = 0 AND data IS NOT NULL
+      AND updatedAt >= ${new Date(now.getTime() - 45 * 86_400_000)}`)) as any;
+    const best = new Map<string, { rep: string; day: string; clockIn: string; address: string | null }>();
+    for (const r of recent as any[]) {
+      let t: any;
+      try { t = JSON.parse(r.data); } catch { continue; }
+      const raw = [t.first_name, t.last_name].filter(Boolean).join(" ").trim();
+      const rep = FR_BY_FIRST.get(raw.toLowerCase().split(/\s+/)[0]);
+      const inTime = String(t.clock_in_time ?? "").slice(0, 19);
+      if (!rep || !inTime) continue;
+      const prev = best.get(rep);
+      if (!prev || inTime > prev.clockIn) best.set(rep, { rep, day: inTime.slice(0, 10), clockIn: inTime, address: t.clock_in_address ? String(t.clock_in_address) : null });
+    }
+    lastShifts.push(...Array.from(best.values()).sort((a, b) => b.clockIn.localeCompare(a.clockIn)));
+  }
+  return { today, asOf: now.toISOString(), nearMeters, shifts, lastShifts };
+}
+
+/**
+ * Today's timesheets straight from Timeero, at most every 2 minutes, so the
+ * Today map doesn't depend on every webhook arriving. Uses the date-range
+ * format the import learned; quietly does nothing when Timeero can't be reached.
+ */
+let lastPull = 0;
+let pulling: Promise<void> | null = null;
+async function pullRecentTimesheets(from: string, to: string) {
+  if (Date.now() - lastPull < 120_000) return pulling ?? undefined;
+  lastPull = Date.now();
+  pulling = (async () => {
+    try {
+      if (!(await apiKey())) return;
+      for (let page = 1; page <= 10; page++) {
+        const body = await rangedGet("timesheets", from, to, page);
+        const items = itemsOf(body);
+        for (const it of items) {
+          const id = idOf(it);
+          if (id) await upsert("timesheets", id, it, { updatedAt: whenOf(it) });
+        }
+        if (lastPage(body, page, items)) break;
+      }
+    } catch (e) {
+      console.warn("[timeero] today pull:", (e as Error)?.message ?? e);
+    } finally {
+      pulling = null;
+    }
+  })();
+  return pulling;
 }
