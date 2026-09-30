@@ -2,8 +2,9 @@
  * Marketing Report — every lead the firm takes in Lead Docket, by the marketing
  * source that brought it, laid out like the Sign-ups Report (same styles, same
  * counting). It covers every Lead Docket lead; the BD/FR team's are one row,
- * "BD/FR team", whose numbers equal the Sign-ups Report's. Private: only
- * canSeeMarketing opens it; the server enforces the same.
+ * "BD/FR team", whose numbers equal the Sign-ups Report's. The whole BD/FR
+ * team opens it (canSeeMarketing); only managers enter spend
+ * (canEditMarketingSpend); the server enforces both.
  *
  * This file is the page's order and state; each panel lives in ./marketing/.
  * Every clickable number hands a DrillLink to openDrill, and the one clients
@@ -19,7 +20,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Inbox, CheckCircle2, DollarSign, Download, Loader2, Trophy, Percent, TrendingUp, Info, Megaphone, ArrowUpRight, Users, Presentation,
 } from "lucide-react";
-import { canSeeMarketing } from "@shared/permissions";
+import { canEditMarketingSpend, canSeeMarketing } from "@shared/permissions";
 import { REASON_KEYS, REASON_LABEL } from "@shared/marketing";
 import type { DrillLink, RowRef } from "../../../server/marketing/common";
 import {
@@ -345,6 +346,8 @@ function HeroBottom({ data, onDrill }: { data: Data; onDrill: (d: DrillLink) => 
 function Report({ data, from, to, group, onDrill }: {
   data: Data; from: string; to: string; group: Group; onDrill: (d: DrillLink) => void;
 }) {
+  const { user } = useAuth();
+  const canEditSpend = canEditMarketingSpend(user?.role);
   const noun = group === "channel" ? "channel" : "source";
   const avg = data.totals.conversion;
   const c = data.compare;
@@ -400,7 +403,7 @@ function Report({ data, from, to, group, onDrill }: {
         <div className="sr-card">
           <div className="sr-bh">
             <h2>Spend</h2>
-            <button className="sr-arr" aria-label="Enter spend" onClick={scrollToSpend}><ArrowUpRight /></button>
+            {canEditSpend && <button className="sr-arr" aria-label="Enter spend" onClick={scrollToSpend}><ArrowUpRight /></button>}
           </div>
           <div className="sr-kv"><span className="n">{usd(data.totals.spend ?? 0)}</span><span className="u">entered for<br />these months</span></div>
           {data.totals.spend ? (
@@ -408,7 +411,7 @@ function Report({ data, from, to, group, onDrill }: {
               <div><b>{usd(data.totals.costPerLead, true)}</b><i>per lead</i></div>
               <div><b>{usd(data.totals.costPerSignup, true)}</b><i>per sign-up</i></div>
             </div>
-          ) : <p className="sr-nil">Enter each source's monthly spend to see what a lead and a sign-up cost.</p>}
+          ) : <p className="sr-nil">{canEditSpend ? "Enter each source's monthly spend to see what a lead and a sign-up cost." : "No spend entered yet for these months."}</p>}
         </div>
       </div>
 
@@ -460,7 +463,8 @@ function Report({ data, from, to, group, onDrill }: {
       <CaseTypes data={data} group={group} onDrill={onDrill} />
       <Campaigns data={data} onDrill={onDrill} />
 
-      <SpendEditor months={data.months} group={group} rows={data.sources} unmatched={data.spendUnmatched} />
+      {/* Managers enter spend; the rest of the team sees what it adds up to. */}
+      {canEditSpend && <SpendEditor months={data.months} group={group} rows={data.sources} unmatched={data.spendUnmatched} />}
       <LeadList from={from} to={to} rows={data.sources} noun={noun} />
     </>
   );

@@ -91,7 +91,7 @@ import {
   setSetting,
   setUserPhoto,
 } from "./db";
-import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing, marketingCaseFacts } from "@shared/permissions";
+import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing, canEditMarketingSpend, marketingCaseFacts } from "@shared/permissions";
 import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS } from "./dataSync";
 import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
@@ -822,12 +822,17 @@ export const appRouter = router({
   // The top partners' logos by facility id (server/facilityLogos.ts).
   facilityLogos: bdProcedure.query(() => getFacilityLogos()),
 
-  // Marketing Report — every Lead Docket lead by marketing source. Managers and
-  // super admins (canSeeMarketing); why leads didn't sign is an intake case fact,
-  // so it goes only to marketingCaseFacts (the super admin) — the hard wall.
+  // Marketing Report — every Lead Docket lead by marketing source. The whole
+  // BD/FR team (canSeeMarketing); spend is entered by managers only; why leads
+  // didn't sign is an intake case fact, so it goes only to marketingCaseFacts
+  // (the super admin) — the hard wall.
   marketing: (() => {
     const marketingProcedure = protectedProcedure.use(({ ctx, next }) => {
-      if (!canSeeMarketing(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "The Marketing Report is for managers." });
+      if (!canSeeMarketing(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "The Marketing Report is for the BD/FR team." });
+      return next();
+    });
+    const spendProcedure = marketingProcedure.use(({ ctx, next }) => {
+      if (!canEditMarketingSpend(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can enter marketing spend." });
       return next();
     });
     const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -874,16 +879,16 @@ export const appRouter = router({
         .query(({ ctx, input }) => exportMarketingLeads({ ...input, ...toRange(input), caseFacts: marketingCaseFacts(ctx.user.role) })),
       spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
       sourceNames: marketingProcedure.query(() => listSourceNames()),
-      setSpend: marketingProcedure
+      setSpend: spendProcedure
         .input(z.object({ month, source: z.string().min(1).max(255), amount: z.number().min(0).max(10_000_000).nullable() }))
         .mutation(({ ctx, input }) => setSpendOne(input.month, input.source, input.amount, byOf(ctx.user))),
-      setSpendMany: marketingProcedure
+      setSpendMany: spendProcedure
         .input(z.object({
           month,
           rows: z.array(z.object({ source: z.string().min(1).max(255), amount: z.number().min(0).max(10_000_000).nullable() })).max(300),
         }))
         .mutation(({ ctx, input }) => setSpendMany(input.month, input.rows, byOf(ctx.user))),
-      copySpend: marketingProcedure
+      copySpend: spendProcedure
         .input(z.object({ from: month, to: month, overwrite: z.boolean().default(false) }))
         .mutation(({ ctx, input }) => copySpend(input.from, input.to, input.overwrite, byOf(ctx.user))),
     });

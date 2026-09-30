@@ -104,7 +104,14 @@ export const NON_REPORTING_REPS = new Set(["youssef", "malvin"]);
  * fact, so only canSeeIntake (the super admin) gets that part: see
  * marketingCaseFacts, applied on the server.
  */
-export const canSeeMarketing = (r?: string | null) => isManager(r);
+/**
+ * The Marketing Report: the whole BD/FR team with a login (Youssef, 2026-09-29:
+ * "all team with access can see the marketing report"). The intake team stays
+ * out — the hard wall — and so do its case facts (marketingCaseFacts below).
+ */
+export const canSeeMarketing = (r?: string | null) => !isIntakeOnly(r);
+/** Entering and copying marketing spend: managers and super admins; the team only reads it. */
+export const canEditMarketingSpend = (r?: string | null) => isManager(r);
 /** The Marketing Report's intake case facts (rejection reasons) — the hard wall in CLAUDE.md. */
 export const marketingCaseFacts = (r?: string | null) => canSeeIntake(r);
 
