@@ -648,12 +648,6 @@ table.sr-mo-t td.tot { font-weight: 600; color: var(--ink); }
 .rp-pname { display: flex; flex-direction: column; min-width: 0; }
 .rp-pname b { font: 600 13.5px var(--ui); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rp-pname i { font: 12px var(--ui); font-style: normal; color: var(--mute); }
-.rp-recaps { display: flex; flex-direction: column; gap: 10px; }
-.rp-recap { padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, .55); }
-.rp-recap-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 6px; }
-.rp-recap-h a, .rp-recap-h b { font: 600 13.5px var(--ui); color: var(--ink); text-decoration: none; }
-.rp-recap-h > span:not(.sr-badge) { font: 12px var(--ui); color: var(--mute); }
-.rp-recap p { margin: 0; font: 13px/1.55 var(--ui); color: var(--ink2); }
 @media (max-width: 720px) {
   .rp-hero .rp-head { flex-direction: column; align-items: flex-start; gap: 14px; }
   .rp-photo { width: 88px; height: 88px; font-size: 30px; }

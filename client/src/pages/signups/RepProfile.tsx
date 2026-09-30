@@ -26,7 +26,6 @@ import "../SignupsDashboard.css";
 
 type Act = NonNullable<inferRouterOutputs<AppRouter>["teamReports"]["repActivity"]>;
 
-const sentimentBadge = (s: string) => (s === "positive" ? "sr-b-ok" : s === "negative" ? "sr-b-bad" : "sr-b-grey");
 const dayLabel = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 export default function RepProfile() {
@@ -145,7 +144,6 @@ export default function RepProfile() {
                 <div style={{ minWidth: 0 }}>
                   <LeadList leads={d.leadList} showRep={false} />
                   {!!(a?.calls.total || a?.recaps.count) && <RepReview member={member} from={from} to={to} />}
-                  {!!a?.recaps.count && <Recaps recaps={a.recaps.latest} total={a.recaps.count} />}
                 </div>
                 <aside>
                   <Activity a={a} />
@@ -291,31 +289,6 @@ function RepReview({ member, from, to }: { member: string; from: string; to: str
           </p>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function Recaps({ recaps, total }: {
-  recaps: { date: string; facilityId: number | null; facility: string; summary: string; sentiment: string }[];
-  total: number;
-}) {
-  return (
-    <div className="sr-panel">
-      <div className="sr-panel-h"><div className="sr-ttl"><h2>Latest call recaps</h2><span className="sr-count">{fmt(total)}</span></div></div>
-      {recaps.length === 0 ? <p className="sr-nil">No call recaps in this period.</p> : (
-        <div className="rp-recaps">
-          {recaps.map((r, i) => (
-            <div key={i} className="rp-recap">
-              <div className="rp-recap-h">
-                {r.facilityId ? <Link href={`/crm/facilities/${r.facilityId}`}><b>{r.facility}</b></Link> : <b>{r.facility}</b>}
-                <span>{dayLabel(r.date)}</span>
-                <span className={`sr-badge ${sentimentBadge(r.sentiment)}`}>{r.sentiment}</span>
-              </div>
-              <p>{r.summary}</p>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
