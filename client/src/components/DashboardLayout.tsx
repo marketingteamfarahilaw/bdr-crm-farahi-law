@@ -73,7 +73,7 @@ const NAV_SECTIONS: { title: string; folder?: boolean; items: { icon: any; label
     { icon: Clock, label: "FR Field Time", path: "/fr-field-time", level: "manage" },
     { icon: Receipt, label: "Expenses Report", path: "/bdr/expenses", level: "all", also: ["/crm/uber-eats"] },
     { icon: Gift, label: "Referral Rewards Report", path: "/bdr/referral-rewards", level: "bdr" },
-    // { icon: ArrowLeftRight, label: "Partner Referrals Report", path: "/partner-referrals-report", level: "manage" },  // coming with its page
+    { icon: ArrowLeftRight, label: "Partner Referrals Report", path: "/partner-referrals-report", level: "manage", also: ["/referral/tracker"] },
     { icon: BarChart3, label: "Reports Center", path: "/reports", level: "all" },
     // Left as is for now (pending FR visit updates).
     { icon: PieChart, label: "Admin Overview", path: "/bdr/admin", level: "manage" },

@@ -41,7 +41,6 @@ import ReferralRewardsPage from "./pages/ReferralRewards";
 import FrErrandsPage from "./pages/FrErrands";
 import ReferralTrackerPage from "./pages/ReferralTracker";
 import PartnerReferralTrackerPage from "./pages/PartnerReferralTracker";
-import ReferralReportsPage from "./pages/ReferralReports";
 import BdrAdminDashboardPage from "./pages/BdrAdminDashboard";
 import PiClientsPage from "./pages/PiClients";
 import FilevineSettingsPage from "./pages/FilevineSettings";
@@ -50,6 +49,7 @@ import ProfilePage from "./pages/Profile";
 import ReportsCenter from "./pages/ReportsCenter";
 import TeamReports from "./pages/TeamReports";
 import CallsHub from "./pages/CallsHub";
+import PartnerReferralsReport from "./pages/PartnerReferralsReport";
 import AgentPerformance from "./pages/AgentPerformance";
 import FieldTime from "./pages/FieldTime";
 import RingCentralCallback from "./pages/RingCentralCallback";
@@ -185,7 +185,10 @@ function Router() {
 
         {/* Partner Referral Workflow */}
         <Route path="/referral/tracker" component={PartnerReferralTrackerPage} />
-        <Route path="/referral/reports" component={ReferralReportsPage} />
+        <Route path="/partner-referrals-report" component={PartnerReferralsReport} />
+        <Route path="/referral/report">{() => <Redirect to="/partner-referrals-report" />}</Route>
+        {/* Referral Reports became the Partner Referrals Report (the team's Sept 30 2026 list). */}
+        <Route path="/referral/reports">{() => <Redirect to="/partner-referrals-report" />}</Route>
 
         {/* Agent Management */}
         <Route path="/agents" component={SettingsPage} />
