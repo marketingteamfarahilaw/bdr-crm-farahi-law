@@ -79,7 +79,6 @@ import {
   updateInboundLead,
   deleteInboundLead,
   getReferralStats,
-  getBdrAdminDashboard,
   listUsers,
   setUserRole,
   getUserByEmail,
@@ -109,6 +108,7 @@ import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCall
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
 import { getSignupsTrends } from "./signupsTrends";
 import { getSignupsMonthly } from "./signupsMonthly";
+import { getAdminOverview } from "./adminOverview";
 import { getRepActivity } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
 import { getSystemHealth } from "./systemHealth";
@@ -1106,10 +1106,13 @@ export const appRouter = router({
 
   bdr: router({
     dashboardKpis: bdProcedure.query(async () => getAgentDashboardKpis()),
-    adminDashboard: bdProcedure.query(async ({ ctx }) => {
-      if (!canManage(ctx.user.role)) throw new TRPCError({ code: 'FORBIDDEN', message: 'Managers only' });
-      return getBdrAdminDashboard();
-    }),
+    // Admin Overview (/bdr/admin): the sheet's activity for today's team, for a date range (all time without one).
+    adminDashboard: bdProcedure
+      .input(z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).nullish())
+      .query(async ({ ctx, input }) => {
+        if (!canManage(ctx.user.role)) throw new TRPCError({ code: 'FORBIDDEN', message: 'Managers only' });
+        return getAdminOverview(input ?? null);
+      }),
 
     fieldVisits: router({
       list: bdProcedure
