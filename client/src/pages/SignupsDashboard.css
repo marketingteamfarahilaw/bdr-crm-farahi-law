@@ -595,7 +595,7 @@ table.sr-mo-t td.tot { font-weight: 600; color: var(--ink); }
 }
 .rp-id { min-width: 0; }
 .rp-kicker { font: 600 11.5px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
-.rp-id h1 { margin: 6px 0 0; }
+.rp-id h1 { margin: 6px 0 0; font-weight: 700; letter-spacing: -.03em; }
 .rp-id .sr-lead { margin-top: 6px; }
 .rp-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
 .rp-chips .sr-award { margin-left: 0; height: 30px; padding: 0 12px 0 10px; font-size: 12.5px; }
