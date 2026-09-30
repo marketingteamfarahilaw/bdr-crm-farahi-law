@@ -2,8 +2,8 @@
  * Unified Expenses — one page, two ledgers (Field Rep + BDR) behind a tab toggle,
  * plus Uber Eats, which imports partner meals as expenses (its own menu item
  * until Sept 2026; /crm/uber-eats opens that tab). Replaces the separate FR/BDR
- * expense nav entries; both old routes still work. Renders the existing page
- * components so their CRUD + CSV export are unchanged.
+ * expense nav entries; both old routes still work. The two ledgers are
+ * read-only views of the Centralized sheet (pages/expenses/ExpenseLedger.tsx).
  */
 import { useState } from "react";
 import { useLocation } from "wouter";

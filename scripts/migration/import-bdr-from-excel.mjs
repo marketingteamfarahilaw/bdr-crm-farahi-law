@@ -13,7 +13,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
 import { createHash } from "node:crypto";
-import { fullName } from "./leaddocket-rules.mjs";
+import { fullName, canonical } from "./leaddocket-rules.mjs";
 import { pacific, serialParts } from "./dates.mjs";
 import { loadRedirects, redirectLookup } from "./facility-redirects.mjs";
 
@@ -42,7 +42,37 @@ const text = (s) => (norm(s) === "" ? null : norm(s).slice(0, 4000));
 const clamp = (s, n) => (norm(s) === "" ? null : norm(s).replace(/[\r\n\t]+/g, " ").slice(0, n));
 const key = (s) => low(s).replace(/[^a-z0-9]/g, "");
 // Representatives in full, as Lead Docket and RingCentral spell them ("Grace" → "Grace Lanayon").
-const rep = (s) => fullName(norm(s));
+// A lone shortened first name is the team member it starts ("Quee" → Queenie Miranda,
+// "Gracel" → Grace Lanayon); anyone off today's roster is kept as typed.
+const rep = (s) => {
+  const n = norm(s).replace(/\s+/g, " ");
+  const f = fullName(n);
+  if (f !== n || n.length < 3 || n.includes(" ")) return f;
+  return canonical(n)?.full ?? f;
+};
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+/**
+ * The BDR sheet's report month, as "June 2026". The column holds typed months
+ * ("July"), and date cells that read back as serials ("46174") — stored raw,
+ * those showed as numbers. A bare month takes the year of the expense beside it
+ * (the nearer one, so a December expense reported in "January" is next year's).
+ */
+function reportMonth(v, when) {
+  const n = Number(v);
+  if (norm(v) && isFinite(n) && n > 1000) {
+    const p = serialParts(n);
+    return p ? `${MONTH_NAMES[p.m - 1]} ${p.y}` : norm(v);
+  }
+  const t = norm(v);
+  const i = MONTH_NAMES.findIndex((m) => m.toLowerCase().startsWith(t.toLowerCase().slice(0, 3)));
+  if (t && /^[a-z]+\.?$/i.test(t) && i >= 0 && when) {
+    const [y, m] = when.toISOString().slice(0, 7).split("-").map(Number);
+    const year = i + 1 - m > 6 ? y - 1 : m - (i + 1) > 6 ? y + 1 : y;
+    return `${MONTH_NAMES[i]} ${year}`;
+  }
+  return t;
+}
 
 /** Excel serial, or a typed date like "3/25/2026" (the sheet also contains
  *  typos such as "2//27/2026" and "3/25//2026", so slashes are collapsed). */
@@ -87,7 +117,7 @@ for (const r of sheet("2.BDR Expen").slice(1)) {
   const when = excelDate(r[1]); const agent = rep(r[2]);
   const amt = money(r[7]) ?? 0;      // a blank amount is still a real logged expense row
   if (!when || !agent) continue;
-  bdrExpenses.push({ month: norm(r[0]), when, agent, facility: norm(r[3]), phone: norm(r[4]),
+  bdrExpenses.push({ month: reportMonth(r[0], when), when, agent, facility: norm(r[3]), phone: norm(r[4]),
     store: norm(r[5]), reason: norm(r[6]), amount: amt });
 }
 
@@ -110,7 +140,6 @@ for (const r of sheet("2.Rfral Rewrd").slice(2)) {
     notes: [norm(r[15]), norm(r[16]), norm(r[17]), norm(r[18]), norm(r[19])].filter(Boolean).join(" · ") });
 }
 
-const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 /** The tracker's Month column mixes typed names ("January ") with dates Excel
  *  stored as serials (46082). A bare name takes the year that puts it closest
  *  to a reference date — the row's own sent or sign-up date, else the nearest

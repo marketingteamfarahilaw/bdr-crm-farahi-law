@@ -14,23 +14,16 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { seesAllData } from "@shared/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import { ROLE_COLOR, SERIES, fmt$, pct, axis, grid, legend, Kpi, ChartCard, downloadCsv as download, PeriodPills } from "@/components/ReportBits";
+import { periodPresets, shortMonth as monthLabel, type PeriodKey } from "@/lib/pacificPeriods";
 import { MapPin, DollarSign, Gift, ClipboardList, Network, TrendingUp, Users, AlertCircle, AlertTriangle, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatInTimeZone } from "date-fns-tz";
 
 const TZ = "America/Los_Angeles";
-// Bars are coloured by role (the rep is already on the axis): FRs charcoal, BDRs amber, former reps grey.
-const ROLE_COLOR: Record<string, string> = { FR: "#3a3a38", BDR: "#c99a00", Former: "#a6a59e", Unassigned: "#d6d4cc" };
-const SERIES = { a: "#3a3a38", b: "#c99a00" };
 
-const fmt$ = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
-const monthLabel = (m: string) => {
-  const [y, mo] = m.split("-").map(Number);
-  return new Date(Date.UTC(y, mo - 1, 15)).toLocaleDateString("en-US", { month: "short", year: "2-digit", timeZone: "UTC" });
-};
 // A dataset's latest entry is a day ("2026-03-31"), or a month for the referral tracker ("2026-03").
 const dayLabel = (d?: string | null) => (!d ? "—" : d.length === 7
   ? new Date(`${d}-15T12:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })
@@ -42,59 +35,15 @@ const daysAgo = (d?: string | null) => {
   return Math.floor((Date.now() - end) / 86400000);
 };
 
-/** Date presets in Pacific days; null = all time. */
-function presets() {
-  const today = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
-  const [y, m] = today.split("-").map(Number);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const lastDay = (yy: number, mm: number) => new Date(Date.UTC(yy, mm, 0)).getUTCDate();
-  const pm = m === 1 ? 12 : m - 1, py = m === 1 ? y - 1 : y;
-  return [
-    { key: "month", label: "This month", range: { from: `${y}-${pad(m)}-01`, to: today } },
-    { key: "last", label: "Last month", range: { from: `${py}-${pad(pm)}-01`, to: `${py}-${pad(pm)}-${lastDay(py, pm)}` } },
-    { key: "year", label: "This year", range: { from: `${y}-01-01`, to: today } },
-    { key: "lastYear", label: "Last year", range: { from: `${y - 1}-01-01`, to: `${y - 1}-12-31` } },
-    { key: "all", label: "All time", range: null },
-  ] as const;
-}
-
-function Kpi({ icon: Icon, label, value, sub }: { icon: React.ElementType; label: string; value: string | number; sub?: string }) {
-  return (
-    <Card>
-      <CardContent className="pt-5 flex items-start gap-4">
-        <div className="mt-0.5 text-foreground/70"><Icon className="w-7 h-7" /></div>
-        <div className="min-w-0">
-          <p className="text-2xl font-semibold leading-tight tabular-nums">{value}</p>
-          <p className="text-sm font-medium text-foreground">{label}</p>
-          {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function download(name: string, rows: (string | number)[][]) {
-  const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-  const a = document.createElement("a");
-  a.href = url; a.download = name; a.click();
-  URL.revokeObjectURL(url);
-}
-
 const UNDATED_NAME: Record<string, string> = {
   visits: "field visits", frExpenses: "FR expenses", bdrExpenses: "BDR expenses", rewards: "rewards", errands: "errands", referrals: "referrals",
 };
 
-const axis = { tick: { fontSize: 11 }, stroke: "var(--muted-foreground)" } as const;
-const grid = <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />;
-// Legend text stays in ink; the swatch beside it carries the series colour.
-const legend = <Legend formatter={(v: string) => <span className="text-muted-foreground">{v}</span>} />;
-
 export default function BdrAdminDashboard() {
   const { user } = useAuth();
   const isAdmin = seesAllData(user?.role);
-  const options = useMemo(presets, []);
-  const [preset, setPreset] = useState<(typeof options)[number]["key"]>("year");
+  const options = useMemo(periodPresets, []);
+  const [preset, setPreset] = useState<PeriodKey>("year");
   const range = options.find((o) => o.key === preset)!.range;
   // NOTE: the hook runs on every render (Rules of Hooks) — gated with `enabled`.
   const { data, isLoading, isFetching } = trpc.bdr.adminDashboard.useQuery(range ? { ...range } : null, { enabled: isAdmin, placeholderData: (p) => p });
@@ -156,14 +105,7 @@ export default function BdrAdminDashboard() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {isFetching && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-          <div className="inline-flex flex-wrap rounded-full border border-border bg-card p-1 text-sm" role="group" aria-label="Period">
-            {options.map((o) => (
-              <button key={o.key} type="button" onClick={() => setPreset(o.key)} aria-pressed={preset === o.key}
-                className={`px-3 py-1 rounded-full transition-colors ${preset === o.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-                {o.label}
-              </button>
-            ))}
-          </div>
+          <PeriodPills options={options} value={preset} onChange={setPreset} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" />Export</Button>
@@ -385,19 +327,5 @@ export default function BdrAdminDashboard() {
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-function ChartCard({ title, note, height = 240, children }: { title: string; note?: string; height?: number; children: React.ReactElement }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
-        {note && <p className="text-xs text-muted-foreground">{note}</p>}
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={height}>{children}</ResponsiveContainer>
-      </CardContent>
-    </Card>
   );
 }

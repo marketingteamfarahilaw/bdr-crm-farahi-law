@@ -1,7 +1,9 @@
 /**
  * FIELD MODE — the FR team's phone/tablet experience.
  * Full-screen, thumb-first: bottom tabs, tap-to-call, tap-to-navigate,
- * and 30-second logging of visits, leads, and expenses from the parking lot.
+ * and 30-second logging of visits and leads from the parking lot. Expenses are
+ * entered in the Centralized sheet (the sync replaces the CRM's copy every 8
+ * hours), so the Expense tab shows today's and links to the sheet.
  * Installed via the existing PWA (Add to Home Screen) — no separate app store.
  */
 import { useMemo, useState } from "react";
@@ -49,7 +51,7 @@ export default function FieldApp() {
 
   const { data: facilities, isLoading: facLoading } = trpc.crm.facilities.list.useQuery(undefined, { retry: false });
   const { data: todayVisits } = trpc.bdr.fieldVisits.list.useQuery({ dateFrom: today, dateTo: today });
-  const { data: todayExpenses } = trpc.bdr.frExpenses.list.useQuery({ dateFrom: today, dateTo: today });
+  const { data: todayExpenses } = trpc.bdr.expenses.useQuery({ ledger: "fr", from: today, to: today });
 
   const book = useMemo(() => {
     let list = (facilities ?? []) as any[];
@@ -103,18 +105,6 @@ export default function FieldApp() {
       toast.success("Lead captured ✓ — it's in the tracker");
       setLFirst(""); setLLast(""); setLPhone(""); setLType(""); setLValue(""); setLNotes("");
       utils.crm.leadIntake.list.invalidate();
-    },
-    onError: (e) => toast.error(e.message),
-  });
-
-  // ── Expense ──
-  const [eAmount, setEAmount] = useState(""); const [eStore, setEStore] = useState("");
-  const [eReason, setEReason] = useState(""); const [eCard, setECard] = useState<"Company" | "Personal">("Company");
-  const createExpense = trpc.bdr.frExpenses.create.useMutation({
-    onSuccess: () => {
-      toast.success("Expense logged ✓");
-      setEAmount(""); setEStore(""); setEReason("");
-      utils.bdr.frExpenses.list.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -303,35 +293,22 @@ export default function FieldApp() {
         {tab === "expense" && (
           <>
             <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-              <p className="text-sm font-semibold text-foreground">Log an expense</p>
-              <div className="grid grid-cols-2 gap-2.5">
-                <Input value={eAmount} onChange={(e) => setEAmount(e.target.value)} placeholder="Amount $ *" inputMode="decimal" className="bg-card border-border h-11 text-base" />
-                <Select value={eCard} onValueChange={(v) => setECard(v as any)}>
-                  <SelectTrigger className="bg-card border-border h-11 text-base"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Company">Company card</SelectItem><SelectItem value="Personal">Personal card</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <Input value={eStore} onChange={(e) => setEStore(e.target.value)} placeholder="Store / vendor" className="bg-card border-border h-11 text-base" />
-              <Input value={eReason} onChange={(e) => setEReason(e.target.value)} placeholder="Reason (lunch drop-off, gas…)" className="bg-card border-border h-11 text-base" />
-              <Button className="w-full h-12 text-base gap-2" disabled={!eAmount.trim() || createExpense.isPending}
-                onClick={() => createExpense.mutate({
-                  expenseDate: `${today}T12:00:00`,
-                  agentName,
-                  amount: eAmount.trim(),
-                  storeName: eStore.trim() || undefined,
-                  facilityName: selected[0]?.name || undefined,
-                  reason: eReason.trim() || undefined,
-                  cardType: eCard,
-                })}>
-                {createExpense.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Receipt className="w-5 h-5" />} Save expense
-              </Button>
+              <p className="text-sm font-semibold text-foreground">Log an expense in the sheet</p>
+              <p className="text-sm text-muted-foreground">
+                Expenses go in the Centralized BDR/FR sheet, tab “2.FR Expen”. The CRM picks them up every 8 hours.
+              </p>
+              {todayExpenses?.source.sheetUrl && (
+                <Button asChild className="w-full h-12 text-base gap-2">
+                  <a href={todayExpenses.source.sheetUrl} target="_blank" rel="noreferrer"><Receipt className="w-5 h-5" /> Open the sheet</a>
+                </Button>
+              )}
             </div>
-            {(todayExpenses ?? []).length > 0 && (
+            {(todayExpenses?.rows ?? []).length > 0 && (
               <div className="rounded-2xl border border-border bg-card p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Today's expenses</p>
-                {(todayExpenses as any[]).map((x) => (
+                {todayExpenses!.rows.map((x) => (
                   <p key={x.id} className="text-sm text-foreground py-1 border-b border-border/40 last:border-0 flex justify-between">
-                    <span>{x.storeName || x.reason || "Expense"}</span><span className="font-semibold">${x.amount}</span>
+                    <span>{x.store || x.reason || "Expense"}</span><span className="font-semibold">${x.amount.toFixed(2)}</span>
                   </p>
                 ))}
               </div>

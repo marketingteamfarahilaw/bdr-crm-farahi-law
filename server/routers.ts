@@ -50,13 +50,7 @@ import {
   updateFieldVisit,
   deleteFieldVisit,
   getAllFrExpenses,
-  createFrExpense,
-  updateFrExpense,
-  deleteFrExpense,
   getAllBdrExpenses,
-  createBdrExpense,
-  updateBdrExpense,
-  deleteBdrExpense,
   getAllReferralRewards,
   createReferralReward,
   updateReferralReward,
@@ -109,6 +103,7 @@ import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./sig
 import { getSignupsTrends } from "./signupsTrends";
 import { getSignupsMonthly } from "./signupsMonthly";
 import { getAdminOverview } from "./adminOverview";
+import { getExpensesView } from "./expensesView";
 import { getRepActivity } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
 import { getSystemHealth } from "./systemHealth";
@@ -1170,6 +1165,24 @@ export const appRouter = router({
         .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteFieldVisit(input.id); return { success: true }; }),
     }),
 
+    // Expenses page. Read-only: the Centralized sheet is where expenses are
+    // entered, and the 8-hourly sheets sync replaces both tables from it, so a
+    // CRM edit would be lost (server/expensesView.ts). A rep sees only their own.
+    expenses: bdProcedure
+      .input(z.object({
+        ledger: z.enum(["fr", "bdr"]),
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        rep: z.string().max(100).optional(),
+        card: z.enum(["Company", "Personal"]).optional(),
+        search: z.string().max(100).optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const { ledger, ...filters } = input;
+        const onlyRep = seesAllData(ctx.user.role) ? null : (ctx.user.agentName ?? ctx.user.name ?? "__none__");
+        return getExpensesView(ledger, filters, onlyRep);
+      }),
+
     frExpenses: router({
       list: bdProcedure
         .input(z.object({
@@ -1181,55 +1194,6 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllFrExpenses(scopeAgentFilter(ctx, input))),
-      create: bdProcedure
-        .input(z.object({
-          expenseDate: z.string(),
-          agentName: z.string().min(1),
-          facilityName: z.string().optional(),
-          storeName: z.string().optional(),
-          reason: z.string().optional(),
-          amount: z.string().default("0.00"),
-          cardType: z.enum(["Personal", "Company"]).default("Company"),
-          notes: z.string().optional(),
-        }))
-        .mutation(async ({ input }) => {
-          await createFrExpense({
-            expenseDate: new Date(input.expenseDate),
-            agentName: input.agentName,
-            facilityName: input.facilityName,
-            store: input.storeName,
-            reason: input.reason,
-            amount: input.amount,
-            cardType: input.cardType,
-            notes: input.notes,
-          });
-          return { success: true };
-        }),
-      update: bdProcedure
-        .input(z.object({
-          id: z.number(),
-          expenseDate: z.string().optional(),
-          agentName: z.string().optional(),
-          facilityName: z.string().optional(),
-          storeName: z.string().optional(),
-          reason: z.string().optional(),
-          amount: z.string().optional(),
-          cardType: z.enum(["Personal", "Company"]).optional(),
-          notes: z.string().optional(),
-        }))
-        .mutation(async ({ ctx, input }) => {
-          mgrOnly(ctx);
-          const { id, expenseDate, storeName, ...rest } = input;
-          await updateFrExpense(id, {
-            ...rest,
-            ...(expenseDate ? { expenseDate: new Date(expenseDate) } : {}),
-            ...(storeName !== undefined ? { store: storeName } : {}),
-          });
-          return { success: true };
-        }),
-      delete: bdProcedure
-        .input(z.object({ id: z.number() }))
-        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteFrExpense(input.id); return { success: true }; }),
     }),
 
     bdrExpenses: router({
@@ -1243,59 +1207,6 @@ export const appRouter = router({
           search: z.string().optional(),
         }).optional())
         .query(async ({ ctx, input }) => getAllBdrExpenses(scopeAgentFilter(ctx, input))),
-      create: bdProcedure
-        .input(z.object({
-          expenseDate: z.string(),
-          reportMonth: z.string().optional(),
-          agentName: z.string().min(1),
-          facilityName: z.string().optional(),
-          facilityPhone: z.string().optional(),
-          storeName: z.string().optional(),
-          reason: z.string().optional(),
-          amount: z.string().default("0.00"),
-          notes: z.string().optional(),
-        }))
-        .mutation(async ({ input }) => {
-          await createBdrExpense({
-            expenseDate: new Date(input.expenseDate),
-            month: input.reportMonth,
-            agentName: input.agentName,
-            facilityName: input.facilityName,
-            facilityPhone: input.facilityPhone,
-            store: input.storeName,
-            reason: input.reason,
-            amount: input.amount,
-            notes: input.notes,
-          });
-          return { success: true };
-        }),
-      update: bdProcedure
-        .input(z.object({
-          id: z.number(),
-          expenseDate: z.string().optional(),
-          reportMonth: z.string().optional(),
-          agentName: z.string().optional(),
-          facilityName: z.string().optional(),
-          facilityPhone: z.string().optional(),
-          storeName: z.string().optional(),
-          reason: z.string().optional(),
-          amount: z.string().optional(),
-          notes: z.string().optional(),
-        }))
-        .mutation(async ({ ctx, input }) => {
-          mgrOnly(ctx);
-          const { id, expenseDate, reportMonth, storeName, ...rest } = input;
-          await updateBdrExpense(id, {
-            ...rest,
-            ...(expenseDate ? { expenseDate: new Date(expenseDate) } : {}),
-            ...(reportMonth !== undefined ? { month: reportMonth } : {}),
-            ...(storeName !== undefined ? { store: storeName } : {}),
-          });
-          return { success: true };
-        }),
-      delete: bdProcedure
-        .input(z.object({ id: z.number() }))
-        .mutation(async ({ ctx, input }) => { mgrOnly(ctx); await deleteBdrExpense(input.id); return { success: true }; }),
     }),
 
     referralRewards: router({
