@@ -215,6 +215,7 @@ function Misregistered({ from, to }: { from: string; to: string }) {
           <div className="sr-ttl"><h2>Possibly mis-registered digital leads</h2>{isFetching && <Loader2 size={13} className="sr-spin" />}</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {data && <button className="sr-btn2" onClick={() => printIntakeReport(data, scopeLabel(scope, from, to))} title="A printable to-do list for the intake team — choose Save as PDF"><Printer size={14} /> Report for intake</button>}
+            {data && <button className="sr-btn2" onClick={() => excelIntakeReport(data, scopeLabel(scope, from, to)).catch(() => toast.error("Couldn't build the Excel file."))} title="The intake report as a spreadsheet, with a Decision column to fill in"><FileSpreadsheet size={14} /> Excel</button>}
             <div className="sr-seg" role="group" aria-label="How far back">
               {([["period", "This period"], ["12m", "Last 12 months"], ["all", "All time"]] as const).map(([v, l]) => (
                 <button key={v} className={scope === v ? "on" : ""} onClick={() => setScope(v)}>{l}</button>
@@ -599,6 +600,60 @@ function printIntakeReport(d: AuditData, period: string) {
   const go = () => { if (done) return; done = true; try { w.focus(); w.print(); } catch { /* the window was closed */ } };
   w.onload = go;
   setTimeout(go, 600);
+}
+
+/**
+ * The intake report as a workbook: a summary tab and one tab per section,
+ * one row per lead with a blank Decision and Notes column for intake to fill
+ * in. Same leads as the printed report; xlsx loads only when asked for.
+ */
+async function excelIntakeReport(d: AuditData, period: string) {
+  const XLSX = await import("xlsx");
+  const wb = XLSX.utils.book_new();
+  const day = (iso: string | null) => (iso ? leadDay(iso) : "");
+  const team = d.teamCampaigns.filter((t) => t.kind !== "Other");
+  const sum = (rows: { leads: number; signed: number }[]) => rows.reduce((a, r) => [a[0] + r.leads, a[1] + r.signed], [0, 0]);
+  const [tl, ts] = sum(team), [dl, ds] = sum(d.possiblyDigital), [nl, ns] = sum(d.possiblyNotDigital);
+
+  const summary = XLSX.utils.aoa_to_sheet([
+    ["Lead Docket attribution review — for the Intake team"],
+    ["Leads from", period],
+    ["Generated", new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short" }) + " Pacific"],
+    ["INTERNAL — contains client names"],
+    [],
+    ["Section", "Leads", "Signed"],
+    ["1. BD/FR leads on a marketing campaign", tl, ts],
+    ["2. Look digital, not credited to a digital source", dl, ds],
+    ["3. Credited digital, may have come another way", nl, ns],
+    [],
+    ["What to do"],
+    ["For each lead, check how the client really found us and fill in Decision (Keep / Change)."],
+    ["If the Marketing Source in Lead Docket is wrong, change it there; the CRM picks it up on the next sync."],
+    ["A rep or partner who actually referred the client keeps the credit, even if the client then called the website or toll-free number."],
+  ]);
+  summary["!cols"] = [{ wch: 52 }, { wch: 22 }, { wch: 10 }];
+  XLSX.utils.book_append_sheet(wb, summary, "Summary");
+
+  const sheet = (name: string, head: string[], rows: (string | number)[][], widths: number[]) => {
+    const ws = XLSX.utils.aoa_to_sheet([head, ...rows]);
+    ws["!cols"] = widths.map((wch) => ({ wch }));
+    if (rows.length) ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: head.length - 1 } }) };
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  };
+  const kindLabel = (k: string) => (k in DIGITAL_GROUP_LABEL ? DIGITAL_GROUP_LABEL[k as keyof typeof DIGITAL_GROUP_LABEL] : k);
+
+  sheet("1 BD-FR campaign leads",
+    ["Campaign", "Would count as", "Client", "Credited to", "Role", "Date", "Outcome", "Signed", "Contact Source", "Decision (Keep rep / Change)", "Notes"],
+    team.flatMap((t) => t.clients.map((c) => [t.campaign, kindLabel(t.kind), c.name, c.rep, c.role, day(c.date), c.outcome, c.signed ? "Yes" : "", c.contactSource ?? "", "", ""])),
+    [38, 14, 28, 22, 6, 13, 18, 7, 30, 26, 30]);
+  const groupRows = (gs: Group[]) => gs.flatMap((g) => g.clients.map((c) => [g.source, g.evidence, g.group ? DIGITAL_GROUP_LABEL[g.group] + (g.label ? ` · ${g.label}` : "") : "", c.name, day(c.date), c.outcome, c.signed ? "Yes" : "", c.contactSource ?? "", c.campaign ?? "", "", ""]));
+  const groupHead = (target: string) => ["Marketing Source in Lead Docket", "Evidence", target, "Client", "Date", "Outcome", "Signed", "Contact Source", "Campaign", "Decision (Keep / Change)", "Notes"];
+  const groupWidths = [34, 34, 22, 28, 13, 18, 7, 30, 30, 24, 30];
+  sheet("2 Possibly digital", groupHead("Would count as"), groupRows(d.possiblyDigital), groupWidths);
+  sheet("3 Possibly not digital", groupHead("Counted as"), groupRows(d.possiblyNotDigital), groupWidths);
+
+  const safe = period.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  XLSX.writeFile(wb, `intake-attribution-review-${safe}.xlsx`);
 }
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
