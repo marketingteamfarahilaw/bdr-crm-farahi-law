@@ -118,6 +118,7 @@ import { getSignupsTrends } from "./signupsTrends";
 import { getSignupsMonthly } from "./signupsMonthly";
 import { getAdminOverview } from "./adminOverview";
 import { getExpensesView } from "./expensesView";
+import { getFilevineComparison, importFilevineExpenses } from "./filevineExpenses";
 import { getRepActivity, getRepReview } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
 import { filevineStatus, saveFilevine, testFilevine, disconnectFilevine } from "./filevine";
@@ -1249,6 +1250,24 @@ export const appRouter = router({
         const onlyRep = seesAllData(ctx.user.role) ? null : (ctx.user.agentName ?? ctx.user.name ?? "__none__");
         return getExpensesView(ledger, filters, onlyRep);
       }),
+
+    // FR expenses as Filevine has them, beside the sheet's (server/filevineExpenses.ts).
+    // Managers only: it spans every rep.
+    filevineExpenses: router({
+      compare: bdProcedure
+        .input(z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }))
+        .query(({ ctx, input }) => { mgrOnly(ctx); return getFilevineComparison(input); }),
+      import: bdProcedure
+        .input(z.object({
+          rows: z.array(z.object({
+            itemId: z.string().min(1).max(64), projectId: z.number().int(), rep: z.string().min(1).max(120),
+            day: z.string().max(10).nullable(), entered: z.string().max(10).nullable(),
+            type: z.string().max(255).nullable(), store: z.string().max(255).nullable(), amount: z.number(),
+            payment: z.string().max(60).nullable(), requestedBy: z.string().max(120).nullable(), enteredBy: z.string().max(120).nullable(),
+          })).max(10000),
+        }))
+        .mutation(({ ctx, input }) => { mgrOnly(ctx); return importFilevineExpenses(input.rows); }),
+    }),
 
     frExpenses: router({
       list: bdProcedure
