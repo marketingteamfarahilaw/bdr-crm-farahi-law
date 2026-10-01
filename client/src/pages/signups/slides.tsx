@@ -370,7 +370,7 @@ function ScorecardSlide({ group, rows, band, last, meta, pos }: {
       <div className={`sr-sc${rows.length > 8 ? " dense" : ""}`}>
         <div className="sr-sc-title">{meta.period}</div>
         <div className="sr-sc-band">{band}</div>
-        <ScorecardTable role={group.role} rows={rows} total={last ? group.total : undefined} pct={scorecardPct} targets={meta.targets} />
+        <ScorecardTable role={group.role} rows={rows} total={last ? group.total : undefined} pct={scorecardPct} targets={meta.targets} faces />
       </div>
       <p className="sr-dsc-note">{targets}Each lead counts once, in the column where it ended up.</p>
     </Frame>

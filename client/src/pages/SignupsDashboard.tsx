@@ -809,13 +809,16 @@ type ScorecardGroup = ReportData["scorecard"]["groups"][number];
  * adds the page's extras — photo, trophy, standing — and lets a phone drop the
  * detail columns.
  */
-export function ScorecardTable({ role, rows, total, onRep, pct = pctText, targets = true, rich }: {
+export function ScorecardTable({ role, rows, total, onRep, pct = pctText, targets = true, rich, faces }: {
   role: string; rows: ScorecardGroup["rows"]; total?: ScorecardGroup["total"]; onRep?: (rep: string, role: string) => void;
   /** How Achieved and Conversion read. The deck rounds Achieved down, so a team that is short never reads 100%. */
   pct?: (v: number | null, of: "achieved" | "conversion") => string;
   /** False leaves out Target and Achieved (the deck does, for All time). */
   targets?: boolean;
   rich?: { avg: number; tops: Set<string> };
+  /** Photo + name only — the deck's scorecard, which wants faces without
+   *  rich's trophy/standing extras. Ignored when `rich` is on. */
+  faces?: boolean;
 }) {
   // Nothing lands in Not Interested today, so an empty column is left out rather
   // than shown as a wall of zeros. It comes back by itself if one ever does.
@@ -845,6 +848,11 @@ export function ScorecardTable({ role, rows, total, onRep, pct = pctText, target
                       <b>{r.name}{rich.tops.has(r.name) && <span className="sr-award" title={`Most sign-ups among the ${role}s`}><Trophy /> Top {role}</span>}</b>
                       {!r.current && <i>former</i>}
                     </div>
+                  </div>
+                ) : faces ? (
+                  <div className="sr-who">
+                    <span className="sr-av" style={hueStyle(r.name)}><RepFace name={r.name} fallback={initials(r.name)} /></span>
+                    <span><b>{first}</b> <span className="last">{rest.join(" ")}</span>{!r.current && <span className="former">former</span>}</span>
                   </div>
                 ) : (
                   <><b>{first}</b> <span className="last">{rest.join(" ")}</span>{!r.current && <span className="former">former</span>}</>
