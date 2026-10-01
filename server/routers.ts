@@ -120,6 +120,7 @@ import { getAdminOverview } from "./adminOverview";
 import { getExpensesView } from "./expensesView";
 import { getRepActivity, getRepReview } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
+import { filevineStatus, saveFilevine, testFilevine, disconnectFilevine } from "./filevine";
 import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret, timeeroSample, getFieldTime, getFieldToday } from "./timeero";
 import { getPartnerReferralsReport } from "./partnerReferralsReport";
 import { getSystemHealth } from "./systemHealth";
@@ -295,6 +296,16 @@ export const appRouter = router({
       .input(z.object({ key: z.string().max(400).nullable() }))
       .mutation(({ ctx, input }) => { superOnly(ctx); return saveTimeeroKey(input.key); }),
     testTimeero: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return testTimeero(); }),
+    // Filevine API (service account): super admin only; secrets never come back out.
+    filevineStatus: protectedProcedure.query(({ ctx }) => { superOnly(ctx); return filevineStatus(); }),
+    saveFilevine: protectedProcedure
+      .input(z.object({
+        pat: z.string().max(400).nullish(), clientId: z.string().max(400).nullish(), clientSecret: z.string().max(400).nullish(),
+        orgId: z.string().max(20).nullish(), userId: z.string().max(20).nullish(), account: z.string().max(200).nullish(),
+      }))
+      .mutation(({ ctx, input }) => { superOnly(ctx); return saveFilevine(input); }),
+    testFilevine: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return testFilevine(); }),
+    disconnectFilevine: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return disconnectFilevine(); }),
     importTimeero: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return importTimeero(); }),
     newTimeeroSecret: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return newTimeeroSecret(); }),
     timeeroSample: protectedProcedure

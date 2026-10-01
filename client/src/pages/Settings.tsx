@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { canAssignRoles, canManage } from "@shared/permissions";
-import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock, Sparkles, CheckCircle2, MapPin, Copy, Download, RotateCw } from "lucide-react";
+import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock, Sparkles, CheckCircle2, MapPin, Copy, Download, RotateCw, Scale } from "lucide-react";
 import { DEFAULT_LOGO } from "@/hooks/useBranding";
 import { DataSyncPanel } from "@/components/DataSyncPanel";
 import { SystemHealthCard } from "@/components/SystemHealth";
@@ -433,6 +433,7 @@ function BrandingSettings() {
       {canAssignRoles(user?.role) && <SystemHealthCard />}
       {canAssignRoles(user?.role) && <ClaudeCard />}
       {canAssignRoles(user?.role) && <TimeeroCard />}
+      {canAssignRoles(user?.role) && <FilevineCard />}
 
       {!isManager && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm mb-6">
@@ -478,6 +479,92 @@ function BrandingSettings() {
           </Button>
           {dirty && <span className="text-xs text-muted-foreground flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" /> Unsaved changes</span>}
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Filevine API (server/filevine.ts): the service account's token, Client ID and
+ * Client Secret, saved encrypted and tested from the server, which can reach
+ * Filevine. Nothing is read from Filevine yet.
+ */
+function FilevineCard() {
+  const utils = trpc.useUtils();
+  const status = trpc.settings.filevineStatus.useQuery();
+  const s = status.data;
+  const [f, setF] = useState({ pat: "", clientId: "", clientSecret: "", orgId: "", userId: "", account: "" });
+  useEffect(() => {
+    if (s) setF((p) => ({ ...p, orgId: p.orgId || s.orgId || "", userId: p.userId || s.userId || "", account: p.account || s.account || "" }));
+  }, [s]);
+  const refresh = () => utils.settings.filevineStatus.invalidate();
+  const report = (r: { ok: true; userId: string | null; orgs: { id: string; name: string }[]; orgMatches: boolean | null } | { ok: false; error: string }) => {
+    if (!r.ok) return void toast.error(r.error, { duration: 15000 });
+    const orgs = r.orgs.map((o) => `${o.name} (${o.id})`).join(", ") || "no organizations";
+    if (r.orgMatches === false) toast.warning(`Connected as user ${r.userId ?? "?"}, but the Org ID doesn't match: the token sees ${orgs}.`, { duration: 15000 });
+    else toast.success(`Filevine connected — user ${r.userId ?? "?"} · ${orgs}.`, { duration: 10000 });
+  };
+  const save = trpc.settings.saveFilevine.useMutation({
+    onSuccess: (r) => { report(r); setF((p) => ({ ...p, pat: "", clientId: "", clientSecret: "" })); refresh(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const test = trpc.settings.testFilevine.useMutation({ onSuccess: report, onError: (e) => toast.error(e.message) });
+  const off = trpc.settings.disconnectFilevine.useMutation({ onSuccess: () => { toast.success("Filevine disconnected."); refresh(); } });
+  const busy = save.isPending || test.isPending || off.isPending;
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const secretInput = (k: "pat" | "clientId" | "clientSecret", label: string, saved: boolean) => (
+    <Input type="password" autoComplete="new-password" spellCheck={false} value={f[k]} onChange={set(k)} aria-label={label}
+      placeholder={saved ? `${label} — saved (paste to replace)` : label} className="bg-card border-border" />
+  );
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><Scale className="w-4 h-4" /></span>
+        <div className="text-sm font-semibold text-foreground">Filevine — API connection</div>
+        {s?.patTail && (
+          <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Token saved · ending {s.patTail}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        The service account's Personal Access Token, with the Client ID and Client Secret Filevine issued with it. Secrets are stored encrypted and
+        never shown again; a blank field keeps what's saved. Saving tests the login straight away. Nothing is read from Filevine yet.
+      </p>
+      {!s?.fromServer && (
+        <form className="grid gap-2 sm:grid-cols-2 max-w-2xl" onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate({ pat: f.pat.trim() || undefined, clientId: f.clientId.trim() || undefined, clientSecret: f.clientSecret.trim() || undefined,
+            orgId: f.orgId, userId: f.userId, account: f.account });
+        }}>
+          <div className="sm:col-span-2">{secretInput("pat", "Personal Access Token", !!s?.patTail)}</div>
+          {secretInput("clientId", "Client ID", !!s?.hasClientId)}
+          {secretInput("clientSecret", "Client Secret", !!s?.hasClientSecret)}
+          <Input value={f.account} onChange={set("account")} placeholder="Service account (email)" aria-label="Service account" className="bg-card border-border sm:col-span-2" />
+          <Input value={f.orgId} onChange={set("orgId")} placeholder="Org ID" aria-label="Org ID" inputMode="numeric" className="bg-card border-border" />
+          <Input value={f.userId} onChange={set("userId")} placeholder="User ID" aria-label="User ID" inputMode="numeric" className="bg-card border-border" />
+          <div className="sm:col-span-2 flex flex-wrap gap-2">
+            <Button type="submit" size="sm" className="gap-1.5" disabled={busy || (!s?.patTail && !f.pat.trim())}>
+              {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save &amp; test
+            </Button>
+            {s?.patTail && (
+              <>
+                <Button type="button" size="sm" variant="outline" className="border-border" disabled={busy} onClick={() => test.mutate()}>
+                  {test.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Test connection
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="gap-1.5 border-border" disabled={busy} onClick={() => off.mutate()}>
+                  <Trash2 className="w-3.5 h-3.5" /> Disconnect
+                </Button>
+              </>
+            )}
+          </div>
+        </form>
+      )}
+      {s?.fromServer && (
+        <Button size="sm" variant="outline" className="border-border" disabled={busy} onClick={() => test.mutate()}>
+          {test.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Test connection
+        </Button>
       )}
     </div>
   );
