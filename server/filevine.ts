@@ -54,6 +54,11 @@ export async function filevineStatus() {
     patTail: pat ? pat.slice(-4) : null,
     hasClientId: !!clientId,
     hasClientSecret: !!clientSecret,
+    // Enough to check what was saved against what IT sent, without showing the secret.
+    clientIdTail: clientId ? clientId.slice(-4) : null,
+    clientIdLength: clientId?.length ?? 0,
+    secretTail: clientSecret ? clientSecret.slice(-2) : null,
+    secretLength: clientSecret?.length ?? 0,
     orgId, userId, account,
     fromServer: !!process.env.FILEVINE_PAT?.trim(),
   };
@@ -95,18 +100,38 @@ const reason = (e: unknown) => {
 async function signIn() {
   const [pat, clientId, clientSecret] = await Promise.all([readSecret("pat"), readSecret("clientId"), readSecret("clientSecret")]);
   if (!pat) throw new Error("No Filevine Personal Access Token is saved.");
-  const form = new URLSearchParams({ grant_type: "personal_access_token", token: pat, scope: SCOPE });
-  if (clientId) form.set("client_id", clientId);
-  if (clientSecret) form.set("client_secret", clientSecret);
+  const post = (inHeader: boolean) => {
+    const form = new URLSearchParams({ grant_type: "personal_access_token", token: pat, scope: SCOPE });
+    const headers: Record<string, string> = { "Content-Type": "application/x-www-form-urlencoded" };
+    if (inHeader && clientId && clientSecret) {
+      // HTTP Basic, each part form-encoded first as OAuth asks (the secret has + ? ~ in it).
+      headers.Authorization = `Basic ${Buffer.from(`${encodeURIComponent(clientId)}:${encodeURIComponent(clientSecret)}`).toString("base64")}`;
+    } else {
+      if (clientId) form.set("client_id", clientId);
+      if (clientSecret) form.set("client_secret", clientSecret);
+    }
+    return axios.post(IDENTITY, form.toString(), { timeout: 20_000, headers });
+  };
   try {
-    const r = await axios.post(IDENTITY, form.toString(), { timeout: 20_000, headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+    // OAuth servers take the client in the body or in a Basic header; Filevine's docs show the body,
+    // so that goes first and the header is tried only when the client is refused.
+    const r = await post(false).catch((e) => {
+      const err = (e as AxiosError).response?.data as any;
+      if (clientId && clientSecret && err?.error === "invalid_client") return post(true);
+      throw e;
+    });
     const token = r.data?.access_token as string | undefined;
     if (!token) throw new Error("Filevine's login answered without a token.");
     return token;
   } catch (e) {
     if ((e as AxiosError).isAxiosError) {
       const missing = !clientId || !clientSecret;
-      throw new Error(`Login refused — ${reason(e)}.${missing ? " The Client ID and Client Secret issued with the token are probably needed." : ""}`);
+      const err = ((e as AxiosError).response?.data as any)?.error;
+      const hint = missing ? " The Client ID and Client Secret issued with the token are probably needed."
+        : err === "invalid_client" ? " Filevine doesn't recognise this Client ID and Secret together — check both were copied exactly (compare the ending and length shown here), and that they were issued with this token."
+        : err === "invalid_grant" ? " The Client ID and Secret were accepted but the token wasn't — it may be expired, revoked, or from another client."
+        : "";
+      throw new Error(`Login refused — ${reason(e)}.${hint}`);
     }
     throw e;
   }

@@ -539,11 +539,17 @@ function FilevineCard() {
             orgId: f.orgId, userId: f.userId, account: f.account });
         }}>
           <div className="sm:col-span-2">{secretInput("pat", "Personal Access Token", !!s?.patTail)}</div>
-          {secretInput("clientId", "Client ID", !!s?.hasClientId)}
+          <Input value={f.clientId} onChange={set("clientId")} spellCheck={false} autoComplete="off" aria-label="Client ID"
+            placeholder={s?.hasClientId ? "Client ID — saved (paste to replace)" : "Client ID"} className="bg-card border-border" />
           {secretInput("clientSecret", "Client Secret", !!s?.hasClientSecret)}
           <Input value={f.account} onChange={set("account")} placeholder="Service account (email)" aria-label="Service account" className="bg-card border-border sm:col-span-2" />
           <Input value={f.orgId} onChange={set("orgId")} placeholder="Org ID" aria-label="Org ID" inputMode="numeric" className="bg-card border-border" />
           <Input value={f.userId} onChange={set("userId")} placeholder="User ID" aria-label="User ID" inputMode="numeric" className="bg-card border-border" />
+          {(s?.hasClientId || s?.hasClientSecret) && (
+            <p className="sm:col-span-2 text-xs text-muted-foreground">
+              Saved: Client ID ending <b>{s.clientIdTail ?? "—"}</b> ({s.clientIdLength} characters) · Client Secret ending <b>{s.secretTail ?? "—"}</b> ({s.secretLength} characters)
+            </p>
+          )}
           <div className="sm:col-span-2 flex flex-wrap gap-2">
             <Button type="submit" size="sm" className="gap-1.5" disabled={busy || (!s?.patTail && !f.pat.trim())}>
               {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save &amp; test
