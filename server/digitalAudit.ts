@@ -20,7 +20,8 @@
  *
  * The rules are pure and tested (digitalAudit.test.ts); the loader only reads.
  */
-import { and, desc, gte, lte, sql, type AnyColumn } from "drizzle-orm";
+import { and, desc, gte, lte, sql } from "drizzle-orm";
+import type { MySqlColumn } from "drizzle-orm/mysql-core";
 import { fromZonedTime } from "date-fns-tz";
 import { getDb } from "./db";
 import { leaddocketLeads } from "../drizzle/schema";
@@ -287,18 +288,31 @@ export async function getDigitalAudit(range: { from: Date; to: Date; fromDay: st
     db.select(AUDIT_COLS).from(L).where(and(notBdFr, ...when)),
     db.select(AUDIT_COLS).from(L).where(and(bdFrOnly, sql`TRIM(COALESCE(${L.campaign}, '')) <> ''`, ...when)).orderBy(desc(L.leadDate)),
     // Every name, all time: hygiene is about the names, whatever the period.
+    // Grouped by the plain column: TiDB refuses a select of TRIM(col) grouped by
+    // TRIM(table.col) as "not in GROUP BY". Spellings that differ only by
+    // surrounding spaces are merged below.
     db.select({
-      source: sql<string>`TRIM(${L.marketingSource})`, leads: sql<number>`COUNT(*)`,
+      source: L.marketingSource, leads: sql<number>`COUNT(*)`,
       first: sql<Date | null>`MIN(${L.leadDate})`, last: sql<Date | null>`MAX(${L.leadDate})`,
-    }).from(L).where(notBdFr).groupBy(sql`TRIM(${L.marketingSource})`),
+    }).from(L).where(notBdFr).groupBy(L.marketingSource),
   ]);
+  const byName = new Map<string, SourceName>();
+  for (const n of names) {
+    const source = clean(n.source);
+    const first = day(n.first), last = day(n.last);
+    const e = byName.get(source);
+    if (!e) { byName.set(source, { source, leads: Number(n.leads) || 0, first, last }); continue; }
+    e.leads += Number(n.leads) || 0;
+    if (first && (!e.first || first < e.first)) e.first = first;
+    if (last && (!e.last || last > e.last)) e.last = last;
+  }
 
   return {
     scope,
     checked: leads.length,
     ...misregistered(leads),
     teamCampaigns: teamCampaigns(team),
-    hygiene: sourceHygiene(names.map((n) => ({ source: clean(n.source), leads: Number(n.leads) || 0, first: day(n.first), last: day(n.last) }))),
+    hygiene: sourceHygiene(Array.from(byName.values())),
   };
 }
 
@@ -327,11 +341,11 @@ function classifyMarketing(name: string, bdFr: boolean): { category: string; det
 export async function getSourceDirectory() {
   const db = await getDb();
   if (!db) return null;
-  const field = (col: AnyColumn) =>
+  const field = (col: MySqlColumn) =>
     db.select({
-      name: sql<string>`TRIM(${col})`, outcome: L.outcome, bdFr: sql<number>`MAX(${L.teamRole} IN ('BDR', 'FR'))`,
+      name: col, outcome: L.outcome, bdFr: sql<number>`MAX(${L.teamRole} IN ('BDR', 'FR'))`,
       leads: sql<number>`COUNT(*)`, first: sql<Date | null>`MIN(${L.leadDate})`, last: sql<Date | null>`MAX(${L.leadDate})`,
-    }).from(L).groupBy(sql`TRIM(${col})`, L.outcome);
+    }).from(L).groupBy(col, L.outcome);   // the plain column, as above; fold() trims and merges
 
   const [ms, cs, cp] = await Promise.all([field(L.marketingSource), field(L.contactSource), field(L.campaign)]);
 
