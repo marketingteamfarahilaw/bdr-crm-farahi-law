@@ -2,6 +2,8 @@
 # Sheet"). Claude pulls them with its Filevine connector and starts this run
 # with the rows as base64 of gzipped JSON; scripts/filevine-expenses-load.ts
 # saves them on the server. Rep, date, amount, store and type only — no notes.
+# The rows come either in the "data" input or, being too long to paste safely,
+# as fv-load/data.b64 on a short-lived branch named in "ref" (deleted after).
 name: Load Filevine expenses
 
 on:
@@ -9,7 +11,10 @@ on:
     inputs:
       data:
         description: Rows as base64 of gzipped JSON (made by Claude)
-        required: true
+        required: false
+      ref:
+        description: Or a branch holding fv-load/data.b64
+        required: false
 
 concurrency:
   group: deploy-vps
@@ -19,6 +24,13 @@ jobs:
   load:
     runs-on: ubuntu-latest
     steps:
+      - name: Fetch the rows from the branch
+        if: ${{ inputs.ref != '' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          sparse-checkout: fv-load
+
       - name: Load the deploy key
         run: |
           mkdir -p ~/.ssh
@@ -28,8 +40,10 @@ jobs:
 
       - name: Load on the server
         env:
-          DATA: ${{ inputs.data }}
+          INPUT: ${{ inputs.data }}
         run: |
+          DATA="$INPUT"
+          [ -n "$DATA" ] || DATA="$(tr -d '\n' < fv-load/data.b64)"
           case "$DATA" in *[!A-Za-z0-9+/=]*) echo "data is not base64"; exit 1;; esac
           ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
