@@ -213,10 +213,13 @@ function Misregistered({ from, to }: { from: string; to: string }) {
       <div className="sr-panel">
         <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
           <div className="sr-ttl"><h2>Possibly mis-registered digital leads</h2>{isFetching && <Loader2 size={13} className="sr-spin" />}</div>
-          <div className="sr-seg" role="group" aria-label="How far back">
-            {([["period", "This period"], ["12m", "Last 12 months"], ["all", "All time"]] as const).map(([v, l]) => (
-              <button key={v} className={scope === v ? "on" : ""} onClick={() => setScope(v)}>{l}</button>
-            ))}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            {data && <button className="sr-btn2" onClick={() => printIntakeReport(data, scopeLabel(scope, from, to))} title="A printable to-do list for the intake team — choose Save as PDF"><Printer size={14} /> Report for intake</button>}
+            <div className="sr-seg" role="group" aria-label="How far back">
+              {([["period", "This period"], ["12m", "Last 12 months"], ["all", "All time"]] as const).map(([v, l]) => (
+                <button key={v} className={scope === v ? "on" : ""} onClick={() => setScope(v)}>{l}</button>
+              ))}
+            </div>
           </div>
         </div>
         <p className="sr-sub">
@@ -522,6 +525,80 @@ function SourceDirectory() {
       )}
     </div>
   );
+}
+
+const scopeLabel = (scope: Scope, from: string, to: string) =>
+  scope === "period" ? rangeLabel(from, to) : scope === "12m" ? "the last 12 months" : "all time";
+
+/**
+ * The audit as a to-do list for the intake team (Youssef, 2026-10-01: "create
+ * a report to send to Malvin, intake team"): the leads whose Marketing Source
+ * may need changing in Lead Docket, each with a box to tick. It names clients,
+ * so it says it's internal. Only Lead Docket's own fields appear — what intake
+ * itself entered — and no CRM facility or partner data, so it stays on intake's
+ * side of the BD/FR wall.
+ */
+function printIntakeReport(d: AuditData, period: string) {
+  const w = window.open("", "_blank");
+  if (!w) { toast.error("Allow pop-ups for this site to save the PDF."); return; }
+  const box = '<span class="box"></span>';
+  const team = d.teamCampaigns.filter((t) => t.kind !== "Other");
+  const teamOther = d.teamCampaigns.filter((t) => t.kind === "Other");
+  const count = (rows: { leads: number; signed: number }[]) => rows.reduce((a, r) => [a[0] + r.leads, a[1] + r.signed], [0, 0]);
+  const [tl, ts] = count(team), [dl, ds] = count(d.possiblyDigital), [nl, ns] = count(d.possiblyNotDigital);
+  const kindLabel = (k: string) => (k in DIGITAL_GROUP_LABEL ? DIGITAL_GROUP_LABEL[k as keyof typeof DIGITAL_GROUP_LABEL] : k);
+  const rows = (clients: { name: string; date: string | null; outcome: string; signed: boolean; contactSource: string | null; campaign?: string | null; rep?: string; role?: string }[], withRep: boolean, choices: [string, string]) =>
+    `<table><thead><tr><th>Client</th>${withRep ? "<th>Credited to</th>" : ""}<th>Date</th><th>Outcome</th><th>Contact Source</th>${withRep ? "" : "<th>Campaign</th>"}<th class="c">${esc(choices[0])}</th><th class="c">${esc(choices[1])}</th></tr></thead><tbody>${
+      clients.map((c) => `<tr><td><b>${esc(c.name)}</b></td>${withRep ? `<td>${esc(c.rep ?? "")}${c.role ? ` <span class="m">${esc(c.role)}</span>` : ""}</td>` : ""}<td class="d">${esc(leadDay(c.date))}</td><td>${c.signed ? `<b>${esc(c.outcome)}</b>` : esc(c.outcome || "—")}</td><td>${esc(c.contactSource ?? "—")}</td>${withRep ? "" : `<td>${esc(c.campaign ?? "—")}</td>`}<td class="c">${box}</td><td class="c">${box}</td></tr>`).join("")
+    }</tbody></table>`;
+  const more = (g: { leads: number; clients: unknown[] }) => (g.leads > g.clients.length ? `<p class="m">Showing the newest ${fmt(g.clients.length)} of ${fmt(g.leads)} — the rest are in the CRM.</p>` : "");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Lead Docket attribution review — ${esc(period)}</title><style>
+    @page { size: letter landscape; margin: 12mm; }
+    body { font: 10px/1.4 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1c1c1e; margin: 0; }
+    h1 { font-size: 20px; margin: 0 0 2px; } h2 { font-size: 14px; margin: 18px 0 4px; border-bottom: 2px solid #1c1c1e; padding-bottom: 3px; break-after: avoid; }
+    h3 { font-size: 11px; margin: 12px 0 3px; break-after: avoid; } h3 span, .m { font-weight: 400; color: #666; }
+    .meta { color: #666; margin-bottom: 8px; } .conf { display: inline-block; background: #fdecea; color: #a1281c; border-radius: 4px; padding: 2px 6px; font-weight: 600; }
+    .kpis { display: flex; gap: 10px; margin: 10px 0; } .kpis div { border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; } .kpis b { display: block; font-size: 15px; }
+    .how { background: #f5f5f7; border-radius: 6px; padding: 8px 12px; margin: 6px 0 4px; } .how li { margin: 2px 0; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 4px; } th { text-align: left; font-size: 9px; text-transform: uppercase; color: #666; border-bottom: 1px solid #bbb; padding: 3px 4px; }
+    td { padding: 3px 4px; border-bottom: 1px solid #eee; vertical-align: top; } tr { break-inside: avoid; } .d { white-space: nowrap; } .c { text-align: center; width: 70px; }
+    .box { display: inline-block; width: 10px; height: 10px; border: 1px solid #555; border-radius: 2px; } .nil { color: #666; font-style: italic; }
+  </style></head><body>
+    <h1>Lead Docket attribution review</h1>
+    <div class="meta">Farahi Law · for the Intake team · leads from ${esc(period)} · generated ${esc(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short" }))} Pacific · <span class="conf">Internal — contains client names</span></div>
+    <div class="kpis">
+      <div><b>${fmt(tl)}</b>BD/FR leads on a marketing campaign · ${fmt(ts)} signed</div>
+      <div><b>${fmt(dl)}</b>possibly digital, not credited · ${fmt(ds)} signed</div>
+      <div><b>${fmt(nl)}</b>credited digital, maybe not · ${fmt(ns)} signed</div>
+    </div>
+    <div class="how"><b>What we need:</b> for each lead below, check how the client really found us and tick one box.
+      <ul>
+        <li>If the Marketing Source in Lead Docket is wrong, change it there. The CRM picks it up on the next sync — nothing needs changing anywhere else.</li>
+        <li>A rep or partner who actually referred the client keeps the credit, even if the client then called the website or toll-free number.</li>
+        <li>Going forward: ask every caller "How did you hear about us?" and record the rep or partner only when one sent them.</li>
+      </ul>
+    </div>
+
+    <h2>1. Leads credited to a BDR or Field Rep that came in on a marketing campaign</h2>
+    <p class="m">Lead Docket's Campaign says the call came through a marketing line or site, but the Marketing Source is a rep, so the lead counts for the rep, not the campaign.</p>
+    ${team.length ? team.map((t) => `<h3>${esc(t.campaign)} <span>· would count as ${esc(kindLabel(t.kind))} · ${fmt(t.leads)} leads · ${fmt(t.signed)} signed</span></h3>${rows(t.clients, true, ["Rep referred — keep", "Came on own — change"])}${more(t)}`).join("") : '<p class="nil">None in this period.</p>'}
+    ${teamOther.length ? `<p class="m">Also on a BD/FR lead, but not a marketing campaign (no action needed): ${teamOther.map((t) => `${esc(t.campaign)} (${fmt(t.leads)})`).join(", ")}.</p>` : ""}
+
+    <h2>2. Leads that look digital but aren't credited to a digital source</h2>
+    <p class="m">The Marketing Source isn't digital (or is empty), but the Contact Source, campaign or web link says the client came in online.</p>
+    ${d.possiblyDigital.length ? d.possiblyDigital.map((g) => `<h3>${esc(g.source)} <span>· ${esc(g.evidence)} · would count as ${esc(g.group ? DIGITAL_GROUP_LABEL[g.group] : "")} · ${fmt(g.leads)} leads · ${fmt(g.signed)} signed</span></h3>${rows(g.clients, false, ["Correct as is", "Change source"])}${more(g)}`).join("") : '<p class="nil">None in this period.</p>'}
+
+    <h2>3. Leads credited to a digital source that may have come another way</h2>
+    <p class="m">The Marketing Source is digital, but the Contact Source says otherwise (a Walker line, staff, an existing client, a partner…).</p>
+    ${d.possiblyNotDigital.length ? d.possiblyNotDigital.map((g) => `<h3>${esc(g.source)} <span>· ${esc(g.evidence)} · ${fmt(g.leads)} leads · ${fmt(g.signed)} signed</span></h3>${rows(g.clients, false, ["Correct as is", "Change source"])}${more(g)}`).join("") : '<p class="nil">None in this period.</p>'}
+  </body></html>`;
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  let done = false;
+  const go = () => { if (done) return; done = true; try { w.focus(); w.print(); } catch { /* the window was closed */ } };
+  w.onload = go;
+  setTimeout(go, 600);
 }
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
