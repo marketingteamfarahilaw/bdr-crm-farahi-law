@@ -1,0 +1,36 @@
+# Load FR expenses read from Filevine into the CRM (Expenses → "FR: Filevine vs
+# Sheet"). Claude pulls them with its Filevine connector and starts this run
+# with the rows as base64 of gzipped JSON; scripts/filevine-expenses-load.ts
+# saves them on the server. Rep, date, amount, store and type only — no notes.
+name: Load Filevine expenses
+
+on:
+  workflow_dispatch:
+    inputs:
+      data:
+        description: Rows as base64 of gzipped JSON (made by Claude)
+        required: true
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load the deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -4 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Load on the server
+        env:
+          DATA: ${{ inputs.data }}
+        run: |
+          case "$DATA" in *[!A-Za-z0-9+/=]*) echo "data is not base64"; exit 1;; esac
+          ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "set -e; cd /opt/farahi-lead-scraper; FV_DATA='$DATA' npx tsx scripts/filevine-expenses-load.ts"
