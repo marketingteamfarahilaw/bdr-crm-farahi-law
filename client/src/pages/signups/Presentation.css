@@ -81,6 +81,13 @@
   width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; flex: none;
   font: 600 26px/1 var(--ui); color: hsl(var(--h) 45% 24%); background: hsl(var(--h) 55% 86%);
 }
+/* Scorecard faces: the dashboard's 36px avatar scaled for the 1920px stage;
+   a dense (9+ row) team steps down so the sheet still fits. */
+.sr-deck .sr-sct .sr-who { display: flex; align-items: center; gap: 18px; }
+.sr-deck .sr-sct .sr-av { width: 56px; height: 56px; font: 600 20px/1 var(--ui); }
+.sr-deck .sr-sc.dense .sr-sct .sr-who { gap: 12px; }
+.sr-deck .sr-sc.dense .sr-sct .sr-av { width: 42px; height: 42px; font-size: 15px; }
+
 .sr-deck .sr-deck-bar-t { height: 16px; border-radius: 99px; background: var(--track); overflow: hidden; }
 .sr-deck .sr-deck-bar-t i { display: block; height: 100%; border-radius: 99px; background: var(--char); }
 .sr-deck .first .sr-deck-bar-t i { background: var(--sun); }
