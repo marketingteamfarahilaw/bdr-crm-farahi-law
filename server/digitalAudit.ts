@@ -20,12 +20,12 @@
  *
  * The rules are pure and tested (digitalAudit.test.ts); the loader only reads.
  */
-import { and, gte, lte, sql, type AnyColumn } from "drizzle-orm";
+import { and, desc, gte, lte, sql, type AnyColumn } from "drizzle-orm";
 import { fromZonedTime } from "date-fns-tz";
 import { getDb } from "./db";
 import { leaddocketLeads } from "../drizzle/schema";
 import { DIGITAL_GROUPS, NO_SOURCE, TEAM_CHANNEL, TOLL_FREE, channelOfSource, digitalGroupOf, isTollFreeLine, sourceCategoryOf, type DigitalGroup } from "@shared/marketing";
-import { TZ, clean, notBdFr, sourceOf } from "./marketing/common";
+import { TZ, bdFrOnly, clean, notBdFr, sourceOf } from "./marketing/common";
 import { routeOf } from "./marketing/routes";
 import { isSigned } from "./signupsReport";
 
@@ -152,6 +152,42 @@ export function misregistered(leads: AuditLead[]) {
   return { possiblyDigital, possiblyNotDigital: sort(outOf), wouldAdd, tollFree: sort(shared) };
 }
 
+// ── BD/FR leads that carry a marketing campaign ──
+
+export type TeamCampaign = {
+  campaign: string;
+  /** Where the campaign alone would file the lead if no rep were credited. */
+  kind: "Toll-free line" | DigitalGroup | "Other";
+  leads: number;
+  signed: number;
+  clients: (Listed & { rep: string; role: string })[];
+};
+
+/**
+ * BD/FR-credited leads whose Lead Docket Campaign is filled in (Youssef,
+ * 2026-10-01: "find all the leads and signups that have a marketing campaign
+ * and are assigned to BDR and FR"). The rep keeps the credit — a rep's client
+ * often calls the toll-free number they were handed, and the intake notes say
+ * so — so this is a list to review, not a recount: a lead that really came in
+ * on its own is moved by changing its Marketing Source in Lead Docket.
+ */
+export function teamCampaigns(leads: AuditLead[]): TeamCampaign[] {
+  const by = new Map<string, TeamCampaign>();
+  for (const l of leads) {
+    const campaign = clean(l.campaign);
+    if (!campaign) continue;
+    const key = campaign.toLowerCase();
+    const kind: TeamCampaign["kind"] = isTollFreeLine(campaign) ? "Toll-free line" : evidenceOf({ contactSource: null, campaign, utm: null, referringUrl: null, keywords: null })?.group ?? "Other";
+    const e = by.get(key) ?? { campaign, kind, leads: 0, signed: 0, clients: [] };
+    e.leads++;
+    if (isSigned(l.outcome)) e.signed++;
+    if (e.clients.length < LIST_CAP) e.clients.push({ ...listed(l), rep: clean(l.marketingSource) || "—", role: clean(l.teamRole) });
+    by.set(key, e);
+  }
+  const marketing = (t: TeamCampaign) => (t.kind === "Other" ? 1 : 0);
+  return Array.from(by.values()).sort((a, b) => marketing(a) - marketing(b) || b.leads - a.leads || a.campaign.localeCompare(b.campaign));
+}
+
 // ── part 3: source names ──
 
 export type SourceName = { source: string; leads: number; first: string | null; last: string | null };
@@ -247,8 +283,9 @@ export async function getDigitalAudit(range: { from: Date; to: Date; fromDay: st
   const start12 = fromZonedTime(`${new Date(Date.UTC(y, m - 12, 1)).toISOString().slice(0, 10)}T00:00:00`, TZ);
   const when = scope === "all" ? [] : [gte(L.leadDate, scope === "12m" ? start12 : range.from), lte(L.leadDate, range.to)];
 
-  const [leads, names] = await Promise.all([
+  const [leads, team, names] = await Promise.all([
     db.select(AUDIT_COLS).from(L).where(and(notBdFr, ...when)),
+    db.select(AUDIT_COLS).from(L).where(and(bdFrOnly, sql`TRIM(COALESCE(${L.campaign}, '')) <> ''`, ...when)).orderBy(desc(L.leadDate)),
     // Every name, all time: hygiene is about the names, whatever the period.
     db.select({
       source: sql<string>`TRIM(${L.marketingSource})`, leads: sql<number>`COUNT(*)`,
@@ -260,6 +297,7 @@ export async function getDigitalAudit(range: { from: Date; to: Date; fromDay: st
     scope,
     checked: leads.length,
     ...misregistered(leads),
+    teamCampaigns: teamCampaigns(team),
     hygiene: sourceHygiene(names.map((n) => ({ source: clean(n.source), leads: Number(n.leads) || 0, first: day(n.first), last: day(n.last) }))),
   };
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TOLL_FREE, MERCH } from "@shared/marketing";
-import { contraryOf, evidenceOf, misregistered, sourceHygiene, type AuditLead } from "./digitalAudit";
+import { contraryOf, evidenceOf, misregistered, sourceHygiene, teamCampaigns, type AuditLead } from "./digitalAudit";
 
 let id = 1;
 const lead = (marketingSource: string | null, over: Partial<AuditLead> = {}): AuditLead => ({
@@ -103,5 +103,26 @@ describe("sourceHygiene", () => {
     expect(sets.some((s) => s.some((x) => x.includes("Contract")))).toBe(false);
     // The JFJ cluster spans two report rows — the website and the shared toll-free line.
     expect(h.duplicates.find((d) => d.names.length === 3)!.rows).toHaveLength(2);
+  });
+});
+
+describe("teamCampaigns", () => {
+  const rows = teamCampaigns([
+    lead("Lupe Campos", { teamRole: "FR", campaign: "Justin For Justice Toll Free for Website", outcome: "Signed" }),
+    lead("Ally Maceda", { teamRole: "BDR", campaign: "justin for justice toll free for website " }),
+    lead("Grace Lanayon", { teamRole: "BDR", campaign: "Spring tow drive" }),
+    lead("Grace Lanayon", { teamRole: "BDR", campaign: "Google Ads PPC" }),
+    lead("Miguel Flores", { teamRole: "BDR", campaign: "  " }),
+  ]);
+
+  it("groups by campaign ignoring case and spacing, names the rep, and skips blank campaigns", () => {
+    expect(rows.map((r) => r.campaign)).toEqual(["Justin For Justice Toll Free for Website", "Google Ads PPC", "Spring tow drive"]);
+    expect(rows[0]).toMatchObject({ kind: "Toll-free line", leads: 2, signed: 1 });
+    expect(rows[0].clients.map((c) => c.rep)).toEqual(["Lupe Campos", "Ally Maceda"]);
+  });
+
+  it("files marketing campaigns before the rest", () => {
+    expect(rows[1].kind).toBe("Ads");
+    expect(rows[2].kind).toBe("Other");
   });
 });

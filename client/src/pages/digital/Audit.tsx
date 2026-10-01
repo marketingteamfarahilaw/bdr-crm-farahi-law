@@ -252,6 +252,7 @@ function Misregistered({ from, to }: { from: string; to: string }) {
             </p>
             <AuditGroups rows={data.tollFree} empty="No leads on the toll-free line." />
           </div>
+          <TeamCampaigns rows={data.teamCampaigns} scope={scope} from={from} to={to} />
           <Hygiene h={data.hygiene} />
         </>
       )}
@@ -307,6 +308,82 @@ function AuditGroups({ rows, empty, target }: { rows: Group[]; empty: string; ta
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+type TeamRow = AuditData["teamCampaigns"][number];
+
+/** BD/FR leads whose Lead Docket Campaign is filled in — to review, not recount: the rep keeps the credit until the Marketing Source changes. */
+function TeamCampaigns({ rows, scope, from, to }: { rows: TeamRow[]; scope: Scope; from: string; to: string }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const leads = rows.reduce((a, r) => a + r.leads, 0), signed = rows.reduce((a, r) => a + r.signed, 0);
+  const exportCsv = () => {
+    const q = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = ["Campaign,Files as,Client,Rep,Role,Date,Outcome,Signed,Contact Source"];
+    for (const r of rows) for (const c of r.clients) lines.push([q(r.campaign), q(r.kind), q(c.name), q(c.rep), c.role, c.date ? c.date.slice(0, 10) : "", q(c.outcome), c.signed ? "yes" : "", q(c.contactSource ?? "")].join(","));
+    const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bdfr-campaign-leads-${scope === "period" ? `${from}-to-${to}` : scope}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <div className="sr-panel">
+      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
+        <h2>BD/FR leads with a marketing campaign</h2>
+        {rows.length > 0 && <button className="sr-btn2" onClick={exportCsv}><FileSpreadsheet size={14} /> Export</button>}
+      </div>
+      <p className="sr-sub">
+        Leads credited to a BDR or Field Rep whose Lead Docket <b>Campaign</b> is filled in — {fmt(leads)} leads, {fmt(signed)} signed. They count for
+        the rep, not the campaign. Often that's right (a rep's client calls the toll-free number they were given; the intake notes say so). Where the
+        lead really came in on its own, change its Marketing Source in Lead Docket and it moves after the next sync.
+      </p>
+      {!rows.length ? <p className="sr-nil">No BD/FR lead carries a campaign in this period.</p> : (
+        <div className="sr-scroll">
+          <table className="sr-t dm-t" style={{ minWidth: 640 }}>
+            <thead><tr><th>Campaign in Lead Docket</th><th>Would file as</th><th className="num">Leads</th><th className="num">Signed</th><th /></tr></thead>
+            <tbody>
+              {rows.map((r) => {
+                const isOpen = open === r.campaign;
+                return (
+                  <Fragment key={r.campaign}>
+                    <tr className="sr-click" onClick={() => setOpen(isOpen ? null : r.campaign)}>
+                      <td className="l"><b>{r.campaign}</b></td>
+                      <td className="nowrap">{r.kind === "Other" ? <span className="muted">not a digital campaign</span> : r.kind in DIGITAL_GROUP_LABEL ? DIGITAL_GROUP_LABEL[r.kind as keyof typeof DIGITAL_GROUP_LABEL] : r.kind}</td>
+                      <td className="num">{fmt(r.leads)}</td>
+                      <td className="num">{fmt(r.signed)}</td>
+                      <td className="num"><button className="dm-cell" aria-expanded={isOpen} aria-label={`${isOpen ? "Hide" : "Show"} the clients`}><ChevronDown size={14} style={{ transform: isOpen ? "rotate(180deg)" : undefined }} /></button></td>
+                    </tr>
+                    {isOpen && (
+                      <tr className="dm-sub-row">
+                        <td colSpan={5}>
+                          <table className="sr-t dm-t sr-leads">
+                            <thead><tr><th>Client</th><th>Rep</th><th>Date</th><th>Outcome</th><th>Contact Source</th></tr></thead>
+                            <tbody>
+                              {r.clients.map((c) => (
+                                <tr key={c.id}>
+                                  <td className="client"><b>{c.name}</b></td>
+                                  <td className="nowrap">{c.rep}{c.role ? <span className="muted"> · {c.role}</span> : null}</td>
+                                  <td className="nowrap">{leadDay(c.date)}</td>
+                                  <td className="nowrap"><span className={`sr-badge ${c.signed ? "sr-b-ok" : "sr-b-grey"}`}>{c.outcome || "—"}</span></td>
+                                  <td>{c.contactSource ?? "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {r.leads > r.clients.length && <p className="dm-foot">The newest {fmt(r.clients.length)} of {fmt(r.leads)}.</p>}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
