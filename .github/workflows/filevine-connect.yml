@@ -1,0 +1,61 @@
+# Save the Filevine API credentials on the VPS and test the login — the same as
+# Settings → "Filevine — API connection" → Save & test, for when nobody can get
+# to that page. Run it from the Actions tab ("Run workflow"). The values are
+# passed in as inputs, masked in the log, and stored encrypted in app_settings
+# by scripts/filevine-connect.ts; they are never written to the repo. A blank
+# input keeps what's already saved.
+name: Connect Filevine
+
+on:
+  workflow_dispatch:
+    inputs:
+      pat:
+        description: Personal Access Token (the "Key" on Filevine's token screen)
+        required: false
+      client_id:
+        description: Client ID (blank keeps the saved one)
+        required: false
+      client_secret:
+        description: Client Secret (blank keeps the saved one)
+        required: false
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mask the values
+        env:
+          PAT: ${{ inputs.pat }}
+          CID: ${{ inputs.client_id }}
+          SEC: ${{ inputs.client_secret }}
+        run: |
+          for x in "$PAT" "$CID" "$SEC"; do
+            [ -n "$x" ] || continue
+            echo "::add-mask::$x"
+            echo "::add-mask::$(printf %s "$x" | base64 -w0)"
+          done
+
+      - name: Load the deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -4 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Save and test on the server
+        env:
+          PAT: ${{ inputs.pat }}
+          CID: ${{ inputs.client_id }}
+          SEC: ${{ inputs.client_secret }}
+        # Base64 so the secret's + ? ~ survive the shell; decoded on the server.
+        run: |
+          b64() { printf %s "$1" | base64 -w0; }
+          ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "set -e; cd /opt/farahi-lead-scraper; d() { printf %s \"\$1\" | base64 -d; }; \
+             FV_PAT=\"\$(d '$(b64 "$PAT")')\" FV_CLIENT_ID=\"\$(d '$(b64 "$CID")')\" FV_CLIENT_SECRET=\"\$(d '$(b64 "$SEC")')\" \
+             npx tsx scripts/filevine-connect.ts"
