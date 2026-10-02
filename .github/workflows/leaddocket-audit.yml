@@ -1,0 +1,33 @@
+# Read-only Lead Docket audit for one month (scripts/audit/leaddocket-audit.ts),
+# run on the server, which has the database and the Lead Docket key. Counts
+# only — no client names — so the log is safe to read. Run from the Actions tab.
+name: Lead Docket audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      month:
+        description: Month to audit, yyyy-MM (Pacific)
+        required: true
+        default: "2026-09"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Load the deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -4 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Audit on the server
+        env:
+          MONTH: ${{ inputs.month }}
+        run: |
+          case "$MONTH" in [0-9][0-9][0-9][0-9]-[0-9][0-9]) ;; *) echo "month must be yyyy-MM"; exit 1;; esac
+          ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd /opt/farahi-lead-scraper && npx tsx scripts/audit/leaddocket-audit.ts --month $MONTH"
