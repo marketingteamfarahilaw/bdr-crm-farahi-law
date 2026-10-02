@@ -15,7 +15,7 @@ import {
 import {
   Building2, Phone, MapPin, User, Plus, Search,
   AlertTriangle, Clock, ChevronUp, ChevronDown, Upload, List,
-  Receipt, ListChecks, ArrowRight, Merge, Trash2, Map as MapIcon,
+  Receipt, ListChecks, ArrowRight, Merge, Trash2, Map as MapIcon, Download,
 } from "lucide-react";
 import { ClickToCallButton } from "@/components/RingCentralWidget";
 import { BulkImportDialog } from "./BulkImportDialog";
@@ -47,6 +47,15 @@ function repsOf(f: { assignedRepName?: string | null; frRepName?: string | null 
   const fr = frStored ?? (ownerIsFr ? owner!.full : null);
   return { bdr, fr };
 }
+
+// Malvin (Intake) brings in and owns some partners; he's on the team, just not BD/FR.
+const INTAKE = new Set(CURRENT_TEAM.Intake.map(firstName));
+const onTeam = (name: string | null) => !!name && (TEAM_OF.has(firstName(name)) || INTAKE.has(firstName(name)));
+/** No rep, or only reps who have left — nobody on today's team is working this partner. */
+const needsOwner = (f: { assignedRepName?: string | null; frRepName?: string | null }) => {
+  const { bdr, fr } = repsOf(f);
+  return !onTeam(bdr) && !onTeam(fr);
+};
 
 const initials = (name: string) => name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
@@ -106,6 +115,7 @@ export default function Facilities() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [ownerFilter, setOwnerFilter] = useState<"all" | "team" | "none">("all");
 
   const { data: facilities, isLoading } = trpc.crm.facilities.list.useQuery({
     search: search || undefined,
@@ -163,7 +173,8 @@ export default function Facilities() {
   };
 
   const time = (d: Date | string | null | undefined) => (d ? new Date(d).getTime() : 0);
-  const sorted = [...(facilities ?? [])].sort((a, b) => {
+  const shown = (facilities ?? []).filter((f) => ownerFilter === "all" || (ownerFilter === "none" ? needsOwner(f) : !needsOwner(f)));
+  const sorted = [...shown].sort((a, b) => {
     let av: string | number = "";
     let bv: string | number = "";
     if (sortKey === "name") { av = a.name ?? ""; bv = b.name ?? ""; }
@@ -183,6 +194,28 @@ export default function Facilities() {
     return 0;
   });
 
+  // The list as filtered and sorted on screen, with what a reassignment needs.
+  const exportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const day = (d: Date | string | null | undefined) => (d ? new Date(d).toLocaleDateString("en-US", { timeZone: "America/Los_Angeles" }) : "");
+    const rows = sorted.map((f: any) => {
+      const { bdr, fr } = repsOf(f);
+      return {
+        Facility: f.name ?? "", Category: CATEGORY_LABELS[f.category] ?? f.category ?? "", Status: STATUS_LABELS[f.partnerStatus as keyof typeof STATUS_LABELS]?.label ?? f.partnerStatus ?? "",
+        City: f.city ?? "", "Zip code": f.zipCode ?? "", Territory: f.territory ?? "", Address: f.address ?? "", Phone: f.phone ?? "",
+        Contact: f.contactName ?? "", "BDR Rep": bdr ?? "", "FR Rep": fr ?? "", "On today's team": needsOwner(f) ? "No — needs an owner" : "Yes",
+        "Last call": day(f.lastCallDate), "Last visit": day(f.lastVisitDate), "Last contact": day(f.lastContactDate),
+        "Leads received": f.totalLeadsReceived ?? 0, "Signed cases": f.totalSignedCases ?? 0, "New BDR (fill in)": "", "New FR (fill in)": "",
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = Object.keys(rows[0] ?? { Facility: "" }).map((k) => ({ wch: k === "Facility" || k === "Address" ? 38 : k.startsWith("New") || k === "On today's team" ? 20 : 14 }));
+    if (rows.length) ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: Object.keys(rows[0]).length - 1 } }) };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, ownerFilter === "none" ? "Needs an owner" : "Facilities");
+    XLSX.writeFile(wb, `facilities-${ownerFilter === "none" ? "needs-owner" : ownerFilter === "team" ? "current-team" : "all"}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   const SortIcon = ({ col }: { col: SortKey }) =>
     sortKey === col ? (
       sortDir === "asc" ? <ChevronUp size={12} className="inline ml-1" /> : <ChevronDown size={12} className="inline ml-1" />
@@ -199,7 +232,7 @@ export default function Facilities() {
             Facility Partners
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {facilities?.length ?? 0} facilities in your network
+            {ownerFilter === "all" ? `${facilities?.length ?? 0} facilities in your network` : `${sorted.length} of ${facilities?.length ?? 0} facilities · ${ownerFilter === "none" ? "no one on today's team" : "owned by today's team"}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -244,6 +277,12 @@ export default function Facilities() {
             <Upload className="w-4 h-4" />
             Bulk Import
           </Button>
+          {manager && (
+            <Button variant="outline" onClick={() => exportExcel().catch(() => toast.error("Couldn't build the Excel file."))} disabled={!sorted.length} className="gap-2 border-border text-muted-foreground hover:text-foreground" title="Download the list as shown, with the filters applied">
+              <Download className="w-4 h-4" />
+              Export Excel
+            </Button>
+          )}
           <LogFrVisitGlobal facilities={facilities ?? []} />
           <Button
             onClick={() => navigate("/crm/facilities/new")}
@@ -276,6 +315,16 @@ export default function Facilities() {
             {Object.entries(STATUS_LABELS).map(([k, v]) => (
               <SelectItem key={k} value={k}>{v.label}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={ownerFilter} onValueChange={(v) => setOwnerFilter(v as typeof ownerFilter)}>
+          <SelectTrigger className="w-[220px] bg-card border-border" aria-label="Owner">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any owner</SelectItem>
+            <SelectItem value="team">Owned by today's team</SelectItem>
+            <SelectItem value="none">Unassigned / former reps</SelectItem>
           </SelectContent>
         </Select>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
