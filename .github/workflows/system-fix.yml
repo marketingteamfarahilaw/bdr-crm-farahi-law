@@ -1,0 +1,36 @@
+# Fixes the data mismatches that are the CRM's own doing (scripts/audit/system-fix.ts):
+# duplicate RingCentral call rows and backdated last-contact dates. Dry run unless
+# "apply" is ticked. Run from the Actions tab.
+name: System fix
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply the changes (unticked = dry run)
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Load the deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -4 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Fix on the server
+        env:
+          APPLY: ${{ inputs.apply && '--apply' || '' }}
+        run: |
+          ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd /opt/farahi-lead-scraper && npx tsx scripts/audit/system-fix.ts $APPLY"

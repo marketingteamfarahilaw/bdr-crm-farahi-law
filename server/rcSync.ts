@@ -383,7 +383,7 @@ export async function syncRecentCalls(
       : r.result === "Busy" ? "busy" : "other";
     const callDate = r.startTime ? new Date(r.startTime) : new Date();
 
-    await createContactLog({
+    const logged = await createContactLog({
       facilityId: facility.id,
       contactType: "call",
       contactDate: callDate,
@@ -400,6 +400,7 @@ export async function syncRecentCalls(
     });
     existing.add(id); // mark seen so a duplicate id later in THIS batch is skipped
     if (sessionId) existingSessions.add(sessionId); // and a duplicate session (other extension) later in THIS batch
+    if (!logged) continue;   // the manual sync logged it a moment ago
     result.logged++;
 
     // Recorded, connected calls get a recap: each is queued and written by

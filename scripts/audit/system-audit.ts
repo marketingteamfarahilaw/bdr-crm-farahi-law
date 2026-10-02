@@ -105,12 +105,14 @@ await check("Partners — stored totals vs the records", async () => {
   report("partners with the same name more than once", dupNames.length, [], "merge candidates");
   const reps = await q(`SELECT id, assignedRepName, frRepName FROM facilities WHERE assignedRepName IS NOT NULL OR frRepName IS NOT NULL`);
   const unknownRep = reps.filter((r) => [r.assignedRepName, r.frRepName].some((n) => n && !whoIs(n)?.current));
-  report("assigned to someone not on today's team", unknownRep.length, unknownRep.map((r) => r.id));
+  const who = new Map<string, number>();
+  for (const r of unknownRep) for (const n of [r.assignedRepName, r.frRepName]) if (n && !whoIs(n)?.current) who.set(String(n).trim(), (who.get(String(n).trim()) ?? 0) + 1);
+  report("assigned to someone not on today's team", unknownRep.length, Array.from(who.entries()).sort((a, b) => b[1] - a[1]).map(([n, k]) => `${JSON.stringify(n)}×${k}`));
 });
 
 await check("Expenses (from the Centralized sheet)", async () => {
   for (const t of ["fr_expenses", "bdr_expenses"]) {
-    const rows = await q(`SELECT id, agentName, amount, expenseDate, store FROM ${t}`);
+    const rows = await q(`SELECT id, agentName, amount, expenseDate, store, facilityName FROM ${t}`);
     const noRep = rows.filter((r) => !whoIs(r.agentName));
     report(`${t}: no rep named`, noRep.length, noRep.map((r) => r.id));
     const former = rows.filter((r) => { const p = whoIs(r.agentName); return p && !p.current; });
@@ -120,9 +122,9 @@ await check("Expenses (from the Centralized sheet)", async () => {
     const future = rows.filter((r) => r.expenseDate && new Date(r.expenseDate).getTime() > Date.now() + 86400000);
     report(`${t}: dated in the future`, future.length, future.map((r) => `${r.id} (${day(r.expenseDate)})`));
     const seen = new Map<string, number[]>();
-    for (const r of rows) { const k = [whoIs(r.agentName)?.name, day(r.expenseDate), Number(r.amount).toFixed(2), String(r.store ?? "").toLowerCase().trim()].join("|"); seen.set(k, [...(seen.get(k) ?? []), r.id]); }
+    for (const r of rows) { const k = [whoIs(r.agentName)?.name, day(r.expenseDate), Number(r.amount).toFixed(2), String(r.store ?? "").toLowerCase().trim(), String(r.facilityName ?? "").toLowerCase().trim()].join("|"); seen.set(k, [...(seen.get(k) ?? []), r.id]); }
     const dup = Array.from(seen.values()).filter((ids) => ids.length > 1 && Number(rows.find((r) => r.id === ids[0])?.amount));
-    report(`${t}: same rep, day, amount and store more than once`, dup.length, dup.map((ids) => ids.join("+")));
+    report(`${t}: same rep, day, amount, store and partner more than once`, dup.length, dup.map((ids) => ids.join("+")));
   }
 });
 
@@ -146,7 +148,7 @@ await check("Calls and visits", async () => {
 await check("Users", async () => {
   const u = await q(`SELECT id, role, agentName, name FROM users WHERE role IN ('bdr_agent','fr_agent')`);
   const bad = u.filter((r) => !whoIs(r.agentName ?? r.name)?.current);
-  report("BDR/FR agent logins not matched to anyone on today's team", bad.length, bad.map((r) => `${r.id} (${r.role})`));
+  report("BDR/FR agent logins not matched to anyone on today's team", bad.length, bad.map((r) => `${r.id} (${r.role}, ${r.agentName ? `agent name ${JSON.stringify(r.agentName)}` : "no agent name"}, login name ${JSON.stringify(r.name ?? "")})`));
 });
 
 console.log(`\n${issues ? `${issues} check(s) found something` : "Everything agrees."}`);

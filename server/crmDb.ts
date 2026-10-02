@@ -216,12 +216,26 @@ export async function listContactLogs(facilityId: number) {
 export async function createContactLog(data: InsertContactLog) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  const result = await db.insert(contactLogs).values(data);
+  // A RingCentral call is logged once. The manual "sync calls" button and the
+  // 2-minute auto-sync can both find the same call unlogged at the same moment;
+  // the unique index on rcCallId (scripts/audit/system-fix.ts) makes the second
+  // insert fail, and it's then a no-op — no row, no second count.
+  let result;
+  try {
+    result = await db.insert(contactLogs).values(data);
+  } catch (e: any) {
+    const dup = e?.code === "ER_DUP_ENTRY" || e?.cause?.code === "ER_DUP_ENTRY" || /Duplicate entry/i.test(String(e?.message ?? e?.cause?.message ?? ""));
+    if (dup && data.rcCallId) return undefined as any;
+    throw e;
+  }
+  // Last contact only moves forward: a call synced late (an older call found by
+  // a backfill) must not pull a partner's last-contact date back in time.
+  const at = data.contactDate as Date;
   await db
     .update(facilities)
     .set({
-      lastContactDate: data.contactDate as Date,
-      lastCheckInDate: data.contactDate as Date,
+      lastContactDate: sql`GREATEST(COALESCE(${facilities.lastContactDate}, ${at}), ${at})`,
+      lastCheckInDate: sql`GREATEST(COALESCE(${facilities.lastCheckInDate}, ${at}), ${at})`,
       totalCalls: sql`${facilities.totalCalls} + 1`,
       updatedAt: new Date(),
     })
