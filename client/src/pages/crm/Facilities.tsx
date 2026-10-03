@@ -66,7 +66,7 @@ function RepCell({ name }: { name: string | null }) {
       <span className="w-5 h-5 rounded-full overflow-hidden bg-secondary flex items-center justify-center text-[9px] font-semibold text-foreground shrink-0 [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
         <RepFace name={name} fallback={initials(name)} />
       </span>
-      <span className="font-medium text-foreground block max-w-[120px] truncate" title={name}>{name}</span>
+      <span className="font-medium text-foreground block max-w-[96px] truncate" title={name}>{name}</span>
     </div>
   );
 }
@@ -102,7 +102,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-type SortKey = "name" | "category" | "relationshipStatus" | "bdrRep" | "frRep" | "lastCall" | "lastVisit" | "totalLeadsSent";
+type SortKey = "name" | "category" | "relationshipStatus" | "bdrRep" | "frRep" | "contact" | "city" | "referrals" | "lastCall" | "lastVisit" | "totalLeadsSent";
 type SortDir = "asc" | "desc";
 type ViewMode = "list" | "map";
 
@@ -185,6 +185,17 @@ export default function Facilities() {
       av = repsOf(a)[k] ?? ""; bv = repsOf(b)[k] ?? "";
       // Unassigned rows go last either way: sorting by rep is for finding a rep's partners.
       if (!av !== !bv) return av ? -1 : 1;
+    }
+    else if (sortKey === "contact" || sortKey === "city") {
+      const k = sortKey === "contact" ? "contactName" : "city";
+      av = (a[k] ?? "").trim().toLowerCase(); bv = (b[k] ?? "").trim().toLowerCase();
+      // Blanks go last either way, as for reps.
+      if (!av !== !bv) return av ? -1 : 1;
+    }
+    // Referrals both ways, then sent breaks ties: the busiest partners first when descending.
+    else if (sortKey === "referrals") {
+      const sent = (f: any) => f.referralsSent ?? 0, recv = (f: any) => f.referralsReceived ?? 0;
+      av = (sent(a) + recv(a)) * 1e6 + sent(a); bv = (sent(b) + recv(b)) * 1e6 + sent(b);
     }
     else if (sortKey === "totalLeadsSent") { av = a.totalLeadsSent ?? 0; bv = b.totalLeadsSent ?? 0; }
     else if (sortKey === "lastCall") { av = time(a.lastCallDate); bv = time(b.lastCallDate); }
@@ -457,15 +468,31 @@ export default function Facilities() {
                     >
                       Category <SortIcon col="category" />
                     </TableHead>
-                    <TableHead className="w-px whitespace-nowrap text-muted-foreground text-xs">Contact</TableHead>
-                    <TableHead className="w-px whitespace-nowrap text-muted-foreground text-xs">Location</TableHead>
+                    <TableHead
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("contact")}
+                    >
+                      Contact <SortIcon col="contact" />
+                    </TableHead>
+                    <TableHead
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("city")}
+                    >
+                      Location <SortIcon col="city" />
+                    </TableHead>
                     <TableHead
                       className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("relationshipStatus")}
                     >
                       Status <SortIcon col="relationshipStatus" />
                     </TableHead>
-                    <TableHead className="w-px whitespace-nowrap text-muted-foreground text-xs text-right" title="Referrals sent to / received from this partner">Sent / Recv</TableHead>
+                    <TableHead
+                      className="w-px whitespace-nowrap text-muted-foreground text-xs text-right cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort("referrals")}
+                      title="Referrals sent to / received from this partner"
+                    >
+                      Sent / Recv <SortIcon col="referrals" />
+                    </TableHead>
                     <TableHead
                       className="w-px whitespace-nowrap text-muted-foreground text-xs cursor-pointer select-none hover:text-foreground"
                       onClick={() => handleSort("lastCall")}
@@ -502,13 +529,13 @@ export default function Facilities() {
                             {facility.managementFlag === 1 && (
                               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                             )}
-                            <span className="font-medium text-foreground text-sm block max-w-[240px] truncate" title={facility.name}>{facility.name}</span>
+                            <span className="font-medium text-foreground text-sm block max-w-[200px] truncate" title={facility.name}>{facility.name}</span>
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5 text-xs"><RepCell name={reps.bdr} /></TableCell>
                         <TableCell className="py-1.5 text-xs"><RepCell name={reps.fr} /></TableCell>
                         <TableCell className="py-1.5 text-xs text-muted-foreground">
-                          {CATEGORY_LABELS[facility.category] ?? facility.category}
+                          <span className="block max-w-[104px] truncate" title={CATEGORY_LABELS[facility.category] ?? facility.category}>{CATEGORY_LABELS[facility.category] ?? facility.category}</span>
                         </TableCell>
                         <TableCell className="py-1.5 pr-2 text-xs text-muted-foreground">
                           {facility.contactName ? (
@@ -524,7 +551,7 @@ export default function Facilities() {
                           {facility.city ? (
                             <div className="flex items-center gap-1">
                               <MapPin className="w-3 h-3 flex-shrink-0" />
-                              <span className="whitespace-nowrap">{facility.city}</span>
+                              <span className="block max-w-[96px] truncate" title={facility.city}>{facility.city}</span>
                             </div>
                           ) : (
                             <span className="opacity-40">—</span>
