@@ -1,0 +1,38 @@
+# Re-checks the Marketing Report's Data audit for a period against Lead Docket
+# live (scripts/audit/data-audit-check.ts), on the server. Read-only; prints
+# counts and Lead Docket ids only — no client names. Run from the Actions tab.
+name: Data audit re-check
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: First day, yyyy-MM-dd (Pacific)
+        required: true
+        default: "2026-09-01"
+      to:
+        description: Last day, yyyy-MM-dd (Pacific)
+        required: true
+        default: "2026-09-30"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Load the deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -4 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Re-check on the server
+        env:
+          FROM: ${{ inputs.from }}
+          TO: ${{ inputs.to }}
+        run: |
+          for d in "$FROM" "$TO"; do case "$d" in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;; *) echo "dates must be yyyy-MM-dd"; exit 1;; esac; done
+          ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd /opt/farahi-lead-scraper && npx tsx scripts/audit/data-audit-check.ts --from $FROM --to $TO"
