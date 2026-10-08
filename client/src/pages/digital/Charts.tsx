@@ -156,3 +156,59 @@ export function QualityChart({ rows, what }: { rows: QualityPoint[]; what: strin
     </>
   );
 }
+
+// ── the Data audit's charts ──
+
+type Pair = { name: string; leads: number; signed: number; prev?: number | null };
+
+/**
+ * One bar per item: with a comparison, this period beside it (grey); without,
+ * signed and not signed stacked. Horizontal, so long source names stay readable.
+ */
+export function AuditBars({ rows, compareLabel, label, height }: { rows: Pair[]; compareLabel: string | null; label: string; height?: number }) {
+  const c = useSrColors();
+  const data = rows.map((r) => ({ ...r, notSigned: r.leads - r.signed }));
+  const h = height ?? Math.max(160, 44 + rows.length * (compareLabel ? 44 : 34));
+  const longest = Math.max(...rows.map((r) => r.name.length), 8);
+  return (
+    <Frame height={h} label={label}>
+      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 18, bottom: 0, left: 4 }} barGap={2}>
+        <CartesianGrid stroke={c.line} horizontal={false} />
+        <XAxis type="number" allowDecimals={false} {...axis(c)} />
+        <YAxis type="category" dataKey="name" {...axis(c)} width={Math.min(220, 12 + longest * 6.2)} />
+        <Tooltip content={<Tip title={(n) => n} />} cursor={{ fill: c.line }} />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+        {compareLabel ? (
+          <>
+            <Bar dataKey="leads" name="This period" fill={c.char} radius={[0, 4, 4, 0]} isAnimationActive={false} />
+            <Bar dataKey="prev" name={compareLabel} fill={c.mute2} radius={[0, 4, 4, 0]} isAnimationActive={false} />
+          </>
+        ) : (
+          <>
+            <Bar dataKey="signed" name="Signed" stackId="s" fill={c.char} isAnimationActive={false} />
+            <Bar dataKey="notSigned" name="Not signed" stackId="s" fill={c.sun} radius={[0, 4, 4, 0]} isAnimationActive={false} />
+          </>
+        )}
+      </BarChart>
+    </Frame>
+  );
+}
+
+/** What each digital row would gain if Lead Docket were corrected: leads and signed, and the comparison. */
+export function AuditGainChart({ rows, compareLabel }: { rows: Pair[]; compareLabel: string | null }) {
+  const c = useSrColors();
+  return (
+    <Frame height={240} label="Leads each digital row would gain if corrected">
+      <BarChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: -12 }} barGap={3}>
+        <CartesianGrid stroke={c.line} vertical={false} />
+        <XAxis dataKey="name" {...axis(c)} />
+        <YAxis allowDecimals={false} {...axis(c)} width={40} />
+        <Tooltip content={<Tip title={(n) => n} />} cursor={{ fill: c.line }} />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Bar dataKey="leads" name="Leads" fill={c.char} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        <Bar dataKey="signed" name="Signed" fill={c.sun} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        {compareLabel && <Bar dataKey="prev" name={`Leads, ${compareLabel}`} fill={c.mute2} radius={[4, 4, 0, 0]} isAnimationActive={false} />}
+      </BarChart>
+    </Frame>
+  );
+}

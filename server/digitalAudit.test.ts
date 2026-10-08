@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TOLL_FREE, MERCH } from "@shared/marketing";
-import { contraryOf, evidenceOf, misregistered, sourceHygiene, teamCampaigns, type AuditLead } from "./digitalAudit";
+import { auditTotals, contraryOf, evidenceOf, misregistered, sourceHygiene, teamCampaigns, type AuditLead } from "./digitalAudit";
 
 let id = 1;
 const lead = (marketingSource: string | null, over: Partial<AuditLead> = {}): AuditLead => ({
@@ -124,5 +124,27 @@ describe("teamCampaigns", () => {
   it("files marketing campaigns before the rest", () => {
     expect(rows[1].kind).toBe("Ads");
     expect(rows[2].kind).toBe("Other");
+  });
+});
+
+describe("auditTotals and the list cap", () => {
+  const leads = [
+    lead(null, { contactSource: "Web Search", outcome: "Signed" }),
+    lead(null, { contactSource: "Web Search" }),
+    lead("GMB 525 W Main St Visalia", { contactSource: "Existing Client" }),
+  ];
+  const team = [lead("FR Lupe Campos", { teamRole: "FR", campaign: "Justin For Justice Toll Free for Website", outcome: "Signed" })];
+  it("totals each panel the way the page counts it, without listing clients", () => {
+    const t = auditTotals(leads, team);
+    expect(t.checked).toBe(3);
+    expect(t.possiblyDigital).toEqual({ leads: 2, signed: 1 });
+    expect(t.possiblyNotDigital).toEqual({ leads: 1, signed: 0 });
+    expect(t.teamCampaigns).toEqual({ leads: 1, signed: 1 });
+    expect(t.wouldAdd.find((w) => w.group === "SEO")).toMatchObject({ leads: 2, signed: 1 });
+    expect(Object.values(t.bySource).reduce((a, n) => a + n, 0)).toBe(3);
+  });
+  it("lists every client when asked, and none with a cap of 0", () => {
+    expect(misregistered(leads, 0).possiblyDigital[0].clients).toHaveLength(0);
+    expect(misregistered(leads, Infinity).possiblyDigital[0].clients).toHaveLength(2);
   });
 });

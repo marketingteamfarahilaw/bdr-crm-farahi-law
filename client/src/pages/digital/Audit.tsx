@@ -9,7 +9,7 @@
  */
 import { Fragment, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { ChevronDown, FileSpreadsheet, Info, Loader2, Printer, Upload } from "lucide-react";
+import { ChevronDown, Download, FileSpreadsheet, Info, Loader2, Printer, Upload } from "lucide-react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import type { DrillLink } from "../../../../server/marketing/common";
@@ -19,10 +19,21 @@ import { SHEET_COLUMNS, parseSheet, reconcileNames, tabForDay, type Cell, type P
 import { fmt, leadDay, pct1, rangeLabel } from "../SignupsDashboard";
 import { LoadError } from "../signups/LoadError";
 import type { DigitalData } from "../DigitalMarketingReport";
+import { VsControl, type CompareChoice } from "../marketing/Compare";
+import { AuditBars, AuditGainChart } from "./Charts";
+import { EXPORT_PARTS, downloadAuditWorkbook, type ExportPart } from "./auditExcel";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Scope = "period" | "12m" | "all";
 
 export function AuditView({ from, to, report }: { from: string; to: string; report: DigitalData | null; onDrill: (d: DrillLink) => void }) {
+  // How far back, and what to compare with: the comparison is for "This period" only, as on the rest of the report.
+  const [scope, setScope] = useState<Scope>("period");
+  const [cmp, setCmp] = useState<CompareChoice>("prev");
+  const compare: CompareChoice = scope === "period" ? cmp : "off";
+  const q = trpc.marketing.digitalAudit.useQuery({ from, to, scope, compare }, { placeholderData: (prev) => prev });
   return (
     <>
       <p className="sr-note">
@@ -31,8 +42,9 @@ export function AuditView({ from, to, report }: { from: string; to: string; repo
           needs correcting — usually the sheet, or a lead's Marketing Source in Lead Docket. A lead fixed in Lead Docket moves on this report after the next sync.
         </span>
       </p>
+      <AuditOverview q={q} from={from} to={to} scope={scope} onScope={setScope} cmp={compare} onCmp={setCmp} />
       <SheetCompare to={to} report={report} />
-      <Misregistered from={from} to={to} />
+      <Misregistered q={q} from={from} to={to} scope={scope} />
       <SourceDirectory />
     </>
   );
@@ -205,9 +217,135 @@ function NameCol({ title, n, tone, children }: { title: string; n: number; tone:
 
 // ── 2. mis-registered leads, and 3. source names ──
 
-function Misregistered({ from, to }: { from: string; to: string }) {
-  const [scope, setScope] = useState<Scope>("period");
-  const { data, isLoading, isFetching, isError, error, refetch } = trpc.marketing.digitalAudit.useQuery({ from, to, scope }, { placeholderData: (prev) => prev });
+type AuditQuery = { data?: AuditData | null; isLoading: boolean; isFetching: boolean; isError: boolean; error: { message: string } | null; refetch: () => unknown };
+
+// ── 0. the overview: tiles, charts, the comparison and the Excel export ──
+
+const sumOf = (rows: { leads: number; signed: number }[]) => ({ leads: rows.reduce((a, r) => a + r.leads, 0), signed: rows.reduce((a, r) => a + r.signed, 0) });
+
+/** "▲ 4 (+25%)" against the comparison. These are lists to clear, so fewer is better: up is red. */
+function Change({ cur, prev }: { cur: number; prev: number | undefined }) {
+  if (prev == null) return null;
+  const d = cur - prev;
+  if (d === 0) return <span className="muted">no change</span>;
+  return <span className={d > 0 ? "dm-diff-bad" : "dm-diff-ok"}>{d > 0 ? "▲" : "▼"} {fmt(Math.abs(d))}{prev ? ` (${d > 0 ? "+" : "−"}${Math.round((Math.abs(d) / prev) * 100)}%)` : ""}</span>;
+}
+
+function AuditOverview({ q, from, to, scope, onScope, cmp, onCmp }: {
+  q: AuditQuery; from: string; to: string; scope: Scope; onScope: (s: Scope) => void; cmp: CompareChoice; onCmp: (c: CompareChoice) => void;
+}) {
+  const { data, isLoading, isFetching, isError, error, refetch } = q;
+  const c = data?.compare ?? null;
+  const vs = c ? c.label : null;
+  const panels = data ? [
+    { name: "Possibly digital", ...sumOf(data.possiblyDigital), prev: c?.possiblyDigital.leads },
+    { name: "Possibly not digital", ...sumOf(data.possiblyNotDigital), prev: c?.possiblyNotDigital.leads },
+    { name: "Toll-free line", ...sumOf(data.tollFree), prev: c?.tollFree.leads },
+    { name: "BD/FR on a campaign", ...sumOf(data.teamCampaigns), prev: c?.teamCampaigns.leads },
+  ] : [];
+  const gain = data ? DIGITAL_GROUPS.map((g) => {
+    const w = data.wouldAdd.find((x) => x.group === g);
+    return { name: DIGITAL_GROUP_LABEL[g], leads: w?.leads ?? 0, signed: w?.signed ?? 0, prev: c?.wouldAdd.find((x) => x.group === g)?.leads ?? null };
+  }) : [];
+  const bySource = new Map<string, { leads: number; signed: number }>();
+  for (const g of data ? [...data.possiblyDigital, ...data.possiblyNotDigital, ...data.tollFree] : []) {
+    const e = bySource.get(g.source) ?? { leads: 0, signed: 0 };
+    e.leads += g.leads; e.signed += g.signed;
+    bySource.set(g.source, e);
+  }
+  const top = Array.from(bySource, ([name, v]) => ({ name, ...v, prev: c ? c.bySource[name] ?? 0 : null }))
+    .sort((a, b) => b.leads - a.leads || a.name.localeCompare(b.name)).slice(0, 8);
+
+  return (
+    <div className="sr-panel">
+      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
+        <div className="sr-ttl"><h2>Overview</h2>{isFetching && <Loader2 size={13} className="sr-spin" />}</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <div className="sr-seg" role="group" aria-label="How far back">
+            {([["period", "This period"], ["12m", "Last 12 months"], ["all", "All time"]] as const).map(([v, l]) => (
+              <button key={v} className={scope === v ? "on" : ""} onClick={() => onScope(v)}>{l}</button>
+            ))}
+          </div>
+          <VsControl value={cmp} onChange={onCmp} allTime={scope !== "period"} />
+          <ExportMenu from={from} to={to} scope={scope} compare={cmp} disabled={!data} />
+        </div>
+      </div>
+      <p className="sr-sub">
+        {scopeLabel(scope, from, to)}{vs ? <> · compared with <b>{vs}</b></> : scope !== "period" ? " · the comparison is for a single period" : ""}.
+        {" "}Every list below is something to fix in Lead Docket, so fewer is better: a rise shows in red.
+      </p>
+      {!data ? (isError && !isLoading ? <LoadError what="the audit" message={error?.message} onRetry={() => refetch()} /> : <div className="sr-skel" style={{ height: 220 }} />) : (
+        <>
+          <div className="dm-kpis">
+            <div className="dm-kpi"><b>{fmt(data.checked)}</b><span>leads checked{c ? <> · {fmt(c.checked)} in {vs}</> : null}</span></div>
+            {panels.map((p) => (
+              <div key={p.name} className="dm-kpi"><b>{fmt(p.leads)}</b><span>{p.name} · {fmt(p.signed)} signed {c && <Change cur={p.leads} prev={p.prev} />}</span></div>
+            ))}
+          </div>
+          <div className="dm-grid2" style={{ marginTop: 12 }}>
+            <div>
+              <h3 className="sr-sub" style={{ fontWeight: 600, color: "var(--ink)" }}>Flagged leads by list{vs ? ` — this period and ${vs}` : " — signed and not"}</h3>
+              <AuditBars rows={panels} compareLabel={vs} label="Flagged leads in each list" />
+            </div>
+            <div>
+              <h3 className="sr-sub" style={{ fontWeight: 600, color: "var(--ink)" }}>If corrected, digital would gain</h3>
+              <AuditGainChart rows={gain} compareLabel={vs} />
+            </div>
+          </div>
+          {top.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <h3 className="sr-sub" style={{ fontWeight: 600, color: "var(--ink)" }}>Marketing Sources most often flagged</h3>
+              <AuditBars rows={top} compareLabel={vs} label="The Marketing Sources with the most flagged leads" />
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Export Excel: everything, or one part — always with every client, not just the page's first 100. */
+function ExportMenu({ from, to, scope, compare, disabled }: { from: string; to: string; scope: Scope; compare: CompareChoice; disabled: boolean }) {
+  const utils = trpc.useUtils();
+  const [busy, setBusy] = useState(false);
+  const run = async (parts: ExportPart[], slug: string) => {
+    setBusy(true);
+    const id = toast.loading("Building the Excel file…");
+    try {
+      const [data, directory] = await Promise.all([
+        utils.marketing.digitalAudit.fetch({ from, to, scope, compare, full: true }),
+        parts.includes("directory") ? utils.marketing.sourceDirectory.fetch() : Promise.resolve(null),
+      ]);
+      if (!data) throw new Error("no data");
+      const period = scopeLabel(scope, from, to);
+      const when = scope === "period" ? `${from}-to-${to}` : scope;
+      await downloadAuditWorkbook({ data, directory: directory ?? null, parts, period, compareLabel: data.compare?.label ?? null }, `data-audit-${slug}-${when}.xlsx`);
+      toast.success("Excel file downloaded.", { id });
+    } catch {
+      toast.error("Couldn't build the Excel file.", { id });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="sr-btn1" disabled={disabled || busy}>{busy ? <Loader2 size={14} className="sr-spin" /> : <Download size={14} />} Export Excel <ChevronDown size={13} /></button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuItem onSelect={() => run(EXPORT_PARTS.map(([k]) => k), "all")}><b>Everything</b>&nbsp;— every sheet, with charts</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs text-muted-foreground">Or one part</DropdownMenuLabel>
+        {EXPORT_PARTS.map(([k, label]) => (
+          <DropdownMenuItem key={k} onSelect={() => run([k], k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase()))}>{label}</DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function Misregistered({ q, from, to, scope }: { q: AuditQuery; from: string; to: string; scope: Scope }) {
+  const { data, isLoading, isFetching, isError, error, refetch } = q;
   return (
     <>
       <div className="sr-panel">
@@ -216,11 +354,6 @@ function Misregistered({ from, to }: { from: string; to: string }) {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {data && <button className="sr-btn2" onClick={() => printIntakeReport(data, scopeLabel(scope, from, to))} title="A printable to-do list for the intake team — choose Save as PDF"><Printer size={14} /> Report for intake</button>}
             {data && <button className="sr-btn2" onClick={() => excelIntakeReport(data, scopeLabel(scope, from, to)).catch(() => toast.error("Couldn't build the Excel file."))} title="The intake report as a spreadsheet, with a Decision column to fill in"><FileSpreadsheet size={14} /> Excel</button>}
-            <div className="sr-seg" role="group" aria-label="How far back">
-              {([["period", "This period"], ["12m", "Last 12 months"], ["all", "All time"]] as const).map(([v, l]) => (
-                <button key={v} className={scope === v ? "on" : ""} onClick={() => setScope(v)}>{l}</button>
-              ))}
-            </div>
           </div>
         </div>
         <p className="sr-sub">

@@ -115,7 +115,8 @@ const listed = (l: AuditLead): Listed => ({
 export type AuditGroup = { source: string; evidence: string; group: DigitalGroup | null; label: string | null; leads: number; signed: number; clients: Listed[] };
 
 /** Parts 1 and 2 from the leads. BD/FR-credited leads are the team's, never checked here. */
-export function misregistered(leads: AuditLead[]) {
+/** `cap`: how many clients each row lists — the page shows 100; an export asks for all. */
+export function misregistered(leads: AuditLead[], cap = LIST_CAP) {
   const into = new Map<string, AuditGroup>();
   const outOf = new Map<string, AuditGroup>();
   const shared = new Map<string, AuditGroup>();
@@ -124,7 +125,7 @@ export function misregistered(leads: AuditLead[]) {
     const e = m.get(k) ?? { ...g, leads: 0, signed: 0, clients: [] };
     e.leads++;
     if (isSigned(l.outcome)) e.signed++;
-    if (e.clients.length < LIST_CAP) e.clients.push(listed(l));
+    if (e.clients.length < cap) e.clients.push(listed(l));
     m.set(k, e);
   };
   for (const l of leads) {
@@ -172,7 +173,7 @@ export type TeamCampaign = {
  * so — so this is a list to review, not a recount: a lead that really came in
  * on its own is moved by changing its Marketing Source in Lead Docket.
  */
-export function teamCampaigns(leads: AuditLead[]): TeamCampaign[] {
+export function teamCampaigns(leads: AuditLead[], cap = LIST_CAP): TeamCampaign[] {
   const by = new Map<string, TeamCampaign>();
   for (const l of leads) {
     const campaign = clean(l.campaign);
@@ -182,11 +183,33 @@ export function teamCampaigns(leads: AuditLead[]): TeamCampaign[] {
     const e = by.get(key) ?? { campaign, kind, leads: 0, signed: 0, clients: [] };
     e.leads++;
     if (isSigned(l.outcome)) e.signed++;
-    if (e.clients.length < LIST_CAP) e.clients.push({ ...listed(l), rep: clean(l.marketingSource) || "—", role: clean(l.teamRole) });
+    if (e.clients.length < cap) e.clients.push({ ...listed(l), rep: clean(l.marketingSource) || "—", role: clean(l.teamRole) });
     by.set(key, e);
   }
   const marketing = (t: TeamCampaign) => (t.kind === "Other" ? 1 : 0);
   return Array.from(by.values()).sort((a, b) => marketing(a) - marketing(b) || b.leads - a.leads || a.campaign.localeCompare(b.campaign));
+}
+
+// ── the comparison period ──
+
+const panelTotal = (rows: { leads: number; signed: number }[]) => ({ leads: rows.reduce((a, r) => a + r.leads, 0), signed: rows.reduce((a, r) => a + r.signed, 0) });
+
+/** Each panel's totals and what digital would gain: what a comparison period needs, without its clients. */
+export function auditTotals(leads: AuditLead[], team: AuditLead[]) {
+  const m = misregistered(leads, 0);
+  const t = teamCampaigns(team, 0);
+  return {
+    checked: leads.length,
+    possiblyDigital: panelTotal(m.possiblyDigital),
+    possiblyNotDigital: panelTotal(m.possiblyNotDigital),
+    tollFree: panelTotal(m.tollFree),
+    teamCampaigns: panelTotal(t),
+    wouldAdd: m.wouldAdd,
+    // By Marketing Source, for the comparison column of the source chart and the Excel file.
+    bySource: Object.fromEntries(
+      [...m.possiblyDigital, ...m.possiblyNotDigital, ...m.tollFree].reduce((acc, g) => acc.set(g.source, (acc.get(g.source) ?? 0) + g.leads), new Map<string, number>()),
+    ) as Record<string, number>,
+  };
 }
 
 // ── part 3: source names ──
@@ -276,7 +299,15 @@ const AUDIT_COLS = {
 };
 const day = (d: Date | string | null) => (d ? new Date(d).toISOString() : null);
 
-export async function getDigitalAudit(range: { from: Date; to: Date; fromDay: string; toDay: string }, scope: "period" | "12m" | "all") {
+/**
+ * `compare`: the period to set this one against (the Marketing Report's
+ * comparisonRange), counted the same way; `full`: every client in every row,
+ * for an export, rather than the page's first 100.
+ */
+export async function getDigitalAudit(
+  range: { from: Date; to: Date; fromDay: string; toDay: string }, scope: "period" | "12m" | "all",
+  opts: { compare?: { from: Date; to: Date; fromDay: string; toDay: string; label: string } | null; full?: boolean } = {},
+) {
   const db = await getDb();
   if (!db) return null;
   // Last 12 months: the whole months up to the period's end, as the trend charts.
@@ -284,7 +315,9 @@ export async function getDigitalAudit(range: { from: Date; to: Date; fromDay: st
   const start12 = fromZonedTime(`${new Date(Date.UTC(y, m - 12, 1)).toISOString().slice(0, 10)}T00:00:00`, TZ);
   const when = scope === "all" ? [] : [gte(L.leadDate, scope === "12m" ? start12 : range.from), lte(L.leadDate, range.to)];
 
-  const [leads, team, names] = await Promise.all([
+  const cmp = opts.compare;
+  const cmpWhen = cmp ? [gte(L.leadDate, cmp.from), lte(L.leadDate, cmp.to)] : [];
+  const [leads, team, names, cmpLeads, cmpTeam] = await Promise.all([
     db.select(AUDIT_COLS).from(L).where(and(notBdFr, ...when)),
     db.select(AUDIT_COLS).from(L).where(and(bdFrOnly, sql`TRIM(COALESCE(${L.campaign}, '')) <> ''`, ...when)).orderBy(desc(L.leadDate)),
     // Every name, all time: hygiene is about the names, whatever the period.
@@ -295,6 +328,8 @@ export async function getDigitalAudit(range: { from: Date; to: Date; fromDay: st
       source: L.marketingSource, leads: sql<number>`COUNT(*)`,
       first: sql<Date | null>`MIN(${L.leadDate})`, last: sql<Date | null>`MAX(${L.leadDate})`,
     }).from(L).where(notBdFr).groupBy(L.marketingSource),
+    cmp ? db.select(AUDIT_COLS).from(L).where(and(notBdFr, ...cmpWhen)) : Promise.resolve([]),
+    cmp ? db.select(AUDIT_COLS).from(L).where(and(bdFrOnly, sql`TRIM(COALESCE(${L.campaign}, '')) <> ''`, ...cmpWhen)) : Promise.resolve([]),
   ]);
   const byName = new Map<string, SourceName>();
   for (const n of names) {
@@ -310,8 +345,9 @@ export async function getDigitalAudit(range: { from: Date; to: Date; fromDay: st
   return {
     scope,
     checked: leads.length,
-    ...misregistered(leads),
-    teamCampaigns: teamCampaigns(team),
+    ...misregistered(leads, opts.full ? Infinity : LIST_CAP),
+    teamCampaigns: teamCampaigns(team, opts.full ? Infinity : LIST_CAP),
+    compare: cmp ? { from: cmp.fromDay, to: cmp.toDay, label: cmp.label, ...auditTotals(cmpLeads, cmpTeam) } : null,
     hygiene: sourceHygiene(Array.from(byName.values())),
   };
 }

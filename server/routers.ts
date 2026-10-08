@@ -134,6 +134,7 @@ import { getMarketingLeads, exportMarketingLeads } from "./marketing/leadFilter"
 import { DM_BUCKETS, DM_OUTCOMES } from "./marketing/digital";
 import { getDigitalMarketingReport } from "./digitalMarketing";
 import { getDigitalAudit, getSourceDirectory } from "./digitalAudit";
+import { comparisonRange, rangeWords } from "./marketing/compare";
 import { listSourceNames, setSpendOne, setSpendMany, copySpend } from "./marketing/spend";
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? "";
@@ -924,9 +925,20 @@ export const appRouter = router({
         .query(({ input }) => getDigitalMarketingReport({ ...toRange(input), fromDay: input.from, toDay: input.to },
           formatInTimeZone(new Date(), MARKETING_TZ, "yyyy-MM-dd"))),
       // Its Audit tab: leads Lead Docket may have credited to the wrong source, and source-name hygiene.
+      // compare: the period before or the same dates a year earlier, as the report's "vs" control (this period only).
       digitalAudit: marketingProcedure
-        .input(range.extend({ scope: z.enum(["period", "12m", "all"]).default("period") }))
-        .query(({ input }) => getDigitalAudit({ ...toRange(input), fromDay: input.from, toDay: input.to }, input.scope)),
+        .input(range.extend({
+          scope: z.enum(["period", "12m", "all"]).default("period"),
+          compare: z.enum(["prev", "yoy", "off"]).default("off"),
+          full: z.boolean().optional(),
+        }))
+        .query(({ input }) => {
+          const c = input.scope === "period" && input.compare !== "off" ? comparisonRange(input.from, input.to, input.compare) : null;
+          return getDigitalAudit({ ...toRange(input), fromDay: input.from, toDay: input.to }, input.scope, {
+            full: input.full,
+            compare: c ? { ...toRange(c), fromDay: c.from, toDay: c.to, label: rangeWords(c.from, c.to, Number(input.to.slice(0, 4))) } : null,
+          });
+        }),
       // Every Marketing Source, Contact Source and Campaign in Lead Docket, all time — the shareable directory.
       sourceDirectory: marketingProcedure.query(() => getSourceDirectory()),
       spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
