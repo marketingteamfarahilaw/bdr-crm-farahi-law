@@ -139,6 +139,14 @@ function startDataSyncSchedule() {
 // ones. Deduped by call id, so re-runs are cheap and safe.
 let rcSyncRunning = false;
 function startRingCentralAutoSync() {
+  // Only the live server pulls calls. A developer's machine runs against the
+  // same production database, and a second sync there would write the same
+  // calls and pay for the same transcripts and summaries; ENABLE_RC_SYNC=1
+  // turns it on deliberately (as the Lead Docket schedule's NODE_ENV check).
+  if (process.env.NODE_ENV !== "production" && process.env.ENABLE_RC_SYNC !== "1") {
+    console.log("[rcSync] auto-sync off outside production (set ENABLE_RC_SYNC=1 to run it here).");
+    return;
+  }
   // Per-agent sync only needs the app credentials; the JWT is optional (used
   // only for the company/admin fallback pass).
   const configured = process.env.RINGCENTRAL_CLIENT_ID && process.env.RINGCENTRAL_CLIENT_SECRET;

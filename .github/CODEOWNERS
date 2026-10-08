@@ -1,0 +1,4 @@
+# Every change is reviewed by the owner before it reaches main (which deploys
+# to production). With "Require review from Code Owners" on in the branch rule,
+# a pull request can't be merged until this account approves it.
+* @marketingteamfarahilaw
