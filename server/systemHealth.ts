@@ -11,7 +11,7 @@ import { and, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { formatInTimeZone } from "date-fns-tz";
 import { getDb } from "./db";
 import { callRecapQueue, contactLogs, facilityUpdates, userRingcentralTokens, users } from "../drizzle/schema";
-import { getStatus, SYNC_INTERVAL_MS, type JobName } from "./dataSync";
+import { getStatus, intervalOf, type JobName } from "./dataSync";
 import { claudeStatus } from "./_core/claude";
 import { recapsOnHold } from "./rcSync";
 
@@ -33,7 +33,7 @@ function ago(d: Date) {
 async function syncCheck(job: JobName, label: string): Promise<HealthCheck> {
   const s = await getStatus(job);
   const last = s.lastSuccessAt ? new Date(s.lastSuccessAt) : null;
-  const due = SYNC_INTERVAL_MS + 2 * HOUR;
+  const due = intervalOf(job) + 2 * HOUR;
   if (!last) return { id: job, label, state: "warn", detail: "Hasn't finished a run yet." };
   const late = Date.now() - last.getTime() > due;
   const failed = s.state === "failed";

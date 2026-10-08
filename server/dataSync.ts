@@ -55,8 +55,16 @@ export type JobStatus = {
 const KEY = (job: JobName) => `sync_status_${job}`;
 const running = new Set<JobName>();
 
-/** Every eight hours, per the team's request. */
+/** The Google Sheets sync: every eight hours, per the team's request. */
 export const SYNC_INTERVAL_MS = 8 * 60 * 60 * 1000;
+/**
+ * The Lead Docket sync: every ten minutes, close to live (Youssef, 2026-10-08).
+ * A run lists every lead (~3 minutes at Lead Docket's list pace) and reads only
+ * the ones that changed, so it stays well inside Lead Docket's rate limits; it
+ * also removes leads deleted in Lead Docket (sync-leaddocket.mjs).
+ */
+export const LEADDOCKET_INTERVAL_MS = 10 * 60 * 1000;
+export const intervalOf = (job: JobName) => (job === "leaddocket" ? LEADDOCKET_INTERVAL_MS : SYNC_INTERVAL_MS);
 
 export async function getStatus(job: JobName): Promise<JobStatus> {
   const raw = await getSetting(KEY(job));
@@ -131,6 +139,7 @@ async function runLeadDocketScript(args: string[], what: string): Promise<{ ok: 
   const r = JSON.parse(line.slice("SYNC_RESULT ".length));
   const reps = Object.entries(r.byRep ?? {}).map(([k, v]) => `${k}: ${v}`).join(", ");
   let summary = `${r.scanned} ${what} read, ${r.ours} belong to the team (${r.inserted} new, ${r.updated} updated)` +
+    (r.removed ? `; ${r.removed} deleted in Lead Docket removed` : "") +
     (r.failed ? ` — ${r.failed} could not be read and will be retried next run` : "") + (reps ? `. ${reps}` : "");
 
   // The sync fills lead_intake, which only the Sign-ups Report reads. The
@@ -219,7 +228,7 @@ export async function runDueJobs() {
     if (job === "leaddocket" && !process.env.LEADDOCKET_API_KEY) continue;
     const s = await getStatus(job);
     const last = s.lastSuccessAt ? new Date(s.lastSuccessAt).getTime() : 0;
-    if (Date.now() - last >= SYNC_INTERVAL_MS && !running.has(job)) {
+    if (Date.now() - last >= intervalOf(job) && !running.has(job)) {
       await startJob(job, "schedule");
     }
   }

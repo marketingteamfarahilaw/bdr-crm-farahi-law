@@ -89,7 +89,7 @@ import {
   setUserPhoto,
 } from "./db";
 import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing, canEditMarketingSpend, marketingCaseFacts } from "@shared/permissions";
-import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS } from "./dataSync";
+import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS, LEADDOCKET_INTERVAL_MS } from "./dataSync";
 import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
@@ -258,7 +258,7 @@ export const appRouter = router({
       const [leaddocket, leaddocket_history, sheets, sheetAccess] = await Promise.all([
         getSyncStatus("leaddocket"), getSyncStatus("leaddocket_history"), getSyncStatus("sheets"), checkSheets(),
       ]);
-      return { leaddocket, leaddocket_history, sheets, sheetAccess, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
+      return { leaddocket, leaddocket_history, sheets, sheetAccess, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
     }),
     run: bdProcedure
       .input(z.object({ job: z.enum(["leaddocket", "leaddocket_history", "sheets"]) }))

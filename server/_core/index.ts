@@ -108,9 +108,10 @@ async function startServer() {
   });
 }
 
-// ─── Background: Lead Docket + Google Sheets, every 8 hours ──────────────────
-// Rather than a fixed 8h timer — which a deploy or restart would reset, or fire
-// on every boot — check often whether each job's last success is older than 8h.
+// ─── Background: Lead Docket every 10 minutes, Google Sheets every 8 hours ───
+// Rather than fixed timers — which a deploy or restart would reset, or fire on
+// every boot — check often whether each job's last success is older than its
+// interval (Lead Docket 10 min, Google Sheets 8h; see dataSync).
 // Skipped in local dev: a laptop running `pnpm dev` must not quietly rewrite
 // production data or spend the Lead Docket rate-limit budget.
 function startDataSyncSchedule() {
@@ -118,7 +119,8 @@ function startDataSyncSchedule() {
     console.log("[dataSync] scheduled syncs disabled outside production.");
     return;
   }
-  const CHECK_MS = 15 * 60 * 1000;
+  // Often enough for the Lead Docket sync to run every 10 minutes; a check is one settings read.
+  const CHECK_MS = 2 * 60 * 1000;
   const tick = () => {
     runDueJobs().catch((e) => console.warn("[dataSync] schedule check failed:", e?.message ?? e));
     // Reps' RingCentral pictures, once a day (it never throws).
@@ -128,7 +130,7 @@ function startDataSyncSchedule() {
   };
   setTimeout(tick, 2 * 60 * 1000);      // shortly after boot, once the server has settled
   setInterval(tick, CHECK_MS);
-  console.log("[dataSync] Lead Docket + Google Sheets sync scheduled every 8h (checked every 15 min).");
+  console.log("[dataSync] Lead Docket sync every 10 min, Google Sheets every 8h (checked every 2 min).");
 }
 
 // ─── Background: auto-sync RingCentral calls every few minutes ───────────────

@@ -382,6 +382,72 @@ if (BACKFILL && !ONLY && !NAMES) {
   console.log("\nMarketing Report complete from lead " + (cursorId ?? "— (none yet)") + " up");
 }
 await saveCoverage(left(), cursorId);
+
+// ── leads deleted in Lead Docket ─────────────────────────────────────────────
+// The list above is every lead Lead Docket has, in every status. A lead the CRM
+// still holds that isn't on it was deleted there — a duplicate intake removed,
+// say — and must go here too, or it keeps counting for the rep (Grace's
+// duplicate, Oct 2026; removal approved by Youssef). Only a run that listed
+// every status can tell; each candidate is then asked for by id, and removed
+// only when Lead Docket says it no longer exists, so a hiccup in the list can
+// never delete a real lead. A list far shorter than what the CRM holds is
+// treated as a bad read: nothing is removed and the run says so. Each removal
+// is recorded in leaddocket_removed. --no-prune skips all of this.
+let removed = 0, removeHeld = 0;
+const MAX_CONFIRM = 150;   // detail reads per run (~3 minutes at the detail pace); the rest wait for the next run
+if (c && !DRY && !ONLY && !NAMES && !process.argv.includes("--no-prune")) {
+  const listed = new Set(rows.map((r) => String(r.Id)));
+  const [held] = await c.query(`
+    SELECT CAST(leadId AS CHAR) id FROM leaddocket_leads
+    UNION SELECT externalId FROM lead_intake WHERE externalSource='leaddocket' AND externalId IS NOT NULL
+    UNION SELECT externalId FROM facility_leads WHERE externalSource='leaddocket' AND externalId IS NOT NULL`);
+  const candidates = held.map((x) => String(x.id)).filter((id) => /^\d+$/.test(id) && !listed.has(id));
+  if (candidates.length && listed.size < 0.9 * stored.size) {
+    console.log(`\nNOT checking ${candidates.length} leads missing from the list: Lead Docket listed ${listed.size}, far fewer than the ${stored.size} the CRM holds.`);
+    removeHeld = candidates.length;
+  } else if (candidates.length) {
+    console.log(`\n${candidates.length} lead(s) the CRM holds are no longer listed by Lead Docket — confirming each…`);
+    const gone = [];
+    for (const id of candidates.slice(0, MAX_CONFIRM)) {
+      try {
+        const raw = await api("/api/Leads/" + id);
+        const d = raw?.Data ?? raw;
+        if (!d || d.IsDeleted === true || d.Deleted === true) gone.push(id);
+        else console.log(`  lead ${id} still exists in Lead Docket (status ${d.StatusName ?? d.Status ?? "?"}) — kept`);
+      } catch (e) {
+        if (/HTTP (404|410)\b/.test(String(e?.message))) gone.push(id);
+        else console.log(`  lead ${id}: couldn't confirm (${e?.message}) — kept, will retry`);
+      }
+    }
+    removeHeld = Math.max(0, candidates.length - MAX_CONFIRM);
+    if (gone.length) {
+      await c.query(`CREATE TABLE IF NOT EXISTS leaddocket_removed (
+        leadId BIGINT NOT NULL PRIMARY KEY,
+        clientName VARCHAR(255) NULL, status VARCHAR(80) NULL, teamRole VARCHAR(20) NULL, teamRep VARCHAR(120) NULL,
+        removedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`);
+      // What was removed, for the record: the lead as the CRM last had it.
+      for (const id of gone) {
+        const [[ld]] = await c.query("SELECT clientName, status, teamRole, teamRep FROM leaddocket_leads WHERE leadId=?", [id]);
+        const [[li]] = await c.query("SELECT leadName, member, role FROM lead_intake WHERE externalSource='leaddocket' AND externalId=? LIMIT 1", [id]);
+        await c.query(`INSERT INTO leaddocket_removed (leadId, clientName, status, teamRole, teamRep) VALUES (?,?,?,?,?)
+          ON DUPLICATE KEY UPDATE removedAt=CURRENT_TIMESTAMP`,
+          [id, ld?.clientName ?? li?.leadName ?? null, ld?.status ?? null, ld?.teamRole ?? li?.role ?? null, ld?.teamRep ?? li?.member ?? null]);
+      }
+      await c.beginTransaction();
+      try {
+        await c.query("DELETE FROM lead_intake WHERE externalSource='leaddocket' AND externalId IN (?)", [gone]);
+        await c.query("DELETE FROM facility_leads WHERE externalSource='leaddocket' AND externalId IN (?)", [gone]);
+        await c.query("DELETE FROM leaddocket_leads WHERE leadId IN (?)", [gone]);
+        await c.query("DELETE FROM leaddocket_seen WHERE leadId IN (?)", [gone]);
+        await c.commit();
+      } catch (e) { await c.rollback(); throw e; }
+      removed = gone.length;
+      console.log(`  removed ${removed} lead(s) deleted in Lead Docket: ${gone.join(", ")}`);
+      // The mirror that runs after this sync drops their partner-tracker rows and recounts partners' totals.
+    }
+  }
+}
 console.log("\nBD/FR leads found : " + ours);
 console.log("not the team's    : " + skipped + (failed ? "  |  STILL UNREADABLE: " + failed : ""));
 console.log("\nby representative:");
@@ -390,6 +456,6 @@ console.log("\ntop sources NOT credited to the team (check for miscredited work)
 [...skippedSources.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15).forEach(([k, v]) => console.log("  " + String(v).padStart(5) + "  " + k));
 console.log(DRY ? "\n[DRY RUN] nothing written." : "\n✅ inserted " + inserted + ", updated " + updated + ".");
 // One machine-readable line, so the in-app sync can show the result.
-console.log("SYNC_RESULT " + JSON.stringify({ scanned: fresh.length, ours, skipped, failed, inserted, updated, byRep: Object.fromEntries(byRep) }));
+console.log("SYNC_RESULT " + JSON.stringify({ scanned: fresh.length, ours, skipped, failed, inserted, updated, removed, removeHeld, byRep: Object.fromEntries(byRep) }));
 if (c) await c.end();
 if (failed > 0) process.exit(2);   // a partial sync must not look like a success
