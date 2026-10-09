@@ -286,7 +286,7 @@ function Gaps({ data }: { data: DigitalData }) {
   return (
     <p className="sr-note">
       <Info /> <span>
-        {g.noCaseValue > 0 && <>{fmt(g.noCaseValue)} of {fmt(g.signed)} sign-ups have no Case Value in the CRM yet — they fill in as Lead Docket reports those leads changed. </>}
+        {g.noCaseValue > 0 && <>{fmt(g.noCaseValue)} of {fmt(g.signed)} sign-ups have no Case Value yet in Lead Docket or Filevine — they fill in as either one records it. </>}
         {g.noAccident > 0 && <>{fmt(g.noAccident)} have no accident date or linked leads yet, so each counts as its own case in the unique count until it is re-read.</>}
       </span>
     </p>

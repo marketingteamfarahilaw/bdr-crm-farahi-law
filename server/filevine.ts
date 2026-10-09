@@ -1,9 +1,8 @@
 /**
- * Filevine API v2 — the connection only, for now: a super admin enters the
- * service account's credentials in Settings and tests them. Nothing is read
- * from Filevine yet (that waits on what the team wants from it), and nothing
- * here writes to Filevine; call recaps and intake leads still go out through
- * the webhook in filevineHook.ts.
+ * Filevine API v2: a super admin enters the service account's credentials in
+ * Settings and tests them. The CRM only reads from Filevine — the case-value
+ * sync (filevineCaseValues.ts) — and nothing here writes to it; call recaps and
+ * intake leads still go out through the webhook in filevineHook.ts.
  *
  * Filevine signs a Personal Access Token in at its identity server together
  * with the Client ID and Client Secret issued alongside it, and answers with a
@@ -135,6 +134,33 @@ async function signIn() {
     }
     throw e;
   }
+}
+
+/** True when a Personal Access Token is saved — the case-value sync only runs then. */
+export async function filevineConfigured() {
+  return !!(await readSecret("pat"));
+}
+
+/**
+ * A signed-in GET against Filevine's v2 API (read-only), with the org and user
+ * headers it asks for. Throws with Filevine's own reason when refused.
+ */
+export async function filevineReader() {
+  const token = await signIn();
+  const [orgId, userId] = await Promise.all([readPlain("orgId"), readPlain("userId")]);
+  if (!orgId) throw new Error("No Filevine org id is saved.");
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}`, Accept: "application/json", "x-fv-orgid": orgId };
+  if (userId) headers["x-fv-userid"] = userId;
+  return async <T = any>(path: string): Promise<{ status: number; data: T | null }> => {
+    try {
+      const r = await axios.get(`${API}/fv-app/v2${path}`, { timeout: 30_000, headers });
+      return { status: r.status, data: r.data as T };
+    } catch (e) {
+      const status = (e as AxiosError).response?.status;
+      if (status === 404) return { status, data: null };   // no such form or contact: not an error
+      throw new Error(reason(e));
+    }
+  };
 }
 
 export async function testFilevine(): Promise<

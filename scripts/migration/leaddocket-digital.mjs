@@ -93,6 +93,11 @@ export const DIGITAL_COLUMNS = [
   ["caseValue", "VARCHAR(40) NULL"],
   ["incidentDate", "VARCHAR(10) NULL"],
   ["relatedLeadIds", "VARCHAR(500) NULL"],
+  // Filevine's intake "Initial Case Value" for the same client, where Lead
+  // Docket has none (server/filevineCaseValues.ts); Lead Docket's own value in
+  // caseValue is never overwritten.
+  ["caseValueFv", "VARCHAR(40) NULL"],
+  ["fvProjectId", "BIGINT NULL"],
 ];
 
 /**

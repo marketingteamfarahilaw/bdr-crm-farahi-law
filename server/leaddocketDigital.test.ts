@@ -51,6 +51,8 @@ describe("ensureDigitalColumns", () => {
     expect(ran.filter((q) => !q.startsWith("SELECT"))).toEqual([
       "ALTER TABLE leaddocket_leads ADD COLUMN `caseValue` VARCHAR(40) NULL",
       "ALTER TABLE leaddocket_leads ADD COLUMN `relatedLeadIds` VARCHAR(500) NULL",
+      "ALTER TABLE leaddocket_leads ADD COLUMN `caseValueFv` VARCHAR(40) NULL",
+      "ALTER TABLE leaddocket_leads ADD COLUMN `fvProjectId` BIGINT NULL",
     ]);
   });
 

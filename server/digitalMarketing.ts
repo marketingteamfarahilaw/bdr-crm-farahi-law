@@ -434,7 +434,9 @@ export const digitalOnly = sql`(${notBdFr} AND LOWER(TRIM(${L.marketingSource}))
 
 const DM_COLS = {
   leadId: L.leadId, leadDate: L.leadDate, outcome: L.outcome, status: L.status, subStatus: L.subStatus, caseType: L.caseType,
-  marketingSource: L.marketingSource, teamRole: L.teamRole, clientName: L.clientName, caseValue: L.caseValue,
+  marketingSource: L.marketingSource, teamRole: L.teamRole, clientName: L.clientName,
+  // Filevine's value fills in only where Lead Docket's is blank.
+  caseValue: sql<string | null>`COALESCE(NULLIF(TRIM(${L.caseValue}), ''), ${L.caseValueFv})`,
   incidentDate: L.incidentDate, relatedLeadIds: L.relatedLeadIds, phoneKey: L.phoneKey,
 };
 const TREND_COLS = {

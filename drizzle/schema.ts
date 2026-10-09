@@ -1217,6 +1217,10 @@ export const leaddocketLeads = mysqlTable("leaddocket_leads", {
   // intake linked to it — as lead_intake keeps them, for the "Sign-up Unique
   // Count". Added at runtime if missing (scripts/migration/leaddocket-digital.mjs).
   caseValue: varchar("caseValue", { length: 40 }),
+  // Filevine's "Initial Case Value" for the same client, matched by phone
+  // (server/filevineCaseValues.ts). Reports use it only where caseValue is blank.
+  caseValueFv: varchar("caseValueFv", { length: 40 }),
+  fvProjectId: bigint("fvProjectId", { mode: "number" }),
   incidentDate: varchar("incidentDate", { length: 10 }),
   relatedLeadIds: varchar("relatedLeadIds", { length: 500 }),
   syncedAt: timestamp("syncedAt").defaultNow().onUpdateNow().notNull(),

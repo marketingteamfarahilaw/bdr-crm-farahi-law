@@ -256,6 +256,7 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
     referredBy: string | null;
     linkable: boolean; linkedBy: string | null;
     caseValue: string | null;
+    caseValueFromFv: boolean;
   }[] = [];
   const caseStats = new Map<string, { name: string; leads: number; signed: number }>();
   // The team's scorecard: each lead lands in exactly one column, so the columns
@@ -329,7 +330,8 @@ export async function getSignupsDashboard(range?: { from?: Date; to?: Date }, fi
       partnerId: hit?.id ?? null,
       referredBy: text || null,
       linkable: l.externalSource === "leaddocket" && linkedTo.has(String(l.externalId)),
-      caseValue: caseValueOf.get(String(l.externalId ?? "")) ?? null,
+      caseValue: caseValueOf.get(String(l.externalId ?? ""))?.value ?? null,
+      caseValueFromFv: caseValueOf.get(String(l.externalId ?? ""))?.fromFv ?? false,
       linkedBy: l.externalSource === "leaddocket" ? linkedByHand.get(String(l.externalId)) ?? null : null,
     });
 
@@ -600,7 +602,8 @@ const CASE_VALUE_ORDER = ["Rank X", "High", "Medium", "Low", "Rank U"];
 const caseValueRank = (v: string) => (v === CASE_VALUE_NONE ? 99 : CASE_VALUE_ORDER.indexOf(v) === -1 ? 50 : CASE_VALUE_ORDER.indexOf(v));
 
 async function loadCaseValues(db: NonNullable<Awaited<ReturnType<typeof getDb>>>, leads: { externalSource: string | null; externalId: string | null }[]) {
-  const out = new Map<string, string>();
+  // Lead Docket's value first; Filevine's only where Lead Docket has none.
+  const out = new Map<string, { value: string; fromFv: boolean }>();
   const ids = Array.from(new Set(leads.filter((l) => l.externalSource === "leaddocket" && /^\d+$/.test(String(l.externalId ?? ""))).map((l) => Number(l.externalId))));
   if (!ids.length) return out;
   try {
@@ -610,9 +613,13 @@ async function loadCaseValues(db: NonNullable<Awaited<ReturnType<typeof getDb>>>
       return (Array.isArray(r) && Array.isArray(r[0]) ? r[0] : r) as any[];
     });
     for (let i = 0; i < ids.length; i += 1000) {
-      const rows = await db.select({ id: leaddocketLeads.leadId, v: leaddocketLeads.caseValue }).from(leaddocketLeads)
+      const rows = await db.select({ id: leaddocketLeads.leadId, v: leaddocketLeads.caseValue, fv: leaddocketLeads.caseValueFv }).from(leaddocketLeads)
         .where(inArray(leaddocketLeads.leadId, ids.slice(i, i + 1000)));
-      for (const r of rows) if (r.v) out.set(String(r.id), String(r.v));
+      for (const r of rows) {
+        const ld = String(r.v ?? "").trim(), fv = String(r.fv ?? "").trim();
+        if (ld) out.set(String(r.id), { value: ld, fromFv: false });
+        else if (fv) out.set(String(r.id), { value: fv, fromFv: true });
+      }
     }
   } catch (e) {
     console.warn("[signups] case values unavailable:", (e as Error)?.message ?? e);

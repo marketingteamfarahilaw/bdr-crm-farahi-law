@@ -2,10 +2,10 @@ import { useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle2, AlertTriangle, XCircle, Clock, Database, Sheet, Loader2 } from "lucide-react";
+import { RefreshCw, CheckCircle2, AlertTriangle, XCircle, Clock, Database, Sheet, Loader2, Scale } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-type Job = "leaddocket" | "sheets";
+type Job = "leaddocket" | "sheets" | "filevine";
 
 const JOBS: { job: Job; title: string; blurb: string; icon: any }[] = [
   {
@@ -19,6 +19,12 @@ const JOBS: { job: Job; title: string; blurb: string; icon: any }[] = [
     title: "Google Sheets",
     blurb: "Centralized BDR/FR workbook: facilities, call history, expenses, referrals, errands and visits.",
     icon: Sheet,
+  },
+  {
+    job: "filevine",
+    title: "Filevine case values",
+    blurb: "Every 6 hours: each signed case's Initial Case Value from Filevine, matched to its Lead Docket lead by phone. Used only where Lead Docket has no Case Value, and shown as Filevine's.",
+    icon: Scale,
   },
 ];
 
@@ -71,7 +77,7 @@ export function DataSyncPanel() {
             <div className="text-sm font-semibold text-foreground">Data sync</div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Lead Docket syncs automatically every {data?.leadDocketMinutes ?? 10} minutes (leads deleted there are removed here too); Google Sheets every {data?.intervalHours ?? 8} hours. Use the buttons to pull the latest now.
+            Lead Docket syncs automatically every {data?.leadDocketMinutes ?? 10} minutes (leads deleted there are removed here too); Google Sheets every {data?.intervalHours ?? 8} hours; Filevine case values every 6 hours once Filevine is connected. Use the buttons to pull the latest now.
           </p>
         </div>
       </div>
@@ -82,7 +88,7 @@ export function DataSyncPanel() {
         {data && JOBS.map(({ job, title, blurb, icon: Icon }) => {
           const s = data[job];
           const busy = s.state === "running" || (run.isPending && run.variables?.job === job);
-          const disabled = busy || (job === "leaddocket" && !data.leadDocketConfigured);
+          const disabled = busy || (job === "leaddocket" && !data.leadDocketConfigured) || (job === "filevine" && !data.filevineConfigured);
           return (
             <div key={job} className="rounded-xl border border-border p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">

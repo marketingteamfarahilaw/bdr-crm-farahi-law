@@ -121,7 +121,7 @@ import { getExpensesView } from "./expensesView";
 import { getFilevineComparison, importFilevineExpenses } from "./filevineExpenses";
 import { getRepActivity, getRepReview } from "./repProfile";
 import { claudeStatus, saveClaudeKey, testClaude } from "./_core/claude";
-import { filevineStatus, saveFilevine, testFilevine, disconnectFilevine } from "./filevine";
+import { filevineStatus, saveFilevine, testFilevine, disconnectFilevine, filevineConfigured } from "./filevine";
 import { timeeroStatus, saveTimeeroKey, testTimeero, importTimeero, newTimeeroSecret, timeeroSample, getFieldTime, getFieldToday } from "./timeero";
 import { getPartnerReferralsReport } from "./partnerReferralsReport";
 import { getSystemHealth } from "./systemHealth";
@@ -255,15 +255,21 @@ export const appRouter = router({
   dataSync: router({
     status: bdProcedure.query(async ({ ctx }) => {
       mgrOnly(ctx);
-      const [leaddocket, leaddocket_history, sheets, sheetAccess] = await Promise.all([
+      const [leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineReady] = await Promise.all([
         getSyncStatus("leaddocket"), getSyncStatus("leaddocket_history"), getSyncStatus("sheets"), checkSheets(),
+        getSyncStatus("filevine"), filevineConfigured(),
       ]);
-      return { leaddocket, leaddocket_history, sheets, sheetAccess, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
+      return { leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineConfigured: filevineReady, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
     }),
     run: bdProcedure
-      .input(z.object({ job: z.enum(["leaddocket", "leaddocket_history", "sheets"]) }))
+      .input(z.object({ job: z.enum(["leaddocket", "leaddocket_history", "sheets", "filevine"]) }))
       .mutation(async ({ ctx, input }) => {
         mgrOnly(ctx);
+        if (input.job === "filevine") {
+          if (!(await filevineConfigured())) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Filevine isn't connected — save its credentials in Settings first." });
+          const started = await startSyncJob("filevine", "manual");
+          return { started, alreadyRunning: !started };
+        }
         if (input.job !== "sheets" && !process.env.LEADDOCKET_API_KEY) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Lead Docket is not configured on the server." });
         }

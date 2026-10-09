@@ -905,7 +905,7 @@ function LeadTable({ rows, showRep }: { rows: ReportData["leadList"]; showRep?: 
             <tr key={l.id}>
               <td className="client"><b>{l.name}</b></td>
               <td className="nowrap">{l.caseType}</td>
-              <td className="nowrap">{l.caseValue ?? <span style={{ color: "var(--mute2)" }}>—</span>}</td>
+              <td className="nowrap">{l.caseValue ?? <span style={{ color: "var(--mute2)" }}>—</span>}{l.caseValueFromFv && <span className="role" title="Lead Docket has no Case Value for this lead; this one is from the Filevine intake form"> Filevine</span>}</td>
               {showRep && <td className="nowrap">{l.member} <span className="role">{l.role}</span></td>}
               <td className="nowrap">{leadDay(l.date)}</td>
               <td className="nowrap"><span className={`sr-badge ${outcomeBadge(l.outcome, l.signed)}`}>{l.outcome || "—"}</span></td>
