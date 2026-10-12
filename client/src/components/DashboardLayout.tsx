@@ -62,11 +62,14 @@ const NAV_SECTIONS: { title: string; folder?: boolean; items: { icon: any; label
   ] },
   // One REPORTS folder for every reporting tool (the team's Sept 30 2026 list).
   // Hidden from the menu then, routes kept so links and bookmarks still open:
-  // Data Check, Team Reports, Representative Performance, Referral Reports,
+  // Data Check, Referral Reports,
   // Partner Referrals (the tracker), Call Logs (a tab of Call Analytics now).
   { title: "Reports", folder: true, items: [
     { icon: PhoneCall, label: "Check-In Reports", path: "/checkin-report", level: "bdr" },
     { icon: BarChart3, label: "BDR Call Reports", path: "/crm/reports", level: "manage" },
+    // Back in the menu (Youssef, Oct 12 2026: "revert back the team performance").
+    { icon: FileBarChart2, label: "Team Reports", path: "/team-reports", level: "manage" },
+    { icon: Sparkles, label: "Representative Performance", path: "/agent-performance", level: "all" },
     { icon: FileBarChart2, label: "Sign-ups Report", path: "/signups-report", level: "manage", also: ["/signups-report/rep"] },
     { icon: Megaphone, label: "Marketing Report", path: "/marketing-report", level: "marketing" },
     { icon: Phone, label: "Call Analytics", path: "/call-analytics", level: "all", also: ["/call-logs"] },
