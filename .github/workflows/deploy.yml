@@ -20,6 +20,12 @@ concurrency:
   group: deploy-vps
   cancel-in-progress: false
 
+# The repository is private, so the server can't fetch anonymously. The job's
+# own short-lived token (read-only, expires when the job ends) is handed to the
+# server for this one fetch and never written to its git config.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -37,8 +43,11 @@ jobs:
         # -4 is required: the host has an AAAA record but GitHub runners have no
         # IPv6 route, so ssh otherwise picks IPv6 and fails with "Network is
         # unreachable" after a two-minute stall.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" 'bash -se' <<'REMOTE'
+          # The token travels in the script on stdin, not on the remote command line.
+          { printf 'GH_TOKEN=%q\n' "$GH_TOKEN"; cat <<'REMOTE'
           set -euo pipefail
           cd /opt/farahi-lead-scraper
 
@@ -49,9 +58,12 @@ jobs:
             exit 1
           fi
 
-          git fetch origin --quiet
+          AUTH="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          # Passed through the environment so it never shows in the process list.
+          GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://github.com/.extraheader GIT_CONFIG_VALUE_0="$AUTH" git fetch origin --quiet
+          unset GH_TOKEN AUTH
           git checkout main --quiet
-          git pull --ff-only --quiet
+          git merge --ff-only --quiet origin/main
           echo "Deploying $(git log --oneline -1)"
 
           pnpm install --frozen-lockfile
@@ -59,6 +71,7 @@ jobs:
 
           pm2 restart farahi-crm --update-env
           REMOTE
+          } | ssh -4 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" 'bash -se'
 
       - name: Verify the site is up
         run: |
