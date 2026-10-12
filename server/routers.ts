@@ -88,7 +88,7 @@ import {
   setSetting,
   setUserPhoto,
 } from "./db";
-import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing, canEditMarketingSpend, marketingCaseFacts } from "@shared/permissions";
+import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing, canEditMarketingSpend, marketingCaseFacts, normalizeRole } from "@shared/permissions";
 import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS, LEADDOCKET_INTERVAL_MS } from "./dataSync";
 import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
@@ -112,7 +112,7 @@ const referralDateFields = (d: string) => {
   return { createdAt: at, month: formatInTimeZone(at, "America/Los_Angeles", "MMMM yyyy") };
 };
 import { getAgentReport, getCallAnalytics, getReportAgents, getCallLogs, getAgentPerformanceData, generateAgentPerformanceReview } from "./reports";
-import { getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
+import { loadRepGroups, getCheckinVisitReport, getSignupReport, getNewFacilitiesReport, getCallActivityReport, getLeadsTargetReport } from "./teamReports";
 import { getSignupsDashboard, getPartnerOptions, linkLeadToPartner } from "./signupsReport";
 import { getSignupsTrends } from "./signupsTrends";
 import { getSignupsMonthly } from "./signupsMonthly";
@@ -169,6 +169,16 @@ const bdProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next();
 });
+
+// Representative Performance: "whole team", or only the BDRs or only the FRs.
+const perfTeam = z.enum(["all", "BDR", "FR"]).default("all");
+/** Every reporting rep on one team (BDR or FR); undefined = everyone. */
+async function teamNames(team: "all" | "BDR" | "FR"): Promise<string[] | undefined> {
+  if (team === "all") return undefined;
+  const [names, groupOf] = await Promise.all([getReportAgents(), loadRepGroups()]);
+  const picked = names.filter((n) => groupOf(n) === team);
+  return picked.length ? picked : ["__none__"];
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -1085,10 +1095,10 @@ export const appRouter = router({
     agents: bdProcedure.query(async ({ ctx }) => {
       if (!seesAllData(ctx.user.role)) {
         const self = String(ctx.user.agentName || ctx.user.name || "Me");
-        return [{ name: self, self: true }];
+        return [{ name: self, self: true, team: (normalizeRole(ctx.user.role) === "fr_agent" ? "FR" : "BDR") as "BDR" | "FR" }];
       }
-      const names = await getReportAgents();
-      return names.map((name) => ({ name, self: false }));
+      const [names, groupOf] = await Promise.all([getReportAgents(), loadRepGroups()]);
+      return names.map((name) => ({ name, self: false, team: groupOf(name) }));
     }),
     agentReport: bdProcedure
       .input(z.object({
@@ -1146,7 +1156,7 @@ export const appRouter = router({
         return getCallLogs({ names, from, to });
       }),
     agentPerformance: bdProcedure
-      .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
+      .input(z.object({ agentName: z.string().optional(), team: perfTeam, from: z.string(), to: z.string() }))
       .query(async ({ ctx, input }) => {
         const from = laDate(input.from);
         const to = laEnd(input.to);
@@ -1158,12 +1168,12 @@ export const appRouter = router({
         } else if (input.agentName && input.agentName !== "__all__") {
           names = [input.agentName];
         } else {
-          names = undefined;
+          names = await teamNames(input.team);
         }
         return getAgentPerformanceData({ names, from, to });
       }),
     agentPerformanceReview: bdProcedure
-      .input(z.object({ agentName: z.string().optional(), from: z.string(), to: z.string() }))
+      .input(z.object({ agentName: z.string().optional(), team: perfTeam, from: z.string(), to: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const from = laDate(input.from);
         const to = laEnd(input.to);
@@ -1178,8 +1188,8 @@ export const appRouter = router({
           names = [input.agentName];
           agentLabel = input.agentName;
         } else {
-          names = undefined;
-          agentLabel = "the whole team";
+          names = await teamNames(input.team);
+          agentLabel = input.team === "BDR" ? "the BDR team" : input.team === "FR" ? "the FR team" : "the whole team";
         }
         return generateAgentPerformanceReview({ names, from, to, agentLabel });
       }),

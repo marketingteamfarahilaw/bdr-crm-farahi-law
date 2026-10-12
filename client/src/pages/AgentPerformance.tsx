@@ -46,10 +46,11 @@ export default function AgentPerformance() {
   const [from, setFrom] = useState(r0.from);
   const [to, setTo] = useState(r0.to);
   const [agent, setAgent] = useState("__all__");
+  const [team, setTeam] = useState<"all" | "BDR" | "FR">("all");
 
   const { data: agents = [] } = trpc.reports.agents.useQuery();
   const { data, isFetching } = trpc.reports.agentPerformance.useQuery(
-    { agentName: isManager ? agent : undefined, from: `${from}T00:00:00`, to: `${to}T23:59:59` },
+    { agentName: isManager ? agent : undefined, team: isManager ? team : "all", from: `${from}T00:00:00`, to: `${to}T23:59:59` },
   );
   const review = trpc.reports.agentPerformanceReview.useMutation();
 
@@ -62,7 +63,15 @@ export default function AgentPerformance() {
   // Calls without a recap are invisible to the AI review and the interest numbers.
   const connected = k?.connected ?? 0;
   const thinRecaps = connected >= 5 && recaps < connected / 2;
-  const whoLabel = isManager ? (agent === "__all__" ? "the whole team" : agent) : (user?.name ?? "me");
+  const teamLabel = team === "BDR" ? "the BDR team" : team === "FR" ? "the FR team" : "the whole team";
+  const whoLabel = isManager ? (agent === "__all__" ? teamLabel : agent) : (user?.name ?? "me");
+  const teamAgents = team === "all" ? agents : agents.filter((a: any) => a.team === team);
+  const pickTeam = (t: "all" | "BDR" | "FR") => {
+    setTeam(t);
+    // A rep from the other team would show nothing; go back to the whole team.
+    if (agent !== "__all__" && t !== "all" && agents.find((a: any) => a.name === agent)?.team !== t) setAgent("__all__");
+    review.reset();
+  };
 
   // The review as plain text, to paste into an email or a chat.
   const copyReview = async () => {
@@ -111,10 +120,19 @@ export default function AgentPerformance() {
             <div><label className="text-[11px] text-muted-foreground block mb-1">To</label><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPreset("custom"); review.reset(); }} className="bg-card border-border h-9 w-[150px]" /></div>
           </div>
           {isManager && (
+            <div><label className="text-[11px] text-muted-foreground block mb-1">Team</label>
+              <div className="flex gap-1.5">
+                {([["all", "Whole Team"], ["BDR", "BDR Performance"], ["FR", "FR Performance"]] as const).map(([id, label]) => (
+                  <button key={id} onClick={() => pickTeam(id)} className={`text-xs font-medium rounded-lg px-3 h-9 border transition-colors ${team === id ? "bg-primary text-primary-foreground border-primary" : "bg-secondary/40 border-border text-muted-foreground hover:text-foreground"}`}>{label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {isManager && (
             <div><label className="text-[11px] text-muted-foreground block mb-1">Representative</label>
               <Select value={agent} onValueChange={(v) => { setAgent(v); review.reset(); }}>
                 <SelectTrigger className="bg-card border-border h-9 w-[180px]"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="__all__">Whole Team</SelectItem>{agents.map((a: any) => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="__all__">{team === "BDR" ? "All BDRs" : team === "FR" ? "All FRs" : "Whole Team"}</SelectItem>{teamAgents.map((a: any) => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           )}
@@ -143,7 +161,7 @@ export default function AgentPerformance() {
             <Button
               size="sm" className="gap-2"
               disabled={review.isPending || isFetching || !(k?.calls || k?.recaps)}
-              onClick={() => review.mutate({ agentName: isManager ? agent : undefined, from: `${from}T00:00:00`, to: `${to}T23:59:59` })}
+              onClick={() => review.mutate({ agentName: isManager ? agent : undefined, team: isManager ? team : "all", from: `${from}T00:00:00`, to: `${to}T23:59:59` })}
             >
               {review.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {review.isPending ? "Analyzing…" : rev ? "Regenerate" : "Generate review"}

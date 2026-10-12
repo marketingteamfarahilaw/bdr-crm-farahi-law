@@ -291,17 +291,7 @@ export async function getNewFacilitiesReport(
     if (isDropped && new Date(f.updatedAt) >= from && new Date(f.updatedAt) <= to && !(opts.excludeImports && isImport)) e.droppedApprox++;
     byRep.set(rep.toLowerCase(), e);
   }
-  // Group reps into BDR vs FR: users-table roles first, then the known FR
-  // roster from the MTD workbook (most team accounts have no granular role).
-  const FR_FALLBACK = new Set(["lupe", "jezel", "zulema", "genysys"]);
-  const userRows = await db.select({ agentName: users.agentName, name: users.name, role: users.role }).from(users);
-  const groupByFirst = new Map<string, "BDR" | "FR">();
-  for (const u of userRows) {
-    const g = u.role === "fr_agent" || u.role === "fr_manager" ? "FR" : u.role === "bdr_agent" || u.role === "bdr_manager" ? "BDR" : null;
-    if (!g) continue;
-    for (const nm of [u.agentName, u.name]) { const f = firstS(String(nm ?? "")); if (f && !groupByFirst.has(f)) groupByFirst.set(f, g); }
-  }
-  FR_FALLBACK.forEach((f) => { if (!groupByFirst.has(f)) groupByFirst.set(f, "FR"); });
+  const groupOf = await loadRepGroups();
 
   const reps = Array.from(byRep.values())
     .filter((r) => repMatches(r.rep) && !isNonReportingRep(r.rep))
@@ -309,7 +299,7 @@ export async function getNewFacilitiesReport(
       ...r,
       added: r.added.sort((a, b) => a.date.localeCompare(b.date)),
       addedCount: r.added.length,
-      group: groupByFirst.get(firstS(r.rep)) ?? ("BDR" as const),
+      group: groupOf(r.rep),
     }))
     .filter((r) => r.active > 0 || r.addedCount > 0 || r.startCount > 0)
     .sort((a, b) => b.active - a.active);
@@ -467,4 +457,26 @@ export async function getLeadsTargetReport({ from, to }: Range) {
   };
 
   return { members, totals: { FR: roleTotal("FR"), BDR: roleTotal("BDR") } };
+}
+
+/**
+ * Which team a rep is on, BDR or FR, by first name: users-table roles first,
+ * then the known FR roster from the MTD workbook (most team accounts have no
+ * granular role). Anyone not known as FR counts as BDR.
+ */
+export async function loadRepGroups(): Promise<(rep: string) => "BDR" | "FR"> {
+  const first = (s: string) => s.toLowerCase().trim().split(/\s+/)[0] ?? "";
+  const groupByFirst = new Map<string, "BDR" | "FR">();
+  const db = await getDb();
+  if (db) {
+    const userRows = await db.select({ agentName: users.agentName, name: users.name, role: users.role }).from(users);
+    for (const u of userRows) {
+      const g = u.role === "fr_agent" || u.role === "fr_manager" ? "FR" : u.role === "bdr_agent" || u.role === "bdr_manager" ? "BDR" : null;
+      if (!g) continue;
+      for (const nm of [u.agentName, u.name]) { const f = first(String(nm ?? "")); if (f && !groupByFirst.has(f)) groupByFirst.set(f, g); }
+    }
+  }
+  const FR_FALLBACK = ["lupe", "jezel", "zulema", "genysys"];
+  FR_FALLBACK.forEach((f) => { if (!groupByFirst.has(f)) groupByFirst.set(f, "FR"); });
+  return (rep: string) => groupByFirst.get(first(rep)) ?? "BDR";
 }
