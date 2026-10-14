@@ -21,12 +21,12 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, or, isNull, inArray, sql } from "drizzle-orm";
 import { protectedProcedure, router } from "./_core/trpc";
-import { canManage, isIntakeOnly } from "@shared/permissions";
+import { canManage, isIntakeOnly, outsideBD } from "@shared/permissions";
 import { getDb } from "./db";
 import { facilities, agentZones } from "../drizzle/schema";
 
 const crmProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (isIntakeOnly(ctx.user.role)) {
+  if (outsideBD(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "This area is for the BD/FR team." });
   }
   return next();

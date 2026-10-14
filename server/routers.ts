@@ -88,7 +88,7 @@ import {
   setSetting,
   setUserPhoto,
 } from "./db";
-import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing, canEditMarketingSpend, marketingCaseFacts, normalizeRole } from "@shared/permissions";
+import { canManage, canAssignRoles, seesAllData, isIntakeOnly, outsideBD, canSeeMarketing, canEditMarketingSpend, marketingCaseFacts, normalizeRole } from "@shared/permissions";
 import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS, LEADDOCKET_INTERVAL_MS } from "./dataSync";
 import { checkSheets } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
@@ -164,7 +164,7 @@ function superOnly(ctx: { user: { role: any } }): void {
 /** BD/FR-side procedure — the Intake team is walled off from the lead scraper,
  *  facility CRM, BD/FR reports and expenses (and vice versa via intakeRouter). */
 const bdProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (isIntakeOnly(ctx.user.role)) {
+  if (outsideBD(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "This area is for the BD/FR team." });
   }
   return next();

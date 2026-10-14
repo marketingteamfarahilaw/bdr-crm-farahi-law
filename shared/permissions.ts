@@ -9,6 +9,7 @@
 //   intake_manager   — the Intake (AI Case Desk) side ONLY, sees all intake data + intake settings
 //   intake_agent     — Intake Specialist: works the shared lead queue
 //   intake_frontline — Intake Frontline: first-touch call takers (same desk access today)
+//   marketing       — Marketing staff: the Marketing Report only; no partner, call or intake data
 //   admin/user      — legacy values (admin → treated as super_admin; user → treated as bdr_agent)
 //
 // HARD WALL: intake roles never see BD/FR data (facilities, partner calls,
@@ -18,6 +19,7 @@
 export type Role =
   | "super_admin" | "bdr_manager" | "fr_manager" | "bdr_agent" | "fr_agent"
   | "intake_manager" | "intake_agent" | "intake_frontline"
+  | "marketing"
   | "admin" | "user";
 
 export const ROLE_LABELS: Record<string, string> = {
@@ -29,12 +31,13 @@ export const ROLE_LABELS: Record<string, string> = {
   intake_manager: "Intake Manager",
   intake_agent: "Intake Specialist",
   intake_frontline: "Intake Frontline",
+  marketing: "Marketing",
   admin: "Admin (legacy)",
   user: "Unassigned",
 };
 
 // Roles offered in the assignment picker.
-export const ASSIGNABLE_ROLES = ["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent", "intake_frontline"] as const;
+export const ASSIGNABLE_ROLES = ["super_admin", "bdr_manager", "fr_manager", "bdr_agent", "fr_agent", "intake_manager", "intake_agent", "intake_frontline", "marketing"] as const;
 
 export function normalizeRole(role?: string | null): Role {
   if (role === "admin") return "super_admin";   // legacy admin == super admin
@@ -77,6 +80,12 @@ export const isIntakeOnly = (r?: string | null) => {
   return n === "intake_manager" || n === "intake_agent" || n === "intake_frontline";
 };
 
+/** Marketing staff: the Marketing Report and nothing from the partner side. */
+export const isMarketingOnly = (r?: string | null) => normalizeRole(r) === "marketing";
+
+/** Kept off the BD/FR tools (partners, calls, field work): the intake team and marketing staff. */
+export const outsideBD = (r?: string | null) => isIntakeOnly(r) || isMarketingOnly(r);
+
 /** Can open the Intake side: the intake team + the super admin. */
 export const canSeeIntake = (r?: string | null) => isIntakeOnly(r) || isSuperAdmin(r);
 
@@ -109,7 +118,10 @@ export const NON_REPORTING_REPS = new Set(["youssef", "malvin"]);
  * "all team with access can see the marketing report"). The intake team stays
  * out — the hard wall — and so do its case facts (marketingCaseFacts below).
  */
-export const canSeeMarketing = (r?: string | null) => !isIntakeOnly(r);
+// Tightened 2026-10-14 (Youssef approved the roles setup): the lead lists carry
+// client names, so representatives no longer see it; managers, the super admin
+// and the Marketing role do.
+export const canSeeMarketing = (r?: string | null) => isManager(r) || isMarketingOnly(r);
 /** Entering and copying marketing spend: managers and super admins; the team only reads it. */
 export const canEditMarketingSpend = (r?: string | null) => isManager(r);
 /** The Marketing Report's intake case facts (rejection reasons) — the hard wall in CLAUDE.md. */

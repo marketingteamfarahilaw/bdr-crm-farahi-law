@@ -7,7 +7,7 @@ import { TRPCError } from "@trpc/server";
 import axios from "axios";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
-import { seesAllData, canManage, isIntakeOnly } from "@shared/permissions";
+import { seesAllData, canManage, isIntakeOnly, outsideBD } from "@shared/permissions";
 import { rcCallTranscript } from "./_core/callTranscript";
 import { fromZonedTime } from "date-fns-tz";
 import { syncRecentCalls, analyzeCallTranscript, maybeCreateVisitFromCall, enqueueRecap } from "./rcSync";
@@ -95,7 +95,7 @@ const RC_BASE = "https://platform.ringcentral.com";
  *  RingCentral CONNECTION procedures below stay on protectedProcedure because
  *  intake members link their own RingCentral through the same flow. */
 const crmProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (isIntakeOnly(ctx.user.role)) {
+  if (outsideBD(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "This area is for the BD/FR team." });
   }
   return next();

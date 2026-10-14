@@ -4,11 +4,11 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
-import { isIntakeOnly } from "@shared/permissions";
+import { isIntakeOnly, outsideBD } from "@shared/permissions";
 import { listPdReferrals, createPdReferral, updatePdReferral, deletePdReferral, bulkImportPd, getPdDashboard, listBodyShops } from "./pdDb";
 
 const pdProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (isIntakeOnly(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "This area is for the BD/FR team." });
+  if (outsideBD(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "This area is for the BD/FR team." });
   return next();
 });
 
