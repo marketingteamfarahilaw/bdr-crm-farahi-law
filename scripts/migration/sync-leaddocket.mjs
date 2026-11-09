@@ -209,11 +209,23 @@ const skippedSources = new Map();
 // A lead that can't be read is queued and retried at the end, never dropped —
 // and it is not marked as seen, so it can't be skipped next time either.
 const retry = [];
+const failReason = new Map();   // leadId → why it couldn't be read, for the run's summary
+let gone404 = 0;
 async function processLead(row) {
   let raw;
-  try { raw = await api("/api/Leads/" + row.Id); } catch { return "failed"; }
+  try { raw = await api("/api/Leads/" + row.Id); }
+  catch (e) {
+    const msg = String(e?.message ?? e);
+    // Listed, but its detail page says it doesn't exist: deleted between the
+    // list and the read. Retrying can't help; next run's list won't carry it
+    // and the pruning below removes any copy the CRM holds.
+    if (/HTTP (404|410)\b/.test(msg)) { gone404++; failReason.delete(String(row.Id)); return "gone"; }
+    failReason.set(String(row.Id), msg.replace(/ for \/api\/.*/, ""));
+    return "failed";
+  }
   const d = raw?.Data ?? raw;
-  if (!d) return "failed";
+  if (!d) { failReason.set(String(row.Id), "empty response"); return "failed"; }
+  failReason.delete(String(row.Id));   // read fine on the retry pass
   lastWasOurs = false;
   await store(d);
   await storeMarketing(d, row);
@@ -361,8 +373,37 @@ if (retry.length) {
   const still = [];
   for (const row of retry) if ((await processLead(row)) === "failed") still.push(row.Id); else done++;
   failed = still.length;
-  if (still.length) console.log("STILL UNREADABLE (" + still.length + "): " + still.slice(0, 30).join(", ") + (still.length > 30 ? " …" : ""));
+  if (still.length) console.log("STILL UNREADABLE (" + still.length + "): " + still.slice(0, 30).map((id) => id + " (" + (failReason.get(String(id)) ?? "?") + ")").join(", ") + (still.length > 30 ? " …" : ""));
 }
+
+// A lead Lead Docket refuses to serve run after run (a 500 on one record, say)
+// would otherwise hold every 10-minute run at "partial" forever and stop the
+// scheduler moving its since-watermark on. Each failure is counted across runs
+// in app_settings; once a lead has failed GIVE_UP_AFTER runs in a row it no
+// longer counts against the run. It is still not marked seen, so every run
+// that lists it in range tries again, and the history job keeps retrying it.
+const GIVE_UP_AFTER = 3;
+let givenUp = [];
+const unreadable = [];
+if (c && !DRY) {
+  const [[cur]] = await c.query("SELECT settingValue v FROM app_settings WHERE settingKey='leaddocket_unreadable'");
+  let prev = {};
+  try { prev = cur?.v ? JSON.parse(cur.v) : {}; } catch { /* rewritten below */ }
+  const stillIds = new Set(failReason.keys());
+  const next = {};
+  // Leads not attempted this run (out of range) keep their count; ones read fine drop off.
+  const attempted = new Set(fresh.map((r) => String(r.Id)));
+  for (const [id, v] of Object.entries(prev)) if (!attempted.has(id)) next[id] = v;
+  for (const id of stillIds) {
+    next[id] = { runs: (prev[id]?.runs ?? 0) + 1, reason: failReason.get(id), last: new Date().toISOString() };
+    unreadable.push({ id, reason: failReason.get(id), runs: next[id].runs });
+  }
+  await c.query("INSERT INTO app_settings (settingKey, settingValue) VALUES ('leaddocket_unreadable', ?) ON DUPLICATE KEY UPDATE settingValue=VALUES(settingValue)", [JSON.stringify(next)]);
+  givenUp = unreadable.filter((u) => u.runs >= GIVE_UP_AFTER);
+  failed = unreadable.length - givenUp.length;
+  if (givenUp.length) console.log("unreadable " + GIVE_UP_AFTER + "+ runs in a row, no longer blocking the sync: " + givenUp.map((u) => u.id + " (" + u.reason + ")").join(", "));
+}
+if (gone404) console.log("listed but no longer in Lead Docket (404), skipped: " + gone404);
 
 // Where a backfill chunk leaves leaddocket_leads complete: the lowest id at and
 // above which every lead Lead Docket listed is stored. The queue is read newest
@@ -456,6 +497,6 @@ console.log("\ntop sources NOT credited to the team (check for miscredited work)
 [...skippedSources.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15).forEach(([k, v]) => console.log("  " + String(v).padStart(5) + "  " + k));
 console.log(DRY ? "\n[DRY RUN] nothing written." : "\n✅ inserted " + inserted + ", updated " + updated + ".");
 // One machine-readable line, so the in-app sync can show the result.
-console.log("SYNC_RESULT " + JSON.stringify({ scanned: fresh.length, ours, skipped, failed, inserted, updated, removed, removeHeld, byRep: Object.fromEntries(byRep) }));
+console.log("SYNC_RESULT " + JSON.stringify({ scanned: fresh.length, ours, skipped, failed, inserted, updated, removed, removeHeld, unreadable, givenUp: givenUp.length, byRep: Object.fromEntries(byRep) }));
 if (c) await c.end();
 if (failed > 0) process.exit(2);   // a partial sync must not look like a success
