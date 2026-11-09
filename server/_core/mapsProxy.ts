@@ -51,7 +51,7 @@ export function registerMapsProxy(app: Express) {
 
       // Forward content-type and cache headers (same-origin only — no CORS *).
       const ct = upstream.headers["content-type"];
-      if (ct) res.setHeader("Content-Type", ct);
+      if (ct) res.setHeader("Content-Type", String(ct));
       res.setHeader("Cache-Control", "private, max-age=3600");
 
       res.status(upstream.status).send(upstream.data);
