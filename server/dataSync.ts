@@ -159,9 +159,16 @@ async function runLeadDocketScript(args: string[], what: string): Promise<{ ok: 
 
   const r = JSON.parse(line.slice("SYNC_RESULT ".length));
   const reps = Object.entries(r.byRep ?? {}).map(([k, v]) => `${k}: ${v}`).join(", ");
+  // Name the leads that failed and why, so a stuck one can be looked up in Lead Docket.
+  const bad: { id: string; reason: string; runs: number }[] = r.unreadable ?? [];
+  const badList = bad.length
+    ? ` (${bad.slice(0, 5).map((u) => `lead ${u.id}: ${u.reason}, ${u.runs} run${u.runs === 1 ? "" : "s"} in a row`).join("; ")}${bad.length > 5 ? "; …" : ""})`
+    : "";
   let summary = `${r.scanned} ${what} read, ${r.ours} belong to the team (${r.inserted} new, ${r.updated} updated)` +
     (r.removed ? `; ${r.removed} deleted in Lead Docket removed` : "") +
-    (r.failed ? ` — ${r.failed} could not be read and will be retried next run` : "") + (reps ? `. ${reps}` : "");
+    (r.failed ? ` — ${r.failed} could not be read and will be retried next run` : "") +
+    (r.givenUp ? ` — ${r.givenUp} keep failing in Lead Docket and no longer hold the sync back` : "") +
+    badList + (reps ? `. ${reps}` : "");
 
   // The sync fills lead_intake, which only the Sign-ups Report reads. The
   // Command Center, facility profiles and rep reports read facility_leads, so
