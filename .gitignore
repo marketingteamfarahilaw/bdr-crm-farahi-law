@@ -115,3 +115,6 @@ backups/
 
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
+
+# The project uses pnpm (pnpm-lock.yaml); an npm lockfile is always a stray from `npm install`.
+package-lock.json

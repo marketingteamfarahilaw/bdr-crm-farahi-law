@@ -96,3 +96,6 @@ table.sr-t.dm-t .muted { color: var(--mute2); }
   .dm-big .sr-big .n { font-size: 40px; }
   table.sr-sct.dm-sct { min-width: 0; }
 }
+/* The Audit tab's four name lists, two by two; one column on narrow screens (the 1100px rule above). */
+.dm-names.dm-names-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .dm-names.dm-names-2 { grid-template-columns: minmax(0, 1fr); } }

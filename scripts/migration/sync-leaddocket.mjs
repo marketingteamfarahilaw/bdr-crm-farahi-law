@@ -79,7 +79,9 @@ const api = async (p) => {
 
     let r;
     try {
-      r = await fetch(BASE + p, { headers: { api_key: KEY } });
+      // A connection Lead Docket leaves open without answering would otherwise
+      // wait forever; a minute without a reply is a blip like any other.
+      r = await fetch(BASE + p, { headers: { api_key: KEY }, signal: AbortSignal.timeout(60_000) });
     } catch (e) {
       await sleep(Math.min(30000, 1000 * attempt));   // network blip
       continue;

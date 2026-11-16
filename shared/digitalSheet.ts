@@ -154,3 +154,75 @@ export function reconcileNames<S extends { name: string }, C extends { name: str
   }
   return { both, onlySheet: s.filter((a) => !a.used).map((a) => a.x), onlyCrm: c.filter((b) => !b.used).map((b) => b.x) };
 }
+
+// ── the audit's checks: the sheet against itself, and one list against Lead Docket ──
+
+/** The sheet's status columns, which between them should hold every lead in Total Leads. */
+const BUCKETS = ["open", "rejected", "referredOut", "lostNI", "signedReferred", "signedInHouse"] as const;
+
+/**
+ * Leads a sheet row counts in Total Leads but in no status column — the
+ * manual's "no status bucket" leads. Negative when the columns hold more than
+ * the total; null when the row lacks a total or every column.
+ */
+export function unbucketed(row: SheetTeamRow | null | undefined): number | null {
+  if (!row || row.leads == null) return null;
+  const vals = BUCKETS.map((k) => row[k]);
+  if (vals.every((v) => v == null)) return null;
+  return row.leads - vals.reduce<number>((s, v) => s + (v ?? 0), 0);
+}
+
+const srcKey = (s: string) => key(s).replace(/^gbp|^gmb/, "");
+
+/**
+ * Whether the sheet's Lead Source and Lead Docket's row name the same thing.
+ * The sheet writes them by hand ("GBP Visalia", "Justin for Justice"), so it
+ * is loose: equal, or one contained in the other, once spaces, case and a
+ * leading GBP are set aside. A blank sheet source is never a difference.
+ */
+export function sameSource(sheet: string, crm: { label: string; source: string }) {
+  const a = srcKey(sheet);
+  if (!a) return true;
+  return [crm.label, crm.source].some((c) => {
+    const b = srcKey(c);
+    return !!b && (a === b || a.includes(b) || b.includes(a));
+  });
+}
+
+export type SignupKind = "inHouse" | "referred";
+export type CrmSignup = { name: string; kind: SignupKind; label: string; source: string };
+
+export type SignupAudit<C extends CrmSignup> = {
+  /** Same person, same kind of sign-up. */
+  agree: { sheet: SheetSignup & { kind: SignupKind }; crm: C }[];
+  /** Same person, but in-house on one side and referred out on the other. */
+  statusDiffers: { sheet: SheetSignup & { kind: SignupKind }; crm: C }[];
+  /** Matched (either kind) but the sheet's Lead Source isn't Lead Docket's. */
+  sourceDiffers: { sheet: SheetSignup & { kind: SignupKind }; crm: C }[];
+  onlySheet: (SheetSignup & { kind: SignupKind })[];
+  onlyCrm: C[];
+};
+
+/**
+ * Both of the sheet's sign-up lists against all of Lead Docket's at once, so
+ * a client the sheet lists as in-house and Lead Docket as referred out (or the
+ * other way) is one status difference — not a name missing from each list.
+ */
+export function auditSignups<C extends CrmSignup>(sheet: { inHouse: SheetSignup[]; referred: SheetSignup[] }, crm: C[]): SignupAudit<C> {
+  const all = [
+    ...sheet.inHouse.map((s) => ({ ...s, kind: "inHouse" as const })),
+    ...sheet.referred.map((s) => ({ ...s, kind: "referred" as const })),
+  ];
+  // Same-kind pairs first, so a family with one line of each kind pairs up as the lists say.
+  const first = (["inHouse", "referred"] as const).map((k) =>
+    reconcileNames(all.filter((s) => s.kind === k), crm.filter((c) => c.kind === k)));
+  const rest = reconcileNames(first.flatMap((r) => r.onlySheet), first.flatMap((r) => r.onlyCrm));
+  const pairs = [...first.flatMap((r) => r.both), ...rest.both];
+  return {
+    agree: pairs.filter((p) => p.sheet.kind === p.crm.kind),
+    statusDiffers: pairs.filter((p) => p.sheet.kind !== p.crm.kind),
+    sourceDiffers: pairs.filter((p) => !sameSource(p.sheet.source, p.crm)),
+    onlySheet: rest.onlySheet,
+    onlyCrm: rest.onlyCrm,
+  };
+}
