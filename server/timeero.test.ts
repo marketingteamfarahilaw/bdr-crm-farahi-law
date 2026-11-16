@@ -50,4 +50,30 @@ describe("FR summary from Timeero", () => {
     expect(r).toMatchObject({ fieldDays: 1.5, errandDays: 1, totalDays: 2.5, visits: 3, lunches: 1, events: 0, total: 4, errands: 1, contract: "PT (20 hrs/wk)" });
     expect(r.avgPerDay).toBe(2.7);
   });
+
+  it("counts a partner the rep clocked in at as a visit, without a job", () => {
+    const [r] = summarise([
+      { ...shift("2026-09-01", 6, null, null), facilityIds: [11, 12] },  // one all-day clock-in, two partners by GPS
+      { ...shift("2026-09-01", 1, null, "A"), facilityIds: [11] },      // a job at the same partner: still one visit
+      { ...shift("2026-09-02", 2, "Lunch", null), facilityIds: [13] },  // a lunch is a lunch, not also a visit
+    ]);
+    expect(r).toMatchObject({ visits: 2, lunches: 1 });
+    expect(r.visitKeys.sort()).toEqual(["2026-09-01|11", "2026-09-01|12"]);
+  });
+});
+
+import { pacificDay, shiftSeconds } from "./timeero";
+
+describe("Timeero clock times", () => {
+  it("takes the day from a wall-clock time, and converts an instant to Pacific", () => {
+    expect(pacificDay("2026-09-30 08:12:00")).toBe("2026-09-30");
+    expect(pacificDay("2026-10-01T02:30:00Z")).toBe("2026-09-30");          // 7:30 pm PDT the day before
+    expect(pacificDay("2026-10-01T02:30:00+00:00")).toBe("2026-09-30");
+  });
+
+  it("works out hours from clock times when the duration is missing", () => {
+    expect(shiftSeconds({ duration: "8:00:00", break_in_seconds: 1800 })).toBe(7.5 * 3600);
+    expect(shiftSeconds({ duration: null, clock_in_time: "2026-09-30 08:00:00", clock_out_time: "2026-09-30 16:30:00" })).toBe(8.5 * 3600);
+    expect(shiftSeconds({ duration: null, clock_in_time: "2026-09-30 08:00:00", clock_out_time: null })).toBe(0);
+  });
 });
