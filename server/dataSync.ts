@@ -58,15 +58,21 @@ export type JobStatus = {
 const KEY = (job: JobName) => `sync_status_${job}`;
 const running = new Set<JobName>();
 
-/** The Google Sheets sync: every eight hours, per the team's request. */
-export const SYNC_INTERVAL_MS = 8 * 60 * 60 * 1000;
 /**
- * The Lead Docket sync: every ten minutes, close to live (Youssef, 2026-10-08).
- * A run lists every lead (~3 minutes at Lead Docket's list pace) and reads only
- * the ones that changed, so it stays well inside Lead Docket's rate limits; it
- * also removes leads deleted in Lead Docket (sync-leaddocket.mjs).
+ * The Google Sheets sync: every five minutes (was eight hours), so the
+ * workbook's edits show in the CRM through the day. The interval counts from
+ * the start of the last good run and a job never overlaps itself, so a run
+ * that takes longer than five minutes just means the next starts when it ends.
  */
-export const LEADDOCKET_INTERVAL_MS = 10 * 60 * 1000;
+export const SYNC_INTERVAL_MS = 5 * 60 * 1000;
+/**
+ * The Lead Docket sync: every five minutes, close to live (was ten,
+ * Youssef, 2026-10-08). A run lists every lead (~3 minutes at Lead Docket's
+ * list pace) and reads only the ones that changed, so it stays inside Lead
+ * Docket's rate limits; it also removes leads deleted in Lead Docket
+ * (sync-leaddocket.mjs). The history backfill gets less time between runs.
+ */
+export const LEADDOCKET_INTERVAL_MS = 5 * 60 * 1000;
 /** Filevine case values: every 6 hours, once Filevine's credentials are saved (filevineCaseValues.ts). */
 export const FILEVINE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const intervalOf = (job: JobName) => (job === "leaddocket" ? LEADDOCKET_INTERVAL_MS : job === "filevine" ? FILEVINE_INTERVAL_MS : SYNC_INTERVAL_MS);

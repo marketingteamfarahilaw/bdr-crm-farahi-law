@@ -272,7 +272,7 @@ export const appRouter = router({
         getSyncStatus("leaddocket"), getSyncStatus("leaddocket_history"), getSyncStatus("sheets"), checkSheets(),
         getSyncStatus("filevine"), filevineConfigured(),
       ]);
-      return { leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineConfigured: filevineReady, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
+      return { leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineConfigured: filevineReady, sheetsMinutes: SYNC_INTERVAL_MS / 60_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
     }),
     run: bdProcedure
       .input(z.object({ job: z.enum(["leaddocket", "leaddocket_history", "sheets", "filevine"]) }))

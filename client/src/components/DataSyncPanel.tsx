@@ -77,7 +77,7 @@ export function DataSyncPanel() {
             <div className="text-sm font-semibold text-foreground">Data sync</div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Lead Docket syncs automatically every {data?.leadDocketMinutes ?? 10} minutes (leads deleted there are removed here too); Google Sheets every {data?.intervalHours ?? 8} hours; Filevine case values every 6 hours once Filevine is connected. Use the buttons to pull the latest now.
+            Lead Docket syncs automatically every {data?.leadDocketMinutes ?? 5} minutes (leads deleted there are removed here too); Google Sheets every {data?.sheetsMinutes ?? 5} minutes; Filevine case values every 6 hours once Filevine is connected. Use the buttons to pull the latest now.
           </p>
         </div>
       </div>
