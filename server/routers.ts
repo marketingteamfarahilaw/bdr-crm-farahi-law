@@ -18,7 +18,8 @@ import { territoriesRouter } from "./territoriesRouter";
 import { triviaRouter } from "./triviaRouter";
 import axios from "axios";
 import { rcCallTranscript } from "./_core/callTranscript";
-import { getRingcentralToken, listFacilities } from "./crmDb";
+import { getRingcentralToken, listAgentsWithRcStatus, listFacilities } from "./crmDb";
+import { CURRENT_TEAM, repNameKey } from "@shared/team";
 import {
   getSavedLeads,
   getSavedLeadByPlaceId,
@@ -1099,6 +1100,18 @@ export const appRouter = router({
       }
       const [names, groupOf] = await Promise.all([getReportAgents(), loadRepGroups()]);
       return names.map((name) => ({ name, self: false, team: groupOf(name) }));
+    }),
+    // Which current FRs have connected their own RingCentral. Their calls
+    // reach FR Performance only after they do, so the page names the rest
+    // instead of showing silent zeros.
+    frRingcentralStatus: bdProcedure.query(async ({ ctx }) => {
+      if (!seesAllData(ctx.user.role)) return [];
+      const rows = await listAgentsWithRcStatus();
+      return CURRENT_TEAM.FR.map((name) => {
+        const key = repNameKey(name);
+        const u = rows.find((r) => repNameKey(r.name) === key || repNameKey(r.agentName) === key);
+        return { name, hasAccount: !!u, connected: !!u?.connected };
+      });
     }),
     agentReport: bdProcedure
       .input(z.object({
