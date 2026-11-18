@@ -984,6 +984,14 @@ export const appRouter = router({
         .query(({ input }) => explainSheetNames(input.names, { fromDay: input.from, toDay: input.to })),
       // Every Marketing Source, Contact Source and Campaign in Lead Docket, all time — the shareable directory.
       sourceDirectory: marketingProcedure.query(() => getSourceDirectory()),
+      // The digital marketing sheet read from Google Sheets (marketingSheetSync.ts), from the Audit tab.
+      // Open to whoever sees this report, not only managers: it only reads the
+      // sheet and adds to the variance log, and never overlaps itself.
+      sheetSyncStatus: marketingProcedure.query(() => getSyncStatus("marketing_sheet")),
+      syncSheet: marketingProcedure.mutation(async () => {
+        const started = await startSyncJob("marketing_sheet", "manual");
+        return { started, alreadyRunning: !started };
+      }),
       // The running variance log: each sheet comparison's differences, saved with the date (varianceLog.ts).
       saveVariances: marketingProcedure
         .input(range.extend({

@@ -9,7 +9,8 @@
  */
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Download, FileSpreadsheet, Info, Loader2, Printer, Upload } from "lucide-react";
+import { ChevronDown, Download, FileSpreadsheet, Info, Loader2, Printer, RefreshCw, Upload } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import type { DrillLink } from "../../../../server/marketing/common";
@@ -95,6 +96,7 @@ function SheetCompare({ to, report }: { to: string; report: DigitalData | null }
   return (
     <div className="sr-panel">
       <div className="sr-panel-h" style={{ flexWrap: "wrap" }}><h2>The team's daily sheet vs Lead Docket</h2></div>
+      <SheetSync />
       <p className="sr-sub">
         Upload the "MTD Performance Summary" workbook. The tab for the period's last day ({tabForDay(to)}) is compared with this report for {rangeLabel(from0(to), to)} —
         the team's table and the names in its In-House Signup Details and Signed Referred Out Details. Pick the month-to-date period above to match the sheet.
@@ -117,6 +119,54 @@ function SheetCompare({ to, report }: { to: string; report: DigitalData | null }
     </div>
   );
 }
+/**
+ * Sync the sheet straight from Google Sheets: the same job that runs every 30
+ * minutes (server/marketingSheetSync.ts) — today's tab, compared with Lead
+ * Docket, its differences added to the variance log below when they changed.
+ */
+function SheetSync() {
+  const utils = trpc.useUtils();
+  const status = trpc.marketing.sheetSyncStatus.useQuery(undefined, {
+    // Poll while it runs so the result shows without a refresh.
+    refetchInterval: (q) => ((q.state.data as any)?.state === "running" ? 3000 : 60_000),
+  });
+  const s = status.data;
+  const running = s?.state === "running";
+  // When a run finishes, the variance log may have a new comparison.
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    if (wasRunning.current && !running) {
+      void utils.marketing.varianceLog.invalidate();
+      if (s?.state === "ok") toast.success("Digital marketing sheet synced.");
+      else if (s?.state === "failed") toast.error("The sheet sync failed — see the message under the button.");
+    }
+    wasRunning.current = running;
+  }, [running]);
+  const sync = trpc.marketing.syncSheet.useMutation({
+    onSuccess: (r) => {
+      if (r.alreadyRunning) toast.info("The sheet is already syncing.");
+      void utils.marketing.sheetSyncStatus.invalidate();
+    },
+    onError: (e) => toast.error(e.message || "Couldn't start the sheet sync."),
+  });
+  const busy = running || sync.isPending;
+  const ago = (iso: string | null) => (iso ? formatDistanceToNow(new Date(iso), { addSuffix: true }) : "never");
+  return (
+    <div className="dm-drop" style={{ marginBottom: 10 }}>
+      <RefreshCw size={20} aria-hidden />
+      <span style={{ flex: 1, minWidth: 180 }}>
+        <b>From Google Sheets</b> · syncs automatically every 30 minutes
+        {s && <> · last synced <b>{ago(s.lastSuccessAt)}</b></>}
+        {s?.summary && s.state === "ok" && <span className="sr-sub" style={{ display: "block", margin: "2px 0 0" }}>{s.summary}</span>}
+        {s?.error && s.state === "failed" && <span style={{ display: "block", marginTop: 2, color: "var(--bad)" }}>{s.error}</span>}
+      </span>
+      <button className="sr-btn2" onClick={() => sync.mutate()} disabled={busy}>
+        {busy ? <Loader2 className="sr-spin" /> : <RefreshCw />} {busy ? "Syncing…" : "Sync now"}
+      </button>
+    </div>
+  );
+}
+
 /** The first of the month of a day: the sheet is month to date. */
 const from0 = (to: string) => to.slice(0, 8) + "01";
 
