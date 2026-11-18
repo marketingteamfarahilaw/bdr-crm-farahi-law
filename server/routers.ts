@@ -91,7 +91,7 @@ import {
 } from "./db";
 import { canManage, canAssignRoles, seesAllData, isIntakeOnly, canSeeMarketing, canEditMarketingSpend, marketingCaseFacts, normalizeRole } from "@shared/permissions";
 import { getStatus as getSyncStatus, startJob as startSyncJob, SYNC_INTERVAL_MS, LEADDOCKET_INTERVAL_MS } from "./dataSync";
-import { checkSheets } from "./googleSheets";
+import { checkSheets, clearGoogleSheetsAccount, googleSheetsAccountStatus, saveGoogleSheetsAccount } from "./googleSheets";
 import { intakeRouter } from "./intakeRouter";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { REFERRAL_STATUSES } from "@shared/referralTracker";
@@ -328,6 +328,16 @@ export const appRouter = router({
       .mutation(({ ctx, input }) => { superOnly(ctx); return saveFilevine(input); }),
     testFilevine: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return testFilevine(); }),
     disconnectFilevine: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return disconnectFilevine(); }),
+    // Google service account for reading sheets kept private to farahilaw.com: super admin only; the key never comes back out.
+    googleSheetsAccount: protectedProcedure.query(({ ctx }) => { superOnly(ctx); return googleSheetsAccountStatus(); }),
+    saveGoogleSheetsAccount: protectedProcedure
+      .input(z.object({ json: z.string().min(10).max(20_000) }))
+      .mutation(async ({ ctx, input }) => {
+        superOnly(ctx);
+        try { return await saveGoogleSheetsAccount(input.json); }
+        catch (e: any) { throw new TRPCError({ code: "BAD_REQUEST", message: e?.message ?? String(e) }); }
+      }),
+    clearGoogleSheetsAccount: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return clearGoogleSheetsAccount(); }),
     importTimeero: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return importTimeero(); }),
     newTimeeroSecret: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return newTimeeroSecret(); }),
     timeeroSample: protectedProcedure
