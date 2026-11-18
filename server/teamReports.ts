@@ -15,7 +15,7 @@ import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getDb } from "./db";
 import { contactLogs, facilities, fieldVisits, leadIntake, users } from "../drizzle/schema";
 import { isNonReportingRep } from "@shared/permissions";
-import { MONTHLY_SIGNUP_TARGET } from "@shared/team";
+import { CURRENT_TEAM, MONTHLY_SIGNUP_TARGET } from "@shared/team";
 
 const LA = "America/Los_Angeles";
 const dayKey = (d: Date | string) => formatInTimeZone(new Date(d), LA, "yyyy-MM-dd");
@@ -476,7 +476,9 @@ export async function loadRepGroups(): Promise<(rep: string) => "BDR" | "FR"> {
       for (const nm of [u.agentName, u.name]) { const f = first(String(nm ?? "")); if (f && !groupByFirst.has(f)) groupByFirst.set(f, g); }
     }
   }
-  const FR_FALLBACK = ["lupe", "jezel", "zulema", "genysys"];
+  // The current FR roster (@shared/team) so a new FR is grouped right without
+  // a second list to keep in step; "genysys" is a former FR, kept for history.
+  const FR_FALLBACK = [...CURRENT_TEAM.FR.map(first), "genysys"];
   FR_FALLBACK.forEach((f) => { if (!groupByFirst.has(f)) groupByFirst.set(f, "FR"); });
   return (rep: string) => groupByFirst.get(first(rep)) ?? "BDR";
 }

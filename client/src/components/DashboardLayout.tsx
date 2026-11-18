@@ -83,8 +83,10 @@ const NAV_SECTIONS: { title: string; folder?: boolean; items: { icon: any; label
   // Team & Roles and Representative Zones are tabs of Settings now; their
   // addresses open those tabs.
   { title: "Settings", items: [
-    // Open to BDRs as well: their RingCentral connection is here now.
-    { icon: Settings, label: "Settings", path: "/settings", level: "bdr", also: ["/crm/ringcentral", "/team", "/agents"] },
+    // Open to BDRs and FRs: their RingCentral connection is here (a rep who
+    // isn't a manager sees only that tab). FRs need it too — their calls only
+    // reach FR Performance once they connect.
+    { icon: Settings, label: "Settings", path: "/settings", level: "all", also: ["/crm/ringcentral", "/team", "/agents"] },
   ] },
 ];
 

@@ -422,6 +422,40 @@ const km = (a: [number, number], b: [number, number]) => {
   return 2 * R * Math.asin(Math.sqrt(h));
 };
 const NEAR_KM = 0.15;   // a clock-in within ~150 m of a partner is at that partner
+
+/**
+ * The Pacific day of a Timeero clock time. Timeero normally writes the rep's
+ * wall clock with no zone ("2026-09-30 08:12:00"), which is already Pacific;
+ * a time carrying "Z" or an offset is an instant, and taking its first ten
+ * characters would put an evening shift on the next day.
+ */
+export function pacificDay(time: unknown): string {
+  const s = String(time ?? "").trim();
+  if (/(Z|[+-]\d{2}:?\d{2})$/i.test(s)) {
+    const d = new Date(s.replace(" ", "T"));
+    if (!isNaN(d.getTime())) return formatInTimeZone(d, "America/Los_Angeles", "yyyy-MM-dd");
+  }
+  return s.slice(0, 10);
+}
+
+/**
+ * Seconds worked on a shift. Timeero's duration is "H:MM:SS"; when it is
+ * missing or in another shape (it read as 0, which made full days into ½
+ * days), a closed shift falls back to clock-out minus clock-in.
+ */
+export function shiftSeconds(t: { duration?: unknown; clock_in_time?: unknown; clock_out_time?: unknown; break_in_seconds?: unknown }): number {
+  let sec = toSec(t.duration);
+  if (!sec && t.clock_in_time && t.clock_out_time) {
+    // Both times share one format, so reading both as UTC gives the right gap.
+    const at = (x: unknown) => {
+      const s = String(x).trim().replace(" ", "T");
+      return Date.parse(/(Z|[+-]\d{2}:?\d{2})$/i.test(s) ? s : `${s}Z`);
+    };
+    const gap = (at(t.clock_out_time) - at(t.clock_in_time)) / 1000;
+    if (isFinite(gap) && gap > 0 && gap < 24 * 3600) sec = Math.round(gap);
+  }
+  return Math.max(0, sec - Number(t.break_in_seconds ?? 0));
+}
 const FR_BY_FIRST = new Map(CURRENT_TEAM.FR.map((n) => [n.toLowerCase().split(/\s+/)[0], n] as const));
 
 /**
@@ -442,9 +476,12 @@ export function categoryOf(task: unknown, hasJob: boolean): Category {
 /**
  * The FR summary sheet's row per rep. A day counts as a field day or an
  * errand day by where most of its hours went, and as ½ when under 4 hours
- * were worked. Visits are distinct partners per day.
+ * were worked. Visits are distinct partners per day: the CRM partners a
+ * shift touched (its job's partner, or a partner at its clock-in or clock-out
+ * point) — the reps mostly clock in without picking a job, so the GPS match is
+ * what finds the visit — and otherwise the job itself.
  */
-export function summarise(list: { rep: string; day: string; seconds: number; miles: number; category: Category; jobId: string | null; flagged: boolean }[]) {
+export function summarise(list: { rep: string; day: string; seconds: number; miles: number; category: Category; jobId: string | null; flagged: boolean; facilityIds?: number[] }[]) {
   type Acc = { rep: string; seconds: number; miles: number; shifts: number; flagged: number;
     days: Map<string, { field: number; errand: number }>; visits: Set<string>; lunch: number; event: number; errandTasks: number };
   const by = new Map<string, Acc>();
@@ -456,7 +493,11 @@ export function summarise(list: { rep: string; day: string; seconds: number; mil
     if (r.category === "errand" || r.category === "investigation") { d.errand += r.seconds; a.errandTasks++; }
     else d.field += r.seconds;
     a.days.set(r.day, d);
-    if (r.category === "visit") a.visits.add(`${r.day}|${r.jobId}`);
+    // Keyed by CRM facility id, the same keys the CRM's own visit logs use,
+    // so a visit seen in both places counts once (withCrmLogs).
+    const ids = r.facilityIds ?? [];
+    if (r.category === "visit" || r.category === "field") for (const id of ids) a.visits.add(`${r.day}|${id}`);
+    if (r.category === "visit" && !ids.length) a.visits.add(`${r.day}|job:${r.jobId}`);
     if (r.category === "lunch") a.lunch++;
     if (r.category === "event") a.event++;
     by.set(r.rep, a);
@@ -477,6 +518,8 @@ export function summarise(list: { rep: string; day: string; seconds: number; mil
       contract: contract?.label ?? null, contractHours: contract?.hoursPerWeek ?? null,
       hours: Math.round((a.seconds / 3600) * 10) / 10, miles: Math.round(a.miles), shifts: a.shifts, flagged: a.flagged,
       current: FR_CONTRACT[a.rep] != null || CURRENT_TEAM.FR.includes(a.rep),
+      // For combining with the CRM's logs; withCrmLogs drops them from the result.
+      visitKeys: Array.from(a.visits), dayKeys: Array.from(a.days.keys()),
     };
   }).sort((x, y) => Number(y.current) - Number(x.current) || y.total - x.total || y.hours - x.hours);
 }
@@ -542,22 +585,24 @@ export async function getFieldTime(from: string, to: string, member?: string) {
     let t: any;
     try { t = JSON.parse(r.data); } catch { continue; }
     const inTime = String(t.clock_in_time ?? "");
-    const day = inTime.slice(0, 10);
+    const day = pacificDay(inTime);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < from || day > to) continue;
     const raw = [t.first_name, t.last_name].filter(Boolean).join(" ").trim() || `Timeero user ${t.user_id ?? "?"}`;
     // Shown under the CRM's name for the rep ("Lupe" in Timeero → Lupe Campos).
     const name = FR_BY_FIRST.get(raw.toLowerCase().split(/\s+/)[0]) ?? raw;
     if (want && name.toLowerCase().split(/\s+/)[0] !== want) continue;
-    const worked = Math.max(0, toSec(t.duration) - Number(t.break_in_seconds ?? 0));
+    const inPartner = nearest(t.clock_in_latitude, t.clock_in_longitude);
+    const outPartner = nearest(t.clock_out_latitude, t.clock_out_longitude);
+    const jp = t.job_id ? jobPartner.get(String(t.job_id)) ?? null : null;
     list.push({
       id: String(t.id), rep: name, day,
       clockIn: inTime || null, clockOut: t.clock_out_time ? String(t.clock_out_time) : null,
       inAddress: t.clock_in_address ?? null, outAddress: t.clock_out_address ?? null,
-      inPartner: nearest(t.clock_in_latitude, t.clock_in_longitude),
-      outPartner: nearest(t.clock_out_latitude, t.clock_out_longitude),
-      seconds: worked,
+      inPartner, outPartner,
+      seconds: shiftSeconds(t),
       miles: Math.round(Number(t.mileage ?? 0) * 10) / 10,
-      job: t.job_name || null, jobPartner: t.job_id ? jobPartner.get(String(t.job_id)) ?? null : null,
+      job: t.job_name || null, jobPartner: jp,
+      facilityIds: Array.from(new Set([jp?.id, inPartner?.id, outPartner?.id].filter((x): x is number => !!x))),
       notes: t.notes ? String(t.notes) : null,
       approved: !!t.approved, flagged: !!t.flagged, open: !t.clock_out_time,
       task: t.task_name ? String(t.task_name) : null,
@@ -575,9 +620,12 @@ export async function getFieldTime(from: string, to: string, member?: string) {
  * The FRs clock in once a day in Timeero without picking a job or a task
  * (seen 2026-09-30), so visits and errands come from what they log in the
  * CRM too — Field Mode's "Log today's visit" and the workbook's Visits and
- * FR Errand tabs, as the team's FR summary sheet counted them. Each column
- * takes the larger of the two sources rather than their sum, so a visit
- * logged in both places counts once.
+ * FR Errand tabs, as the team's FR summary sheet counted them. Visits are the
+ * union of both sources, keyed by partner and day, so a visit logged in both
+ * places counts once and different visits in each add up (taking the larger
+ * of the two lost the smaller source's visits). A day with CRM visits but no
+ * Timeero clock-in is a field day too. Errands still take the larger count:
+ * the CRM's errand rows carry no partner to match on.
  */
 async function withCrmLogs(reps: ReturnType<typeof summarise>, from: string, to: string, want: string | null) {
   const db = await getDb();
@@ -616,13 +664,14 @@ async function withCrmLogs(reps: ReturnType<typeof summarise>, from: string, to:
   for (const v of logRows as any[]) { const day = pDay(v.visitDate), c = get(v.agentName); c.days.add(day); c.visits.add(`${day}|${v.facilityId}`); }
   for (const e of errandRows as any[]) if (e.status !== "Not Completed") get(e.agentName).errands++;
 
-  const out = reps.map((r) => {
+  const out = reps.map(({ visitKeys, dayKeys, ...r }) => {
     const c = crm.get(first(r.rep));
     crm.delete(first(r.rep));
     if (!c) return r;
-    const visits = Math.max(r.visits, c.visits.size);
+    const visits = new Set([...visitKeys, ...Array.from(c.visits)]).size;
     const errands = Math.max(r.errands, c.errands);
-    const fieldDays = r.fieldDays || c.days.size;
+    const clocked = new Set(dayKeys);
+    const fieldDays = r.fieldDays + Array.from(c.days).filter((d) => !clocked.has(d)).length;
     const total = visits + r.lunches + r.events;
     return { ...r, visits, errands, fieldDays, totalDays: fieldDays + r.errandDays, total, avgPerDay: fieldDays ? Math.round((total / fieldDays) * 10) / 10 : 0 };
   });
@@ -684,7 +733,7 @@ export async function getFieldToday() {
     const raw = [t.first_name, t.last_name].filter(Boolean).join(" ").trim() || `Timeero user ${t.user_id ?? "?"}`;
     const outTime = open ? null : String(t.clock_out_time).slice(0, 19);
     const inAt = instant(inTime);
-    const worked = Math.max(0, toSec(t.duration) - Number(t.break_in_seconds ?? 0));
+    const worked = shiftSeconds(t);
     shifts.push({
       id: String(t.id),
       // Shown under the CRM's name for the rep, as in getFieldTime.
