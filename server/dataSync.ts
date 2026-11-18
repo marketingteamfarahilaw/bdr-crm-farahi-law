@@ -20,6 +20,7 @@ import { getSetting, setSetting } from "./db";
 import { downloadWorkbook } from "./googleSheets";
 import { filevineConfigured } from "./filevine";
 import { FIRST_SINCE, syncFilevineCaseValues } from "./filevineCaseValues";
+import { runMarketingSheetSync } from "./marketingSheetSync";
 
 /**
  * leaddocket_history is a one-off backfill of every lead since 2020, in every
@@ -35,7 +36,7 @@ import { FIRST_SINCE, syncFilevineCaseValues } from "./filevineCaseValues";
  * HISTORY_CHUNK (about an hour each), and runDueJobs starts the next chunk
  * whenever the regular sync isn't due, until the sync reports none remaining.
  */
-export type JobName = "leaddocket" | "leaddocket_history" | "sheets" | "filevine";
+export type JobName = "leaddocket" | "leaddocket_history" | "sheets" | "filevine" | "marketing_sheet";
 
 /** Jobs that draw on the same external rate limit and must not overlap. */
 const SHARES_BUDGET: Record<JobName, JobName[]> = {
@@ -43,6 +44,7 @@ const SHARES_BUDGET: Record<JobName, JobName[]> = {
   leaddocket_history: ["leaddocket"],
   sheets: [],
   filevine: [],
+  marketing_sheet: [],
 };
 
 export type JobStatus = {
@@ -75,7 +77,15 @@ export const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 export const LEADDOCKET_INTERVAL_MS = 5 * 60 * 1000;
 /** Filevine case values: every 6 hours, once Filevine's credentials are saved (filevineCaseValues.ts). */
 export const FILEVINE_INTERVAL_MS = 6 * 60 * 60 * 1000;
-export const intervalOf = (job: JobName) => (job === "leaddocket" ? LEADDOCKET_INTERVAL_MS : job === "filevine" ? FILEVINE_INTERVAL_MS : SYNC_INTERVAL_MS);
+/**
+ * The digital marketing sheet vs Lead Docket (marketingSheetSync.ts): every 30
+ * minutes. The team fills the sheet in through the day; a comparison is logged
+ * only when its differences change, so a shorter interval adds no rows.
+ */
+export const MARKETING_SHEET_INTERVAL_MS = 30 * 60 * 1000;
+export const intervalOf = (job: JobName) =>
+  job === "leaddocket" ? LEADDOCKET_INTERVAL_MS : job === "filevine" ? FILEVINE_INTERVAL_MS
+  : job === "marketing_sheet" ? MARKETING_SHEET_INTERVAL_MS : SYNC_INTERVAL_MS;
 
 /**
  * Case values from Filevine for leads Lead Docket has none for. The first run
@@ -122,6 +132,7 @@ export const JOB_TIMEOUT_MS: Record<JobName, number> = {
   leaddocket_history: 120 * 60_000, // a HISTORY_CHUNK is about an hour
   sheets: 30 * 60_000,
   filevine: 60 * 60_000,
+  marketing_sheet: 15 * 60_000,
 };
 /** Exit code runScript reports for a script it had to stop. */
 const TIMED_OUT = 124;
@@ -259,6 +270,7 @@ export async function startJob(job: JobName, trigger: "schedule" | "manual"): Pr
         job === "leaddocket" ? await runLeadDocket()
         : job === "leaddocket_history" ? await runLeadDocketHistory()
         : job === "filevine" ? await runFilevine()
+        : job === "marketing_sheet" ? await runMarketingSheetSync()
         : await runSheets();
       const finishedAt = new Date().toISOString();
       const partial = "partial" in result && result.partial;
@@ -289,7 +301,7 @@ export async function startJob(job: JobName, trigger: "schedule" | "manual"): Pr
  * of resetting (or firing) every time the process starts.
  */
 export async function runDueJobs() {
-  for (const job of ["leaddocket", "sheets", "filevine"] as JobName[]) {
+  for (const job of ["leaddocket", "sheets", "filevine", "marketing_sheet"] as JobName[]) {
     if (job === "leaddocket" && !process.env.LEADDOCKET_API_KEY) continue;
     if (job === "filevine" && !(await filevineConfigured())) continue;
     const s = await getStatus(job);

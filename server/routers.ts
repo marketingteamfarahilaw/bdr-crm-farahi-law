@@ -269,14 +269,14 @@ export const appRouter = router({
   dataSync: router({
     status: bdProcedure.query(async ({ ctx }) => {
       mgrOnly(ctx);
-      const [leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineReady] = await Promise.all([
+      const [leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineReady, marketing_sheet] = await Promise.all([
         getSyncStatus("leaddocket"), getSyncStatus("leaddocket_history"), getSyncStatus("sheets"), checkSheets(),
-        getSyncStatus("filevine"), filevineConfigured(),
+        getSyncStatus("filevine"), filevineConfigured(), getSyncStatus("marketing_sheet"),
       ]);
-      return { leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineConfigured: filevineReady, sheetsMinutes: SYNC_INTERVAL_MS / 60_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
+      return { leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineConfigured: filevineReady, marketing_sheet, sheetsMinutes: SYNC_INTERVAL_MS / 60_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
     }),
     run: bdProcedure
-      .input(z.object({ job: z.enum(["leaddocket", "leaddocket_history", "sheets", "filevine"]) }))
+      .input(z.object({ job: z.enum(["leaddocket", "leaddocket_history", "sheets", "filevine", "marketing_sheet"]) }))
       .mutation(async ({ ctx, input }) => {
         mgrOnly(ctx);
         if (input.job === "filevine") {
@@ -284,7 +284,7 @@ export const appRouter = router({
           const started = await startSyncJob("filevine", "manual");
           return { started, alreadyRunning: !started };
         }
-        if (input.job !== "sheets" && !process.env.LEADDOCKET_API_KEY) {
+        if (input.job !== "sheets" && input.job !== "marketing_sheet" && !process.env.LEADDOCKET_API_KEY) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Lead Docket is not configured on the server." });
         }
         const started = await startSyncJob(input.job, "manual");

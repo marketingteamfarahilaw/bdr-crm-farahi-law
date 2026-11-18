@@ -226,3 +226,81 @@ export function auditSignups<C extends CrmSignup>(sheet: { inHouse: SheetSignup[
     onlyCrm: rest.onlyCrm,
   };
 }
+
+// ─── The variance log's rows ──────────────────────────────────────────────────
+
+export type VarianceKind = "total" | "unbucketed" | "status" | "onlySheet" | "onlyCrm" | "source" | "sync";
+export type VarianceRow = { kind: VarianceKind; itemKey: string; name: string; detail: string };
+
+/** What the comparison needs from the Digital Marketing Report: its GBP/SEO rows and its sign-ups. */
+export type ReportForSheet = {
+  team: ({ group: string } & Partial<Record<SheetColumn, number | null>>)[];
+  signups: (CrmSignup & { group: string })[];
+};
+/** Why a name only on the sheet is missing from Lead Docket's sign-ups (server/sheetNames.ts). */
+export type NameReason = { fix: "leaddocket" | "sheet" | "check"; reason: string };
+
+const FIX_LABEL: Record<NameReason["fix"], string> = { leaddocket: "Fix in Lead Docket", sheet: "Fix the sheet", check: "Check" };
+const count = (n: number) => n.toLocaleString("en-US");
+const kindWord = (k: SignupKind) => (k === "inHouse" ? "in-house" : "referred out");
+
+/**
+ * The sheet's three team rows beside the report's numbers for them. The sheet's
+ * TOTAL is GBP + SEO; it has no Ads row.
+ */
+export function sheetTeamRows(sheet: ParsedSheet, report: ReportForSheet) {
+  const gbp = report.team.find((r) => r.group === "GBP");
+  const seo = report.team.find((r) => r.group === "SEO");
+  const val = (r: typeof gbp, k: SheetColumn) => (r?.[k] ?? null) as number | null;
+  const both = (k: SheetColumn) => {
+    if (k === "conversion") {
+      const l = (val(gbp, "leads") ?? 0) + (val(seo, "leads") ?? 0);
+      return l ? Math.round((((val(gbp, "signed") ?? 0) + (val(seo, "signed") ?? 0)) / l) * 1000) / 10 : null;
+    }
+    const a = val(gbp, k), b = val(seo, k);
+    return a == null || b == null ? null : Math.round((a + b) * 10) / 10;
+  };
+  return [
+    ["GBP", sheet.team.GBP, (k: SheetColumn) => val(gbp, k)],
+    ["SEO / Website", sheet.team.SEO, (k: SheetColumn) => val(seo, k)],
+    ["TOTAL (GBP + SEO)", sheet.team.TOTAL, both],
+  ] as [string, SheetTeamRow | null, (k: SheetColumn) => number | null][];
+}
+
+/**
+ * Every difference between a day's sheet tab and the report, as the variance
+ * log stores them. Shared by the Audit tab (an uploaded file) and the
+ * scheduled marketing-sheet sync (server/marketingSheetSync.ts), so both log
+ * the same differences in the same words.
+ */
+export function sheetVariances(
+  sheet: ParsedSheet,
+  report: ReportForSheet,
+  opts: { explained?: Map<string, NameReason> | null; staleSync?: { lastSuccessAt: string | null; state: string } | null } = {},
+): VarianceRow[] {
+  const rows = sheetTeamRows(sheet, report);
+  // The sheet has no Ads row, so its sign-ups are matched against GBP + SEO only.
+  const audit = auditSignups(sheet, report.signups.filter((s) => s.group !== "Ads"));
+  const items: VarianceRow[] = [];
+  for (const [name, s, crmOf] of rows) {
+    for (const [k, , label] of SHEET_COLUMNS) {
+      if (k === "conversion" || k === "target") continue;
+      const a = s?.[k] ?? null, b = crmOf(k);
+      if (a != null && b != null && a !== b) items.push({ kind: "total", itemKey: `${name}|${k}`, name: `${name} — ${label}`, detail: `Sheet ${count(a)} · Lead Docket ${count(b)}` });
+    }
+  }
+  for (const [name, s] of rows) {
+    const n = unbucketed(s);
+    if (n != null && n !== 0) items.push({ kind: "unbucketed", itemKey: name, name, detail: n > 0 ? `${n} lead(s) in no status column on the sheet` : `Status columns hold ${-n} more than Total Leads` });
+  }
+  for (const b of audit.statusDiffers) items.push({ kind: "status", itemKey: nameKey(b.crm.name), name: b.crm.name, detail: `Sheet: ${kindWord(b.sheet.kind)} · Lead Docket: ${kindWord(b.crm.kind)}` });
+  for (const s of audit.onlySheet) {
+    const why = opts.explained?.get(s.name);
+    items.push({ kind: "onlySheet", itemKey: nameKey(s.name), name: s.name, detail: why ? `${FIX_LABEL[why.fix]}: ${why.reason}` : `${kindWord(s.kind)} on the sheet; not found among Lead Docket's sign-ups` });
+  }
+  for (const c of audit.onlyCrm) items.push({ kind: "onlyCrm", itemKey: nameKey(c.name), name: c.name, detail: `${c.label} · ${kindWord(c.kind)} in Lead Docket; missing from the sheet` });
+  for (const b of audit.sourceDiffers) items.push({ kind: "source", itemKey: nameKey(b.crm.name), name: b.crm.name, detail: `Sheet: ${b.sheet.source} · Lead Docket: ${b.crm.label}` });
+  const st = opts.staleSync;
+  if (st) items.push({ kind: "sync", itemKey: "leaddocket", name: "Lead Docket sync", detail: `Last synced ${st.lastSuccessAt ?? "never"} (${st.state})` });
+  return items;
+}

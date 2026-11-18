@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle2, AlertTriangle, XCircle, Clock, Database, Sheet, Loader2, Scale } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-type Job = "leaddocket" | "sheets" | "filevine";
+type Job = "leaddocket" | "sheets" | "filevine" | "marketing_sheet";
 
 const JOBS: { job: Job; title: string; blurb: string; icon: any }[] = [
   {
@@ -25,6 +25,12 @@ const JOBS: { job: Job; title: string; blurb: string; icon: any }[] = [
     title: "Filevine case values",
     blurb: "Every 6 hours: each signed case's Initial Case Value from Filevine, matched to its Lead Docket lead by phone. Used only where Lead Docket has no Case Value, and shown as Filevine's.",
     icon: Scale,
+  },
+  {
+    job: "marketing_sheet",
+    title: "Digital marketing sheet",
+    blurb: "Every 30 minutes: the digital marketing team's MTD Performance Summary, today's tab, compared with Lead Docket. Differences go into the Digital Marketing Report's Audit tab variance log; a comparison is logged only when they change.",
+    icon: Sheet,
   },
 ];
 
@@ -54,14 +60,14 @@ export function DataSyncPanel() {
     // Poll while anything is running so the badge flips to done without a refresh.
     refetchInterval: (q) => {
       const d: any = q.state.data;
-      return d && (d.leaddocket?.state === "running" || d.sheets?.state === "running") ? 5000 : 60000;
+      return d && (d.leaddocket?.state === "running" || d.sheets?.state === "running" || d.marketing_sheet?.state === "running") ? 5000 : 60000;
     },
   });
   const run = trpc.dataSync.run.useMutation({
     onSuccess: (r, vars) => {
-      const label = vars.job === "sheets" ? "Google Sheets" : vars.job === "leaddocket_history" ? "The Lead Docket history backfill" : "Lead Docket";
+      const label = vars.job === "sheets" ? "Google Sheets" : vars.job === "marketing_sheet" ? "The digital marketing sheet" : vars.job === "leaddocket_history" ? "The Lead Docket history backfill" : "Lead Docket";
       // Lead Docket jobs share one rate limit, so "already running" can mean the other one is.
-      if (r.alreadyRunning) toast.info(vars.job === "sheets" ? "Google Sheets is already syncing." : "A Lead Docket sync is already running — try again when it finishes.");
+      if (r.alreadyRunning) toast.info(vars.job === "sheets" || vars.job === "marketing_sheet" ? `${label} is already syncing.` : "A Lead Docket sync is already running — try again when it finishes.");
       else toast.success(`${label} started — you can keep working.`);
       utils.dataSync.status.invalidate();
     },
@@ -77,7 +83,7 @@ export function DataSyncPanel() {
             <div className="text-sm font-semibold text-foreground">Data sync</div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Lead Docket syncs automatically every {data?.leadDocketMinutes ?? 5} minutes (leads deleted there are removed here too); Google Sheets every {data?.sheetsMinutes ?? 5} minutes; Filevine case values every 6 hours once Filevine is connected. Use the buttons to pull the latest now.
+            Lead Docket syncs automatically every {data?.leadDocketMinutes ?? 5} minutes (leads deleted there are removed here too); Google Sheets every {data?.sheetsMinutes ?? 5} minutes; Filevine case values every 6 hours once Filevine is connected; the digital marketing sheet every 30 minutes. Use the buttons to pull the latest now.
           </p>
         </div>
       </div>

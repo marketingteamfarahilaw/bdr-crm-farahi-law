@@ -15,7 +15,7 @@ import type { AppRouter } from "../../../../server/routers";
 import type { DrillLink } from "../../../../server/marketing/common";
 import { trpc } from "@/lib/trpc";
 import { DIGITAL_GROUP_LABEL, DIGITAL_GROUPS, MERCH } from "@shared/marketing";
-import { SHEET_COLUMNS, auditSignups, nameKey, parseSheet, tabForDay, unbucketed, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
+import { SHEET_COLUMNS, auditSignups, nameKey, parseSheet, sheetVariances, tabForDay, unbucketed, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
 import { fmt, leadDay, pct1, rangeLabel } from "../SignupsDashboard";
 import { LoadError } from "../signups/LoadError";
 import type { DigitalData } from "../DigitalMarketingReport";
@@ -171,23 +171,11 @@ function Comparison({ sheet, report, file, tab }: { sheet: ParsedSheet; report: 
   useEffect(() => {
     if (!lookedUp || savedFor.current === saveKey) return;
     savedFor.current = saveKey;
-    const items: VarianceRow[] = [];
-    for (const [name, s, crmOf] of rows) {
-      for (const [k, , label] of SHEET_COLUMNS) {
-        if (k === "conversion" || k === "target") continue;
-        const a = s?.[k] ?? null, b = crmOf(k);
-        if (a != null && b != null && a !== b) items.push({ kind: "total", itemKey: `${name}|${k}`, name: `${name} — ${label}`, detail: `Sheet ${fmt(a)} · Lead Docket ${fmt(b)}` });
-      }
-    }
-    for (const [name, n] of gaps) items.push({ kind: "unbucketed", itemKey: name, name, detail: n! > 0 ? `${n} lead(s) in no status column on the sheet` : `Status columns hold ${-n!} more than Total Leads` });
-    for (const b of audit.statusDiffers) items.push({ kind: "status", itemKey: nameKey(b.crm.name), name: b.crm.name, detail: `Sheet: ${kindWord(b.sheet.kind)} · Lead Docket: ${kindWord(b.crm.kind)}` });
-    for (const s of audit.onlySheet) {
-      const why = explained?.get(s.name);
-      items.push({ kind: "onlySheet", itemKey: nameKey(s.name), name: s.name, detail: why ? `${FIX_LABEL[why.fix]}: ${why.reason}` : `${kindWord(s.kind)} on the sheet; not found among Lead Docket's sign-ups` });
-    }
-    for (const c of audit.onlyCrm) items.push({ kind: "onlyCrm", itemKey: nameKey(c.name), name: c.name, detail: `${c.label} · ${kindWord(c.kind)} in Lead Docket; missing from the sheet` });
-    for (const b of audit.sourceDiffers) items.push({ kind: "source", itemKey: nameKey(b.crm.name), name: b.crm.name, detail: `Sheet: ${b.sheet.source} · Lead Docket: ${b.crm.label}` });
-    if (stale) items.push({ kind: "sync", itemKey: "leaddocket", name: "Lead Docket sync", detail: `Last synced ${syncedAt ? syncedAt.toISOString() : "never"} (${sync!.state})` });
+    // The same rows the scheduled marketing-sheet sync logs (shared/digitalSheet.ts).
+    const items = sheetVariances(sheet, report, {
+      explained,
+      staleSync: stale ? { lastSuccessAt: syncedAt ? syncedAt.toISOString() : null, state: sync!.state } : null,
+    });
     save.mutate({ from: report.period.from, to: report.period.to, file, tab, items: items.slice(0, 1000) });
   }, [lookedUp, saveKey]);
   return (

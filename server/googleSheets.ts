@@ -18,9 +18,12 @@ export const SHEETS = {
     id: process.env.GSHEET_CENTRALIZED_ID || "1duZo7gJ-eW0ZB08-VxYH_Z-0MiRYRBRnXKeoQvoylNw",
     label: "Centralized BDR/FR Reports",
   },
-  intake: {
-    id: process.env.GSHEET_INTAKE_ID || "1_PLPrmmOv0KIyuqd_e2AaDKpLWYFvq4byj4DFdAB49k",
-    label: "FLF Sign-up / Intake sheet",
+  // The digital marketing team's daily "MTD Performance Summary" (one tab per
+  // day), compared with Lead Docket by marketingSheetSync.ts. It was listed here
+  // as an intake sheet before anything read it; GSHEET_INTAKE_ID still works.
+  marketing: {
+    id: process.env.GSHEET_MARKETING_ID || process.env.GSHEET_INTAKE_ID || "1_PLPrmmOv0KIyuqd_e2AaDKpLWYFvq4byj4DFdAB49k",
+    label: "Digital Marketing MTD Performance Summary",
   },
 } as const;
 
