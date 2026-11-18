@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import xlsx from "xlsx";
+import { createHash } from "node:crypto";
 import { pacific, pacificYmd, serialParts } from "./dates.mjs";
 import { fullName } from "./leaddocket-rules.mjs";
 import { loadRedirects, redirectLookup } from "./facility-redirects.mjs";
@@ -159,33 +160,79 @@ console.log(`Already in the live RingCentral data (skipped): ${calls.length - fr
 calls.length = 0;
 calls.push(...fresh);
 
+// The rows this run would write. rcId is a stable synthetic id (its position).
+const now = new Date();
+const logRows = [], unmatchedRows = [];
+calls.forEach((call, i) => {
+  const rcId = `xls:${i}`;
+  if (call.facilityId) {
+    logRows.push([call.facilityId, "call", call.when, call.result, mmss(call.secs), call.callType,
+      call.name ? `Imported from spreadsheet — ${call.name}` : "Imported from spreadsheet", call.agent, "Outbound", 0, rcId, now]);
+  } else {
+    unmatchedRows.push([rcId, "Outbound", null, call.rawPhone || null, call.name || null, call.when, call.secs, call.result, call.agent, "unassigned", now]);
+  }
+});
+
+// The sheet's call history ends where the live RingCentral sync began (August
+// 2026), so it rarely changes, yet the sheets sync runs this every time. Skip
+// the rewrite when the rows are the same as last time AND the tables still
+// hold them all — a run cut off part-way leaves fewer, and is then redone.
+const FP_KEY = "calls_import_fingerprint";
+const fingerprint = createHash("sha1")
+  .update(JSON.stringify([logRows.map((r) => r.slice(0, -1)), unmatchedRows.map((r) => r.slice(0, -1))]))
+  .digest("hex");
+const [[{ v: lastFp } = { v: null }]] = await c.query("SELECT settingValue v FROM app_settings WHERE settingKey = ?", [FP_KEY]);
+const [[{ n: haveLogs }]] = await c.query("SELECT COUNT(*) n FROM contact_logs WHERE fromRingCentral = 0 AND rcCallId LIKE 'xls:%'");
+const [[{ n: haveUnmatched }]] = await c.query("SELECT COUNT(*) n FROM rc_unmatched_calls WHERE rcCallId LIKE 'xls:%'");
+if (lastFp === fingerprint && Number(haveLogs) === logRows.length && Number(haveUnmatched) === unmatchedRows.length) {
+  console.log(`✅ Call history unchanged since the last import (${logRows.length} contact_logs + ${unmatchedRows.length} unmatched calls) — nothing to write.`);
+  await c.end();
+  process.exit(0);
+}
+
 if (dry) { console.log("\n[DRY RUN] nothing written."); await c.end(); process.exit(0); }
 
-const [dl] = await c.query("DELETE FROM contact_logs WHERE fromRingCentral = 0 AND rcCallId LIKE 'xls:%'");
-const [du] = await c.query("DELETE FROM rc_unmatched_calls WHERE rcCallId LIKE 'xls:%'");
-console.log(`cleared previous excel imports: ${dl.affectedRows} contact_logs, ${du.affectedRows} unmatched`);
-
-let ins = 0, insU = 0, failed = 0, i = 0;
-for (const call of calls) {
-  const rcId = `xls:${i++}`;                       // stable synthetic id, keeps re-runs idempotent
-  try {
-    if (call.facilityId) {
-      await c.query(
-        `INSERT INTO contact_logs (facilityId, contactType, contactDate, callResult, callDuration, callType, summary, repName, direction, fromRingCentral, rcCallId, createdAt)
-         VALUES (?, 'call', ?, ?, ?, ?, ?, ?, 'Outbound', 0, ?, NOW())`,
-        [call.facilityId, call.when, call.result, mmss(call.secs), call.callType,
-         call.name ? `Imported from spreadsheet — ${call.name}` : "Imported from spreadsheet", call.agent, rcId]
-      );
-      ins++;
-    } else {
-      await c.query(
-        `INSERT INTO rc_unmatched_calls (rcCallId, direction, fromNumber, toNumber, toName, startTime, durationSeconds, callResult, agentName, status, createdAt)
-         VALUES (?, 'Outbound', NULL, ?, ?, ?, ?, ?, ?, 'unassigned', NOW())`,
-        [rcId, call.rawPhone || null, call.name || null, call.when, call.secs, call.result, call.agent]
-      );
-      insU++;
+// One transaction, many rows per INSERT. Inserting a row at a time took
+// ~150 ms each over the network — 11,000 calls ran past the sync's 30-minute
+// limit, and the run was stopped after the delete, leaving call history
+// half-empty. Now a failed run rolls back and the previous import stays.
+const LOG_SQL = `INSERT INTO contact_logs (facilityId, contactType, contactDate, callResult, callDuration, callType, summary, repName, direction, fromRingCentral, rcCallId, createdAt) VALUES ?`;
+const UNMATCHED_SQL = `INSERT INTO rc_unmatched_calls (rcCallId, direction, fromNumber, toNumber, toName, startTime, durationSeconds, callResult, agentName, status, createdAt) VALUES ?`;
+const BATCH = 500;
+let failed = 0;
+/** Insert in batches; a batch the database refuses is retried a row at a time so one bad row doesn't sink the rest. */
+async function insertAll(sqlText, rows) {
+  let ok = 0;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH);
+    try { await c.query(sqlText, [batch]); ok += batch.length; }
+    catch {
+      for (const row of batch) {
+        try { await c.query(sqlText, [[row]]); ok++; }
+        catch (e) { failed++; if (failed <= 6) console.warn("insert failed:", e.message.slice(0, 120)); }
+      }
     }
-  } catch (e) { failed++; if (failed <= 6) console.warn("insert failed:", e.message.slice(0, 120)); }
+  }
+  return ok;
 }
-console.log(`✅ Inserted ${ins} contact_logs + ${insU} unmatched calls (${failed} failed).`);
+
+await c.beginTransaction();
+try {
+  const [dl] = await c.query("DELETE FROM contact_logs WHERE fromRingCentral = 0 AND rcCallId LIKE 'xls:%'");
+  const [du] = await c.query("DELETE FROM rc_unmatched_calls WHERE rcCallId LIKE 'xls:%'");
+  console.log(`cleared previous excel imports: ${dl.affectedRows} contact_logs, ${du.affectedRows} unmatched`);
+  const ins = await insertAll(LOG_SQL, logRows);
+  const insU = await insertAll(UNMATCHED_SQL, unmatchedRows);
+  // Only a complete import is remembered, so a partial one is redone next time.
+  if (!failed) {
+    await c.query("INSERT INTO app_settings (settingKey, settingValue) VALUES (?, ?) ON DUPLICATE KEY UPDATE settingValue = VALUES(settingValue)", [FP_KEY, fingerprint]);
+  }
+  await c.commit();
+  console.log(`✅ Inserted ${ins} contact_logs + ${insU} unmatched calls (${failed} failed).`);
+} catch (e) {
+  await c.rollback().catch(() => {});
+  console.error("Call history import rolled back, previous import kept:", e.message);
+  await c.end();
+  process.exit(1);
+}
 await c.end();
