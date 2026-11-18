@@ -77,7 +77,7 @@ export function DataSyncPanel() {
             <div className="text-sm font-semibold text-foreground">Data sync</div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Lead Docket syncs automatically every {data?.leadDocketMinutes ?? 10} minutes (leads deleted there are removed here too); Google Sheets every {data?.intervalHours ?? 8} hours; Filevine case values every 6 hours once Filevine is connected. Use the buttons to pull the latest now.
+            Lead Docket syncs automatically every {data?.leadDocketMinutes ?? 5} minutes (leads deleted there are removed here too); Google Sheets every {data?.sheetsMinutes ?? 5} minutes; Filevine case values every 6 hours once Filevine is connected. Use the buttons to pull the latest now.
           </p>
         </div>
       </div>
@@ -181,13 +181,26 @@ export function LeadDocketSyncButton({ className = "", hintClassName = "" }: { c
   // anyone having to refresh the page.
   const prev = useRef(s?.state);
   useEffect(() => {
-    if (prev.current === "running" && s && s.state !== "running") { utils.teamReports.invalidate(); utils.marketing.invalidate(); }
+    if (prev.current === "running" && s && s.state !== "running") {
+      utils.teamReports.invalidate(); utils.marketing.invalidate();
+      // A run that ends badly says so, rather than the button quietly going back to normal.
+      if (s.state === "failed" || s.state === "partial") toast.error(`Lead Docket sync ${s.state === "failed" ? "failed" : "only partly finished"}: ${(s.error ?? s.summary ?? "no details").slice(0, 300)}`);
+    }
     prev.current = s?.state;
   }, [s?.state]);
+  // The last run's trouble, shown beside the button until a run succeeds.
+  const trouble = s && (s.state === "failed" || s.state === "partial") ? (s.error ?? s.summary ?? "no details") : null;
 
   return (
     <div className="flex items-center gap-2">
-      {s && <span className={`text-xs hidden sm:inline ${hintClassName || "text-muted-foreground"}`}>Lead Docket synced {ago(s.lastSuccessAt)}</span>}
+      {s && <span className={`text-xs hidden sm:inline ${hintClassName || "text-muted-foreground"}`}>
+        Lead Docket synced {ago(s.lastSuccessAt)}{s.state === "running" && s.startedAt ? ` · this run started ${ago(s.startedAt)}` : ""}
+      </span>}
+      {trouble && (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400" title={trouble}>
+          <AlertTriangle className="w-3.5 h-3.5" aria-hidden /> Last sync {s!.state === "failed" ? "failed" : "partly failed"}
+        </span>
+      )}
       <Button
         size="sm"
         variant="outline"

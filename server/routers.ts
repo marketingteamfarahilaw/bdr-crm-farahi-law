@@ -134,6 +134,9 @@ import { getMarketingLeads, exportMarketingLeads } from "./marketing/leadFilter"
 import { DM_BUCKETS, DM_OUTCOMES } from "./marketing/digital";
 import { getDigitalMarketingReport } from "./digitalMarketing";
 import { getDigitalAudit, getSourceDirectory } from "./digitalAudit";
+import { explainSheetNames } from "./sheetNames";
+import { listLocks, lockMonth, readSnapshot, unlockMonth, wholeMonthOf } from "./monthLock";
+import { VARIANCE_KINDS, readLog, saveComparison } from "./varianceLog";
 import { comparisonRange, rangeWords } from "./marketing/compare";
 import { listSourceNames, setSpendOne, setSpendMany, copySpend } from "./marketing/spend";
 
@@ -269,7 +272,7 @@ export const appRouter = router({
         getSyncStatus("leaddocket"), getSyncStatus("leaddocket_history"), getSyncStatus("sheets"), checkSheets(),
         getSyncStatus("filevine"), filevineConfigured(),
       ]);
-      return { leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineConfigured: filevineReady, intervalHours: SYNC_INTERVAL_MS / 3_600_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
+      return { leaddocket, leaddocket_history, sheets, sheetAccess, filevine, filevineConfigured: filevineReady, sheetsMinutes: SYNC_INTERVAL_MS / 60_000, leadDocketMinutes: LEADDOCKET_INTERVAL_MS / 60_000, leadDocketConfigured: !!process.env.LEADDOCKET_API_KEY };
     }),
     run: bdProcedure
       .input(z.object({ job: z.enum(["leaddocket", "leaddocket_history", "sheets", "filevine"]) }))
@@ -885,6 +888,11 @@ export const appRouter = router({
       if (!canSeeMarketing(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "The Marketing Report is for the BD/FR team." });
       return next();
     });
+    // Locking a month's numbers is a manager's call, like entering spend.
+    const lockProcedure = marketingProcedure.use(({ ctx, next }) => {
+      if (!canManage(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can lock or unlock a month." });
+      return next();
+    });
     const spendProcedure = marketingProcedure.use(({ ctx, next }) => {
       if (!canEditMarketingSpend(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can enter marketing spend." });
       return next();
@@ -936,10 +944,24 @@ export const appRouter = router({
         .input(leadScope)
         .query(({ ctx, input }) => exportMarketingLeads({ ...input, ...toRange(input), caseFacts: marketingCaseFacts(ctx.user.role) })),
       // Digital Marketing Report — the digital team's MTD summary, from the same leads.
+      // A locked month (monthLock.ts) loads from its saved copy; any other range is live.
       digital: marketingProcedure
         .input(range)
-        .query(({ input }) => getDigitalMarketingReport({ ...toRange(input), fromDay: input.from, toDay: input.to },
-          formatInTimeZone(new Date(), MARKETING_TZ, "yyyy-MM-dd"))),
+        .query(async ({ input }) => {
+          const month = wholeMonthOf(input.from, input.to);
+          const saved = month ? await readSnapshot(month) : null;
+          if (saved) return { ...saved.report, locked: saved.lock };
+          const live = await getDigitalMarketingReport({ ...toRange(input), fromDay: input.from, toDay: input.to },
+            formatInTimeZone(new Date(), MARKETING_TZ, "yyyy-MM-dd"));
+          return live && { ...live, locked: null };
+        }),
+      monthLocks: marketingProcedure.query(() => listLocks()),
+      lockMonth: lockProcedure
+        .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) }))
+        .mutation(({ ctx, input }) => lockMonth(input.month, String(ctx.user.name || ctx.user.email || `user ${ctx.user.id}`))),
+      unlockMonth: lockProcedure
+        .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) }))
+        .mutation(({ input }) => unlockMonth(input.month)),
       // Its Audit tab: leads Lead Docket may have credited to the wrong source, and source-name hygiene.
       // compare: the period before or the same dates a year earlier, as the report's "vs" control (this period only).
       digitalAudit: marketingProcedure
@@ -955,8 +977,26 @@ export const appRouter = router({
             compare: c ? { ...toRange(c), fromDay: c.from, toDay: c.to, label: rangeWords(c.from, c.to, Number(input.to.slice(0, 4))) } : null,
           });
         }),
+      // The Audit tab's names on the team's sheet that this period's sign-ups lack: why each is missing, and the sync's state.
+      sheetNames: marketingProcedure
+        .input(range.extend({ names: z.array(z.string().max(255)).max(200) }))
+        .query(({ input }) => explainSheetNames(input.names, { fromDay: input.from, toDay: input.to })),
       // Every Marketing Source, Contact Source and Campaign in Lead Docket, all time — the shareable directory.
       sourceDirectory: marketingProcedure.query(() => getSourceDirectory()),
+      // The running variance log: each sheet comparison's differences, saved with the date (varianceLog.ts).
+      saveVariances: marketingProcedure
+        .input(range.extend({
+          file: z.string().max(255), tab: z.string().max(60),
+          items: z.array(z.object({
+            kind: z.enum(VARIANCE_KINDS), itemKey: z.string().max(255), name: z.string().max(255), detail: z.string().max(1000),
+          })).max(1000),
+        }))
+        .mutation(({ ctx, input }) => saveComparison(
+          { fromDay: input.from, toDay: input.to, file: input.file, tab: input.tab, by: String(ctx.user.name || ctx.user.email || `user ${ctx.user.id}`) },
+          input.items)),
+      varianceLog: marketingProcedure
+        .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) }))
+        .query(({ input }) => readLog(input.month)),
       spend: marketingProcedure.input(z.object({ months: z.array(month).max(240) })).query(({ input }) => listMarketingSpend(input.months)),
       sourceNames: marketingProcedure.query(() => listSourceNames()),
       setSpend: spendProcedure

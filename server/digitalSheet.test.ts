@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nameKey, parseSheet, reconcileNames, sameName, tabForDay, type Cell } from "@shared/digitalSheet";
+import { auditSignups, nameKey, parseSheet, reconcileNames, sameName, sameSource, tabForDay, unbucketed, type Cell } from "@shared/digitalSheet";
 
 // The team's layout, with placeholder names.
 const rows: Cell[][] = [
@@ -60,5 +60,54 @@ describe("names", () => {
     expect(r.both).toHaveLength(2);
     expect(r.onlySheet.map((x) => x.name)).toEqual(["Only In Sheet"]);
     expect(r.onlyCrm.map((x) => x.name)).toEqual(["Only In Ld"]);
+  });
+});
+
+describe("unbucketed", () => {
+  it("is zero when the status columns hold every lead", () => {
+    expect(unbucketed(parseSheet(rows).team.GBP)).toBe(0);   // 4+39+26+7+8+22 = 106
+  });
+  it("counts the leads a row leaves in no column", () => {
+    expect(unbucketed(parseSheet(rows).team.SEO)).toBe(10);  // 6+18+21+6+1+10 = 62 of 72
+  });
+  it("says nothing without a total or any column", () => {
+    expect(unbucketed(null)).toBeNull();
+    expect(unbucketed({ open: 3 })).toBeNull();
+    expect(unbucketed({ leads: 5 })).toBeNull();
+  });
+});
+
+describe("sameSource", () => {
+  const crm = { label: "GBP Visalia", source: "GMB - Visalia Office" };
+  it("matches the sheet's hand-written names loosely", () => {
+    expect(sameSource(" GBP Visalia", crm)).toBe(true);
+    expect(sameSource("Visalia", crm)).toBe(true);
+    expect(sameSource("Justin for Justice", { label: "Justin For Justice — website (form, chat, search)", source: "Justin For Justice" })).toBe(true);
+  });
+  it("flags a different source, but never a blank one", () => {
+    expect(sameSource("GBP Fresno", crm)).toBe(false);
+    expect(sameSource("", crm)).toBe(true);
+  });
+});
+
+describe("auditSignups", () => {
+  const s = (name: string, source = "") => ({ name, source, caseValue: "", caseType: "" });
+  const c = (name: string, kind: "inHouse" | "referred", label = "GBP Visalia") => ({ name, kind, label, source: label });
+  const a = auditSignups(
+    { inHouse: [s("Ana Placeholder", "GBP Visalia"), s("Ben Example"), s("Gus Ghost")], referred: [s("Cara Sample", "GBP Fresno")] },
+    [c("Ana Placeholder", "inHouse"), c("Ben Example", "referred"), c("Cara Sample", "referred"), c("Dee Only", "inHouse")],
+  );
+  it("pairs the same kind as agreeing", () => {
+    expect(a.agree.map((p) => p.crm.name).sort()).toEqual(["Ana Placeholder", "Cara Sample"]);
+  });
+  it("reports in-house on the sheet but referred in Lead Docket once, as a status difference", () => {
+    expect(a.statusDiffers.map((p) => [p.sheet.name, p.sheet.kind, p.crm.kind])).toEqual([["Ben Example", "inHouse", "referred"]]);
+  });
+  it("flags a matched lead whose source differs", () => {
+    expect(a.sourceDiffers.map((p) => p.sheet.name)).toEqual(["Cara Sample"]);
+  });
+  it("leaves only the truly unmatched on either side", () => {
+    expect(a.onlySheet.map((x) => x.name)).toEqual(["Gus Ghost"]);
+    expect(a.onlyCrm.map((x) => x.name)).toEqual(["Dee Only"]);
   });
 });
