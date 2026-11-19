@@ -71,6 +71,10 @@ describe("digitalGroupOf", () => {
     ["KJ FB Organic", "Ads", "Social Media"],
     ["JFJ Facebook", "Ads", "Social Media"],
     ["RND Worx", "Ads", "RND Worx Google Ads"],
+    ["Billboard", "Ads", "Billboards"],
+    ["JFJ Billboard - I-5 Bakersfield", "Ads", "Billboards"],
+    ["Google Ads - Search", "Ads", "Other Google Ads"],
+    ["Emailer", "SEO", OTHER_CHANNELS],
   ];
   for (const [source, group, label] of cases) {
     it(`${source} → ${group} / ${label}`, () => expect(digitalGroupOf(source)).toEqual({ group, label }));
