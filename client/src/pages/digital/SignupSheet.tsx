@@ -61,14 +61,20 @@ export function SignupSheetTab() {
 
   const referred = rows.filter(isReferred).length;
   const digital = d.rows.filter((r) => r.group).length;
-  // Sign-ups by the sheet's Source column, most first.
-  const bySource = new Map<string, { signed: number; referred: number; group: SignupSheetRow["group"] }>();
+  // Digital marketing's sign-ups by the sheet's Source column, grouped GBP,
+  // Website, Ads and most first within each. Walker, referrals and the reps'
+  // sign-ups aren't digital marketing's, so they aren't listed here.
+  const bySource = new Map<string, { signed: number; referred: number; group: NonNullable<SignupSheetRow["group"]> }>();
   for (const r of rows) {
+    if (!r.group) continue;
     const s = bySource.get(r.source || "(blank)") ?? { signed: 0, referred: 0, group: r.group };
     if (isReferred(r)) s.referred++; else s.signed++;
     bySource.set(r.source || "(blank)", s);
   }
-  const sources = Array.from(bySource.entries()).sort((a, b) => b[1].signed + b[1].referred - (a[1].signed + a[1].referred));
+  const GROUP_ORDER = { GBP: 0, SEO: 1, Ads: 2 } as const;
+  const sources = Array.from(bySource.entries()).sort((a, b) =>
+    GROUP_ORDER[a[1].group] - GROUP_ORDER[b[1].group] || b[1].signed + b[1].referred - (a[1].signed + a[1].referred));
+  const sourceTotal = sources.reduce((t, [, s]) => ({ signed: t.signed + s.signed, referred: t.referred + s.referred }), { signed: 0, referred: 0 });
 
   const exportCsv = () => downloadCsv(`flf-signup-sheet-${new Date().toISOString().slice(0, 10)}.csv`, [
     ["Sign-up date", "Source", "Lead source", "Digital group", "Signed up by", "Intake by", "Outcome", "Client name", "Value", "Tier", "Case type", "Referral status", ...(facts ? FACT_COLS.map(([, l]) => l) : [])],
@@ -103,20 +109,25 @@ export function SignupSheetTab() {
 
       <div className="sr-panel">
         <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
-          <div className="sr-ttl"><h2>By source</h2></div>
+          <div className="sr-ttl"><h2>By source — digital marketing</h2></div>
         </div>
-        {sources.length === 0 ? <p className="sr-nil">No sign-ups match.</p> : (
+        <p className="sr-sub">GMB, the JFJ website and brand sites, Intaker, Yelp, Facebook and Instagram. Walker, referrals and the reps' sign-ups aren't digital marketing's and aren't listed.</p>
+        {sources.length === 0 ? <p className="sr-nil">No digital marketing sign-ups match.</p> : (
           <div className="sr-scroll">
             <table className="sr-t dm-t" style={{ minWidth: 420 }}>
-              <thead><tr><th>Source</th><th>Digital</th><th className="num">Signed in-house</th><th className="num">Referred out</th><th className="num">Total</th></tr></thead>
+              <thead><tr><th>Source</th><th>Group</th><th className="num">Signed in-house</th><th className="num">Referred out</th><th className="num">Total</th></tr></thead>
               <tbody>
                 {sources.map(([name, s]) => (
                   <tr key={name}>
                     <td className="l"><b>{name}</b></td>
-                    <td>{s.group ? GROUP_LABEL[s.group] : <span className="muted">—</span>}</td>
+                    <td>{GROUP_LABEL[s.group]}</td>
                     <td className="num">{fmt(s.signed)}</td><td className="num">{fmt(s.referred)}</td><td className="num"><b>{fmt(s.signed + s.referred)}</b></td>
                   </tr>
                 ))}
+                <tr className="foot">
+                  <td className="l" colSpan={2}>Digital marketing</td>
+                  <td className="num">{fmt(sourceTotal.signed)}</td><td className="num">{fmt(sourceTotal.referred)}</td><td className="num"><b>{fmt(sourceTotal.signed + sourceTotal.referred)}</b></td>
+                </tr>
               </tbody>
             </table>
           </div>
