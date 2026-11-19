@@ -1,8 +1,8 @@
 /**
  * The Digital Marketing Report's "Sign-up sheet" tab: the FLF sign-up sheet
  * (its Current Month tab), live from Google Sheets via server/signupSheet.ts.
- * Every sign-up the sheet logs — not only digital ones — with a filter for
- * the digital rows (GBP, website, social ads) the Audit tab compares with Lead Docket.
+ * Digital marketing's sign-ups only (GBP, website, ads) — the ones the Audit
+ * tab compares with Lead Docket; the server sends no others.
  *
  * Intake case facts (liability, medical visits, case manager, referred
  * attorney…) arrive only for those allowed them; the columns are left out for
@@ -17,7 +17,6 @@ import type { SignupSheetRow } from "@shared/digitalSheet";
 import { fmt } from "../SignupsDashboard";
 import { LoadError } from "../signups/LoadError";
 
-type Scope = "all" | "digital";
 type Outcome = "all" | "signed" | "referred";
 const isReferred = (r: SignupSheetRow) => /^referred/i.test(r.outcome);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -36,7 +35,6 @@ export function SignupSheetTab() {
   const utils = trpc.useUtils();
   const q = trpc.marketing.signupSheet.useQuery({ fresh: false }, { staleTime: 60_000 });
   const [refreshing, setRefreshing] = useState(false);
-  const [scope, setScope] = useState<Scope>("all");
   const [outcome, setOutcome] = useState<Outcome>("all");
   const [search, setSearch] = useState("");
 
@@ -55,15 +53,12 @@ export function SignupSheetTab() {
 
   const k = search.trim().toLowerCase();
   const rows = d.rows.filter((r) =>
-    (scope === "all" || r.group) &&
     (outcome === "all" || (outcome === "referred") === isReferred(r)) &&
     (!k || [r.clientName, r.source, r.leadSource, r.signedUpBy, r.intaker, r.caseType].some((v) => v.toLowerCase().includes(k))));
 
-  // The KPIs are digital marketing's alone, like By source: the sign-ups the
-  // filters below show, less Walker, referrals and the reps'.
-  const dm = rows.filter((r) => r.group);
+  // Every row is digital marketing's: the server sends no others.
+  const dm = rows;
   const referred = dm.filter(isReferred).length;
-  const digital = d.rows.filter((r) => r.group).length;
   // Digital marketing's sign-ups by the sheet's Source column, grouped GBP,
   // Website, Ads and most first within each. Walker, referrals and the reps'
   // sign-ups aren't digital marketing's, so they aren't listed here.
@@ -89,15 +84,16 @@ export function SignupSheetTab() {
     <>
       <div className="sr-panel">
         <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
-          <div className="sr-ttl"><h2>FLF sign-up sheet</h2><span className="sr-count">{fmt(d.rows.length)}</span></div>
+          <div className="sr-ttl"><h2>FLF sign-up sheet — digital marketing</h2><span className="sr-count">{fmt(d.rows.length)}</span></div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <a className="sr-btn2" href={d.sheetUrl} target="_blank" rel="noreferrer"><ExternalLink /> Open sheet</a>
             <button className="sr-btn2" onClick={() => void refresh()} disabled={refreshing}>{refreshing ? <Loader2 className="sr-spin" /> : <RefreshCw />} Refresh</button>
           </div>
         </div>
         <p className="sr-sub">
-          Live from Google Sheets — tab <b>{d.tab}</b>, read {formatDistanceToNow(new Date(d.fetchedAt), { addSuffix: true })}. Every sign-up the sheet logs;
-          {" "}<b>{fmt(digital)}</b> are digital marketing (GMB, the JFJ website and brand sites, Intaker, Yelp, Facebook, Instagram) and are the ones the Data audit compares with Lead Docket.
+          Live from Google Sheets — tab <b>{d.tab}</b>, read {formatDistanceToNow(new Date(d.fetchedAt), { addSuffix: true })}. Digital marketing's sign-ups only —
+          {" "}<b>{fmt(d.rows.length)}</b> of the sheet's {fmt(d.sheetTotal)} (GMB, the JFJ website and brand sites, Intaker, Yelp, Facebook, Instagram, Google Ads, emailers, billboards),
+          the ones the Data audit compares with Lead Docket. Walker, referrals and the reps' sign-ups are left out.
           {!facts && <> Intake case details aren't shown for your role.</>}
         </p>
         <div className="dm-kpis">
@@ -141,10 +137,6 @@ export function SignupSheetTab() {
         <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
           <div className="sr-ttl"><h2>Sign-ups</h2><span className="sr-count">{fmt(rows.length)}</span></div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <div className="sr-seg" role="group" aria-label="Sources">
-              <button className={scope === "all" ? "on" : ""} onClick={() => setScope("all")}>All sources</button>
-              <button className={scope === "digital" ? "on" : ""} onClick={() => setScope("digital")}>Digital only</button>
-            </div>
             <div className="sr-seg" role="group" aria-label="Outcome">
               <button className={outcome === "all" ? "on" : ""} onClick={() => setOutcome("all")}>All</button>
               <button className={outcome === "signed" ? "on" : ""} onClick={() => setOutcome("signed")}>Signed</button>
@@ -154,7 +146,7 @@ export function SignupSheetTab() {
             <button className="sr-btn2" disabled={!rows.length} onClick={exportCsv}><Download /> CSV</button>
           </div>
         </div>
-        {rows.length === 0 ? <p className="sr-nil">{d.rows.length ? "No sign-ups match." : "The sheet has no sign-ups yet."}</p> : (
+        {rows.length === 0 ? <p className="sr-nil">{d.rows.length ? "No sign-ups match." : "The sheet has no digital marketing sign-ups yet."}</p> : (
           <div className="sr-scroll">
             <table className="sr-t dm-t sr-leads" style={{ minWidth: facts ? 1900 : 1100 }}>
               <thead>
