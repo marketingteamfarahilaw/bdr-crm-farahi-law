@@ -91,16 +91,17 @@ describe("sourceHygiene", () => {
     expect(visalia.names.map((x) => x.source)).toEqual(["GMB 525 W Main St Visalia", "GMB 525 W. Main St Visalia"]);
     expect(visalia.leads).toBe(22);
   });
-  it("flags names that look digital but aren't counted, and knows merch", () => {
+  it("flags names that look digital but aren't counted, and lists nothing that isn't digital marketing's", () => {
     expect(h.lookDigital.map((x) => x.source)).toEqual(["Online Ads Agency"]);
-    expect(h.merch.map((x) => x.source)).toEqual(["Justin - Note Pad and Post it"]);
-    expect(h.merch.length && MERCH).toBe(MERCH);
+    // Merch, Walker and existing clients aren't digital marketing's concern.
+    expect("merch" in h).toBe(false);
+    expect(JSON.stringify(h)).not.toMatch(/Note Pad|Existing Client/);
   });
   it("pairs near-duplicate spellings, but not Walker's numbered contracts", () => {
     const sets = h.duplicates.map((d) => d.names.map((x) => x.source).sort());
     expect(sets).toContainEqual(["GMB 525 W Main St Visalia", "GMB 525 W. Main St Visalia"]);
     expect(sets).toContainEqual(["Justin For Justice Toll Free for Website", "Justin For Justice website", "JustinforJustice Website"]);
-    expect(sets.some((s) => s.some((x) => x.includes("Contract")))).toBe(false);
+    expect(sets.some((s) => s.some((x) => x.includes("Walker")))).toBe(false);   // not digital, so not listed at all
     // The JFJ cluster spans two report rows — the website and the shared toll-free line.
     expect(h.duplicates.find((d) => d.names.length === 3)!.rows).toHaveLength(2);
   });
@@ -116,14 +117,14 @@ describe("teamCampaigns", () => {
   ]);
 
   it("groups by campaign ignoring case and spacing, names the rep, and skips blank campaigns", () => {
-    expect(rows.map((r) => r.campaign)).toEqual(["Justin For Justice Toll Free for Website", "Google Ads PPC", "Spring tow drive"]);
+    expect(rows.map((r) => r.campaign)).toEqual(["Justin For Justice Toll Free for Website", "Google Ads PPC"]);
     expect(rows[0]).toMatchObject({ kind: "Toll-free line", leads: 2, signed: 1 });
     expect(rows[0].clients.map((c) => c.rep)).toEqual(["Lupe Campos", "Ally Maceda"]);
   });
 
-  it("files marketing campaigns before the rest", () => {
-    expect(rows[1].kind).toBe("Ads");
-    expect(rows[2].kind).toBe("Other");
+  it("lists digital marketing campaigns only", () => {
+    expect(rows.map((r) => r.kind)).toEqual(["Toll-free line", "Ads"]);
+    expect(rows.some((r) => r.campaign === "Spring tow drive")).toBe(false);
   });
 });
 

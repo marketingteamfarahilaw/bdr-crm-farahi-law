@@ -25,7 +25,7 @@ import type { MySqlColumn } from "drizzle-orm/mysql-core";
 import { fromZonedTime } from "date-fns-tz";
 import { getDb } from "./db";
 import { leaddocketLeads } from "../drizzle/schema";
-import { DIGITAL_GROUPS, NO_SOURCE, TEAM_CHANNEL, TOLL_FREE, channelOfSource, digitalGroupOf, isTollFreeLine, sourceCategoryOf, type DigitalGroup } from "@shared/marketing";
+import { DIGITAL_GROUPS, DIGITAL_SOURCE_PATTERN, NO_SOURCE, TEAM_CHANNEL, TOLL_FREE, channelOfSource, digitalGroupOf, isTollFreeLine, sourceCategoryOf, type DigitalGroup } from "@shared/marketing";
 import { TZ, bdFrOnly, clean, notBdFr, sourceOf } from "./marketing/common";
 import { routeOf } from "./marketing/routes";
 import { isSigned } from "./signupsReport";
@@ -172,6 +172,10 @@ export type TeamCampaign = {
  * often calls the toll-free number they were handed, and the intake notes say
  * so — so this is a list to review, not a recount: a lead that really came in
  * on its own is moved by changing its Marketing Source in Lead Docket.
+ *
+ * Only campaigns that are digital marketing's (GBP, the website, ads, the
+ * toll-free line) are listed: the Audit tab is digital marketing's alone
+ * (2026-11-19), and a rep's lead on any other campaign isn't its concern.
  */
 export function teamCampaigns(leads: AuditLead[], cap = LIST_CAP): TeamCampaign[] {
   const by = new Map<string, TeamCampaign>();
@@ -180,6 +184,7 @@ export function teamCampaigns(leads: AuditLead[], cap = LIST_CAP): TeamCampaign[
     if (!campaign) continue;
     const key = campaign.toLowerCase();
     const kind: TeamCampaign["kind"] = isTollFreeLine(campaign) ? "Toll-free line" : evidenceOf({ contactSource: null, campaign, utm: null, referringUrl: null, keywords: null })?.group ?? "Other";
+    if (kind === "Other") continue;
     const e = by.get(key) ?? { campaign, kind, leads: 0, signed: 0, clients: [] };
     e.leads++;
     if (isSigned(l.outcome)) e.signed++;
@@ -246,9 +251,8 @@ export function sourceHygiene(names: SourceName[]) {
     .map((r) => ({ ...r, names: r.names.sort((a, b) => b.leads - a.leads || a.source.localeCompare(b.source)), leads: r.names.reduce((a, n) => a + n.leads, 0) }))
     .sort((a, b) => DIGITAL_GROUPS.indexOf(a.group) - DIGITAL_GROUPS.indexOf(b.group) || b.leads - a.leads || a.label.localeCompare(b.label));
 
-  const lookDigital = real.filter((n) => sourceCategoryOf(n.source).kind === "other" && DIGITAL_WORDS.test(n.source)).sort((a, b) => b.leads - a.leads);
-  // Known and not digital, so not a gap: the firm's merch and print.
-  const merch = real.filter((n) => sourceCategoryOf(n.source).kind === "merch").sort((a, b) => b.leads - a.leads);
+  const looksDigital = (n: SourceName) => sourceCategoryOf(n.source).kind === "other" && DIGITAL_WORDS.test(n.source);
+  const lookDigital = real.filter(looksDigital).sort((a, b) => b.leads - a.leads);
 
   // Union-find over the names.
   const parent = real.map((_, i) => i);
@@ -269,8 +273,10 @@ export function sourceHygiene(names: SourceName[]) {
   }
   const clusters = new Map<number, SourceName[]>();
   real.forEach((n, i) => { const r = find(i); clusters.set(r, [...(clusters.get(r) ?? []), n]); });
+  // Only spellings that touch digital marketing: one of the names is counted
+  // as digital, or looks it. Walker's or a rep's spellings aren't its concern.
   const duplicates = Array.from(clusters.values())
-    .filter((c) => c.length > 1)
+    .filter((c) => c.length > 1 && c.some((n) => sourceCategoryOf(n.source).kind === "digital" || looksDigital(n)))
     .map((c) => {
       const sorted = c.sort((a, b) => b.leads - a.leads || a.source.localeCompare(b.source));
       const groups = new Set(sorted.map((n) => {
@@ -287,7 +293,7 @@ export function sourceHygiene(names: SourceName[]) {
     })
     .sort((a, b) => b.rows.length - a.rows.length || b.leads - a.leads);
 
-  return { perRow, lookDigital, merch, duplicates };
+  return { perRow, lookDigital, duplicates };
 }
 
 // ── reading ──
@@ -359,8 +365,10 @@ export async function getDigitalAudit(
  * used, with how many leads and sign-ups each carries and where the CRM files
  * it — the list the team shares as a PDF (Youssef, 2026-09-30: "all the
  * channels and sources in Lead Docket in a PDF to share with the team").
- * All leads, BD/FR included, so nothing in Lead Docket is missing from it.
- * Names and counts only: no client appears.
+ * Digital marketing's alone (2026-11-19): its Marketing Sources (and the
+ * toll-free line), and the Contact Sources and Campaigns of its leads —
+ * not Walker's, the BD/FR team's, staff or merch. Names and counts only: no
+ * client appears.
  */
 export type DirectoryRow = { name: string; leads: number; signed: number; first: string | null; last: string | null; category: string; detail: string };
 
@@ -377,11 +385,13 @@ function classifyMarketing(name: string, bdFr: boolean): { category: string; det
 export async function getSourceDirectory() {
   const db = await getDb();
   if (!db) return null;
+  // Digital marketing's leads: the same pattern the report counts with (isDigitalSource), BD/FR excluded.
+  const digitalLeads = and(notBdFr, sql`LOWER(TRIM(${L.marketingSource})) REGEXP ${DIGITAL_SOURCE_PATTERN}`);
   const field = (col: MySqlColumn) =>
     db.select({
       name: col, outcome: L.outcome, bdFr: sql<number>`MAX(${L.teamRole} IN ('BDR', 'FR'))`,
       leads: sql<number>`COUNT(*)`, first: sql<Date | null>`MIN(${L.leadDate})`, last: sql<Date | null>`MAX(${L.leadDate})`,
-    }).from(L).groupBy(col, L.outcome);   // the plain column, as above; fold() trims and merges
+    }).from(L).where(digitalLeads).groupBy(col, L.outcome);   // the plain column, as above; fold() trims and merges
 
   const [ms, cs, cp] = await Promise.all([field(L.marketingSource), field(L.contactSource), field(L.campaign)]);
 
@@ -413,7 +423,8 @@ export async function getSourceDirectory() {
 
   return {
     generated: new Date().toISOString(),
-    marketing: fold(ms, classifyMarketing),
+    // The SQL pattern and classifyMarketing agree; the filter keeps a stray mismatch out all the same.
+    marketing: fold(ms, classifyMarketing).filter((r) => r.category.startsWith("Digital") || r.category === "Toll-free line"),
     contact: fold(cs, plain),
     campaign: fold(cp, plain),
   };
