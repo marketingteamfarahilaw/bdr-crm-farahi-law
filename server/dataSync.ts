@@ -20,6 +20,7 @@ import { getSetting, setSetting } from "./db";
 import { downloadWorkbook } from "./googleSheets";
 import { filevineConfigured } from "./filevine";
 import { FIRST_SINCE, syncFilevineCaseValues } from "./filevineCaseValues";
+import { runMarketingSheetSync } from "./marketingSheetSync";
 
 /**
  * leaddocket_history is a one-off backfill of every lead since 2020, in every
@@ -35,7 +36,7 @@ import { FIRST_SINCE, syncFilevineCaseValues } from "./filevineCaseValues";
  * HISTORY_CHUNK (about an hour each), and runDueJobs starts the next chunk
  * whenever the regular sync isn't due, until the sync reports none remaining.
  */
-export type JobName = "leaddocket" | "leaddocket_history" | "sheets" | "filevine";
+export type JobName = "leaddocket" | "leaddocket_history" | "sheets" | "filevine" | "marketing_sheet";
 
 /** Jobs that draw on the same external rate limit and must not overlap. */
 const SHARES_BUDGET: Record<JobName, JobName[]> = {
@@ -43,6 +44,7 @@ const SHARES_BUDGET: Record<JobName, JobName[]> = {
   leaddocket_history: ["leaddocket"],
   sheets: [],
   filevine: [],
+  marketing_sheet: [],
 };
 
 export type JobStatus = {
@@ -58,18 +60,32 @@ export type JobStatus = {
 const KEY = (job: JobName) => `sync_status_${job}`;
 const running = new Set<JobName>();
 
-/** The Google Sheets sync: every eight hours, per the team's request. */
-export const SYNC_INTERVAL_MS = 8 * 60 * 60 * 1000;
 /**
- * The Lead Docket sync: every ten minutes, close to live (Youssef, 2026-10-08).
- * A run lists every lead (~3 minutes at Lead Docket's list pace) and reads only
- * the ones that changed, so it stays well inside Lead Docket's rate limits; it
- * also removes leads deleted in Lead Docket (sync-leaddocket.mjs).
+ * The Google Sheets sync: every five minutes (was eight hours), so the
+ * workbook's edits show in the CRM through the day. The interval counts from
+ * the start of the last good run and a job never overlaps itself, so a run
+ * that takes longer than five minutes just means the next starts when it ends.
  */
-export const LEADDOCKET_INTERVAL_MS = 10 * 60 * 1000;
+export const SYNC_INTERVAL_MS = 5 * 60 * 1000;
+/**
+ * The Lead Docket sync: every five minutes, close to live (was ten,
+ * Youssef, 2026-10-08). A run lists every lead (~3 minutes at Lead Docket's
+ * list pace) and reads only the ones that changed, so it stays inside Lead
+ * Docket's rate limits; it also removes leads deleted in Lead Docket
+ * (sync-leaddocket.mjs). The history backfill gets less time between runs.
+ */
+export const LEADDOCKET_INTERVAL_MS = 5 * 60 * 1000;
 /** Filevine case values: every 6 hours, once Filevine's credentials are saved (filevineCaseValues.ts). */
 export const FILEVINE_INTERVAL_MS = 6 * 60 * 60 * 1000;
-export const intervalOf = (job: JobName) => (job === "leaddocket" ? LEADDOCKET_INTERVAL_MS : job === "filevine" ? FILEVINE_INTERVAL_MS : SYNC_INTERVAL_MS);
+/**
+ * The digital marketing sheet vs Lead Docket (marketingSheetSync.ts): every 30
+ * minutes. The team fills the sheet in through the day; a comparison is logged
+ * only when its differences change, so a shorter interval adds no rows.
+ */
+export const MARKETING_SHEET_INTERVAL_MS = 30 * 60 * 1000;
+export const intervalOf = (job: JobName) =>
+  job === "leaddocket" ? LEADDOCKET_INTERVAL_MS : job === "filevine" ? FILEVINE_INTERVAL_MS
+  : job === "marketing_sheet" ? MARKETING_SHEET_INTERVAL_MS : SYNC_INTERVAL_MS;
 
 /**
  * Case values from Filevine for leads Lead Docket has none for. The first run
@@ -104,17 +120,47 @@ async function save(job: JobName, patch: Partial<JobStatus>) {
   await setSetting(KEY(job), JSON.stringify({ ...cur, ...patch }));
 }
 
-/** Run one script to completion; resolves with its output and exit code. */
-function runScript(script: string, args: string[]): Promise<{ code: number; out: string }> {
+/**
+ * How long one run of a job may take before it is stopped. A script that never
+ * exits (a Lead Docket call that stalls, say) used to hold the job "running"
+ * until the next deploy: the schedule skipped it, the button sat on Syncing…,
+ * and from 2026-11-09 Lead Docket went four days without a finished run. The
+ * limits are well above a normal run, which picks up where the last left off.
+ */
+export const JOB_TIMEOUT_MS: Record<JobName, number> = {
+  leaddocket: 90 * 60_000,          // normally ~3–10 minutes; a backlog after an outage takes longer
+  leaddocket_history: 120 * 60_000, // a HISTORY_CHUNK is about an hour
+  sheets: 30 * 60_000,
+  filevine: 60 * 60_000,
+  marketing_sheet: 15 * 60_000,
+};
+/** Exit code runScript reports for a script it had to stop. */
+const TIMED_OUT = 124;
+
+/** Run one script to completion, or stop it after timeoutMs; resolves with its output and exit code. */
+function runScript(script: string, args: string[], timeoutMs = 30 * 60_000): Promise<{ code: number; out: string }> {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [path.resolve(process.cwd(), script), ...args], {
       cwd: process.cwd(), env: process.env,
     });
     let out = "";
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGTERM");
+      // A child stuck in a native call may ignore SIGTERM.
+      setTimeout(() => { if (child.exitCode === null) child.kill("SIGKILL"); }, 10_000).unref();
+    }, timeoutMs);
     child.stdout.on("data", (b) => { out += b.toString(); });
     child.stderr.on("data", (b) => { out += b.toString(); });
-    child.on("close", (code) => resolve({ code: code ?? 1, out }));
-    child.on("error", (e) => resolve({ code: 1, out: out + "\n" + e.message }));
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (timedOut) {
+        const last = out.trim().split("\n").slice(-3).join(" | ");
+        resolve({ code: TIMED_OUT, out: `${out}\nstopped after ${Math.round(timeoutMs / 60_000)} minutes without finishing${last ? ` (last output: ${last.slice(-300)})` : ""}` });
+      } else resolve({ code: code ?? 1, out });
+    });
+    child.on("error", (e) => { clearTimeout(timer); resolve({ code: 1, out: out + "\n" + e.message }); });
   });
 }
 
@@ -129,7 +175,7 @@ async function runLeadDocket(): Promise<{ ok: boolean; partial?: boolean; summar
   const since = prev.lastSuccessAt
     ? new Date(new Date(prev.lastSuccessAt).getTime() - 60 * 60 * 1000)      // 1h overlap, in case of clock skew
     : new Date(new Date().getFullYear(), 0, 1);
-  return runLeadDocketScript(["--since", since.toISOString()], "changed leads");
+  return runLeadDocketScript(["--since", since.toISOString()], "changed leads", JOB_TIMEOUT_MS.leaddocket);
 }
 
 /** Leads per history run — about an hour at Lead Docket's pace. */
@@ -137,7 +183,7 @@ const HISTORY_CHUNK = 3000;
 
 /** The next chunk of every lead since Lead Docket began (2020). Leads already checked are skipped. */
 async function runLeadDocketHistory() {
-  return runLeadDocketScript(["--since", "2020-01-01", "--backfill", "--limit", String(HISTORY_CHUNK)], "historical leads");
+  return runLeadDocketScript(["--since", "2020-01-01", "--backfill", "--limit", String(HISTORY_CHUNK)], "historical leads", JOB_TIMEOUT_MS.leaddocket_history);
 }
 
 /** Leads the backfill still has to read, from the sync's last report; null before it has run. */
@@ -152,21 +198,29 @@ async function backfillRemaining(): Promise<number | null> {
   }
 }
 
-async function runLeadDocketScript(args: string[], what: string): Promise<{ ok: boolean; partial?: boolean; summary: string }> {
-  const { code, out } = await runScript("scripts/migration/sync-leaddocket.mjs", args);
+async function runLeadDocketScript(args: string[], what: string, timeoutMs: number): Promise<{ ok: boolean; partial?: boolean; summary: string }> {
+  const { code, out } = await runScript("scripts/migration/sync-leaddocket.mjs", args, timeoutMs);
   const line = out.split("\n").find((l) => l.startsWith("SYNC_RESULT "));
   if (!line) return { ok: false, summary: tail(out) || `exited with code ${code}` };
 
   const r = JSON.parse(line.slice("SYNC_RESULT ".length));
   const reps = Object.entries(r.byRep ?? {}).map(([k, v]) => `${k}: ${v}`).join(", ");
+  // Name the leads that failed and why, so a stuck one can be looked up in Lead Docket.
+  const bad: { id: string; reason: string; runs: number }[] = r.unreadable ?? [];
+  const badList = bad.length
+    ? ` (${bad.slice(0, 5).map((u) => `lead ${u.id}: ${u.reason}, ${u.runs} run${u.runs === 1 ? "" : "s"} in a row`).join("; ")}${bad.length > 5 ? "; …" : ""})`
+    : "";
   let summary = `${r.scanned} ${what} read, ${r.ours} belong to the team (${r.inserted} new, ${r.updated} updated)` +
     (r.removed ? `; ${r.removed} deleted in Lead Docket removed` : "") +
-    (r.failed ? ` — ${r.failed} could not be read and will be retried next run` : "") + (reps ? `. ${reps}` : "");
+    (r.failed ? ` — ${r.failed} could not be read and will be retried next run` : "") +
+    (r.givenUp ? ` — ${r.givenUp} keep failing in Lead Docket and no longer hold the sync back` : "") +
+    badList + (reps ? `. ${reps}` : "");
 
   // The sync fills lead_intake, which only the Sign-ups Report reads. The
   // Command Center, facility profiles and rep reports read facility_leads, so
   // mirror into it every time — otherwise new leads appear on one page only.
-  const m = await runScript("scripts/migration/mirror-leads-to-facilities.mjs", []);
+  // ~2,700 row updates, one at a time; 15 minutes proved too tight on a slow link.
+  const m = await runScript("scripts/migration/mirror-leads-to-facilities.mjs", [], 45 * 60_000);
   const mline = m.out.split("\n").find((l) => l.startsWith("MIRROR_RESULT "));
   if (m.code !== 0 || !mline) {
     return { ok: false, summary: summary + ` — but updating the other CRM pages failed: ${tail(m.out, 300)}` };
@@ -187,7 +241,7 @@ async function runSheets(): Promise<{ ok: boolean; summary: string }> {
     ];
     const done: string[] = [];
     for (const [script, args, label] of steps) {
-      const { code, out } = await runScript(script, args);
+      const { code, out } = await runScript(script, args, JOB_TIMEOUT_MS.sheets);
       if (code !== 0) return { ok: false, summary: `stopped at ${label}: ${tail(out, 400)}` };
       done.push(label);
     }
@@ -216,6 +270,7 @@ export async function startJob(job: JobName, trigger: "schedule" | "manual"): Pr
         job === "leaddocket" ? await runLeadDocket()
         : job === "leaddocket_history" ? await runLeadDocketHistory()
         : job === "filevine" ? await runFilevine()
+        : job === "marketing_sheet" ? await runMarketingSheetSync()
         : await runSheets();
       const finishedAt = new Date().toISOString();
       const partial = "partial" in result && result.partial;
@@ -246,7 +301,7 @@ export async function startJob(job: JobName, trigger: "schedule" | "manual"): Pr
  * of resetting (or firing) every time the process starts.
  */
 export async function runDueJobs() {
-  for (const job of ["leaddocket", "sheets", "filevine"] as JobName[]) {
+  for (const job of ["leaddocket", "sheets", "filevine", "marketing_sheet"] as JobName[]) {
     if (job === "leaddocket" && !process.env.LEADDOCKET_API_KEY) continue;
     if (job === "filevine" && !(await filevineConfigured())) continue;
     const s = await getStatus(job);

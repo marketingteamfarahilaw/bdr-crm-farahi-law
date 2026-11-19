@@ -154,3 +154,295 @@ export function reconcileNames<S extends { name: string }, C extends { name: str
   }
   return { both, onlySheet: s.filter((a) => !a.used).map((a) => a.x), onlyCrm: c.filter((b) => !b.used).map((b) => b.x) };
 }
+
+// ── the audit's checks: the sheet against itself, and one list against Lead Docket ──
+
+/** The sheet's status columns, which between them should hold every lead in Total Leads. */
+const BUCKETS = ["open", "rejected", "referredOut", "lostNI", "signedReferred", "signedInHouse"] as const;
+
+/**
+ * Leads a sheet row counts in Total Leads but in no status column — the
+ * manual's "no status bucket" leads. Negative when the columns hold more than
+ * the total; null when the row lacks a total or every column.
+ */
+export function unbucketed(row: SheetTeamRow | null | undefined): number | null {
+  if (!row || row.leads == null) return null;
+  const vals = BUCKETS.map((k) => row[k]);
+  if (vals.every((v) => v == null)) return null;
+  return row.leads - vals.reduce<number>((s, v) => s + (v ?? 0), 0);
+}
+
+const srcKey = (s: string) => key(s).replace(/^gbp|^gmb/, "");
+
+/**
+ * Whether the sheet's Lead Source and Lead Docket's row name the same thing.
+ * The sheet writes them by hand ("GBP Visalia", "Justin for Justice"), so it
+ * is loose: equal, or one contained in the other, once spaces, case and a
+ * leading GBP are set aside. A blank sheet source is never a difference.
+ */
+export function sameSource(sheet: string, crm: { label: string; source: string }) {
+  const a = srcKey(sheet);
+  if (!a) return true;
+  return [crm.label, crm.source].some((c) => {
+    const b = srcKey(c);
+    return !!b && (a === b || a.includes(b) || b.includes(a));
+  });
+}
+
+export type SignupKind = "inHouse" | "referred";
+export type CrmSignup = { name: string; kind: SignupKind; label: string; source: string };
+
+export type SignupAudit<C extends CrmSignup> = {
+  /** Same person, same kind of sign-up. */
+  agree: { sheet: SheetSignup & { kind: SignupKind }; crm: C }[];
+  /** Same person, but in-house on one side and referred out on the other. */
+  statusDiffers: { sheet: SheetSignup & { kind: SignupKind }; crm: C }[];
+  /** Matched (either kind) but the sheet's Lead Source isn't Lead Docket's. */
+  sourceDiffers: { sheet: SheetSignup & { kind: SignupKind }; crm: C }[];
+  onlySheet: (SheetSignup & { kind: SignupKind })[];
+  onlyCrm: C[];
+};
+
+/**
+ * Both of the sheet's sign-up lists against all of Lead Docket's at once, so
+ * a client the sheet lists as in-house and Lead Docket as referred out (or the
+ * other way) is one status difference — not a name missing from each list.
+ */
+export function auditSignups<C extends CrmSignup>(sheet: { inHouse: SheetSignup[]; referred: SheetSignup[] }, crm: C[]): SignupAudit<C> {
+  const all = [
+    ...sheet.inHouse.map((s) => ({ ...s, kind: "inHouse" as const })),
+    ...sheet.referred.map((s) => ({ ...s, kind: "referred" as const })),
+  ];
+  // Same-kind pairs first, so a family with one line of each kind pairs up as the lists say.
+  const first = (["inHouse", "referred"] as const).map((k) =>
+    reconcileNames(all.filter((s) => s.kind === k), crm.filter((c) => c.kind === k)));
+  const rest = reconcileNames(first.flatMap((r) => r.onlySheet), first.flatMap((r) => r.onlyCrm));
+  const pairs = [...first.flatMap((r) => r.both), ...rest.both];
+  return {
+    agree: pairs.filter((p) => p.sheet.kind === p.crm.kind),
+    statusDiffers: pairs.filter((p) => p.sheet.kind !== p.crm.kind),
+    sourceDiffers: pairs.filter((p) => !sameSource(p.sheet.source, p.crm)),
+    onlySheet: rest.onlySheet,
+    onlyCrm: rest.onlyCrm,
+  };
+}
+
+// ─── The variance log's rows ──────────────────────────────────────────────────
+
+export type VarianceKind = "total" | "unbucketed" | "status" | "onlySheet" | "onlyCrm" | "source" | "sync";
+export type VarianceRow = { kind: VarianceKind; itemKey: string; name: string; detail: string };
+
+/** What the comparison needs from the Digital Marketing Report: its GBP/SEO rows and its sign-ups. */
+export type ReportForSheet = {
+  team: ({ group: string } & Partial<Record<SheetColumn, number | null>>)[];
+  signups: (CrmSignup & { group: string })[];
+};
+/** Why a name only on the sheet is missing from Lead Docket's sign-ups (server/sheetNames.ts). */
+export type NameReason = { fix: "leaddocket" | "sheet" | "check"; reason: string };
+
+const FIX_LABEL: Record<NameReason["fix"], string> = { leaddocket: "Fix in Lead Docket", sheet: "Fix the sheet", check: "Check" };
+const count = (n: number) => n.toLocaleString("en-US");
+const kindWord = (k: SignupKind) => (k === "inHouse" ? "in-house" : "referred out");
+
+/**
+ * The sheet's three team rows beside the report's numbers for them. The sheet's
+ * TOTAL is GBP + SEO; it has no Ads row.
+ */
+export function sheetTeamRows(sheet: ParsedSheet, report: ReportForSheet) {
+  const gbp = report.team.find((r) => r.group === "GBP");
+  const seo = report.team.find((r) => r.group === "SEO");
+  const val = (r: typeof gbp, k: SheetColumn) => (r?.[k] ?? null) as number | null;
+  const both = (k: SheetColumn) => {
+    if (k === "conversion") {
+      const l = (val(gbp, "leads") ?? 0) + (val(seo, "leads") ?? 0);
+      return l ? Math.round((((val(gbp, "signed") ?? 0) + (val(seo, "signed") ?? 0)) / l) * 1000) / 10 : null;
+    }
+    const a = val(gbp, k), b = val(seo, k);
+    return a == null || b == null ? null : Math.round((a + b) * 10) / 10;
+  };
+  return [
+    ["GBP", sheet.team.GBP, (k: SheetColumn) => val(gbp, k)],
+    ["SEO / Website", sheet.team.SEO, (k: SheetColumn) => val(seo, k)],
+    ["TOTAL (GBP + SEO)", sheet.team.TOTAL, both],
+  ] as [string, SheetTeamRow | null, (k: SheetColumn) => number | null][];
+}
+
+/**
+ * Every difference between a day's sheet tab and the report, as the variance
+ * log stores them. Shared by the Audit tab (an uploaded file) and the
+ * scheduled marketing-sheet sync (server/marketingSheetSync.ts), so both log
+ * the same differences in the same words.
+ */
+export function sheetVariances(
+  sheet: ParsedSheet,
+  report: ReportForSheet,
+  opts: { explained?: Map<string, NameReason> | null; staleSync?: { lastSuccessAt: string | null; state: string } | null } = {},
+): VarianceRow[] {
+  const rows = sheetTeamRows(sheet, report);
+  // The sheet has no Ads row, so its sign-ups are matched against GBP + SEO only.
+  const audit = auditSignups(sheet, report.signups.filter((s) => s.group !== "Ads"));
+  const items: VarianceRow[] = [];
+  for (const [name, s, crmOf] of rows) {
+    for (const [k, , label] of SHEET_COLUMNS) {
+      if (k === "conversion" || k === "target") continue;
+      const a = s?.[k] ?? null, b = crmOf(k);
+      if (a != null && b != null && a !== b) items.push({ kind: "total", itemKey: `${name}|${k}`, name: `${name} — ${label}`, detail: `Sheet ${count(a)} · Lead Docket ${count(b)}` });
+    }
+  }
+  for (const [name, s] of rows) {
+    const n = unbucketed(s);
+    if (n != null && n !== 0) items.push({ kind: "unbucketed", itemKey: name, name, detail: n > 0 ? `${n} lead(s) in no status column on the sheet` : `Status columns hold ${-n} more than Total Leads` });
+  }
+  for (const b of audit.statusDiffers) items.push({ kind: "status", itemKey: nameKey(b.crm.name), name: b.crm.name, detail: `Sheet: ${kindWord(b.sheet.kind)} · Lead Docket: ${kindWord(b.crm.kind)}` });
+  for (const s of audit.onlySheet) {
+    const why = opts.explained?.get(s.name);
+    items.push({ kind: "onlySheet", itemKey: nameKey(s.name), name: s.name, detail: why ? `${FIX_LABEL[why.fix]}: ${why.reason}` : `${kindWord(s.kind)} on the sheet; not found among Lead Docket's sign-ups` });
+  }
+  for (const c of audit.onlyCrm) items.push({ kind: "onlyCrm", itemKey: nameKey(c.name), name: c.name, detail: `${c.label} · ${kindWord(c.kind)} in Lead Docket; missing from the sheet` });
+  for (const b of audit.sourceDiffers) items.push({ kind: "source", itemKey: nameKey(b.crm.name), name: b.crm.name, detail: `Sheet: ${b.sheet.source} · Lead Docket: ${b.crm.label}` });
+  const st = opts.staleSync;
+  if (st) items.push({ kind: "sync", itemKey: "leaddocket", name: "Lead Docket sync", detail: `Last synced ${st.lastSuccessAt ?? "never"} (${st.state})` });
+  return items;
+}
+
+// ─── The FLF sign-up sheet (one row per sign-up, a "Current Month" tab) ───────
+
+/** The sign-up sheet's tab: the team keeps the month's sign-ups on one tab. */
+export const SIGNUP_LOG_TAB = "Current Month";
+
+/**
+ * Which digital group a sign-up's Source belongs to, or null when it isn't
+ * digital marketing. The sheet logs every sign-up — Walker, referrals, FR and
+ * BDR reps, intake — and only Google Business Profile ("GMB") and the website
+ * are compared with the Digital Marketing Report's GBP and SEO groups (Ads has
+ * no rows on the sheet, as before).
+ */
+export function signupLogGroup(source: Cell, leadSource: Cell): "GBP" | "SEO" | null {
+  const s = key(source), l = key(leadSource);
+  if (/^(gmb|gbp)/.test(s) || /googlebusiness|googlemybusiness/.test(s)) return "GBP";
+  if (/website|seo|organic/.test(s) || (!s && /website/.test(l))) return "SEO";
+  return null;
+}
+
+/** A sheet date — an Excel day serial, or text like 11/2/2026 or 2026-11-02 — as YYYY-MM-DD; null when unreadable. */
+export function sheetDay(v: Cell): string | null {
+  if (typeof v === "number" && v > 20000 && v < 80000) {
+    // Excel's day 0 is 1899-12-30; the time of day (a fraction) is dropped.
+    return new Date(Date.UTC(1899, 11, 30) + Math.floor(v) * 86_400_000).toISOString().slice(0, 10);
+  }
+  const t = text(v);
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\b/);
+  if (m) return `${m[3].length === 2 ? `20${m[3]}` : m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  return null;
+}
+
+/**
+ * The sign-up sheet read into the same shape as a daily tab, so the same
+ * comparison runs on it: its GBP and SEO sign-ups (Lead Outcome "Signed" is
+ * in-house, "Referred out" referred out), dated within the range when one is
+ * given, and the sign-up counts per group. It has no lead totals, so only the
+ * sign-up columns are compared (the others stay empty and are skipped).
+ * Returns null when the rows aren't this sheet (no Lead Outcome / Client's Name header).
+ */
+export function parseSignupLog(rows: Cell[][], range?: { fromDay: string; toDay: string }): ParsedSheet | null {
+  const head = findRow(rows, (k) => k === "leadoutcome");
+  if (head < 0) return null;
+  const cols = (rows[head] ?? []).map(key);
+  const col = (...ks: string[]) => cols.findIndex((c) => ks.includes(c));
+  const c = {
+    source: col("source"), leadSource: col("leadsource"), day: col("signupdate"), outcome: col("leadoutcome"),
+    name: col("clientsname", "clientname"), value: col("value"), type: cols.findIndex((k) => k.startsWith("casetype")),
+  };
+  if (c.name < 0 || c.source < 0) return null;
+
+  const inHouse: SheetSignup[] = [], referred: SheetSignup[] = [];
+  const counts = { GBP: { signedInHouse: 0, signedReferred: 0 }, SEO: { signedInHouse: 0, signedReferred: 0 } };
+  for (let i = head + 1; i < rows.length; i++) {
+    const r = rows[i] ?? [];
+    const name = text(r[c.name]);
+    const outcome = key(r[c.outcome]);
+    if (!name || !outcome) continue;   // the sheet's blank case-group rows
+    const group = signupLogGroup(r[c.source], c.leadSource >= 0 ? r[c.leadSource] : null);
+    if (!group) continue;
+    if (range && c.day >= 0) {
+      const day = sheetDay(r[c.day]);
+      if (!day || day < range.fromDay || day > range.toDay) continue;
+    }
+    const s: SheetSignup = {
+      name, source: text(c.leadSource >= 0 ? r[c.leadSource] : r[c.source]) || text(r[c.source]),
+      caseValue: c.value >= 0 ? text(r[c.value]) : "", caseType: c.type >= 0 ? text(r[c.type]) : "",
+    };
+    if (outcome.startsWith("referred")) { referred.push(s); counts[group].signedReferred++; }
+    else if (outcome.startsWith("signed")) { inHouse.push(s); counts[group].signedInHouse++; }
+  }
+  const row = (g: { signedInHouse: number; signedReferred: number }): SheetTeamRow =>
+    ({ signedInHouse: g.signedInHouse, signedReferred: g.signedReferred, signed: g.signedInHouse + g.signedReferred });
+  const total = { signedInHouse: counts.GBP.signedInHouse + counts.SEO.signedInHouse, signedReferred: counts.GBP.signedReferred + counts.SEO.signedReferred };
+  return {
+    team: { GBP: row(counts.GBP), SEO: row(counts.SEO), TOTAL: row(total) },
+    inHouse, referred,
+    found: { team: true, inHouse: true, referred: true },
+  };
+}
+
+/**
+ * One sign-up on the FLF sign-up sheet, for the Digital Marketing Report's
+ * "Sign-up sheet" tab. Phone and email are never read. `facts` holds the
+ * intake case facts — the hard wall in CLAUDE.md — which the server sends
+ * only to those allowed them (marketingCaseFacts).
+ */
+export type SignupSheetRow = {
+  day: string | null; source: string; leadSource: string; group: "GBP" | "SEO" | null;
+  intaker: string; signedUpBy: string; outcome: string; clientName: string;
+  value: string; tier: string; caseType: string; referralStatus: string; caseNumber: string;
+  facts: {
+    liability: string; language: string; erVisit: string; firstMedical: string | null; sentTo: string;
+    caseManager: string; investigator: string; referredAttorney: string; referralFee: string; activeStatus: string;
+  } | null;
+};
+
+/** Every sign-up on the sheet's tab (blank case-group rows skipped), in sheet order. Null when the rows aren't this sheet. */
+export function readSignupSheet(rows: Cell[][]): SignupSheetRow[] | null {
+  const head = findRow(rows, (k) => k === "leadoutcome");
+  if (head < 0) return null;
+  const cols = (rows[head] ?? []).map(key);
+  // A column by its header: exact, or for long headers ("Case Type (Slip, Auto, …)") the start of it.
+  const at = (exact: string, starts = false) => cols.findIndex((c) => (starts ? c.startsWith(exact) : c === exact));
+  const c = {
+    source: at("source"), leadSource: at("leadsource"), day: at("signupdate"), intaker: at("nameofpersonconductingintake", true),
+    signedUpBy: at("signedupby"), outcome: at("leadoutcome"), name: at("clientsname"), value: at("value"), tier: at("tier"),
+    caseType: at("casetype", true), referralStatus: at("signedcasesreferralstatus", true), caseNumber: at("casenumber"),
+    liability: at("acceptedordisputedliability", true), language: at("language"), erVisit: at("erucvisit", true),
+    firstMedical: at("timetofirstmedical", true), sentTo: at("facilitynameuc", true), caseManager: at("cmassigned"),
+    investigator: at("pdinvestigatorassigned", true), referredAttorney: at("referredattorney"), referralFee: at("referralfee"),
+    activeStatus: at("activestatus"),
+  };
+  if (c.name < 0 || c.outcome < 0) return null;
+  const get = (r: Cell[], i: number) => (i >= 0 ? text(r[i]) : "");
+  const out: SignupSheetRow[] = [];
+  for (let i = head + 1; i < rows.length; i++) {
+    const r = rows[i] ?? [];
+    const clientName = get(r, c.name), outcome = get(r, c.outcome);
+    if (!clientName || !outcome) continue;
+    const fee = c.referralFee >= 0 ? r[c.referralFee] : null;
+    out.push({
+      day: c.day >= 0 ? sheetDay(r[c.day]) : null,
+      source: get(r, c.source), leadSource: get(r, c.leadSource),
+      group: signupLogGroup(r[c.source], c.leadSource >= 0 ? r[c.leadSource] : null),
+      intaker: get(r, c.intaker), signedUpBy: get(r, c.signedUpBy), outcome, clientName,
+      value: get(r, c.value), tier: get(r, c.tier), caseType: get(r, c.caseType),
+      referralStatus: get(r, c.referralStatus), caseNumber: get(r, c.caseNumber),
+      facts: {
+        liability: get(r, c.liability), language: get(r, c.language), erVisit: get(r, c.erVisit),
+        firstMedical: c.firstMedical >= 0 ? sheetDay(r[c.firstMedical]) : null, sentTo: get(r, c.sentTo),
+        caseManager: get(r, c.caseManager), investigator: get(r, c.investigator), referredAttorney: get(r, c.referredAttorney),
+        // A fraction on the sheet (0.33) is a percentage.
+        referralFee: typeof fee === "number" && fee > 0 && fee < 1 ? `${Math.round(fee * 100)}%` : get(r, c.referralFee),
+        activeStatus: get(r, c.activeStatus),
+      },
+    });
+  }
+  return out;
+}

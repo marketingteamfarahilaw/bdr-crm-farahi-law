@@ -17,8 +17,9 @@ import type { DrillLink, DrillScope } from "../../../server/marketing/common";
 import { trpc } from "@/lib/trpc";
 import { LeadDocketSyncButton } from "@/components/DataSyncPanel";
 import {
-  CheckCircle2, Download, Inbox, Info, Loader2, Percent, Target,
+  CheckCircle2, Download, Inbox, Info, Loader2, Lock, Percent, Target, Unlock,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   CASE_VALUES, DIGITAL_GROUP_LABEL, DIGITAL_GROUP_NAME, OTHER_CHANNELS, TOLL_FREE, JFJ_WEBSITE, type DigitalGroup,
 } from "@shared/marketing";
@@ -28,6 +29,7 @@ import { Clients } from "./marketing/Clients";
 import { delta, usd } from "./marketing/shared";
 import { CumulativeChart, MonthlyChart, QualityChart } from "./digital/Charts";
 import { AuditView } from "./digital/Audit";
+import { SignupSheetTab } from "./digital/SignupSheet";
 import "./digital/Digital.css";
 
 export type DigitalData = NonNullable<inferRouterOutputs<AppRouter>["marketing"]["digital"]>;
@@ -67,6 +69,7 @@ const TABS = [
   { id: "ads", label: "Ads" },
   { id: "signups", label: "Sign-ups" },
   { id: "trends", label: "Quality & trends" },
+  { id: "sheet", label: "Sign-up sheet" },
 ] as const;
 export type DigitalTab = (typeof TABS)[number]["id"];
 export const tabOf = (t: string | null): DigitalTab => TABS.find((x) => x.id === t)?.id ?? "overview";
@@ -94,6 +97,53 @@ type ViewProps = {
   onTab: (t: DigitalTab) => void;
   canSync: boolean;
 };
+
+const lastDay = (month: string) => {
+  const [y, m] = month.split("-").map(Number);
+  return `${month}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0")}`;
+};
+
+/**
+ * A closed month's "Locked" badge, and a manager's Lock / Unlock. A locked
+ * month shows the copy saved when it was locked (server/monthLock.ts), so its
+ * numbers and client lists stop moving as Lead Docket changes. Offered only on
+ * a whole month that has ended.
+ */
+function MonthLock({ from, to, locked, canLock }: { from: string; to: string; locked: { lockedAt: string; lockedBy: string | null } | null; canLock: boolean }) {
+  const utils = trpc.useUtils();
+  const month = from.slice(0, 7);
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  const whole = from === `${month}-01` && to === lastDay(month);
+  const closed = month < today.slice(0, 7);
+  const done = (msg: string) => { toast.success(msg); utils.marketing.digital.invalidate(); utils.marketing.monthLocks.invalidate(); };
+  const lock = trpc.marketing.lockMonth.useMutation({ onSuccess: () => done("Month locked — it now shows the saved copy."), onError: (e) => toast.error(e.message) });
+  const unlock = trpc.marketing.unlockMonth.useMutation({ onSuccess: () => done("Month unlocked — it shows live data again."), onError: (e) => toast.error(e.message) });
+  const busy = lock.isPending || unlock.isPending;
+  const date = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  if (locked) {
+    return (
+      <>
+        <span className="sr-badge sr-b-grey" title={`Saved ${new Date(locked.lockedAt).toLocaleString()}${locked.lockedBy ? ` by ${locked.lockedBy}` : ""}. Later changes in Lead Docket don't show here.`}>
+          <Lock size={12} aria-hidden /> Locked {date(locked.lockedAt)}
+        </span>
+        {canLock && (
+          <button className="sr-btn2" disabled={busy}
+            onClick={() => { if (confirm("Unlock this month? It will show live Lead Docket data again, and the saved copy is deleted.")) unlock.mutate({ month }); }}>
+            {busy ? <Loader2 className="sr-spin" /> : <Unlock />} Unlock
+          </button>
+        )}
+      </>
+    );
+  }
+  if (!canLock || !whole || !closed) return null;
+  return (
+    <button className="sr-btn2" disabled={busy} title="Save this month's numbers and client lists as they stand, so they stop changing"
+      onClick={() => { if (confirm("Lock this month? Its numbers and client lists are saved as they stand now, and later changes in Lead Docket won't show for it.")) lock.mutate({ month }); }}>
+      {busy ? <Loader2 className="sr-spin" /> : <Lock />} Lock month
+    </button>
+  );
+}
 
 /** The two digital views, with their own pinned bar; the period is the Marketing Report's. */
 export function DigitalView({ view, onView, from, to, onRange, tab, onTab, canSync }: ViewProps) {
@@ -126,6 +176,7 @@ export function DigitalView({ view, onView, from, to, onRange, tab, onTab, canSy
           </span>
           {isFetching &&<span className="sr-fresh"><Loader2 size={13} className="sr-spin" /> Updating…</span>}
           <div className="sr-actions">
+            {view === "digital" && <MonthLock from={from} to={to} locked={data?.locked ?? null} canLock={canSync} />}
             {view === "digital" && <button className="sr-btn2" onClick={() => data && exportAll(data)} disabled={!data}><Download /> Export CSV</button>}
             {canSync && <LeadDocketSyncButton className="sr-btn1" hintClassName="sr-hint" />}
           </div>
@@ -155,7 +206,8 @@ export function DigitalView({ view, onView, from, to, onRange, tab, onTab, canSy
                   <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? "on" : ""} onClick={() => onTab(t.id)}>{t.label}</button>
                 ))}
               </div>
-              {!data ? (
+              {/* The sign-up sheet comes from Google Sheets, not this report: it needn't wait for it. */}
+              {tab === "sheet" ? <SignupSheetTab /> : !data ? (
                 isError && !isLoading
                   ? <LoadError what="the digital marketing report" message={error?.message} onRetry={() => refetch()} />
                   : <div className="dm-grid2">{[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 240 }} />)}</div>
@@ -632,7 +684,7 @@ function saveCsv(lines: string[], name: string) {
 }
 const signupLine = (s: Signup, i: number) => [i + 1, q(s.label), q(s.caseValue ?? ""), q(s.caseType), q(s.name), s.date ? leadDay(s.date) : ""].map(String).join(",");
 
-function SignupList({ title, rows, file }: { title: string; rows: Signup[]; file: string }) {
+function SignupList({ title, rows, file, note }: { title: string; rows: Signup[]; file: string; note?: ReactNode }) {
   const [search, setSearch] = useState("");
   const k = search.trim().toLowerCase();
   const shown = rows.filter((s) => !k || [s.name, s.label, s.caseType, s.caseValue ?? "", s.source].some((v) => v.toLowerCase().includes(k)));
@@ -646,6 +698,7 @@ function SignupList({ title, rows, file }: { title: string; rows: Signup[]; file
           <button className="sr-btn2" disabled={!shown.length} onClick={() => saveCsv(["Count,Lead Source,Case Value,Case Type,Client Name,Sign-up date", ...shown.map(signupLine)], file)}><Download /> CSV</button>
         </div>
       </div>
+      {note && <p className="sr-sub" style={{ marginTop: -4 }}>{note}</p>}
       {shown.length === 0 ? <p className="sr-nil">{rows.length ? "No sign-ups match." : "None in this period."}</p> : (
         <div className="sr-scroll">
           <table className="sr-t dm-t sr-leads" style={{ minWidth: 720 }}>
@@ -675,7 +728,8 @@ function SignupsTab({ data }: { data: DigitalData }) {
   return (
     <>
       <SignupList title="In-house signup details" rows={data.signups.filter((s) => s.kind === "inHouse")} file={`digital-in-house-signups-${range}.csv`} />
-      <SignupList title="Signed referred out details" rows={data.signups.filter((s) => s.kind === "referred")} file={`digital-signed-referred-out-${range}.csv`} />
+      <SignupList title="Signed referred out details" rows={data.signups.filter((s) => s.kind === "referred")} file={`digital-signed-referred-out-${range}.csv`}
+        note={<><b>Late referrals count in the month they sign.</b> A referral counts on its sign-up date in Lead Docket, even when the lead came in an earlier month — so a month's list can include leads from before it, and a closed month doesn't change when one of its leads signs later.</>} />
     </>
   );
 }

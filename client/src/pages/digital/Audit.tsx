@@ -7,15 +7,16 @@
  * The sheet is read in the browser: xlsx is imported only when a file is
  * chosen, so it never weighs on the page's first load.
  */
-import { Fragment, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Download, FileSpreadsheet, Info, Loader2, Printer, Upload } from "lucide-react";
+import { ChevronDown, Download, FileSpreadsheet, Info, Loader2, Printer, RefreshCw, Upload } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import type { DrillLink } from "../../../../server/marketing/common";
 import { trpc } from "@/lib/trpc";
 import { DIGITAL_GROUP_LABEL, DIGITAL_GROUPS, MERCH } from "@shared/marketing";
-import { SHEET_COLUMNS, parseSheet, reconcileNames, tabForDay, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
+import { SHEET_COLUMNS, SIGNUP_LOG_TAB, auditSignups, nameKey, parseSheet, parseSignupLog, sheetVariances, tabForDay, unbucketed, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
 import { fmt, leadDay, pct1, rangeLabel } from "../SignupsDashboard";
 import { LoadError } from "../signups/LoadError";
 import type { DigitalData } from "../DigitalMarketingReport";
@@ -44,6 +45,7 @@ export function AuditView({ from, to, report }: { from: string; to: string; repo
       </p>
       <AuditOverview q={q} from={from} to={to} scope={scope} onScope={setScope} cmp={compare} onCmp={setCmp} />
       <SheetCompare to={to} report={report} />
+      <VarianceLog month={to.slice(0, 7)} />
       <Misregistered q={q} from={from} to={to} scope={scope} />
       <SourceDirectory />
     </>
@@ -54,11 +56,16 @@ export function AuditView({ from, to, report }: { from: string; to: string; repo
 
 type Loaded = { file: string; tabs: string[]; tab: string; parsed: ParsedSheet; buf: ArrayBuffer };
 
-async function readTab(buf: ArrayBuffer, tab: string): Promise<ParsedSheet> {
+/**
+ * One tab, read as the FLF sign-up sheet (a row per sign-up; its GBP and
+ * website sign-ups within the range) or, failing that, as an older daily
+ * "MTD Performance Summary" tab.
+ */
+async function readTab(buf: ArrayBuffer, tab: string, range: { fromDay: string; toDay: string }): Promise<ParsedSheet> {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(buf, { type: "array", sheets: [tab] });
   const rows = XLSX.utils.sheet_to_json<Cell[]>(wb.Sheets[tab], { header: 1, raw: true, defval: null, blankrows: true });
-  return parseSheet(rows);
+  return parseSignupLog(rows, range) ?? parseSheet(rows);
 }
 
 function SheetCompare({ to, report }: { to: string; report: DigitalData | null }) {
@@ -66,19 +73,22 @@ function SheetCompare({ to, report }: { to: string; report: DigitalData | null }
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const range = { fromDay: from0(to), toDay: to };
 
   const open = async (f: File) => {
     setBusy(true);
     try {
       const buf = await f.arrayBuffer();
       const XLSX = await import("xlsx");
-      // Tab names first (cheap), then only the one tab: the workbook holds a tab per day.
+      // Tab names first (cheap), then only the one tab: the sign-up sheet's
+      // "Current Month", or an older workbook's tab for the day.
       const tabs = XLSX.read(buf, { type: "array", bookSheets: true }).SheetNames;
-      const want = tabForDay(to);
+      const logTab = tabs.find((t) => t.trim().toLowerCase() === SIGNUP_LOG_TAB.toLowerCase());
+      const want = logTab ?? tabForDay(to);
       const tab = tabs.includes(want) ? want : tabs[tabs.length - 1];
       if (!tab) throw new Error("The file has no sheets.");
       if (tab !== want) toast.info(`No tab named ${want} for ${rangeLabel(to, to)}; showing ${tab}. Pick another tab if needed.`);
-      setLoaded({ file: f.name, tabs, tab, parsed: await readTab(buf, tab), buf });
+      setLoaded({ file: f.name, tabs, tab, parsed: await readTab(buf, tab, range), buf });
     } catch (e) {
       toast.error(e instanceof Error ? `Couldn't read the sheet: ${e.message}` : "Couldn't read the sheet.");
     } finally {
@@ -88,15 +98,17 @@ function SheetCompare({ to, report }: { to: string; report: DigitalData | null }
   const pickTab = async (tab: string) => {
     if (!loaded) return;
     setBusy(true);
-    try { setLoaded({ ...loaded, tab, parsed: await readTab(loaded.buf, tab) }); } finally { setBusy(false); }
+    try { setLoaded({ ...loaded, tab, parsed: await readTab(loaded.buf, tab, range) }); } finally { setBusy(false); }
   };
 
   return (
     <div className="sr-panel">
-      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}><h2>The team's daily sheet vs Lead Docket</h2></div>
+      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}><h2>The FLF sign-up sheet vs Lead Docket</h2></div>
+      <SheetSync />
       <p className="sr-sub">
-        Upload the "MTD Performance Summary" workbook. The tab for the period's last day ({tabForDay(to)}) is compared with this report for {rangeLabel(from0(to), to)} —
-        the team's table and the names in its In-House Signup Details and Signed Referred Out Details. Pick the month-to-date period above to match the sheet.
+        The sheet's GBP ("GMB") and website sign-ups from its "{SIGNUP_LOG_TAB}" tab are compared with this report for {rangeLabel(from0(to), to)} —
+        how many signed in-house and referred out, and each client's name and source. Its other sign-ups (Walker, referrals, reps, intake) aren't digital and are left out.
+        Synced from Google Sheets above, or upload a copy. Pick the month-to-date period above to match the sheet.
       </p>
       <div className={`dm-drop${over ? " over" : ""}`}
         onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
@@ -112,10 +124,58 @@ function SheetCompare({ to, report }: { to: string; report: DigitalData | null }
         <input ref={input} type="file" accept=".xlsx,.xlsm,.xls" hidden aria-label="The team's sheet" onChange={(e) => { const f = e.target.files?.[0]; if (f) void open(f); e.target.value = ""; }} />
       </div>
       {loaded && !report && <p className="sr-nil" style={{ marginTop: 12 }}><Loader2 size={13} className="sr-spin" /> Loading Lead Docket's numbers…</p>}
-      {loaded && report && <Comparison sheet={loaded.parsed} report={report} />}
+      {loaded && report && <Comparison sheet={loaded.parsed} report={report} file={loaded.file} tab={loaded.tab} />}
     </div>
   );
 }
+/**
+ * Sync the sheet straight from Google Sheets: the same job that runs every 30
+ * minutes (server/marketingSheetSync.ts) — today's tab, compared with Lead
+ * Docket, its differences added to the variance log below when they changed.
+ */
+function SheetSync() {
+  const utils = trpc.useUtils();
+  const status = trpc.marketing.sheetSyncStatus.useQuery(undefined, {
+    // Poll while it runs so the result shows without a refresh.
+    refetchInterval: (q) => ((q.state.data as any)?.state === "running" ? 3000 : 60_000),
+  });
+  const s = status.data;
+  const running = s?.state === "running";
+  // When a run finishes, the variance log may have a new comparison.
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    if (wasRunning.current && !running) {
+      void utils.marketing.varianceLog.invalidate();
+      if (s?.state === "ok") toast.success("Digital marketing sheet synced.");
+      else if (s?.state === "failed") toast.error("The sheet sync failed — see the message under the button.");
+    }
+    wasRunning.current = running;
+  }, [running]);
+  const sync = trpc.marketing.syncSheet.useMutation({
+    onSuccess: (r) => {
+      if (r.alreadyRunning) toast.info("The sheet is already syncing.");
+      void utils.marketing.sheetSyncStatus.invalidate();
+    },
+    onError: (e) => toast.error(e.message || "Couldn't start the sheet sync."),
+  });
+  const busy = running || sync.isPending;
+  const ago = (iso: string | null) => (iso ? formatDistanceToNow(new Date(iso), { addSuffix: true }) : "never");
+  return (
+    <div className="dm-drop" style={{ marginBottom: 10 }}>
+      <RefreshCw size={20} aria-hidden />
+      <span style={{ flex: 1, minWidth: 180 }}>
+        <b>From Google Sheets</b> · syncs automatically every 30 minutes
+        {s && <> · last synced <b>{ago(s.lastSuccessAt)}</b></>}
+        {s?.summary && s.state === "ok" && <span className="sr-sub" style={{ display: "block", margin: "2px 0 0" }}>{s.summary}</span>}
+        {s?.error && s.state === "failed" && <span style={{ display: "block", marginTop: 2, color: "var(--bad)" }}>{s.error}</span>}
+      </span>
+      <button className="sr-btn2" onClick={() => sync.mutate()} disabled={busy}>
+        {busy ? <Loader2 className="sr-spin" /> : <RefreshCw />} {busy ? "Syncing…" : "Sync now"}
+      </button>
+    </div>
+  );
+}
+
 /** The first of the month of a day: the sheet is month to date. */
 const from0 = (to: string) => to.slice(0, 8) + "01";
 
@@ -125,7 +185,11 @@ const CRM_KEY: Record<SheetColumn, (r: DigitalData["team"][number]) => number | 
   target: (r) => r.target, conversion: (r) => r.conversion,
 };
 
-function Comparison({ sheet, report }: { sheet: ParsedSheet; report: DigitalData }) {
+const FIX_LABEL = { leaddocket: "Fix in Lead Docket", sheet: "Fix the sheet", check: "Check" } as const;
+/** Older than this, the comparison may be against a copy of Lead Docket that's behind the sheet. */
+const STALE_MS = 30 * 60 * 1000;
+
+function Comparison({ sheet, report, file, tab }: { sheet: ParsedSheet; report: DigitalData; file: string; tab: string }) {
   const gbp = report.team.find((r) => r.group === "GBP")!;
   const seo = report.team.find((r) => r.group === "SEO")!;
   // The sheet's TOTAL is GBP + SEO; it has no Ads row.
@@ -139,12 +203,52 @@ function Comparison({ sheet, report }: { sheet: ParsedSheet; report: DigitalData
     ["SEO / Website", sheet.team.SEO, (k) => CRM_KEY[k](seo)],
     ["TOTAL (GBP + SEO)", sheet.team.TOTAL, both],
   ];
-  const lists = [
-    { title: "In-house sign-ups", sheet: sheet.inHouse, crm: report.signups.filter((s) => s.kind === "inHouse" && s.group !== "Ads"), found: sheet.found.inHouse },
-    { title: "Signed referred out", sheet: sheet.referred, crm: report.signups.filter((s) => s.kind === "referred" && s.group !== "Ads"), found: sheet.found.referred },
-  ];
+  // The sheet has no Ads row, so its sign-ups are matched against GBP + SEO only.
+  const crm = report.signups.filter((s) => s.group !== "Ads");
+  const audit = auditSignups(sheet, crm);
+  const gaps = rows.map(([name, s]) => [name, unbucketed(s)] as const).filter(([, n]) => n != null && n !== 0);
+  const kindWord = (k: "inHouse" | "referred") => (k === "inHouse" ? "in-house" : "referred out");
+  const names = trpc.marketing.sheetNames.useQuery(
+    { from: report.period.from, to: report.period.to, names: audit.onlySheet.map((s) => s.name).slice(0, 200) },
+    { placeholderData: (prev) => prev },
+  );
+  const explained = names.data ? new Map(names.data.names.map((n) => [n.name, n])) : null;
+  const sync = names.data?.sync;
+  const syncedAt = sync?.lastSuccessAt ? new Date(sync.lastSuccessAt) : null;
+  const stale = sync && (!syncedAt || Date.now() - syncedAt.getTime() > STALE_MS || sync.state === "failed" || sync.state === "partial");
+
+  // Every difference on this page, for the running variance log. Saved once per
+  // file, tab and period — after the name lookups, so each carries its reason.
+  const utils = trpc.useUtils();
+  const save = trpc.marketing.saveVariances.useMutation({
+    onSuccess: () => utils.marketing.varianceLog.invalidate(),
+    onError: (e) => toast.error(`Couldn't save this comparison to the variance log: ${e.message}`),
+  });
+  const savedFor = useRef<string | null>(null);
+  const saveKey = `${file}|${tab}|${report.period.from}|${report.period.to}`;
+  const lookedUp = !audit.onlySheet.length || !!names.data || names.isError;
+  useEffect(() => {
+    if (!lookedUp || savedFor.current === saveKey) return;
+    savedFor.current = saveKey;
+    // The same rows the scheduled marketing-sheet sync logs (shared/digitalSheet.ts).
+    const items = sheetVariances(sheet, report, {
+      explained,
+      staleSync: stale ? { lastSuccessAt: syncedAt ? syncedAt.toISOString() : null, state: sync!.state } : null,
+    });
+    save.mutate({ from: report.period.from, to: report.period.to, file, tab, items: items.slice(0, 1000) });
+  }, [lookedUp, saveKey]);
   return (
     <div style={{ marginTop: 14 }}>
+      {stale && (
+        <p className="sr-note">
+          <Info /> <span>
+            <b>Lead Docket last synced {syncedAt ? syncedAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "never"}
+            {sync!.state === "failed" || sync!.state === "partial" ? ", and its last run had problems" : ""}.</b>{" "}
+            Recent changes in Lead Docket may not be here yet — sync from the top of the page before reviewing differences.
+            {sync!.state !== "ok" && sync!.summary ? ` Last run: ${sync!.summary.slice(0, 300)}` : ""}
+          </span>
+        </p>
+      )}
       {!sheet.found.team ? <p className="sr-nil">This tab has no "Digital Marketing Team" table.</p> : (
         <div className="sr-scroll">
           <table className="sr-t dm-t" style={{ minWidth: 980 }}>
@@ -175,33 +279,62 @@ function Comparison({ sheet, report }: { sheet: ParsedSheet; report: DigitalData
       )}
       <p className="dm-foot">
         Differences are Lead Docket minus the sheet. Two are by definition: the CRM counts Pending Referral leads as Open (the sheet counts them as
-        Referred Out), and a lead counts in the day of its sign-up if signed, otherwise the day it came in. The CRM's unique count needs the accident
+        Referred Out), and a lead counts in the day of its sign-up if signed, otherwise the day it came in — so a late referral counts in the month it signs, not the month the lead arrived. The CRM's unique count needs the accident
         date and linked leads, which fill in as Lead Docket re-reads leads.
       </p>
 
-      {lists.map((l) => {
-        const r = reconcileNames(l.sheet, l.crm);
-        return (
-          <div key={l.title} style={{ marginTop: 18 }}>
-            <h3 className="sr-sub" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>
-              {l.title}: {fmt(l.sheet.length)} on the sheet, {fmt(l.crm.length)} in Lead Docket (GBP + SEO)
-            </h3>
-            {!l.found ? <p className="sr-nil">This tab has no list for it.</p> : (
-              <div className="dm-names">
-                <NameCol title="In both" n={r.both.length} tone="ok">
-                  {r.both.map((b, i) => <li key={i}>{b.crm.name}<i>{b.crm.label}{b.sheet.source && b.sheet.source !== b.crm.label ? ` · sheet: ${b.sheet.source}` : ""}</i></li>)}
-                </NameCol>
-                <NameCol title="Only on the sheet" n={r.onlySheet.length} tone="bad">
-                  {r.onlySheet.map((s, i) => <li key={i}>{s.name}<i>{[s.source, s.caseType, s.caseValue].filter(Boolean).join(" · ")} — check its Marketing Source, status and sign-up date in Lead Docket</i></li>)}
-                </NameCol>
-                <NameCol title="Only in Lead Docket" n={r.onlyCrm.length} tone="bad">
-                  {r.onlyCrm.map((c) => <li key={c.id}>{c.name}<i>{c.label} · signed {leadDay(c.date)} — missing from the sheet</i></li>)}
-                </NameCol>
-              </div>
-            )}
+      {gaps.length > 0 && (
+        <p className="sr-note" style={{ marginTop: 12 }}>
+          <Info /> <span>
+            <b>The sheet's status columns don't add up to its Total Leads:</b>{" "}
+            {gaps.map(([name, n], i) => (
+              <Fragment key={name}>{i ? "; " : ""}{name}: {n! > 0 ? `${fmt(n!)} lead${n === 1 ? "" : "s"} in no status column` : `the columns hold ${fmt(-n!)} more than the total`}</Fragment>
+            ))}. Give each of those leads a status on the sheet — Lead Docket files every lead in one.
+          </span>
+        </p>
+      )}
+
+      <h3 className="sr-sub" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14, marginTop: 18 }}>
+        Sign-ups: {fmt(sheet.inHouse.length + sheet.referred.length)} on the sheet ({fmt(sheet.inHouse.length)} in-house, {fmt(sheet.referred.length)} referred out),{" "}
+        {fmt(crm.length)} in Lead Docket (GBP + SEO)
+      </h3>
+      {!sheet.found.inHouse && !sheet.found.referred ? <p className="sr-nil">This tab has no sign-up lists.</p> : (
+        <>
+          <div className="dm-names dm-names-2">
+            <NameCol title="In both, same status" n={audit.agree.length} tone="ok">
+              {audit.agree.map((b, i) => <li key={i}>{b.crm.name}<i>{b.crm.label} · {kindWord(b.crm.kind)}</i></li>)}
+            </NameCol>
+            <NameCol title="Status differs" n={audit.statusDiffers.length} tone="bad">
+              {audit.statusDiffers.map((b, i) => (
+                <li key={i}>{b.crm.name}<i>Sheet: {kindWord(b.sheet.kind)} · Lead Docket: {kindWord(b.crm.kind)} — correct whichever is wrong; Intake updates Lead Docket first</i></li>
+              ))}
+            </NameCol>
+            <NameCol title="Only on the sheet" n={audit.onlySheet.length} tone="bad">
+              {audit.onlySheet.map((s, i) => {
+                const why = explained?.get(s.name);
+                return (
+                  <li key={i}>{s.name}
+                    <i>{[s.source, kindWord(s.kind), s.caseType].filter(Boolean).join(" · ")}</i>
+                    <i>{why ? <><b>{FIX_LABEL[why.fix]}:</b> {why.reason}{why.found ? ` (lead ${why.found.leadId})` : ""}</> : names.isError ? "Couldn't look this name up in Lead Docket." : "Looking it up in Lead Docket…"}</i>
+                  </li>
+                );
+              })}
+            </NameCol>
+            <NameCol title="Only in Lead Docket" n={audit.onlyCrm.length} tone="bad">
+              {audit.onlyCrm.map((c) => <li key={c.id}>{c.name}<i>{c.label} · {kindWord(c.kind)} · lead {leadDay(c.date)} — missing from the sheet</i></li>)}
+            </NameCol>
           </div>
-        );
-      })}
+          {audit.sourceDiffers.length > 0 && (
+            <div className="dm-names" style={{ marginTop: 12, gridTemplateColumns: "minmax(0, 1fr)" }}>
+              <NameCol title="Source differs" n={audit.sourceDiffers.length} tone="bad">
+                {audit.sourceDiffers.map((b, i) => (
+                  <li key={i}>{b.crm.name}<i>Sheet: {b.sheet.source} · Lead Docket: {b.crm.label} ({b.crm.source}) — Lead Docket's Marketing Source is what counts; fix it there if it's wrong, otherwise the sheet</i></li>
+                ))}
+              </NameCol>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -211,6 +344,98 @@ function NameCol({ title, n, tone, children }: { title: string; n: number; tone:
     <div>
       <h3>{title}<span className={`sr-badge ${n === 0 ? "sr-b-grey" : tone === "ok" ? "sr-b-ok" : "sr-b-bad"}`}>{fmt(n)}</span></h3>
       {n === 0 ? <p className="sr-nil" style={{ marginTop: 6 }}>None.</p> : <ul>{children}</ul>}
+    </div>
+  );
+}
+
+// ── the running variance log ──
+
+type VarianceRow = { kind: "total" | "unbucketed" | "status" | "onlySheet" | "onlyCrm" | "source" | "sync"; itemKey: string; name: string; detail: string };
+const KIND_LABEL: Record<VarianceRow["kind"], string> = {
+  total: "Team table", unbucketed: "No status on sheet", status: "Status differs", onlySheet: "Only on the sheet",
+  onlyCrm: "Only in Lead Docket", source: "Source differs", sync: "Sync out of date",
+};
+const when = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+/**
+ * Every difference found in this month's sheet comparisons: open while the
+ * latest comparison still finds it, fixed once one doesn't. Each upload of the
+ * sheet above adds a comparison.
+ */
+function VarianceLog({ month }: { month: string }) {
+  const q = trpc.marketing.varianceLog.useQuery({ month });
+  const [show, setShow] = useState<"open" | "all">("open");
+  const data = q.data;
+  const open = data?.variances.filter((v) => v.status === "open") ?? [];
+  const fixed = data?.variances.filter((v) => v.status === "fixed") ?? [];
+  const rows = show === "open" ? open : data?.variances ?? [];
+  const label = new Date(`${month}-15T12:00:00Z`).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+
+  const exportXlsx = async () => {
+    if (!data) return;
+    const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.variances.map((v) => ({
+      Status: v.status === "open" ? "Open" : "Fixed", Type: KIND_LABEL[v.kind as VarianceRow["kind"]] ?? v.kind, Item: v.name, Detail: v.detail,
+      "First found": when(v.firstSeen), "Last found": when(v.lastSeen), "Fixed by": v.fixedAt ? when(v.fixedAt) : "", "Times found": v.times,
+    }))), "Differences");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.uploads.map((u) => ({
+      Compared: when(u.uploadedAt), By: u.uploadedBy ?? "", File: u.file, Tab: u.tab, Period: `${u.fromDay} – ${u.toDay}`, Differences: u.count,
+    }))), "Comparisons");
+    XLSX.writeFile(wb, `variance-log-${month}.xlsx`);
+  };
+
+  return (
+    <div className="sr-panel">
+      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
+        <div className="sr-ttl">
+          <h2>Variance log — {label}</h2>
+          {data && <span className={`sr-badge ${open.length ? "sr-b-bad" : "sr-b-ok"}`}>{fmt(open.length)} open</span>}
+          {data && fixed.length > 0 && <span className="sr-badge sr-b-ok">{fmt(fixed.length)} fixed</span>}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <select className="sr-input" value={show} onChange={(e) => setShow(e.target.value as "open" | "all")} aria-label="Which differences">
+            <option value="open">Open only</option>
+            <option value="all">Open and fixed</option>
+          </select>
+          <button className="sr-btn2" disabled={!data?.variances.length} onClick={() => void exportXlsx()}><Download /> Excel</button>
+        </div>
+      </div>
+      <p className="sr-sub">
+        Each upload of the team's sheet above is saved here with its differences. A difference stays open while the latest comparison still finds it, and
+        is marked fixed when one doesn't. Run both reports side by side this way for a month or two; when it stays at zero open, the sheet can be retired.
+      </p>
+      {q.isLoading ? <p className="sr-nil"><Loader2 size={13} className="sr-spin" /> Loading…</p>
+        : q.isError ? <LoadError what="the variance log" message={q.error.message} onRetry={() => void q.refetch()} />
+        : !data?.uploads.length ? <p className="sr-nil">No comparisons for {label} yet. Upload the team's sheet above to start the log.</p>
+        : (
+          <>
+            <p className="sr-sub" style={{ marginTop: 0 }}>
+              {fmt(data.uploads.length)} comparison{data.uploads.length === 1 ? "" : "s"} this month · latest {when(data.uploads[0].uploadedAt)}
+              {data.uploads[0].uploadedBy ? ` by ${data.uploads[0].uploadedBy}` : ""} ({data.uploads[0].file}, tab {data.uploads[0].tab}).
+            </p>
+            {rows.length === 0 ? <p className="sr-nil">{show === "open" ? "Nothing open — the latest comparison found no differences." : "No differences logged."}</p> : (
+              <div className="sr-scroll">
+                <table className="sr-t dm-t" style={{ minWidth: 820 }}>
+                  <thead><tr><th>Status</th><th>Type</th><th>Item</th><th>Detail</th><th>First found</th><th>Fixed by</th><th className="num">Found</th></tr></thead>
+                  <tbody>
+                    {rows.map((v) => (
+                      <tr key={`${v.kind}|${v.itemKey}`}>
+                        <td><span className={`sr-badge ${v.status === "open" ? "sr-b-bad" : "sr-b-ok"}`}>{v.status === "open" ? "Open" : "Fixed"}</span></td>
+                        <td className="nowrap">{KIND_LABEL[v.kind as VarianceRow["kind"]] ?? v.kind}</td>
+                        <td className="l"><b>{v.name}</b></td>
+                        <td>{v.detail}</td>
+                        <td className="nowrap">{when(v.firstSeen)}</td>
+                        <td className="nowrap">{v.fixedAt ? when(v.fixedAt) : "—"}</td>
+                        <td className="num">{fmt(v.times)}×</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
     </div>
   );
 }

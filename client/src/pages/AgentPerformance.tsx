@@ -53,6 +53,8 @@ export default function AgentPerformance() {
     { agentName: isManager ? agent : undefined, team: isManager ? team : "all", from: `${from}T00:00:00`, to: `${to}T23:59:59` },
   );
   const review = trpc.reports.agentPerformanceReview.useMutation();
+  const { data: frRc = [] } = trpc.reports.frRingcentralStatus.useQuery(undefined, { enabled: isManager, staleTime: 60_000 });
+  const frUnlinked = frRc.filter((f) => !f.connected);
 
   const applyPreset = (p: string) => { setPreset(p); const r = presetRange(p); setFrom(r.from); setTo(r.to); review.reset(); };
   const k = data?.kpis;
@@ -137,6 +139,20 @@ export default function AgentPerformance() {
             </div>
           )}
         </div>
+
+        {/* FR calls come from each FR's own RingCentral sign-in; name who hasn't, so zeros aren't mistaken for no work. */}
+        {isManager && team === "FR" && frUnlinked.length > 0 && (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm flex gap-3">
+            <AlertTriangle className="w-[18px] h-[18px] text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-semibold text-foreground">RingCentral not connected: {frUnlinked.map((f) => f.name).join(", ")}</div>
+              <div className="text-muted-foreground mt-1">
+                Their calls can't appear here until each one signs in to RingCentral once, from <b>Settings → RingCentral</b> (or My Profile).
+                {frUnlinked.some((f) => !f.hasAccount) && <> No CRM login matches {frUnlinked.filter((f) => !f.hasAccount).map((f) => f.name).join(", ")} yet.</>}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

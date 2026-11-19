@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { canAssignRoles, canManage } from "@shared/permissions";
-import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock, Sparkles, CheckCircle2, MapPin, Copy, Download, RotateCw, Scale } from "lucide-react";
+import { Palette, Upload, Trash2, Save, Loader2, Image as ImageIcon, Moon, Sun, Lock, Sparkles, CheckCircle2, MapPin, Copy, Download, RotateCw, Scale, FileSpreadsheet, XCircle } from "lucide-react";
 import { DEFAULT_LOGO } from "@/hooks/useBranding";
 import { DataSyncPanel } from "@/components/DataSyncPanel";
 import { SystemHealthCard } from "@/components/SystemHealth";
@@ -434,6 +434,7 @@ function BrandingSettings() {
       {canAssignRoles(user?.role) && <ClaudeCard />}
       {canAssignRoles(user?.role) && <TimeeroCard />}
       {canAssignRoles(user?.role) && <FilevineCard />}
+      {canAssignRoles(user?.role) && <GoogleSheetsCard />}
 
       {!isManager && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm mb-6">
@@ -479,6 +480,89 @@ function BrandingSettings() {
           </Button>
           {dirty && <span className="text-xs text-muted-foreground flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" /> Unsaved changes</span>}
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Google service account (server/googleSheets.ts): lets the CRM read sheets kept
+ * private to farahilaw.com — each sheet is shared with the account's email as
+ * Viewer instead of "Anyone with the link". The key is checked with Google,
+ * then stored encrypted and never shown again.
+ */
+function GoogleSheetsCard() {
+  const utils = trpc.useUtils();
+  const status = trpc.settings.googleSheetsAccount.useQuery();
+  const s = status.data;
+  const [json, setJson] = useState("");
+  const [sheets, setSheets] = useState<{ label: string; ok: boolean; detail: string }[] | null>(null);
+  const save = trpc.settings.saveGoogleSheetsAccount.useMutation({
+    onSuccess: (r) => {
+      setJson(""); setSheets(r.sheets); utils.settings.googleSheetsAccount.invalidate(); utils.dataSync.status.invalidate();
+      toast.success(`Google accepted the key for ${r.email}.`);
+    },
+    onError: (e) => toast.error(e.message, { duration: 12000 }),
+  });
+  const clear = trpc.settings.clearGoogleSheetsAccount.useMutation({
+    onSuccess: () => { setSheets(null); utils.settings.googleSheetsAccount.invalidate(); toast.success("Service account removed; sheets are read by link again."); },
+  });
+  const busy = save.isPending || clear.isPending;
+  const copy = async () => {
+    if (!s?.email) return;
+    try { await navigator.clipboard.writeText(s.email); toast.success("Copied — share the sheet with this address as Viewer."); }
+    catch { toast.error("Couldn't copy — select the address instead."); }
+  };
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><FileSpreadsheet className="w-4 h-4" /></span>
+        <div className="text-sm font-semibold text-foreground">Google Sheets — service account</div>
+        {s?.email && (
+          <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Key saved
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        For sheets kept private to farahilaw.com. Paste the service account's JSON key from Google Cloud (with the Google Drive API turned on),
+        then share each sheet with the account's address as <b>Viewer</b>. Sheets shared "Anyone with the link" keep working without it.
+      </p>
+      {s?.email && (
+        <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
+          <span className="text-muted-foreground">Share sheets with</span>
+          <code className="rounded-md bg-muted px-2 py-0.5 text-foreground break-all">{s.email}</code>
+          <Button type="button" size="sm" variant="outline" className="gap-1.5 border-border h-7" onClick={copy}><Copy className="w-3.5 h-3.5" /> Copy</Button>
+        </div>
+      )}
+      {!s?.fromServer && (
+        <form className="grid gap-2 max-w-2xl" onSubmit={(e) => { e.preventDefault(); save.mutate({ json }); }}>
+          <textarea value={json} onChange={(e) => setJson(e.target.value)} spellCheck={false} autoComplete="off" rows={4}
+            aria-label="Service account JSON key"
+            placeholder={s?.email ? "Key saved — paste a new key file's contents to replace it" : '{ "type": "service_account", "client_email": "…", "private_key": "…" }'}
+            className="w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-xs text-foreground" />
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm" className="gap-1.5" disabled={busy || json.trim().length < 10}>
+              {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save &amp; test
+            </Button>
+            {s?.email && (
+              <Button type="button" size="sm" variant="outline" className="gap-1.5 border-border" disabled={busy} onClick={() => clear.mutate()}>
+                <Trash2 className="w-3.5 h-3.5" /> Remove
+              </Button>
+            )}
+          </div>
+        </form>
+      )}
+      {sheets && (
+        <ul className="mt-3 space-y-1 text-xs">
+          {sheets.map((x) => (
+            <li key={x.label} className="flex items-start gap-1.5">
+              {x.ok ? <CheckCircle2 className="w-3.5 h-3.5 mt-px text-emerald-600 dark:text-emerald-400 shrink-0" /> : <XCircle className="w-3.5 h-3.5 mt-px text-red-600 dark:text-red-400 shrink-0" />}
+              <span><b className="text-foreground">{x.label}</b> — {x.detail}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

@@ -116,22 +116,40 @@ const userFor = (raw) => {
   const byPhone = new Map();
   for (const f of facs) for (const p of [f.phone, f.phone2, f.phone3, f.contactPhone]) { const k = phone10(p); if (k && !byPhone.has(k)) byPhone.set(k, f.id); }
   const calls = await q("SELECT * FROM rc_unmatched_calls WHERE status='unassigned'");
-  let n = 0;
+  // A call can already be in contact_logs (the sync logged it after the
+  // facility appeared, or the unmatched table holds it twice). The unique
+  // index on rcCallId rejects a second copy, so such rows are only closed out.
+  // Compared trimmed and lower-cased: the unique index's collation ignores case
+  // and trailing spaces, so an exact-string check misses ids it would reject.
+  const callKey = (v) => String(v).trim().toLowerCase();
+  const logged = new Set(
+    (await q("SELECT rcCallId FROM contact_logs WHERE rcCallId IS NOT NULL")).map((r) => callKey(r.rcCallId))
+  );
+  let n = 0, already = 0;
   for (const u of calls) {
     const external = u.direction === "Inbound" ? u.fromNumber : u.toNumber;
     const fid = byPhone.get(phone10(external)) ?? byPhone.get(phone10(u.toNumber)) ?? byPhone.get(phone10(u.fromNumber));
     if (!fid) continue;
-    n++;
+    if (u.rcCallId != null && logged.has(callKey(u.rcCallId))) {
+      already++;
+      await exec("UPDATE rc_unmatched_calls SET status='assigned' WHERE id=?", [u.id]);
+      continue;
+    }
+    if (u.rcCallId != null) logged.add(callKey(u.rcCallId));
     const secs = Number(u.durationSeconds) || 0;
     const result = /connect|accept/i.test(u.callResult || "") ? "connected" : /voicemail/i.test(u.callResult || "") ? "voicemail" : /miss|no answer/i.test(u.callResult || "") ? "no_answer" : /busy/i.test(u.callResult || "") ? "busy" : "other";
-    await exec(
-      `INSERT INTO contact_logs (facilityId, contactType, contactDate, callResult, callDuration, callType, summary, repName, direction, fromRingCentral, rcCallId, rcSessionId, createdAt)
+    // The RingCentral sync runs every 2 minutes and can log this call between
+    // the check above and this insert; the unique index then rejects it. That
+    // means the call is already filed, which is all this step wanted.
+    const ins = await exec(
+      `INSERT IGNORE INTO contact_logs (facilityId, contactType, contactDate, callResult, callDuration, callType, summary, repName, direction, fromRingCentral, rcCallId, rcSessionId, createdAt)
        VALUES (?, 'call', ?, ?, ?, 'other', ?, ?, ?, ?, ?, ?, NOW())`,
       [fid, u.startTime, result, `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`, u.toName ? `Matched later — ${u.toName}` : "Matched later", u.agentName, u.direction, String(u.rcCallId).startsWith("xls:") ? 0 : 1, u.rcCallId, u.rcSessionId]
     );
+    if (APPLY && ins === 0) already++; else n++;
     await exec("UPDATE rc_unmatched_calls SET status='assigned' WHERE id=?", [u.id]);
   }
-  log(`[4] unmatched calls filed against a facility: ${n}\n`);
+  log(`[4] unmatched calls filed against a facility: ${n}  (already logged, closed out: ${already})\n`);
 }
 
 // ── 3. rollups from contact_logs ─────────────────────────────────────────────

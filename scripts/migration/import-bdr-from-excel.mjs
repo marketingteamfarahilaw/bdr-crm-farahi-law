@@ -255,14 +255,97 @@ await load("bdr_expenses", bdrExpenses, (e) => [
   "INSERT INTO bdr_expenses (month, expenseDate, agentName, facilityId, facilityName, facilityPhone, store, reason, amount, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,NOW(),NOW())",
   [clamp(e.month, 20), e.when, clamp(e.agent, 255), facId(e.facility, e.phone), clamp(e.facility, 255), clamp(e.phone, 50), clamp(e.store, 255), clamp(e.reason, 500), e.amount]]);
 
-await load("referral_rewards", rewards, (r) => [
-  "INSERT INTO referral_rewards (agentName, sud, referralType, facilityId, facilityName, clientName, clientTier, payoutAmount, status, caseNumber, coordinator, deliveryType, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())",
-  [clamp(r.agent, 255), clamp(r.sud, 100), r.refType, facId(r.facility, ""), clamp(r.facility, 255), clamp(r.client || "(unknown)", 255), r.tier, r.payout, r.status, clamp(r.caseNumber, 100), clamp(r.coordinator, 255), clamp(r.delivery, 100), text(r.notes)]]);
+// ─── Referral Rewards (referral_rewards) ──────────────────────────────────────
+// This table used to be wiped and reloaded from the sheet on every sync, which
+// erased any reward added or edited on the Referral Rewards page. It now syncs
+// like the Partner Referral Tracker below: each sheet row is keyed on its own
+// contents, a row edited in the app (updatedAt later than syncedAt) is left
+// alone from then on, and rewards added in the app (no externalSource) are
+// never touched. The key columns are added here, the only code that reads
+// them — deploys have no migration step.
+{
+  const [cols] = await c.query(`SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'referral_rewards'`);
+  const has = new Set(cols.map((r) => r.name));
+  if (!has.has("externalId")) await c.query("ALTER TABLE referral_rewards ADD COLUMN externalId VARCHAR(64) NULL");
+  if (!has.has("externalSource")) await c.query("ALTER TABLE referral_rewards ADD COLUMN externalSource VARCHAR(20) NULL");
+  if (!has.has("syncedAt")) await c.query("ALTER TABLE referral_rewards ADD COLUMN syncedAt TIMESTAMP NULL");
+
+  // Keyed on who, which client, when and where — on the values as stored, so a
+  // row already in the table gives the same key.
+  const baseOf = (agent, client, sud, facility) => [key(agent), key(client), key(sud), key(facility)].join("|");
+  const FIELDS = ["agentName", "sud", "referralType", "facilityId", "facilityName", "clientName", "clientTier", "payoutAmount", "status", "caseNumber", "coordinator", "deliveryType", "notes"];
+  const seen = new Map();
+  const rows = rewards.map((r) => {
+    const v = {
+      agentName: clamp(r.agent, 255), sud: clamp(r.sud, 100), referralType: r.refType, facilityId: facId(r.facility, ""),
+      facilityName: clamp(r.facility, 255), clientName: clamp(r.client || "(unknown)", 255), clientTier: r.tier,
+      payoutAmount: r.payout, status: r.status, caseNumber: clamp(r.caseNumber, 100), coordinator: clamp(r.coordinator, 255),
+      deliveryType: clamp(r.delivery, 100), notes: text(r.notes),
+    };
+    const base = baseOf(v.agentName, v.clientName, v.sud, v.facilityName);
+    const n = (seen.get(base) ?? 0) + 1;       // the same reward can appear twice
+    seen.set(base, n);
+    return { ...v, base, n, externalId: createHash("sha1").update(base + "#" + n).digest("hex") };
+  });
+
+  // First run only: the rows already here came from the old wipe-and-reload
+  // (plus any added in the app since the last one). Adopt the ones that match a
+  // sheet row, so the switch-over neither duplicates nor drops them; the rest
+  // were added in the app and stay as they are.
+  const [[{ synced }]] = await c.query("SELECT COUNT(*) AS synced FROM referral_rewards WHERE externalSource='sheet'");
+  let adopted = 0;
+  if (Number(synced) === 0) {
+    const [legacy] = await c.query("SELECT id, agentName, clientName, sud, facilityName FROM referral_rewards WHERE externalSource IS NULL ORDER BY id");
+    const pool = new Map();
+    for (const l of legacy) {
+      const b = baseOf(l.agentName, l.clientName, l.sud, l.facilityName);
+      pool.set(b, [...(pool.get(b) ?? []), l.id]);
+    }
+    for (const r of rows) {
+      const id = pool.get(r.base)?.shift();
+      if (id == null) continue;
+      await c.query("UPDATE referral_rewards SET externalId=?, externalSource='sheet', syncedAt=NOW(), updatedAt=NOW() WHERE id=?", [r.externalId, id]);
+      adopted++;
+    }
+  }
+
+  const have = new Map((await c.query(
+    "SELECT id, externalId, UNIX_TIMESTAMP(updatedAt) u, UNIX_TIMESTAMP(syncedAt) s FROM referral_rewards WHERE externalSource='sheet'"))[0]
+    .map((r) => [r.externalId, r]));
+  const editedInApp = (r) => r.s != null && Number(r.u) > Number(r.s) + 1;
+  let ins = 0, upd = 0, kept = 0, del = 0, bad = 0;
+  for (const r of rows) {
+    const cur = have.get(r.externalId);
+    have.delete(r.externalId);
+    try {
+      if (cur && editedInApp(cur)) { kept++; continue; }
+      if (cur) {
+        await c.query(`UPDATE referral_rewards SET ${FIELDS.map((f) => "`" + f + "`=?").join(", ")}, syncedAt=NOW(), updatedAt=NOW() WHERE id=?`,
+          [...FIELDS.map((f) => r[f]), cur.id]);
+        upd++;
+      } else {
+        await c.query(`INSERT INTO referral_rewards (${FIELDS.map((f) => "`" + f + "`").join(", ")}, externalId, externalSource, syncedAt, createdAt, updatedAt)
+          VALUES (${FIELDS.map(() => "?").join(", ")}, ?, 'sheet', NOW(), NOW(), NOW())`,
+          [...FIELDS.map((f) => r[f]), r.externalId]);
+        ins++;
+      }
+    } catch (e) { bad++; if (bad <= 3) console.warn("  referral_rewards failed: " + e.message.slice(0, 110)); }
+  }
+  // Gone from the sheet: remove it here too, unless someone has worked on it in the app.
+  for (const r of have.values()) {
+    if (editedInApp(r)) { kept++; continue; }
+    await c.query("DELETE FROM referral_rewards WHERE id=?", [r.id]);
+    del++;
+  }
+  console.log(`referral_rewards: ${ins} added, ${upd} updated, ${del} removed, ${kept} left alone (edited in the app)` +
+    (adopted ? `, ${adopted} existing rows matched to the sheet` : "") + (bad ? `, failed ${bad}` : ""));
+}
 
 // referral_tracker (the Referral-Friendly List) is NOT loaded from the sheet any
 // more: the CRM became its source of truth on 2026-09-30 (Youssef), and the
 // team now enters rows in the app. Wiping and re-importing it here would erase
-// that work every 8 hours, so the sync leaves the table alone — no delete, no
+// that work on every sync, so the sync leaves the table alone — no delete, no
 // insert. The tab is still parsed above because the Partner Referral Tracker
 // block below reads it.
 
