@@ -15,7 +15,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import type { DrillLink } from "../../../../server/marketing/common";
 import { trpc } from "@/lib/trpc";
-import { DIGITAL_GROUP_LABEL, DIGITAL_GROUPS, MERCH } from "@shared/marketing";
+import { DIGITAL_GROUP_LABEL, DIGITAL_GROUPS } from "@shared/marketing";
 import { SHEET_COLUMNS, SIGNUP_LOG_TAB, auditSignups, comparedSignups, nameKey, parseSheet, parseSignupLog, sheetTeamRows, sheetVariances, tabForDay, unbucketed, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
 import { fmt, leadDay, pct1, rangeLabel } from "../SignupsDashboard";
 import { LoadError } from "../signups/LoadError";
@@ -454,7 +454,7 @@ function AuditOverview({ q, from, to, scope, onScope, cmp, onCmp }: {
     { name: "Possibly digital", ...sumOf(data.possiblyDigital), prev: c?.possiblyDigital.leads },
     { name: "Possibly not digital", ...sumOf(data.possiblyNotDigital), prev: c?.possiblyNotDigital.leads },
     { name: "Toll-free line", ...sumOf(data.tollFree), prev: c?.tollFree.leads },
-    { name: "BD/FR on a campaign", ...sumOf(data.teamCampaigns), prev: c?.teamCampaigns.leads },
+    { name: "BD/FR on a digital campaign", ...sumOf(data.teamCampaigns), prev: c?.teamCampaigns.leads },
   ] : [];
   const gain = data ? DIGITAL_GROUPS.map((g) => {
     const w = data.wouldAdd.find((x) => x.group === g);
@@ -682,15 +682,15 @@ function TeamCampaigns({ rows, scope, from, to }: { rows: TeamRow[]; scope: Scop
   return (
     <div className="sr-panel">
       <div className="sr-panel-h" style={{ flexWrap: "wrap" }}>
-        <h2>BD/FR leads with a marketing campaign</h2>
+        <h2>BD/FR leads with a digital marketing campaign</h2>
         {rows.length > 0 && <button className="sr-btn2" onClick={exportCsv}><FileSpreadsheet size={14} /> Export</button>}
       </div>
       <p className="sr-sub">
-        Leads credited to a BDR or Field Rep whose Lead Docket <b>Campaign</b> is filled in — {fmt(leads)} leads, {fmt(signed)} signed. They count for
+        Leads credited to a BDR or Field Rep whose Lead Docket <b>Campaign</b> is one of digital marketing's (GBP, the website, ads, the toll-free line) — {fmt(leads)} leads, {fmt(signed)} signed. They count for
         the rep, not the campaign. Often that's right (a rep's client calls the toll-free number they were given; the intake notes say so). Where the
         lead really came in on its own, change its Marketing Source in Lead Docket and it moves after the next sync.
       </p>
-      {!rows.length ? <p className="sr-nil">No BD/FR lead carries a campaign in this period.</p> : (
+      {!rows.length ? <p className="sr-nil">No BD/FR lead carries a digital marketing campaign in this period.</p> : (
         <div className="sr-scroll">
           <table className="sr-t dm-t" style={{ minWidth: 640 }}>
             <thead><tr><th>Campaign in Lead Docket</th><th>Would file as</th><th className="num">Leads</th><th className="num">Signed</th><th /></tr></thead>
@@ -775,16 +775,10 @@ function Hygiene({ h }: { h: Hyg }) {
           <div className="sr-panel-h"><div className="sr-ttl"><h2>Names that look digital but aren't counted</h2><span className="sr-count">{h.lookDigital.length}</span></div></div>
           <p className="sr-sub">No digital row claims them. If one is a digital channel, tell the CRM team so it gets a row.</p>
           <NameTable rows={h.lookDigital} empty="None." />
-          {h.merch.length > 0 && (
-            <>
-              <h3 className="sr-sub" style={{ fontWeight: 600, color: "var(--ink)", marginTop: 12 }}>Known, not digital: {MERCH}</h3>
-              <NameTable rows={h.merch} empty="None." />
-            </>
-          )}
         </div>
         <div className="sr-panel">
           <div className="sr-panel-h"><div className="sr-ttl"><h2>Near-duplicate names</h2><span className="sr-count">{h.duplicates.length}</span></div></div>
-          <p className="sr-sub">The same letters and digits, one name inside another, or the same first 12 letters. Ones that land in different rows first.</p>
+          <p className="sr-sub">Spellings that involve a digital marketing source: the same letters and digits, one name inside another, or the same first 12 letters. Ones that land in different rows first.</p>
           {h.duplicates.length === 0 ? <p className="sr-nil">None.</p> : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 520, overflow: "auto" }}>
               {h.duplicates.map((d, i) => (
@@ -841,8 +835,8 @@ function SourceDirectory() {
         )}
       </div>
       <p className="sr-sub">
-        Every Marketing Source, Contact Source and Campaign ever used in Lead Docket, all time and all teams, with lead and sign-up counts and where
-        this CRM files each one. Names and counts only — no clients — so it's safe to share. <b>Save as PDF</b> prints all three lists; choose
+        Digital marketing's Marketing Sources (and the toll-free line) ever used in Lead Docket, and the Contact Sources and Campaigns of its leads, all time,
+        with lead and sign-up counts and where this CRM files each one. Walker, the BD/FR team, staff and merch aren't listed. Names and counts only — no clients — so it's safe to share. <b>Save as PDF</b> prints all three lists; choose
         "Save as PDF" as the printer.
       </p>
       {!open ? (
@@ -890,7 +884,6 @@ function printIntakeReport(d: AuditData, period: string) {
   if (!w) { toast.error("Allow pop-ups for this site to save the PDF."); return; }
   const box = '<span class="box"></span>';
   const team = d.teamCampaigns.filter((t) => t.kind !== "Other");
-  const teamOther = d.teamCampaigns.filter((t) => t.kind === "Other");
   const count = (rows: { leads: number; signed: number }[]) => rows.reduce((a, r) => [a[0] + r.leads, a[1] + r.signed], [0, 0]);
   const [tl, ts] = count(team), [dl, ds] = count(d.possiblyDigital), [nl, ns] = count(d.possiblyNotDigital);
   const kindLabel = (k: string) => (k in DIGITAL_GROUP_LABEL ? DIGITAL_GROUP_LABEL[k as keyof typeof DIGITAL_GROUP_LABEL] : k);
@@ -929,7 +922,6 @@ function printIntakeReport(d: AuditData, period: string) {
     <h2>1. Leads credited to a BDR or Field Rep that came in on a marketing campaign</h2>
     <p class="m">Lead Docket's Campaign says the call came through a marketing line or site, but the Marketing Source is a rep, so the lead counts for the rep, not the campaign.</p>
     ${team.length ? team.map((t) => `<h3>${esc(t.campaign)} <span>· would count as ${esc(kindLabel(t.kind))} · ${fmt(t.leads)} leads · ${fmt(t.signed)} signed</span></h3>${rows(t.clients, true, ["Rep referred — keep", "Came on own — change"])}${more(t)}`).join("") : '<p class="nil">None in this period.</p>'}
-    ${teamOther.length ? `<p class="m">Also on a BD/FR lead, but not a marketing campaign (no action needed): ${teamOther.map((t) => `${esc(t.campaign)} (${fmt(t.leads)})`).join(", ")}.</p>` : ""}
 
     <h2>2. Leads that look digital but aren't credited to a digital source</h2>
     <p class="m">The Marketing Source isn't digital (or is empty), but the Contact Source, campaign or web link says the client came in online.</p>
@@ -1029,7 +1021,7 @@ function printDirectory(d: Directory) {
     .note { color: #555; margin: 2px 0 6px; } .pb { break-before: page; }
   </style></head><body>
     <h1>Lead Docket Sources Directory</h1>
-    <div class="meta">Farahi Law · every Marketing Source, Contact Source and Campaign in Lead Docket, all time, all teams · generated ${esc(new Date(d.generated).toLocaleString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short" }))} Pacific · names and counts only, no client data</div>
+    <div class="meta">Farahi Law · digital marketing's Marketing Sources, and the Contact Sources and Campaigns of its leads, in Lead Docket, all time · generated ${esc(new Date(d.generated).toLocaleString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short" }))} Pacific · names and counts only, no client data</div>
     <div class="kpis"><div><b>${fmt(d.marketing.length)}</b>Marketing Sources</div><div><b>${fmt(d.contact.length)}</b>Contact Sources</div><div><b>${fmt(d.campaign.length)}</b>Campaigns</div><div><b>${fmt(ml)}</b>leads · ${fmt(msg)} signed</div></div>
     <h2>1. Marketing Sources, by where the CRM files them</h2>
     <p class="note">The field every marketing report counts by. "Digital" rows are what the Digital Marketing Report counts; "Other" is everything else (vendors, referrals, staff…), shown with the channel it rolls up into.</p>

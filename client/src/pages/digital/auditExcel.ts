@@ -14,7 +14,7 @@
 import type { inferRouterOutputs } from "@trpc/server";
 import type { Workbook, Worksheet, Row, Fill } from "exceljs";
 import type { AppRouter } from "../../../../server/routers";
-import { DIGITAL_GROUP_LABEL, DIGITAL_GROUPS, MERCH } from "@shared/marketing";
+import { DIGITAL_GROUP_LABEL, DIGITAL_GROUPS } from "@shared/marketing";
 
 type Out = inferRouterOutputs<AppRouter>["marketing"];
 export type AuditData = NonNullable<Out["digitalAudit"]>;
@@ -25,7 +25,7 @@ export const EXPORT_PARTS = [
   ["possiblyDigital", "Possibly digital"],
   ["possiblyNotDigital", "Possibly not digital"],
   ["tollFree", "Toll-free line"],
-  ["teamCampaigns", "BD/FR leads on a campaign"],
+  ["teamCampaigns", "BD/FR leads on a digital campaign"],
   ["names", "Source names"],
   ["directory", "Sources directory"],
 ] as const;
@@ -148,7 +148,7 @@ function overview(wb: Workbook, x: AuditExport): ChartSpec[] {
     { name: "Possibly digital", cur: sum(d.possiblyDigital), prev: cmp?.possiblyDigital },
     { name: "Possibly not digital", cur: sum(d.possiblyNotDigital), prev: cmp?.possiblyNotDigital },
     { name: "Toll-free line", cur: sum(d.tollFree), prev: cmp?.tollFree },
-    { name: "BD/FR on a campaign", cur: sum(d.teamCampaigns), prev: cmp?.teamCampaigns },
+    { name: "BD/FR on a digital campaign", cur: sum(d.teamCampaigns), prev: cmp?.teamCampaigns },
   ];
 
   // KPI tiles, two columns each: label, big number, change.
@@ -356,7 +356,7 @@ function teamSheet(wb: Workbook, x: AuditExport) {
       if (c.signed) cr.getCell(8).font = { ...bodyFont, bold: true, color: { argb: "FF" + C.ok } };
     }
   }
-  if (!d.teamCampaigns.length) { ws.getCell(r, 1).value = "No BD/FR lead carries a campaign in this period."; ws.getCell(r, 1).font = { ...bodyFont, italic: true, color: { argb: "FF" + C.mute } }; }
+  if (!d.teamCampaigns.length) { ws.getCell(r, 1).value = "No BD/FR lead carries a digital marketing campaign in this period."; ws.getCell(r, 1).font = { ...bodyFont, italic: true, color: { argb: "FF" + C.mute } }; }
   else ws.autoFilter = { from: { row: H, column: 1 }, to: { row: r - 1, column: COLS } };
 }
 
@@ -394,7 +394,6 @@ function namesSheet(wb: Workbook, x: AuditExport) {
     DIGITAL_GROUPS.flatMap((g) => h.perRow.filter((p) => p.group === g).flatMap((p) => p.names.map((n) => [DIGITAL_GROUP_LABEL[g], p.label, n.source, n.leads, excelDay(n.first), excelDay(n.last)]))));
   section("Names that look digital but aren't counted", "No digital row claims them. If one is a digital channel, tell the CRM team so it gets a row.",
     ["Marketing Source", "Leads", "First lead", "Last lead"], h.lookDigital.map((n) => [n.source, n.leads, excelDay(n.first), excelDay(n.last)]));
-  if (h.merch.length) section(`Known, not digital: ${MERCH}`, "The firm's merch and print.", ["Marketing Source", "Leads", "First lead", "Last lead"], h.merch.map((n) => [n.source, n.leads, excelDay(n.first), excelDay(n.last)]));
   section("Near-duplicate names", "The same letters and digits, one name inside another, or the same first 12 letters.",
     ["Kind", "Rows", "Names", "Leads"], h.duplicates.map((dd) => [dd.exact ? "Same name, spelled differently" : "Probably the same", dd.rows.join(" / "), dd.names.map((n) => `${n.source} (${fmtN(n.leads)})`).join("  ·  "), dd.leads]));
 }
@@ -413,7 +412,7 @@ function directorySheets(wb: Workbook, x: AuditExport) {
     const withCat = key === "marketing";
     const head = ["Name", "Leads", "Signed", "Sign-up rate", "First lead", "Last lead", ...(withCat ? ["Filed in the CRM as", "Detail"] : [])];
     const COLS = head.length;
-    banner(ws, COLS, `Lead Docket ${title.toLowerCase()}`, `All time, all teams  ·  ${fmtN(rows.length)} names  ·  ${note}`, false);
+    banner(ws, COLS, `Lead Docket ${title.toLowerCase()}`, `All time, digital marketing's leads  ·  ${fmtN(rows.length)} names  ·  ${note}`, false);
     const H = 6;
     header(ws, H, head, new Set([1, 2, 3]));
     setup(ws, [46, 10, 10, 12, 14, 14, ...(withCat ? [22, 34] : [])], H);
