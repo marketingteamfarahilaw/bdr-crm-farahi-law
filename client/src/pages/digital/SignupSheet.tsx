@@ -59,7 +59,10 @@ export function SignupSheetTab() {
     (outcome === "all" || (outcome === "referred") === isReferred(r)) &&
     (!k || [r.clientName, r.source, r.leadSource, r.signedUpBy, r.intaker, r.caseType].some((v) => v.toLowerCase().includes(k))));
 
-  const referred = rows.filter(isReferred).length;
+  // The KPIs are digital marketing's alone, like By source: the sign-ups the
+  // filters below show, less Walker, referrals and the reps'.
+  const dm = rows.filter((r) => r.group);
+  const referred = dm.filter(isReferred).length;
   const digital = d.rows.filter((r) => r.group).length;
   // Digital marketing's sign-ups by the sheet's Source column, grouped GBP,
   // Website, Ads and most first within each. Walker, referrals and the reps'
@@ -98,12 +101,12 @@ export function SignupSheetTab() {
           {!facts && <> Intake case details aren't shown for your role.</>}
         </p>
         <div className="dm-kpis">
-          <div className="dm-kpi hl"><b>{fmt(rows.length)}</b><span>Sign-ups shown</span></div>
-          <div className="dm-kpi"><b>{fmt(rows.length - referred)}</b><span>Signed in-house</span></div>
+          <div className="dm-kpi hl"><b>{fmt(dm.length)}</b><span>Digital marketing sign-ups</span></div>
+          <div className="dm-kpi"><b>{fmt(dm.length - referred)}</b><span>Signed in-house</span></div>
           <div className="dm-kpi"><b>{fmt(referred)}</b><span>Referred out</span></div>
-          <div className="dm-kpi"><b>{fmt(rows.filter((r) => r.group === "GBP").length)}</b><span>GBP</span></div>
-          <div className="dm-kpi"><b>{fmt(rows.filter((r) => r.group === "SEO").length)}</b><span>Website</span></div>
-          <div className="dm-kpi"><b>{fmt(rows.filter((r) => r.group === "Ads").length)}</b><span>Ads (social)</span></div>
+          <div className="dm-kpi"><b>{fmt(dm.filter((r) => r.group === "GBP").length)}</b><span>GBP</span></div>
+          <div className="dm-kpi"><b>{fmt(dm.filter((r) => r.group === "SEO").length)}</b><span>Website</span></div>
+          <div className="dm-kpi"><b>{fmt(dm.filter((r) => r.group === "Ads").length)}</b><span>Ads (social)</span></div>
         </div>
       </div>
 
