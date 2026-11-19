@@ -16,7 +16,7 @@ import type { AppRouter } from "../../../../server/routers";
 import type { DrillLink } from "../../../../server/marketing/common";
 import { trpc } from "@/lib/trpc";
 import { DIGITAL_GROUP_LABEL, DIGITAL_GROUPS, MERCH } from "@shared/marketing";
-import { SHEET_COLUMNS, SIGNUP_LOG_TAB, auditSignups, nameKey, parseSheet, parseSignupLog, sheetVariances, tabForDay, unbucketed, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
+import { SHEET_COLUMNS, SIGNUP_LOG_TAB, auditSignups, comparedSignups, nameKey, parseSheet, parseSignupLog, sheetTeamRows, sheetVariances, tabForDay, unbucketed, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
 import { fmt, leadDay, pct1, rangeLabel } from "../SignupsDashboard";
 import { LoadError } from "../signups/LoadError";
 import type { DigitalData } from "../DigitalMarketingReport";
@@ -106,8 +106,8 @@ function SheetCompare({ to, report }: { to: string; report: DigitalData | null }
       <div className="sr-panel-h" style={{ flexWrap: "wrap" }}><h2>The FLF sign-up sheet vs Lead Docket</h2></div>
       <SheetSync />
       <p className="sr-sub">
-        The sheet's GBP ("GMB") and website sign-ups from its "{SIGNUP_LOG_TAB}" tab are compared with this report for {rangeLabel(from0(to), to)} —
-        how many signed in-house and referred out, and each client's name and source. Its other sign-ups (Walker, referrals, reps, intake) aren't digital and are left out.
+        The sheet's digital sign-ups from its "{SIGNUP_LOG_TAB}" tab — GMB, the JFJ website and brand sites, Intaker, Yelp, Facebook and Instagram, by this report's own source rules —
+        are compared with this report for {rangeLabel(from0(to), to)}: how many signed in-house and referred out, and each client's name and source. Walker, referrals and the reps' sign-ups aren't digital and are left out.
         Synced from Google Sheets above, or upload a copy. Pick the month-to-date period above to match the sheet.
       </p>
       <div className={`dm-drop${over ? " over" : ""}`}
@@ -190,21 +190,9 @@ const FIX_LABEL = { leaddocket: "Fix in Lead Docket", sheet: "Fix the sheet", ch
 const STALE_MS = 30 * 60 * 1000;
 
 function Comparison({ sheet, report, file, tab }: { sheet: ParsedSheet; report: DigitalData; file: string; tab: string }) {
-  const gbp = report.team.find((r) => r.group === "GBP")!;
-  const seo = report.team.find((r) => r.group === "SEO")!;
-  // The sheet's TOTAL is GBP + SEO; it has no Ads row.
-  const both = (k: SheetColumn) => {
-    if (k === "conversion") { const l = gbp.leads + seo.leads; return l ? Math.round(((gbp.signed + seo.signed) / l) * 1000) / 10 : null; }
-    const a = CRM_KEY[k](gbp), b = CRM_KEY[k](seo);
-    return a == null || b == null ? null : Math.round((a + b) * 10) / 10;
-  };
-  const rows: [string, ParsedSheet["team"]["GBP"], (k: SheetColumn) => number | null][] = [
-    ["GBP", sheet.team.GBP, (k) => CRM_KEY[k](gbp)],
-    ["SEO / Website", sheet.team.SEO, (k) => CRM_KEY[k](seo)],
-    ["TOTAL (GBP + SEO)", sheet.team.TOTAL, both],
-  ];
-  // The sheet has no Ads row, so its sign-ups are matched against GBP + SEO only.
-  const crm = report.signups.filter((s) => s.group !== "Ads");
+  // GBP, SEO, Ads when the sheet has an Ads row (the sign-up sheet), and TOTAL — as the variance log counts them.
+  const rows = sheetTeamRows(sheet, report);
+  const crm = comparedSignups(sheet, report);
   const audit = auditSignups(sheet, crm);
   const gaps = rows.map(([name, s]) => [name, unbucketed(s)] as const).filter(([, n]) => n != null && n !== 0);
   const kindWord = (k: "inHouse" | "referred") => (k === "inHouse" ? "in-house" : "referred out");
