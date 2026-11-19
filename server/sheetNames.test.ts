@@ -14,7 +14,7 @@ describe("whyNotListed", () => {
     expect(whyNotListed(lead({ teamRole: "BDR", teamRep: "Pat Rep" }), range)).toMatchObject({ fix: "leaddocket", reason: expect.stringContaining("BDR Pat Rep") });
   });
   it("names a non-digital source", () => {
-    expect(whyNotListed(lead({ marketingSource: "Billboard" }), range).reason).toContain('"Billboard"');
+    expect(whyNotListed(lead({ marketingSource: "Walker Advertising" }), range).reason).toContain('"Walker Advertising"');
     expect(whyNotListed(lead({ marketingSource: null }), range).reason).toContain('"blank"');
   });
   it("names a lead that isn't signed", () => {
@@ -32,9 +32,9 @@ describe("explainNames", () => {
   });
   it("prefers the lead in the period that signed", () => {
     const old = lead({ leadDate: new Date("2025-02-01T19:00:00Z"), outcome: "Chase", status: "Open" });
-    const cur = lead({ marketingSource: "Billboard" });
+    const cur = lead({ marketingSource: "Walker Advertising" });
     const [r] = explainNames(["Ana Placeholder Jr"], [old, cur], range);
     expect(r.found?.leadId).toBe(cur.leadId);
-    expect(r.reason).toContain("Billboard");
+    expect(r.reason).toContain("Walker Advertising");
   });
 });

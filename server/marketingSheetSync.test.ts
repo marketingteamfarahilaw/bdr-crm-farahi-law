@@ -90,7 +90,8 @@ describe("FLF sign-up sheet (Current Month tab)", () => {
   it("counts sources as the report does: GMB, JFJ sites and brands, Intaker, Yelp, Facebook, Instagram", () => {
     expect(signupLogGroup("GMB", "")).toBe("GBP");
     for (const s of ["JFJ Website", "Intaker - JFJ", "Yelp", "Ayuda California", "Motorcyclist Attorney", "Justin For Justice", "JFJ"]) expect(signupLogGroup(s, "")).toBe("SEO");
-    for (const s of ["Facebook", "Instagram"]) expect(signupLogGroup(s, "")).toBe("Ads");
+    for (const s of ["Facebook", "Instagram", "Google Ads", "Billboard", "JFJ Billboard"]) expect(signupLogGroup(s, "")).toBe("Ads");
+    expect(signupLogGroup("Emailer", "")).toBe("SEO");
     for (const s of ["Walker", "Referral", "FR Jezel", "BDR Miguel"]) expect(signupLogGroup(s, "")).toBeNull();
     // A rep's row is the rep's, whatever facility its Lead Source names.
     expect(signupLogGroup("FR Jezel", "Body Shop Website")).toBeNull();

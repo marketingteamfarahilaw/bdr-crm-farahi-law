@@ -32,7 +32,8 @@ export const CHANNEL_RULES: [RegExp, string][] = [
  * "GMB …" sources), the SEO websites and landing pages of each brand, website
  * chat (Intaker), web search, email campaigns and directories, and the paid
  * ads — Local Services Ads, the firm's own PPC, social media and RND Worx's
- * Google Ads. Not digital: Walker Advertising (an outside vendor's call lines),
+ * Google Ads — and billboards, which the digital marketing team counts with
+ * its ads (added 2026-11-19 at the team's request). Not digital: Walker Advertising (an outside vendor's call lines),
  * the BD/FR team, staff, referrals, existing clients, Felix Cedillo Marketing
  * and print.
  *
@@ -50,7 +51,7 @@ export const DIGITAL_SOURCE_PATTERN = [
   "justin *for *justice", "j4j california car accident", "kapwa", "ayuda california", "brain injury help",
   "labor law advocates", "wom[ae]n'?s rights? group", "motorcyclist", "collision repair us",
   "email campaign", "emailer", "avvo", "yelp",
-  "local services ads", "ppc", "fb organic", "facebook", "instagram", "tiktok", "youtube", "rnd *worx",
+  "local services ads", "ppc", "fb organic", "facebook", "instagram", "tiktok", "youtube", "rnd *worx", "billboard",
   "800[^0-9]*738[^0-9]*0000",   // the JFJ toll-free number, however it is written (isTollFreeLine)
 ].join("|");
 const DIGITAL_RE = new RegExp(DIGITAL_SOURCE_PATTERN);
@@ -140,6 +141,8 @@ const DIGITAL_RULES: [RegExp, DigitalGroup, string][] = [
   [/ppc/, "Ads", "Internal PPC"],
   [/fb organic|facebook|instagram|tiktok|youtube/, "Ads", "Social Media"],
   [/rnd *worx/, "Ads", "RND Worx Google Ads"],
+  // Before the brands: "JFJ Billboard" is the billboard, not the website.
+  [/billboard/, "Ads", "Billboards"],
   [/kapwa/, "SEO", "Kapwa Justice"],
   [/ayuda california/, "SEO", "Ayuda California"],
   [/brain injury help/, "SEO", "Brain Injury Help Center"],
