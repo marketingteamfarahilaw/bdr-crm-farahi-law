@@ -110,6 +110,16 @@ export const ADS_CAMPAIGNS = ["LSA", "Internal PPC", "Social Media", "RND Worx G
 const GBP_LOCATIONS: [RegExp, string][] = [
   [/\bma bakersfield\b/, "MA Bakersfield"],
   [/\bma visalia\b/, "MA Visalia"],
+  // Motorcyclist Attorney's LA listings, by address — "GMB 2411 Sichel Street"
+  // and "Motorcyclist Atty - GMB 2411 Sichel St LA" are the same listing.
+  [/2411 sichel\b/, "MA Los Angeles (Sichel St)"],
+  [/12079 jefferson\b/, "MA Culver City"],
+  [/kapwa/, "Kapwa Justice Los Angeles"],
+  [/402 w(est)?\.? broadway\b|san diego/, "San Diego"],
+  [/155 n(orth)?\.? riverview\b|anaheim/, "Anaheim"],
+  [/1000 town center\b|oxnard/, "Oxnard"],
+  [/palmdale/, "Palmdale"],
+  [/chula vista/, "Chula Vista"],
   [/525 w(est)?\.? main\b|visalia/, "Visalia"],
   [/5340 alla\b/, "Los Angeles"],
   [/1010 crenshaw\b|crenshaw/, "Los Angeles (Crenshaw)"],
