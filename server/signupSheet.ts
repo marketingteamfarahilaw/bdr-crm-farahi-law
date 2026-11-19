@@ -5,9 +5,12 @@
  * for a few minutes so opening the tab doesn't download it every time; the
  * tab's Refresh button asks for a fresh copy.
  *
- * Nothing is stored. Intake case facts are dropped here for anyone without
- * marketingCaseFacts — the hard wall in CLAUDE.md — and phone and email are
- * never read from the sheet at all.
+ * Only digital marketing's sign-ups leave the server (GMB, the JFJ sites and
+ * brands, Intaker, Yelp, social and Google ads, billboards — signupLogGroup):
+ * the tab shows nothing else, so the names behind Walker, referral and rep
+ * sign-ups aren't sent; only their count is. Nothing is stored. Intake case
+ * facts are dropped here for anyone without marketingCaseFacts — the hard
+ * wall in CLAUDE.md — and phone and email are never read from the sheet.
  */
 import fs from "node:fs";
 import xlsx from "xlsx";
@@ -47,6 +50,8 @@ export async function getSignupSheet(opts: { fresh: boolean; caseFacts: boolean 
     tab: c.tab,
     fetchedAt: new Date(c.at).toISOString(),
     caseFacts: opts.caseFacts,
-    rows: opts.caseFacts ? c.rows : c.rows.map((r) => ({ ...r, facts: null })),
+    /** Every sign-up on the tab, digital or not — for "N of the sheet's M". */
+    sheetTotal: c.rows.length,
+    rows: c.rows.filter((r) => r.group).map((r) => (opts.caseFacts ? r : { ...r, facts: null })),
   };
 }

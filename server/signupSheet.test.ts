@@ -31,7 +31,7 @@ describe("FLF sign-up sheet tab", () => {
     expect(all).not.toMatch(/example\.com|559-000|213-000/);
   });
 
-  it("sends case facts only to roles allowed them", async () => {
+  it("sends only digital marketing's sign-ups, and case facts only to roles allowed them", async () => {
     const file = path.join(os.tmpdir(), `signup-sheet-test-${Date.now()}.xlsx`);
     const wb = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(ROWS), "Current Month");
@@ -41,11 +41,15 @@ describe("FLF sign-up sheet tab", () => {
     }));
     const { getSignupSheet } = await import("./signupSheet");
     const bd = await getSignupSheet({ fresh: true, caseFacts: false });
+    // The GMB sign-up only; the Walker one is counted but its name never sent.
+    expect(bd.sheetTotal).toBe(2);
+    expect(bd.rows.map((r) => r.clientName)).toEqual(["Ana Diaz"]);
+    expect(JSON.stringify(bd)).not.toMatch(/Ben Cho|Avrek/);
     expect(bd.caseFacts).toBe(false);
     expect(bd.rows.every((r) => r.facts === null)).toBe(true);
-    expect(JSON.stringify(bd)).not.toMatch(/Avrek|Kaiser|Accepted|Paulina/);
+    expect(JSON.stringify(bd)).not.toMatch(/Kaiser|Accepted|Paulina/);
     const admin = await getSignupSheet({ fresh: false, caseFacts: true });
-    expect(admin.rows[1].facts?.referredAttorney).toBe("Avrek Law");
+    expect(admin.rows[0].facts).toMatchObject({ sentTo: "Kaiser", caseManager: "Paulina Vargas" });
     vi.doUnmock("./googleSheets");
   });
 });
