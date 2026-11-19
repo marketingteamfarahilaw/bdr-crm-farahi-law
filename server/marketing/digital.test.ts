@@ -52,7 +52,7 @@ describe("digital sources", () => {
 describe("digitalGroupOf", () => {
   const cases: [string, string, string][] = [
     ["GMB 525 W Main St Visalia", "GBP", "GBP Visalia"],
-    ["Motorcyclist Atty - GMB 12079 Jefferson Blvd", "GBP", "GBP Motorcyclist Atty - 12079 Jefferson Blvd"],
+    ["Motorcyclist Atty - GMB 12079 Jefferson Blvd", "GBP", "GBP MA Culver City"],
     ["Google My Business", "GBP", "GBP (unspecified)"],
     ["JustinforJustice Website", "SEO", JFJ_WEBSITE],
     ["Intaker - All Source", "SEO", JFJ_WEBSITE],
@@ -166,5 +166,25 @@ describe("the team table's columns and the GBP outcome rows", () => {
     expect(keepsTriple({ outcome: "Rejected", status: "Rejected", subStatus: "Spam" }, { status: "all", dmBucket: "lostNI" })).toBe(false);
     expect(keepsTriple({ outcome: "Referred Out", status: "Referred", subStatus: "Reviewing" }, { status: "all", dmOutcome: "referredReviewing" })).toBe(true);
     expect(keepsTriple({ outcome: "Referred Out", status: "Referred", subStatus: "Declined" }, { status: "all", dmOutcome: "referredReviewing" })).toBe(false);
+  });
+});
+
+describe("GBP listings by office", () => {
+  it("names each listing's office, and merges two spellings of one address", () => {
+    const cases: [string, string][] = [
+      ["GMB 2411 Sichel Street", "GBP MA Los Angeles (Sichel St)"],
+      ["Motorcyclist Atty - GMB 2411 Sichel St LA", "GBP MA Los Angeles (Sichel St)"],
+      ["Motorcyclist Atty - GMB 12079 Jefferson Blvd", "GBP MA Culver City"],
+      ["GMB 402 West Broadway, Suite #400 San Diego", "GBP San Diego"],
+      ["GMB 155 N Riverview Dr Anaheim", "GBP Anaheim"],
+      ["GMB JFJ 1000 Town Center Drive Oxnard", "GBP Oxnard"],
+      ["GMB Kapwa Justice - LA", "GBP Kapwa Justice Los Angeles"],
+      ["GMB Palmdale", "GBP Palmdale"],
+      ["GMB Chula Vista", "GBP Chula Vista"],
+      ["Google My Business", "GBP (unspecified)"],
+      ["GMB 525 W Main St Visalia", "GBP Visalia"],
+      ["GMB 5340 Alla Road Los Angeles", "GBP Los Angeles"],
+    ];
+    for (const [source, label] of cases) expect(gbpLocationOf(source), source).toBe(label);
   });
 });
