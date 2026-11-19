@@ -18,6 +18,7 @@ const NOT_DIGITAL = [
   "Walker Advertising Contract 26", "Walker Advertising", "Walker Employment Contract - NEW", TEAM_CHANNEL, NO_SOURCE,
   "FLF Employee", "Felix Cedillo Marketing", "Existing Client", "Attorney Referral", "Justin Farahi",
   "Justin - Note Pad and Post it", "Afterhours Call Service", "West Los Angeles",
+  "FBI Referral", "Fabian Martinez",   // "fb" inside a word isn't Facebook
 ];
 
 // The list Youssef confirmed on 2026-09-30.
@@ -71,6 +72,15 @@ describe("digitalGroupOf", () => {
     ["KJ FB Organic", "Ads", "Social Media"],
     ["JFJ Facebook", "Ads", "Social Media"],
     ["RND Worx", "Ads", "RND Worx Google Ads"],
+    ["Social Media", "Ads", "Social Media"],
+    ["JFJ Social Media FB", "Ads", "Social Media"],
+    ["GroClub FB Ads Campaign", "Ads", "Social Media"],
+    ["BIHC Social Media FB Campaign", "Ads", "Social Media"],
+    ["JFJ - FB Page", "Ads", "Social Media"],
+    ["KF FB Community", "Ads", "Social Media"],
+    ["JFJ - Internal Google Ads", "Ads", "Internal PPC"],
+    ["Google Discovery Ads Leads", "Ads", "Other Google Ads"],
+    ["JFJ E-mail Blast", "SEO", OTHER_CHANNELS],
     ["Billboard", "Ads", "Billboards"],
     ["JFJ Billboard - I-5 Bakersfield", "Ads", "Billboards"],
     ["Google Ads - Search", "Ads", "Other Google Ads"],

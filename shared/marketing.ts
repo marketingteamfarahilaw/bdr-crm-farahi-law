@@ -31,8 +31,9 @@ export const CHANNEL_RULES: [RegExp, string][] = [
  * (Youssef, 2026-09-30): Google Business Profile listings (GBP, Lead Docket's
  * "GMB …" sources), the SEO websites and landing pages of each brand, website
  * chat (Intaker), web search, email campaigns and directories, and the paid
- * ads — Local Services Ads, the firm's own PPC, social media and RND Worx's
- * Google Ads — and billboards, which the digital marketing team counts with
+ * ads — Local Services Ads, the firm's own PPC and Google Ads, social media
+ * (every Facebook spelling: "Social Media", "… FB Ads", "FB Page" — counted
+ * from 2026-11-19, the team's request) and RND Worx's Google Ads — and billboards, which the digital marketing team counts with
  * its ads (added 2026-11-19 at the team's request). Not digital: Walker Advertising (an outside vendor's call lines),
  * the BD/FR team, staff, referrals, existing clients, Felix Cedillo Marketing
  * and print.
@@ -50,8 +51,10 @@ export const DIGITAL_SOURCE_PATTERN = [
   "website", "landing page", "web search", "search engine", "intaker",
   "justin *for *justice", "j4j california car accident", "kapwa", "ayuda california", "brain injury help",
   "labor law advocates", "wom[ae]n'?s rights? group", "motorcyclist", "collision repair us",
-  "email campaign", "emailer", "avvo", "yelp",
-  "local services ads", "ppc", "fb organic", "facebook", "instagram", "tiktok", "youtube", "rnd *worx", "billboard",
+  "e-?mail", "avvo", "yelp",
+  "local services ads", "ppc", "google ads", "fb organic", "facebook", "instagram", "tiktok", "youtube", "social media",
+  "^fb ", " fb ", " fb$", "^fb$",   // "fb" as a word ("KJ FB Ads"), never inside one ("FBI")
+  "rnd *worx", "billboard",
   "800[^0-9]*738[^0-9]*0000",   // the JFJ toll-free number, however it is written (isTollFreeLine)
 ].join("|");
 const DIGITAL_RE = new RegExp(DIGITAL_SOURCE_PATTERN);
@@ -138,8 +141,10 @@ export function gbpLocationOf(source: string): string {
 const DIGITAL_RULES: [RegExp, DigitalGroup, string][] = [
   [/website pool/, "SEO", "RND Website Pool"],   // RND's leads from the pooled sites, not its Google Ads
   [/local services ads/, "Ads", "LSA"],
-  [/ppc/, "Ads", "Internal PPC"],
-  [/fb organic|facebook|instagram|tiktok|youtube/, "Ads", "Social Media"],
+  // The firm's own Google Ads ("JFJ - Internal Google Ads") are its PPC.
+  [/ppc|internal google ads/, "Ads", "Internal PPC"],
+  // Facebook as Lead Docket spells it: "JFJ Social Media FB", "KJ FB Ads", "JFJ - FB Page", "GroClub FB Ads Campaign"…
+  [/fb organic|facebook|instagram|tiktok|youtube|social media|(^| )fb( |$)/, "Ads", "Social Media"],
   [/rnd *worx/, "Ads", "RND Worx Google Ads"],
   // Before the brands: "JFJ Billboard" is the billboard, not the website.
   [/billboard/, "Ads", "Billboards"],
@@ -150,7 +155,7 @@ const DIGITAL_RULES: [RegExp, DigitalGroup, string][] = [
   [/wom[ae]n'?s rights? group/, "SEO", "Women's Rights Group"],
   [/motorcyclist/, "SEO", "Motorcyclist Attorney"],
   [/collision repair us/, "SEO", "Collision Repair"],
-  [/email campaign|emailer|avvo|yelp/, "SEO", OTHER_CHANNELS],
+  [/e-?mail|avvo|yelp/, "SEO", OTHER_CHANNELS],
   // Justin For Justice is the firm's main site: its toll-free line, its chat
   // (Intaker, "All Source" included) and plain web search all land there.
   [/justin *for *justice|j4j california car accident|intaker|web search|search engine/, "SEO", JFJ_WEBSITE],
@@ -168,9 +173,9 @@ export function digitalGroupOf(source: string): { group: DigitalGroup; label: st
   if (GBP_WORD.test(s)) return { group: "GBP", label: gbpLocationOf(source) };
   if (isTollFreeLine(source)) return { group: "SEO", label: TOLL_FREE };
   for (const [re, group, label] of DIGITAL_RULES) if (re.test(s)) return { group, label };
-  // ASSUMPTION: a Google-named source no rule above claims ("Google Ads …") is
-  // paid search; any other website or landing page is SEO. None exist today.
-  if (/^google.*\bads?\b/.test(s)) return { group: "Ads", label: "Other Google Ads" };
+  // A source naming Google Ads that no rule above claims ("Google Discovery Ads
+  // Leads", "KJ Google Ads") is paid search; any other website or landing page is SEO.
+  if (/google.*\bads?\b/.test(s)) return { group: "Ads", label: "Other Google Ads" };
   return { group: "SEO", label: "Other websites" };
 }
 
