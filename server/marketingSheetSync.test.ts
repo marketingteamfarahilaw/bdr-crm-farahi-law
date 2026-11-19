@@ -48,3 +48,48 @@ describe("marketing sheet: the variance log's rows", () => {
     expect(items.find((i) => i.kind === "sync")?.detail).toBe("Last synced never (failed)");
   });
 });
+
+import { parseSignupLog, sheetDay, signupLogGroup } from "@shared/digitalSheet";
+
+describe("FLF sign-up sheet (Current Month tab)", () => {
+  const head = ["Source", "Lead Source", "Timestamp", "Name of Person Conducting Intake ", "Signed Up By", "Sign Up Date", "Value", " Lead Outcome", "Client's Name", "Case Type (Slip, Auto, Employment, W/C, Etc)"];
+  const row = (source: string, lead: string, day: number | string, outcome: string, name: string) => [source, lead, null, "X", "Y", day, "Medium", outcome, name, "Auto"];
+  const rows = [
+    head,
+    row("GMB", "GMB 5340 Alla Road Los Angeles", 46328, "Signed", "Ana Diaz"),
+    row("GMB", "GMB San-pedro", 46330, "Referred out", "Ben Cho"),
+    row("JFJ Website", "Justin For Justice Toll Free for Website", "11/3/2026", "Signed", "Cara Lee"),
+    row("Walker", "Walker Advertising Contract 41", 46328, "Signed", "Dan Roe"),     // not digital
+    row("FR Jezel", "", 46328, "Signed", "Eve Park"),                                  // a rep's, not digital
+    row("GMB", "GMB Visalia", 46296, "Signed", "Old Month"),                           // October: outside the range
+    [null, null, null, null, null, null, null, null, null, null],                      // a blank case-group row
+  ];
+
+  it("keeps GBP and website sign-ups in the range, split in-house / referred out, with counts", () => {
+    const p = parseSignupLog(rows, { fromDay: "2026-11-01", toDay: "2026-11-19" })!;
+    expect(p.inHouse.map((s) => s.name)).toEqual(["Ana Diaz", "Cara Lee"]);
+    expect(p.referred.map((s) => s.name)).toEqual(["Ben Cho"]);
+    expect(p.team.GBP).toEqual({ signedInHouse: 1, signedReferred: 1, signed: 2 });
+    expect(p.team.SEO).toEqual({ signedInHouse: 1, signedReferred: 0, signed: 1 });
+    expect(p.team.TOTAL).toEqual({ signedInHouse: 2, signedReferred: 1, signed: 3 });
+    expect(p.inHouse[0]).toMatchObject({ source: "GMB 5340 Alla Road Los Angeles", caseValue: "Medium", caseType: "Auto" });
+  });
+
+  it("isn't fooled by a daily-summary tab", () => {
+    expect(parseSignupLog([["GBP", 1, 2], ["SEO", 3, 4]])).toBeNull();
+  });
+
+  it("reads Excel day serials and typed dates", () => {
+    expect(sheetDay(46327)).toBe("2026-11-01");
+    expect(sheetDay(46328.5)).toBe("2026-11-02");
+    expect(sheetDay("11/3/2026")).toBe("2026-11-03");
+    expect(sheetDay("2026-11-04")).toBe("2026-11-04");
+    expect(sheetDay("soon")).toBeNull();
+  });
+
+  it("only GMB and the website are digital", () => {
+    expect(signupLogGroup("GMB", "")).toBe("GBP");
+    expect(signupLogGroup("JFJ Website", "")).toBe("SEO");
+    for (const s of ["Walker", "Referral", "FR Jezel", "BDR Miguel", "Intaker - JFJ", "Yelp"]) expect(signupLogGroup(s, "")).toBeNull();
+  });
+});

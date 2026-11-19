@@ -16,7 +16,7 @@ import type { AppRouter } from "../../../../server/routers";
 import type { DrillLink } from "../../../../server/marketing/common";
 import { trpc } from "@/lib/trpc";
 import { DIGITAL_GROUP_LABEL, DIGITAL_GROUPS, MERCH } from "@shared/marketing";
-import { SHEET_COLUMNS, auditSignups, nameKey, parseSheet, sheetVariances, tabForDay, unbucketed, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
+import { SHEET_COLUMNS, SIGNUP_LOG_TAB, auditSignups, nameKey, parseSheet, parseSignupLog, sheetVariances, tabForDay, unbucketed, type Cell, type ParsedSheet, type SheetColumn } from "@shared/digitalSheet";
 import { fmt, leadDay, pct1, rangeLabel } from "../SignupsDashboard";
 import { LoadError } from "../signups/LoadError";
 import type { DigitalData } from "../DigitalMarketingReport";
@@ -56,11 +56,16 @@ export function AuditView({ from, to, report }: { from: string; to: string; repo
 
 type Loaded = { file: string; tabs: string[]; tab: string; parsed: ParsedSheet; buf: ArrayBuffer };
 
-async function readTab(buf: ArrayBuffer, tab: string): Promise<ParsedSheet> {
+/**
+ * One tab, read as the FLF sign-up sheet (a row per sign-up; its GBP and
+ * website sign-ups within the range) or, failing that, as an older daily
+ * "MTD Performance Summary" tab.
+ */
+async function readTab(buf: ArrayBuffer, tab: string, range: { fromDay: string; toDay: string }): Promise<ParsedSheet> {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(buf, { type: "array", sheets: [tab] });
   const rows = XLSX.utils.sheet_to_json<Cell[]>(wb.Sheets[tab], { header: 1, raw: true, defval: null, blankrows: true });
-  return parseSheet(rows);
+  return parseSignupLog(rows, range) ?? parseSheet(rows);
 }
 
 function SheetCompare({ to, report }: { to: string; report: DigitalData | null }) {
@@ -68,19 +73,22 @@ function SheetCompare({ to, report }: { to: string; report: DigitalData | null }
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const range = { fromDay: from0(to), toDay: to };
 
   const open = async (f: File) => {
     setBusy(true);
     try {
       const buf = await f.arrayBuffer();
       const XLSX = await import("xlsx");
-      // Tab names first (cheap), then only the one tab: the workbook holds a tab per day.
+      // Tab names first (cheap), then only the one tab: the sign-up sheet's
+      // "Current Month", or an older workbook's tab for the day.
       const tabs = XLSX.read(buf, { type: "array", bookSheets: true }).SheetNames;
-      const want = tabForDay(to);
+      const logTab = tabs.find((t) => t.trim().toLowerCase() === SIGNUP_LOG_TAB.toLowerCase());
+      const want = logTab ?? tabForDay(to);
       const tab = tabs.includes(want) ? want : tabs[tabs.length - 1];
       if (!tab) throw new Error("The file has no sheets.");
       if (tab !== want) toast.info(`No tab named ${want} for ${rangeLabel(to, to)}; showing ${tab}. Pick another tab if needed.`);
-      setLoaded({ file: f.name, tabs, tab, parsed: await readTab(buf, tab), buf });
+      setLoaded({ file: f.name, tabs, tab, parsed: await readTab(buf, tab, range), buf });
     } catch (e) {
       toast.error(e instanceof Error ? `Couldn't read the sheet: ${e.message}` : "Couldn't read the sheet.");
     } finally {
@@ -90,16 +98,17 @@ function SheetCompare({ to, report }: { to: string; report: DigitalData | null }
   const pickTab = async (tab: string) => {
     if (!loaded) return;
     setBusy(true);
-    try { setLoaded({ ...loaded, tab, parsed: await readTab(loaded.buf, tab) }); } finally { setBusy(false); }
+    try { setLoaded({ ...loaded, tab, parsed: await readTab(loaded.buf, tab, range) }); } finally { setBusy(false); }
   };
 
   return (
     <div className="sr-panel">
-      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}><h2>The team's daily sheet vs Lead Docket</h2></div>
+      <div className="sr-panel-h" style={{ flexWrap: "wrap" }}><h2>The FLF sign-up sheet vs Lead Docket</h2></div>
       <SheetSync />
       <p className="sr-sub">
-        Upload the "MTD Performance Summary" workbook. The tab for the period's last day ({tabForDay(to)}) is compared with this report for {rangeLabel(from0(to), to)} —
-        the team's table and the names in its In-House Signup Details and Signed Referred Out Details. Pick the month-to-date period above to match the sheet.
+        The sheet's GBP ("GMB") and website sign-ups from its "{SIGNUP_LOG_TAB}" tab are compared with this report for {rangeLabel(from0(to), to)} —
+        how many signed in-house and referred out, and each client's name and source. Its other sign-ups (Walker, referrals, reps, intake) aren't digital and are left out.
+        Synced from Google Sheets above, or upload a copy. Pick the month-to-date period above to match the sheet.
       </p>
       <div className={`dm-drop${over ? " over" : ""}`}
         onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}

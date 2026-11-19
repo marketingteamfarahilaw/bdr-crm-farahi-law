@@ -304,3 +304,85 @@ export function sheetVariances(
   if (st) items.push({ kind: "sync", itemKey: "leaddocket", name: "Lead Docket sync", detail: `Last synced ${st.lastSuccessAt ?? "never"} (${st.state})` });
   return items;
 }
+
+// ─── The FLF sign-up sheet (one row per sign-up, a "Current Month" tab) ───────
+
+/** The sign-up sheet's tab: the team keeps the month's sign-ups on one tab. */
+export const SIGNUP_LOG_TAB = "Current Month";
+
+/**
+ * Which digital group a sign-up's Source belongs to, or null when it isn't
+ * digital marketing. The sheet logs every sign-up — Walker, referrals, FR and
+ * BDR reps, intake — and only Google Business Profile ("GMB") and the website
+ * are compared with the Digital Marketing Report's GBP and SEO groups (Ads has
+ * no rows on the sheet, as before).
+ */
+export function signupLogGroup(source: Cell, leadSource: Cell): "GBP" | "SEO" | null {
+  const s = key(source), l = key(leadSource);
+  if (/^(gmb|gbp)/.test(s) || /googlebusiness|googlemybusiness/.test(s)) return "GBP";
+  if (/website|seo|organic/.test(s) || (!s && /website/.test(l))) return "SEO";
+  return null;
+}
+
+/** A sheet date — an Excel day serial, or text like 11/2/2026 or 2026-11-02 — as YYYY-MM-DD; null when unreadable. */
+export function sheetDay(v: Cell): string | null {
+  if (typeof v === "number" && v > 20000 && v < 80000) {
+    // Excel's day 0 is 1899-12-30; the time of day (a fraction) is dropped.
+    return new Date(Date.UTC(1899, 11, 30) + Math.floor(v) * 86_400_000).toISOString().slice(0, 10);
+  }
+  const t = text(v);
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\b/);
+  if (m) return `${m[3].length === 2 ? `20${m[3]}` : m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  return null;
+}
+
+/**
+ * The sign-up sheet read into the same shape as a daily tab, so the same
+ * comparison runs on it: its GBP and SEO sign-ups (Lead Outcome "Signed" is
+ * in-house, "Referred out" referred out), dated within the range when one is
+ * given, and the sign-up counts per group. It has no lead totals, so only the
+ * sign-up columns are compared (the others stay empty and are skipped).
+ * Returns null when the rows aren't this sheet (no Lead Outcome / Client's Name header).
+ */
+export function parseSignupLog(rows: Cell[][], range?: { fromDay: string; toDay: string }): ParsedSheet | null {
+  const head = findRow(rows, (k) => k === "leadoutcome");
+  if (head < 0) return null;
+  const cols = (rows[head] ?? []).map(key);
+  const col = (...ks: string[]) => cols.findIndex((c) => ks.includes(c));
+  const c = {
+    source: col("source"), leadSource: col("leadsource"), day: col("signupdate"), outcome: col("leadoutcome"),
+    name: col("clientsname", "clientname"), value: col("value"), type: cols.findIndex((k) => k.startsWith("casetype")),
+  };
+  if (c.name < 0 || c.source < 0) return null;
+
+  const inHouse: SheetSignup[] = [], referred: SheetSignup[] = [];
+  const counts = { GBP: { signedInHouse: 0, signedReferred: 0 }, SEO: { signedInHouse: 0, signedReferred: 0 } };
+  for (let i = head + 1; i < rows.length; i++) {
+    const r = rows[i] ?? [];
+    const name = text(r[c.name]);
+    const outcome = key(r[c.outcome]);
+    if (!name || !outcome) continue;   // the sheet's blank case-group rows
+    const group = signupLogGroup(r[c.source], c.leadSource >= 0 ? r[c.leadSource] : null);
+    if (!group) continue;
+    if (range && c.day >= 0) {
+      const day = sheetDay(r[c.day]);
+      if (!day || day < range.fromDay || day > range.toDay) continue;
+    }
+    const s: SheetSignup = {
+      name, source: text(c.leadSource >= 0 ? r[c.leadSource] : r[c.source]) || text(r[c.source]),
+      caseValue: c.value >= 0 ? text(r[c.value]) : "", caseType: c.type >= 0 ? text(r[c.type]) : "",
+    };
+    if (outcome.startsWith("referred")) { referred.push(s); counts[group].signedReferred++; }
+    else if (outcome.startsWith("signed")) { inHouse.push(s); counts[group].signedInHouse++; }
+  }
+  const row = (g: { signedInHouse: number; signedReferred: number }): SheetTeamRow =>
+    ({ signedInHouse: g.signedInHouse, signedReferred: g.signedReferred, signed: g.signedInHouse + g.signedReferred });
+  const total = { signedInHouse: counts.GBP.signedInHouse + counts.SEO.signedInHouse, signedReferred: counts.GBP.signedReferred + counts.SEO.signedReferred };
+  return {
+    team: { GBP: row(counts.GBP), SEO: row(counts.SEO), TOTAL: row(total) },
+    inHouse, referred,
+    found: { team: true, inHouse: true, referred: true },
+  };
+}

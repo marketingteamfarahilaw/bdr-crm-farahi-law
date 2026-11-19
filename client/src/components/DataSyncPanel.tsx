@@ -29,7 +29,7 @@ const JOBS: { job: Job; title: string; blurb: string; icon: any }[] = [
   {
     job: "marketing_sheet",
     title: "Digital marketing sheet",
-    blurb: "Every 30 minutes: the digital marketing team's MTD Performance Summary, today's tab, compared with Lead Docket. Differences go into the Digital Marketing Report's Audit tab variance log; a comparison is logged only when they change.",
+    blurb: "Every 30 minutes: the FLF sign-up sheet's GBP and website sign-ups this month, compared with Lead Docket. Differences go into the Digital Marketing Report's Audit tab variance log; a comparison is logged only when they change.",
     icon: Sheet,
   },
 ];

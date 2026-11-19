@@ -27,12 +27,13 @@ export const SHEETS = {
     id: process.env.GSHEET_CENTRALIZED_ID || "1duZo7gJ-eW0ZB08-VxYH_Z-0MiRYRBRnXKeoQvoylNw",
     label: "Centralized BDR/FR Reports",
   },
-  // The digital marketing team's daily "MTD Performance Summary" (one tab per
-  // day), compared with Lead Docket by marketingSheetSync.ts. It was listed here
-  // as an intake sheet before anything read it; GSHEET_INTAKE_ID still works.
+  // The FLF sign-up sheet: every sign-up of the month on its "Current Month"
+  // tab. Its GBP and website sign-ups are compared with Lead Docket by
+  // marketingSheetSync.ts. It replaced the old FLF sign-up history sheet
+  // (1_PLPrmmOv0KIyuqd_e2AaDKpLWYFvq4byj4DFdAB49k) in Nov 2026.
   marketing: {
-    id: process.env.GSHEET_MARKETING_ID || process.env.GSHEET_INTAKE_ID || "1_PLPrmmOv0KIyuqd_e2AaDKpLWYFvq4byj4DFdAB49k",
-    label: "Digital Marketing MTD Performance Summary",
+    id: process.env.GSHEET_MARKETING_ID || "1kzBCsZJdO3dj_8eOk_5_UBlTlII2ORfndmfa507J4bU",
+    label: "FLF Sign-up Sheet (Current Month)",
   },
 } as const;
 
