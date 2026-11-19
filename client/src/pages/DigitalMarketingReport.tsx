@@ -29,6 +29,7 @@ import { Clients } from "./marketing/Clients";
 import { delta, usd } from "./marketing/shared";
 import { CumulativeChart, MonthlyChart, QualityChart } from "./digital/Charts";
 import { AuditView } from "./digital/Audit";
+import { SignupSheetTab } from "./digital/SignupSheet";
 import "./digital/Digital.css";
 
 export type DigitalData = NonNullable<inferRouterOutputs<AppRouter>["marketing"]["digital"]>;
@@ -68,6 +69,7 @@ const TABS = [
   { id: "ads", label: "Ads" },
   { id: "signups", label: "Sign-ups" },
   { id: "trends", label: "Quality & trends" },
+  { id: "sheet", label: "Sign-up sheet" },
 ] as const;
 export type DigitalTab = (typeof TABS)[number]["id"];
 export const tabOf = (t: string | null): DigitalTab => TABS.find((x) => x.id === t)?.id ?? "overview";
@@ -204,7 +206,8 @@ export function DigitalView({ view, onView, from, to, onRange, tab, onTab, canSy
                   <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? "on" : ""} onClick={() => onTab(t.id)}>{t.label}</button>
                 ))}
               </div>
-              {!data ? (
+              {/* The sign-up sheet comes from Google Sheets, not this report: it needn't wait for it. */}
+              {tab === "sheet" ? <SignupSheetTab /> : !data ? (
                 isError && !isLoading
                   ? <LoadError what="the digital marketing report" message={error?.message} onRetry={() => refetch()} />
                   : <div className="dm-grid2">{[0, 1, 2, 3].map((i) => <div key={i} className="sr-skel" style={{ height: 240 }} />)}</div>

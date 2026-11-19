@@ -136,6 +136,7 @@ import { DM_BUCKETS, DM_OUTCOMES } from "./marketing/digital";
 import { getDigitalMarketingReport } from "./digitalMarketing";
 import { getDigitalAudit, getSourceDirectory } from "./digitalAudit";
 import { explainSheetNames } from "./sheetNames";
+import { getSignupSheet } from "./signupSheet";
 import { listLocks, lockMonth, readSnapshot, unlockMonth, wholeMonthOf } from "./monthLock";
 import { VARIANCE_KINDS, readLog, saveComparison } from "./varianceLog";
 import { comparisonRange, rangeWords } from "./marketing/compare";
@@ -994,6 +995,11 @@ export const appRouter = router({
         .query(({ input }) => explainSheetNames(input.names, { fromDay: input.from, toDay: input.to })),
       // Every Marketing Source, Contact Source and Campaign in Lead Docket, all time — the shareable directory.
       sourceDirectory: marketingProcedure.query(() => getSourceDirectory()),
+      // The FLF sign-up sheet, live from Google Sheets, for the report's "Sign-up sheet" tab.
+      // Its intake case facts go only to marketingCaseFacts (the hard wall).
+      signupSheet: marketingProcedure
+        .input(z.object({ fresh: z.boolean().default(false) }))
+        .query(({ ctx, input }) => getSignupSheet({ fresh: input.fresh, caseFacts: marketingCaseFacts(ctx.user.role) })),
       // The digital marketing sheet read from Google Sheets (marketingSheetSync.ts), from the Audit tab.
       // Open to whoever sees this report, not only managers: it only reads the
       // sheet and adds to the variance log, and never overlaps itself.

@@ -386,3 +386,63 @@ export function parseSignupLog(rows: Cell[][], range?: { fromDay: string; toDay:
     found: { team: true, inHouse: true, referred: true },
   };
 }
+
+/**
+ * One sign-up on the FLF sign-up sheet, for the Digital Marketing Report's
+ * "Sign-up sheet" tab. Phone and email are never read. `facts` holds the
+ * intake case facts — the hard wall in CLAUDE.md — which the server sends
+ * only to those allowed them (marketingCaseFacts).
+ */
+export type SignupSheetRow = {
+  day: string | null; source: string; leadSource: string; group: "GBP" | "SEO" | null;
+  intaker: string; signedUpBy: string; outcome: string; clientName: string;
+  value: string; tier: string; caseType: string; referralStatus: string; caseNumber: string;
+  facts: {
+    liability: string; language: string; erVisit: string; firstMedical: string | null; sentTo: string;
+    caseManager: string; investigator: string; referredAttorney: string; referralFee: string; activeStatus: string;
+  } | null;
+};
+
+/** Every sign-up on the sheet's tab (blank case-group rows skipped), in sheet order. Null when the rows aren't this sheet. */
+export function readSignupSheet(rows: Cell[][]): SignupSheetRow[] | null {
+  const head = findRow(rows, (k) => k === "leadoutcome");
+  if (head < 0) return null;
+  const cols = (rows[head] ?? []).map(key);
+  // A column by its header: exact, or for long headers ("Case Type (Slip, Auto, …)") the start of it.
+  const at = (exact: string, starts = false) => cols.findIndex((c) => (starts ? c.startsWith(exact) : c === exact));
+  const c = {
+    source: at("source"), leadSource: at("leadsource"), day: at("signupdate"), intaker: at("nameofpersonconductingintake", true),
+    signedUpBy: at("signedupby"), outcome: at("leadoutcome"), name: at("clientsname"), value: at("value"), tier: at("tier"),
+    caseType: at("casetype", true), referralStatus: at("signedcasesreferralstatus", true), caseNumber: at("casenumber"),
+    liability: at("acceptedordisputedliability", true), language: at("language"), erVisit: at("erucvisit", true),
+    firstMedical: at("timetofirstmedical", true), sentTo: at("facilitynameuc", true), caseManager: at("cmassigned"),
+    investigator: at("pdinvestigatorassigned", true), referredAttorney: at("referredattorney"), referralFee: at("referralfee"),
+    activeStatus: at("activestatus"),
+  };
+  if (c.name < 0 || c.outcome < 0) return null;
+  const get = (r: Cell[], i: number) => (i >= 0 ? text(r[i]) : "");
+  const out: SignupSheetRow[] = [];
+  for (let i = head + 1; i < rows.length; i++) {
+    const r = rows[i] ?? [];
+    const clientName = get(r, c.name), outcome = get(r, c.outcome);
+    if (!clientName || !outcome) continue;
+    const fee = c.referralFee >= 0 ? r[c.referralFee] : null;
+    out.push({
+      day: c.day >= 0 ? sheetDay(r[c.day]) : null,
+      source: get(r, c.source), leadSource: get(r, c.leadSource),
+      group: signupLogGroup(r[c.source], c.leadSource >= 0 ? r[c.leadSource] : null),
+      intaker: get(r, c.intaker), signedUpBy: get(r, c.signedUpBy), outcome, clientName,
+      value: get(r, c.value), tier: get(r, c.tier), caseType: get(r, c.caseType),
+      referralStatus: get(r, c.referralStatus), caseNumber: get(r, c.caseNumber),
+      facts: {
+        liability: get(r, c.liability), language: get(r, c.language), erVisit: get(r, c.erVisit),
+        firstMedical: c.firstMedical >= 0 ? sheetDay(r[c.firstMedical]) : null, sentTo: get(r, c.sentTo),
+        caseManager: get(r, c.caseManager), investigator: get(r, c.investigator), referredAttorney: get(r, c.referredAttorney),
+        // A fraction on the sheet (0.33) is a percentage.
+        referralFee: typeof fee === "number" && fee > 0 && fee < 1 ? `${Math.round(fee * 100)}%` : get(r, c.referralFee),
+        activeStatus: get(r, c.activeStatus),
+      },
+    });
+  }
+  return out;
+}
