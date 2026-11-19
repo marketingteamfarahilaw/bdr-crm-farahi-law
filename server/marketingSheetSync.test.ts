@@ -87,9 +87,47 @@ describe("FLF sign-up sheet (Current Month tab)", () => {
     expect(sheetDay("soon")).toBeNull();
   });
 
-  it("only GMB and the website are digital", () => {
+  it("counts sources as the report does: GMB, JFJ sites and brands, Intaker, Yelp, Facebook, Instagram", () => {
     expect(signupLogGroup("GMB", "")).toBe("GBP");
-    expect(signupLogGroup("JFJ Website", "")).toBe("SEO");
-    for (const s of ["Walker", "Referral", "FR Jezel", "BDR Miguel", "Intaker - JFJ", "Yelp"]) expect(signupLogGroup(s, "")).toBeNull();
+    for (const s of ["JFJ Website", "Intaker - JFJ", "Yelp", "Ayuda California", "Motorcyclist Attorney", "Justin For Justice", "JFJ"]) expect(signupLogGroup(s, "")).toBe("SEO");
+    for (const s of ["Facebook", "Instagram"]) expect(signupLogGroup(s, "")).toBe("Ads");
+    for (const s of ["Walker", "Referral", "FR Jezel", "BDR Miguel"]) expect(signupLogGroup(s, "")).toBeNull();
+    // A rep's row is the rep's, whatever facility its Lead Source names.
+    expect(signupLogGroup("FR Jezel", "Body Shop Website")).toBeNull();
+    // A blank Source falls back to the Lead Source.
+    expect(signupLogGroup("", "GMB San-pedro")).toBe("GBP");
+  });
+
+  it("adds an Ads row for social sign-ups, and TOTAL covers it", () => {
+    const p = parseSignupLog([...rows, row("Facebook", "FB Lead Form", 46329, "Signed", "Fay Wong"), row("Instagram", "", 46330, "Referred out", "Gus Ng")],
+      { fromDay: "2026-11-01", toDay: "2026-11-19" })!;
+    expect(p.team.Ads).toEqual({ signedInHouse: 1, signedReferred: 1, signed: 2 });
+    expect(p.team.TOTAL).toEqual({ signedInHouse: 3, signedReferred: 2, signed: 5 });
+  });
+});
+
+import { comparedSignups, sheetTeamRows } from "@shared/digitalSheet";
+
+describe("the comparison with an Ads row", () => {
+  const report: ReportForSheet = {
+    team: [{ group: "GBP", signed: 3 }, { group: "SEO", signed: 2 }, { group: "Ads", signed: 4 }],
+    signups: [
+      { name: "A", kind: "inHouse", label: "GBP Visalia", source: "GMB Visalia", group: "GBP" },
+      { name: "B", kind: "inHouse", label: "Social Media", source: "Facebook", group: "Ads" },
+    ],
+  };
+  const daily: ParsedSheet = { team: { GBP: { signed: 3 }, SEO: { signed: 2 }, TOTAL: { signed: 5 } }, inHouse: [], referred: [], found: { team: true, inHouse: true, referred: true } };
+  const log: ParsedSheet = { ...daily, team: { ...daily.team, Ads: { signed: 4 }, TOTAL: { signed: 9 } } };
+
+  it("a daily tab still leaves Ads out", () => {
+    expect(sheetTeamRows(daily, report).map(([n]) => n)).toEqual(["GBP", "SEO / Website", "TOTAL (GBP + SEO)"]);
+    expect(comparedSignups(daily, report).map((s) => s.name)).toEqual(["A"]);
+  });
+  it("the sign-up sheet compares Ads too, and its TOTAL includes them", () => {
+    const rows = sheetTeamRows(log, report);
+    expect(rows.map(([n]) => n)).toEqual(["GBP", "SEO / Website", "Ads", "TOTAL (GBP + SEO + Ads)"]);
+    expect(rows[3][2]("signed")).toBe(9);
+    expect(comparedSignups(log, report).map((s) => s.name)).toEqual(["A", "B"]);
+    expect(sheetVariances(log, report).filter((v) => v.kind === "total")).toEqual([]);
   });
 });

@@ -9,6 +9,8 @@
  * sheet and Lead Docket disagree, so one of them can be corrected.
  */
 
+import { digitalGroupOf, type DigitalGroup } from "./marketing";
+
 export type Cell = string | number | boolean | null | undefined;
 
 /** Lower-case letters and digits only — how the sheet's headers and labels are recognised. */
@@ -43,7 +45,11 @@ export type SheetTeamRow = Partial<Record<SheetColumn, number>>;
 export type SheetSignup = { source: string; caseValue: string; caseType: string; name: string };
 
 export type ParsedSheet = {
-  team: { GBP: SheetTeamRow | null; SEO: SheetTeamRow | null; TOTAL: SheetTeamRow | null };
+  team: {
+    GBP: SheetTeamRow | null; SEO: SheetTeamRow | null; TOTAL: SheetTeamRow | null;
+    /** Only the FLF sign-up sheet has one (its Facebook / Instagram sign-ups); a daily tab has no Ads row. */
+    Ads?: SheetTeamRow | null;
+  };
   inHouse: SheetSignup[];
   referred: SheetSignup[];
   found: { team: boolean; inHouse: boolean; referred: boolean };
@@ -245,25 +251,28 @@ const count = (n: number) => n.toLocaleString("en-US");
 const kindWord = (k: SignupKind) => (k === "inHouse" ? "in-house" : "referred out");
 
 /**
- * The sheet's three team rows beside the report's numbers for them. The sheet's
- * TOTAL is GBP + SEO; it has no Ads row.
+ * The sheet's team rows beside the report's numbers for them: GBP, SEO, and
+ * Ads when the sheet has an Ads row (the sign-up sheet does; a daily tab
+ * doesn't), then TOTAL over those same groups.
  */
 export function sheetTeamRows(sheet: ParsedSheet, report: ReportForSheet) {
-  const gbp = report.team.find((r) => r.group === "GBP");
-  const seo = report.team.find((r) => r.group === "SEO");
-  const val = (r: typeof gbp, k: SheetColumn) => (r?.[k] ?? null) as number | null;
+  const withAds = sheet.team.Ads !== undefined;
+  const groups = (withAds ? ["GBP", "SEO", "Ads"] : ["GBP", "SEO"]).map((g) => report.team.find((r) => r.group === g));
+  const [gbp, seo, ads] = groups;
+  const val = (r: (typeof groups)[number], k: SheetColumn) => (r?.[k] ?? null) as number | null;
   const both = (k: SheetColumn) => {
     if (k === "conversion") {
-      const l = (val(gbp, "leads") ?? 0) + (val(seo, "leads") ?? 0);
-      return l ? Math.round((((val(gbp, "signed") ?? 0) + (val(seo, "signed") ?? 0)) / l) * 1000) / 10 : null;
+      const l = groups.reduce((n, r) => n + (val(r, "leads") ?? 0), 0);
+      return l ? Math.round((groups.reduce((n, r) => n + (val(r, "signed") ?? 0), 0) / l) * 1000) / 10 : null;
     }
-    const a = val(gbp, k), b = val(seo, k);
-    return a == null || b == null ? null : Math.round((a + b) * 10) / 10;
+    const vs = groups.map((r) => val(r, k));
+    return vs.some((v) => v == null) ? null : Math.round(vs.reduce<number>((n, v) => n + (v ?? 0), 0) * 10) / 10;
   };
   return [
     ["GBP", sheet.team.GBP, (k: SheetColumn) => val(gbp, k)],
     ["SEO / Website", sheet.team.SEO, (k: SheetColumn) => val(seo, k)],
-    ["TOTAL (GBP + SEO)", sheet.team.TOTAL, both],
+    ...(withAds ? [["Ads", sheet.team.Ads ?? null, (k: SheetColumn) => val(ads, k)]] : []),
+    [withAds ? "TOTAL (GBP + SEO + Ads)" : "TOTAL (GBP + SEO)", sheet.team.TOTAL, both],
   ] as [string, SheetTeamRow | null, (k: SheetColumn) => number | null][];
 }
 
@@ -273,14 +282,18 @@ export function sheetTeamRows(sheet: ParsedSheet, report: ReportForSheet) {
  * scheduled marketing-sheet sync (server/marketingSheetSync.ts), so both log
  * the same differences in the same words.
  */
+/** Lead Docket's sign-ups the sheet is matched against: a daily tab has no Ads row, so not Ads there. */
+export function comparedSignups<C extends { group: string }>(sheet: ParsedSheet, report: { signups: C[] }): C[] {
+  return sheet.team.Ads !== undefined ? report.signups : report.signups.filter((s) => s.group !== "Ads");
+}
+
 export function sheetVariances(
   sheet: ParsedSheet,
   report: ReportForSheet,
   opts: { explained?: Map<string, NameReason> | null; staleSync?: { lastSuccessAt: string | null; state: string } | null } = {},
 ): VarianceRow[] {
   const rows = sheetTeamRows(sheet, report);
-  // The sheet has no Ads row, so its sign-ups are matched against GBP + SEO only.
-  const audit = auditSignups(sheet, report.signups.filter((s) => s.group !== "Ads"));
+  const audit = auditSignups(sheet, comparedSignups(sheet, report));
   const items: VarianceRow[] = [];
   for (const [name, s, crmOf] of rows) {
     for (const [k, , label] of SHEET_COLUMNS) {
@@ -312,16 +325,21 @@ export const SIGNUP_LOG_TAB = "Current Month";
 
 /**
  * Which digital group a sign-up's Source belongs to, or null when it isn't
- * digital marketing. The sheet logs every sign-up — Walker, referrals, FR and
- * BDR reps, intake — and only Google Business Profile ("GMB") and the website
- * are compared with the Digital Marketing Report's GBP and SEO groups (Ads has
- * no rows on the sheet, as before).
+ * digital marketing — by the Digital Marketing Report's own rules
+ * (digitalGroupOf in shared/marketing.ts), so the sheet and Lead Docket are
+ * counted the same way: GMB → GBP; JFJ Website, Intaker - JFJ, Yelp and the
+ * JFJ brand sites (Ayuda California, Motorcyclist Attorney…) → SEO / Website;
+ * Facebook and Instagram → Ads. Walker, referrals and the FR/BDR reps aren't
+ * digital. The sheet's Source column decides; its Lead Source is read only
+ * when Source is blank, since a rep's row can name any facility there.
  */
-export function signupLogGroup(source: Cell, leadSource: Cell): "GBP" | "SEO" | null {
-  const s = key(source), l = key(leadSource);
-  if (/^(gmb|gbp)/.test(s) || /googlebusiness|googlemybusiness/.test(s)) return "GBP";
-  if (/website|seo|organic/.test(s) || (!s && /website/.test(l))) return "SEO";
-  return null;
+export function signupLogGroup(source: Cell, leadSource: Cell): DigitalGroup | null {
+  const name = text(source) || text(leadSource);
+  if (!name) return null;
+  const g = digitalGroupOf(name);
+  if (g) return g.group;
+  // The sheet's short name for the firm's main site, which Lead Docket spells out ("Justin For Justice").
+  return /\bjfj\b/i.test(name) ? "SEO" : null;
 }
 
 /** A sheet date — an Excel day serial, or text like 11/2/2026 or 2026-11-02 — as YYYY-MM-DD; null when unreadable. */
@@ -340,7 +358,7 @@ export function sheetDay(v: Cell): string | null {
 
 /**
  * The sign-up sheet read into the same shape as a daily tab, so the same
- * comparison runs on it: its GBP and SEO sign-ups (Lead Outcome "Signed" is
+ * comparison runs on it: its digital sign-ups (GBP, SEO and Ads — see signupLogGroup) (Lead Outcome "Signed" is
  * in-house, "Referred out" referred out), dated within the range when one is
  * given, and the sign-up counts per group. It has no lead totals, so only the
  * sign-up columns are compared (the others stay empty and are skipped).
@@ -358,7 +376,7 @@ export function parseSignupLog(rows: Cell[][], range?: { fromDay: string; toDay:
   if (c.name < 0 || c.source < 0) return null;
 
   const inHouse: SheetSignup[] = [], referred: SheetSignup[] = [];
-  const counts = { GBP: { signedInHouse: 0, signedReferred: 0 }, SEO: { signedInHouse: 0, signedReferred: 0 } };
+  const counts = { GBP: { signedInHouse: 0, signedReferred: 0 }, SEO: { signedInHouse: 0, signedReferred: 0 }, Ads: { signedInHouse: 0, signedReferred: 0 } };
   for (let i = head + 1; i < rows.length; i++) {
     const r = rows[i] ?? [];
     const name = text(r[c.name]);
@@ -379,9 +397,10 @@ export function parseSignupLog(rows: Cell[][], range?: { fromDay: string; toDay:
   }
   const row = (g: { signedInHouse: number; signedReferred: number }): SheetTeamRow =>
     ({ signedInHouse: g.signedInHouse, signedReferred: g.signedReferred, signed: g.signedInHouse + g.signedReferred });
-  const total = { signedInHouse: counts.GBP.signedInHouse + counts.SEO.signedInHouse, signedReferred: counts.GBP.signedReferred + counts.SEO.signedReferred };
+  const groups = [counts.GBP, counts.SEO, counts.Ads];
+  const total = { signedInHouse: groups.reduce((n, g) => n + g.signedInHouse, 0), signedReferred: groups.reduce((n, g) => n + g.signedReferred, 0) };
   return {
-    team: { GBP: row(counts.GBP), SEO: row(counts.SEO), TOTAL: row(total) },
+    team: { GBP: row(counts.GBP), SEO: row(counts.SEO), Ads: row(counts.Ads), TOTAL: row(total) },
     inHouse, referred,
     found: { team: true, inHouse: true, referred: true },
   };
@@ -394,7 +413,7 @@ export function parseSignupLog(rows: Cell[][], range?: { fromDay: string; toDay:
  * only to those allowed them (marketingCaseFacts).
  */
 export type SignupSheetRow = {
-  day: string | null; source: string; leadSource: string; group: "GBP" | "SEO" | null;
+  day: string | null; source: string; leadSource: string; group: DigitalGroup | null;
   intaker: string; signedUpBy: string; outcome: string; clientName: string;
   value: string; tier: string; caseType: string; referralStatus: string; caseNumber: string;
   facts: {

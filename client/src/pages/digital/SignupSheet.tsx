@@ -2,7 +2,7 @@
  * The Digital Marketing Report's "Sign-up sheet" tab: the FLF sign-up sheet
  * (its Current Month tab), live from Google Sheets via server/signupSheet.ts.
  * Every sign-up the sheet logs — not only digital ones — with a filter for
- * the GBP and website rows the Audit tab compares with Lead Docket.
+ * the digital rows (GBP, website, social ads) the Audit tab compares with Lead Docket.
  *
  * Intake case facts (liability, medical visits, case manager, referred
  * attorney…) arrive only for those allowed them; the columns are left out for
@@ -23,7 +23,7 @@ const isReferred = (r: SignupSheetRow) => /^referred/i.test(r.outcome);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** A sheet day (YYYY-MM-DD) as "Nov 2, 2026". It is already a calendar day: no time-zone shift. */
 const dayLabel = (d: string) => `${MONTHS[Number(d.slice(5, 7)) - 1]} ${Number(d.slice(8, 10))}, ${d.slice(0, 4)}`;
-const GROUP_LABEL = { GBP: "GBP", SEO: "Website" } as const;
+const GROUP_LABEL = { GBP: "GBP", SEO: "Website", Ads: "Ads" } as const;
 
 /** The intake case-fact columns, shown only when the server sent them. */
 const FACT_COLS: [keyof NonNullable<SignupSheetRow["facts"]>, string][] = [
@@ -88,7 +88,7 @@ export function SignupSheetTab() {
         </div>
         <p className="sr-sub">
           Live from Google Sheets — tab <b>{d.tab}</b>, read {formatDistanceToNow(new Date(d.fetchedAt), { addSuffix: true })}. Every sign-up the sheet logs;
-          {" "}<b>{fmt(digital)}</b> are digital marketing (GBP and website) and are the ones the Data audit compares with Lead Docket.
+          {" "}<b>{fmt(digital)}</b> are digital marketing (GMB, the JFJ website and brand sites, Intaker, Yelp, Facebook, Instagram) and are the ones the Data audit compares with Lead Docket.
           {!facts && <> Intake case details aren't shown for your role.</>}
         </p>
         <div className="dm-kpis">
@@ -97,6 +97,7 @@ export function SignupSheetTab() {
           <div className="dm-kpi"><b>{fmt(referred)}</b><span>Referred out</span></div>
           <div className="dm-kpi"><b>{fmt(rows.filter((r) => r.group === "GBP").length)}</b><span>GBP</span></div>
           <div className="dm-kpi"><b>{fmt(rows.filter((r) => r.group === "SEO").length)}</b><span>Website</span></div>
+          <div className="dm-kpi"><b>{fmt(rows.filter((r) => r.group === "Ads").length)}</b><span>Ads (social)</span></div>
         </div>
       </div>
 
