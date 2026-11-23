@@ -179,3 +179,94 @@ export function matchSignups<S extends Pick<FlfSignup, "clientName" | "phoneKey"
     return hit;
   });
 }
+
+// ── where a sign-up is counted: column A → the report's channel ──────────────
+
+/** A mapping's channel meaning "the linked Lead Docket lead's own Marketing Source" (the sheet says only "Referral"). */
+export const LD_SOURCE = "(Lead Docket's source)";
+/** The BD/FR team row's channel, as shared/marketing.ts names it. */
+const TEAM = "BD/FR team";
+
+/**
+ * One line of the mapping: a column-A value — exact, ignoring case and spaces,
+ * or a prefix when it ends in "*" — and the report channel it counts under.
+ */
+export type SourceMapEntry = { sheet: string; channel: string };
+
+/**
+ * What column A says → the report's channel, from how the linked Lead Docket
+ * leads of 2026 are named (Walker → Walker Advertising for 614 of 650, and so
+ * on). Referrals are split in Lead Docket (FLF Employee, Existing Client, a
+ * referrer's name) but one word on the sheet, so they take their lead's own
+ * source. Settings can override any line; a value with no line is counted
+ * under its own name.
+ */
+export const DEFAULT_SOURCE_MAP: SourceMapEntry[] = [
+  { sheet: "BDR *", channel: TEAM },
+  { sheet: "FR *", channel: TEAM },
+  { sheet: "Walker", channel: "Walker Advertising" },
+  { sheet: "Walker Advertising*", channel: "Walker Advertising" },
+  { sheet: "GMB*", channel: "Google Business Profile (GMB)" },
+  { sheet: "JFJ Website", channel: "Justin For Justice" },
+  { sheet: "Intaker*", channel: "Intaker" },
+  { sheet: "Kapwa Justice", channel: "Kapwa Justice Website" },
+  { sheet: "Referral", channel: LD_SOURCE },
+];
+
+const mapKey = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+
+/** The mapped channel for a column-A value, or null when no line covers it. Exact lines win over prefixes, longer prefixes over shorter. */
+export function channelForSheetSource(a: string, map: SourceMapEntry[]): string | null {
+  const k = mapKey(a);
+  if (!k) return null;
+  const exact = map.find((e) => !e.sheet.trim().endsWith("*") && mapKey(e.sheet) === k);
+  if (exact) return exact.channel;
+  const prefixes = map
+    .filter((e) => e.sheet.trim().endsWith("*"))
+    // A space before the * is kept: "FR *" is FR and a name, never "Frank's Body Shop".
+    .map((e) => ({ p: e.sheet.trim().slice(0, -1).toLowerCase().replace(/\s+/g, " ").trimStart(), channel: e.channel }))
+    .filter((e) => e.p && k.startsWith(e.p))
+    .sort((x, y) => y.p.length - x.p.length);
+  return prefixes[0]?.channel ?? null;
+}
+
+/** The linked lead's fields the placement uses. */
+export type LinkedLead = { marketingSource: string | null; teamRole: string | null; teamRep: string | null } | null;
+
+/**
+ * Where a sign-up is reported, as Lead Docket fields: the Marketing Source the
+ * report reads (its row in the source view; its channel through
+ * channelOfSource) and, for a BD/FR rep's, teamRole and teamRep.
+ *
+ * The channel is column A's, through the mapping. Within that channel the
+ * most specific name that still belongs to it is kept — the linked lead's own
+ * source ("GMB 1900 South Norfolk Street Suite 350"), else column B — so the
+ * source view lines sign-ups up with the leads they came from.
+ */
+export function placeSignup(
+  s: Pick<FlfSignup, "source" | "leadSource" | "signedUpBy">,
+  lead: LinkedLead,
+  map: SourceMapEntry[],
+  channelOf: (source: string) => string,
+): { marketingSource: string | null; teamRole: string | null; teamRep: string | null } {
+  const a = s.source.trim(), b = s.leadSource.trim();
+  const mapped = channelForSheetSource(a, map);
+  const fromLead = () => ({ marketingSource: lead?.marketingSource?.trim() || null, teamRole: lead?.teamRole ?? null, teamRep: lead?.teamRep ?? null });
+
+  if (mapped === TEAM) {
+    const role = /^bdr\b/i.test(a) ? "BDR" : "FR";
+    // Lead Docket's full name for the rep when the lead is theirs; else the sheet's ("FR Jezel" → "Jezel").
+    const rep = lead && (lead.teamRole === "BDR" || lead.teamRole === "FR") && lead.teamRep ? lead.teamRep : a.replace(/^(bdr|fr)\s+/i, "");
+    return { marketingSource: b || a, teamRole: role, teamRep: rep };
+  }
+  if (mapped === LD_SOURCE || (!a && lead)) {
+    if (lead) return fromLead();
+    return { marketingSource: a || b || null, teamRole: null, teamRep: null };
+  }
+  if (!a) return { marketingSource: b || null, teamRole: null, teamRep: null };
+
+  const channel = mapped ?? channelOf(a);
+  const leadSource = lead && lead.teamRole !== "BDR" && lead.teamRole !== "FR" ? lead.marketingSource?.trim() : "";
+  const name = leadSource && channelOf(leadSource) === channel ? leadSource : b && channelOf(b) === channel ? b : channel;
+  return { marketingSource: name, teamRole: null, teamRep: null };
+}

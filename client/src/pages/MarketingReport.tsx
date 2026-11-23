@@ -240,9 +240,10 @@ export default function MarketingReport() {
               <div>
                 <h1>Marketing report</h1>
                 <p className="sr-lead">
-                  Every Lead Docket lead by marketing source · {rangeLabel(view.from, view.to)}
+                  {data?.signupsFrom.sheet ? "Sign-ups from the FLF Sign Up sheet, leads from Lead Docket" : "Every Lead Docket lead by marketing source"}
+                  {" · "}{rangeLabel(view.from, view.to)}
                   {data?.compare ? ` · compared with ${data.compare.label}` : ""}
-                  {data && <FreshnessLine c={data.coverage} />}
+                  {data && <FreshnessLine c={data.coverage} sheet={data.signupsFrom} />}
                 </p>
               </div>
               <div className="sr-actions">
@@ -309,13 +310,14 @@ function exportSummary(data: Data, from: string, to: string) {
   const unmatchedSum = Math.round(unmatched.reduce((a, u) => a + u.amount, 0) * 100) / 100;
 
   const lines = [
-    `Marketing report,${from} to ${to},every Lead Docket lead (BD/FR team as one row)`, "",
+    `Marketing report,${from} to ${to},${data.signupsFrom.sheet ? "sign-ups from the FLF Sign Up sheet; leads from Lead Docket" : "every Lead Docket lead"} (BD/FR team as one row)`, "",
     "Summary,Value",
     `Leads,${data.totals.leads}`, `Signed,${data.totals.signed}`, `Conversion,${data.totals.conversion}%`,
     `Spend,${data.totals.spend ?? ""}`, `Cost per lead,${data.totals.costPerLead ?? ""}`, `Cost per sign-up,${data.totals.costPerSignup ?? ""}`,
     ...(c ? [`Compared with,${q(c.label + (c.partial ? " (not fully loaded yet)" : ""))}`] : []),
     `Lead Docket complete back to,${q(loadedLabel(cov) ?? (cov.complete ? "complete" : "not known yet"))}`,
-    `Synced,${q(cov.syncedAt ? whenLabel(cov.syncedAt, new Date(), true) : "")}`, "",
+    `Synced,${q(cov.syncedAt ? whenLabel(cov.syncedAt, new Date(), true) : "")}`,
+    ...(data.signupsFrom.sheet ? [`FLF sheet synced,${q(data.signupsFrom.syncedAt ? whenLabel(data.signupsFrom.syncedAt, new Date(), true) : "")}`] : []), "",
     `Source,Leads,Open,Rejected,Referred Out,Not Interested,Signed Referred Out,Signed In-House,Signed,Conversion %,Spend,Cost per lead,Cost per sign-up${cmpHead}`,
     ...data.sources.map((s) => [
       q(s.name), s.leads, s.open, s.rejected, s.referredOut, s.notInterested, s.signedReferred, s.signedInHouse, s.signed, s.conversion,
@@ -487,6 +489,16 @@ function Report({ data, from, to, group, onDrill }: {
             <div className="sr-panel-h"><h2>How these numbers are built</h2></div>
             <details className="sr-acc">
               <summary><span>Where leads come from</span></summary>
+              {data?.signupsFrom.sheet && (
+                <p>
+                  <b>Sign-ups come from the FLF Sign Up History sheet</b> — the record intake keeps — and the leads that never signed
+                  from Lead Docket, since the sheet lists sign-ups only. Total Leads is the two together. A sign-up counts on the sheet's
+                  Sign Up Date, under the channel its Source column maps to (Settings), and as referred out when its Lead Outcome is
+                  "Referred out" or its referral status starts "Lead/Client Referred out". Each one is linked to its Lead Docket lead by
+                  phone, email or name, and that lead isn't counted again. A lead Lead Docket marks signed but the sheet doesn't list
+                  isn't counted as a sign-up; the Data audit lists it.
+                </p>
+              )}
               <p>
                 Every lead the firm takes in Lead Docket, read by the same sync as the Sign-ups Report. A lead's source is its
                 Marketing Source. Leads credited to a BDR or FR representative are one row, "BD/FR team" — the same leads and
@@ -496,7 +508,11 @@ function Report({ data, from, to, group, onDrill }: {
             </details>
             <details className="sr-acc">
               <summary><span>When a lead counts as signed</span></summary>
-              <p>When it has a sign-up date, even if the case later closed. Signed leads count in the month they signed; the rest in the month they came in — the same as the Sign-ups Report.</p>
+              <p>
+                {data?.signupsFrom.sheet
+                  ? "When it's on the FLF Sign Up sheet, even if the case later closed or was dropped. A sign-up counts in the month of its Sign Up Date; every other lead in the month it came in."
+                  : "When it has a sign-up date, even if the case later closed. Signed leads count in the month they signed; the rest in the month they came in — the same as the Sign-ups Report."}
+              </p>
             </details>
             <SpendAccordion />
             {data.why && <WhyAccordion why={data.why} />}
