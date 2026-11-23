@@ -60,7 +60,18 @@ describe("ensureLiabilityColumns", () => {
       return [];
     });
     const alters = ran.filter((q) => !q.startsWith("SELECT"));
-    expect(alters).toEqual(["ALTER TABLE leaddocket_leads ADD COLUMN `liabilityStatus` VARCHAR(255) NULL"]);
+    expect(alters).toEqual([
+      "ALTER TABLE leaddocket_leads ADD COLUMN `liabilityStatus` VARCHAR(255) NULL",
+      "ALTER TABLE leaddocket_leads ADD COLUMN `emailHash` CHAR(64) NULL",
+    ]);
+  });
+
+  it("hashes an email the way the FLF sheet's are hashed, and nothing else", async () => {
+    const { emailHash } = await import("../scripts/migration/leaddocket-liability.mjs");
+    const { createHash } = await import("node:crypto");
+    expect(emailHash("  Pat@Example.COM ")).toBe(createHash("sha256").update("pat@example.com").digest("hex"));
+    expect(emailHash("not an email")).toBeNull();
+    expect(emailHash(null)).toBeNull();
   });
 
   it("treats a column another process just added as done", async () => {

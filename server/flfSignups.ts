@@ -18,10 +18,10 @@ import { sql } from "drizzle-orm";
 import { getDb, getSetting, setSetting } from "./db";
 import { downloadWorkbook } from "./googleSheets";
 import {
-  DEFAULT_SOURCE_MAP, countMonthOf, matchSignups, monthOfTab, nameKeyOf, parseFlfTab, placeSignup,
+  DEFAULT_SOURCE_MAP, LD_SOURCE, channelForSheetSource, countMonthOf, utcDate, matchSignups, monthOfTab, nameKeyOf, parseFlfTab, placeSignup,
   type FlfSignup, type LinkedLead, type MatchLead, type SourceMapEntry,
 } from "@shared/flfSignups";
-import { channelOfSource } from "@shared/marketing";
+import { TEAM_CHANNEL as TEAM_ROW, channelOfSource } from "@shared/marketing";
 import type { Cell } from "@shared/digitalSheet";
 
 const TZ = "America/Los_Angeles";
@@ -92,13 +92,70 @@ export function ensureFlfTable() {
 
 // ── the column-A mapping ────────────────────────────────────────────────────
 
-/** The mapping in use: Settings' saved lines, else the defaults. */
-export async function getSourceMap(): Promise<SourceMapEntry[]> {
+/** The lines saved in Settings: one per column-A value someone mapped by hand. */
+async function savedLines(): Promise<SourceMapEntry[]> {
   try {
     const saved = JSON.parse((await getSetting(MAP_KEY)) ?? "null");
     if (Array.isArray(saved)) return saved.filter((e) => e && typeof e.sheet === "string" && typeof e.channel === "string");
-  } catch { /* fall through to the defaults */ }
-  return DEFAULT_SOURCE_MAP;
+  } catch { /* none saved */ }
+  return [];
+}
+
+/**
+ * The mapping in use: Settings' lines first, then the defaults. Saved lines
+ * are exact values, and an exact line wins over a prefix, so a saved line
+ * always overrides the default for that value.
+ */
+export async function getSourceMap(): Promise<SourceMapEntry[]> {
+  return [...(await savedLines()), ...DEFAULT_SOURCE_MAP];
+}
+
+/**
+ * Settings' view of the mapping: every column-A value on the sheet, how many
+ * sign-ups have it and when it was last used, and the channel it counts under
+ * — by a saved line, a default line, or (with neither) its own name.
+ */
+export async function getSourceMapView() {
+  await ensureFlfTable();
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const saved = await savedLines();
+  const map = [...saved, ...DEFAULT_SOURCE_MAP];
+  const [values] = (await db.execute(sql`SELECT TRIM(COALESCE(source, '')) AS sheet, COUNT(*) AS n, MAX(countMonth) AS last
+    FROM flf_signups GROUP BY TRIM(COALESCE(source, '')) ORDER BY last DESC, n DESC`)) as unknown as [{ sheet: string; n: number; last: string }[]];
+  // The report's channels in use, to pick from: those Lead Docket's sources of the last year group into.
+  const [ld] = (await db.execute(sql`SELECT marketingSource AS s, COUNT(*) AS n FROM leaddocket_leads
+    WHERE leadDate >= ${new Date(Date.now() - 365 * 86_400_000)} AND marketingSource IS NOT NULL AND TRIM(marketingSource) <> ''
+      AND (teamRole IS NULL OR teamRole NOT IN ('BDR', 'FR'))
+    GROUP BY marketingSource`)) as unknown as [{ s: string; n: number }[]];
+  const channels = new Map<string, number>();
+  for (const r of ld) { const c = channelOfSource(r.s.trim()); channels.set(c, (channels.get(c) ?? 0) + Number(r.n)); }
+  const savedKeys = new Set(saved.map((e) => e.sheet.toLowerCase().replace(/\s+/g, " ").trim()));
+  return {
+    rows: values.map((v) => {
+      const channel = channelForSheetSource(v.sheet, map);
+      const isSaved = savedKeys.has(v.sheet.toLowerCase().replace(/\s+/g, " ").trim());
+      return {
+        sheet: v.sheet, signups: Number(v.n), lastMonth: v.last,
+        channel: channel ?? (v.sheet ? channelOfSource(v.sheet) : null),
+        how: isSaved ? "saved" as const : channel ? "default" as const : "ownName" as const,
+      };
+    }),
+    saved,
+    defaults: DEFAULT_SOURCE_MAP,
+    channels: [TEAM_ROW, LD_SOURCE, ...Array.from(channels.entries()).sort((a, b) => b[1] - a[1]).map(([c]) => c).filter((c) => c !== TEAM_ROW)].slice(0, 150),
+  };
+}
+
+/** Save Settings' lines (one per column-A value; an empty channel removes it) and place every sign-up again. */
+export async function saveSourceMap(lines: SourceMapEntry[]): Promise<{ lines: number; replaced: number }> {
+  const seen = new Set<string>();
+  const clean = lines
+    .map((e) => ({ sheet: e.sheet.replace(/\s+/g, " ").trim(), channel: e.channel.replace(/\s+/g, " ").trim() }))
+    .filter((e) => e.sheet && e.channel && !e.sheet.endsWith("*"))
+    .filter((e) => { const k = e.sheet.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  await setSetting(MAP_KEY, clean.length ? JSON.stringify(clean) : null);
+  return { lines: clean.length, replaced: await remapFlfSignups(false) };
 }
 
 // ── matching ─────────────────────────────────────────────────────────────────
@@ -111,18 +168,29 @@ export async function candidateLeads(signups: FlfSignup[]): Promise<CandidateLea
   if (!db) throw new Error("Database unavailable");
   const phones = Array.from(new Set(signups.map((s) => s.phoneKey).filter((p): p is string => !!p)));
   const names = Array.from(new Set(signups.map((s) => nameKeyOf(s.clientName)).filter(Boolean)));
+  const emails = Array.from(new Set(signups.map((s) => s.emailKey).filter((e): e is string => !!e)));
+  // The Lead Docket sync adds emailHash when it next runs; until then there's nothing to match by email.
+  const [ecol] = (await db.execute(sql`SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leaddocket_leads' AND COLUMN_NAME = 'emailHash'`)) as unknown as [{ n: number }[]];
+  const hasEmail = Number(ecol[0]?.n) > 0;
   const out = new Map<number, CandidateLead>();
-  type Row = { leadId: number; clientName: string | null; phoneKey: string | null; day: Date | string | null; marketingSource: string | null; teamRole: string | null; teamRep: string | null };
+  type Row = { leadId: number; clientName: string | null; phoneKey: string | null; emailHash: string | null; day: Date | string | null; marketingSource: string | null; teamRole: string | null; teamRep: string | null };
   const read = async (where: ReturnType<typeof sql>) => {
-    const [rows] = (await db.execute(sql`SELECT leadId, clientName, phoneKey, COALESCE(signedUpDate, leadDate) AS day, marketingSource, teamRole, teamRep
+    const [rows] = (await db.execute(sql`SELECT leadId, clientName, phoneKey, ${hasEmail ? sql`emailHash` : sql`NULL AS emailHash`}, COALESCE(signedUpDate, leadDate) AS day, marketingSource, teamRole, teamRep
       FROM leaddocket_leads WHERE ${where}`)) as unknown as [Row[]];
     for (const r of rows) {
-      const day = r.day ? formatInTimeZone(new Date(r.day), TZ, "yyyy-MM-dd") : null;
-      out.set(Number(r.leadId), { leadId: Number(r.leadId), clientName: r.clientName, phoneKey: r.phoneKey, day, marketingSource: r.marketingSource, teamRole: r.teamRole, teamRep: r.teamRep });
+      const t = utcDate(r.day);
+      const day = t ? formatInTimeZone(t, TZ, "yyyy-MM-dd") : null;
+      out.set(Number(r.leadId), { leadId: Number(r.leadId), clientName: r.clientName, phoneKey: r.phoneKey, emailKey: r.emailHash, day, marketingSource: r.marketingSource, teamRole: r.teamRole, teamRep: r.teamRep });
     }
   };
   for (let i = 0; i < phones.length; i += 500) {
     await read(sql`phoneKey IN (${sql.join(phones.slice(i, i + 500).map((p) => sql`${p}`), sql`, `)})`);
+  }
+  if (hasEmail) {
+    for (let i = 0; i < emails.length; i += 500) {
+      await read(sql`emailHash IN (${sql.join(emails.slice(i, i + 500).map((e) => sql`${e}`), sql`, `)})`);
+    }
   }
   // Names Lead Docket spells the same way, give or take case and spaces; the
   // matcher still requires a sign-up date within 7 days for these.
@@ -181,13 +249,15 @@ export async function syncFlfSignups(opts: { all?: boolean } = {}): Promise<stri
       fs.rm(file, { force: true }, () => {});
     }
 
+    // Emails are compared as hashes on both sides; the address is never stored.
+    const hash = (e: string | null) => (e ? createHash("sha256").update(e).digest("hex") : null);
+    signups = signups.map((s) => ({ ...s, emailKey: hash(s.emailKey) }));
     const candidates = await candidateLeads(signups);
     const matches = matchSignups(signups, candidates);
     const byId = new Map(candidates.map((l) => [l.leadId, l]));
     const map = await getSourceMap();
     const db = await getDb();
     if (!db) throw new Error("Database unavailable");
-    const hash = (e: string | null) => (e ? createHash("sha256").update(e).digest("hex") : null);
     await db.transaction(async (tx) => {
       if (full) {
         // Every month tab was read: a month no longer in the sheet goes too.
@@ -201,7 +271,7 @@ export async function syncFlfSignups(opts: { all?: boolean } = {}): Promise<stri
           return sql`(${s.tabMonth}, ${s.rowNo}, ${countMonthOf(s)}, ${s.signDay}, ${cut(s.source, 120)}, ${cut(s.leadSource, 255)},
             ${cut(s.intaker, 120)}, ${cut(s.signedUpBy, 120)}, ${cut(s.referralStatus, 255)}, ${cut(s.outcome, 60)}, ${s.kind},
             ${cut(s.value, 60)}, ${cut(s.rank, 60)}, ${cut(s.clientName, 255)}, ${cut(s.caseType, 120)}, ${cut(s.caseNumber, 60)},
-            ${s.phoneKey}, ${hash(s.emailKey)}, ${hit?.leadId ?? null}, ${hit?.by ?? null},
+            ${s.phoneKey}, ${s.emailKey}, ${hit?.leadId ?? null}, ${hit?.by ?? null},
             ${cut(at.marketingSource ?? "", 255)}, ${at.teamRole}, ${cut(at.teamRep ?? "", 120)})`;
         });
         await tx.execute(sql`INSERT INTO flf_signups (tabMonth, rowNo, countMonth, signDay, source, leadSource, intaker, signedUpBy,

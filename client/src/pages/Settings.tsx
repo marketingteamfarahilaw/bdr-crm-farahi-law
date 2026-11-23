@@ -430,6 +430,7 @@ function BrandingSettings() {
       </p>
 
       {isManager && <DataSyncPanel />}
+      {isManager && <FlfSourceMapCard />}
       {canAssignRoles(user?.role) && <SystemHealthCard />}
       {canAssignRoles(user?.role) && <ClaudeCard />}
       {canAssignRoles(user?.role) && <TimeeroCard />}
@@ -481,6 +482,108 @@ function BrandingSettings() {
           {dirty && <span className="text-xs text-muted-foreground flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" /> Unsaved changes</span>}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Which Marketing Report channel each Source (column A) of the FLF Sign Up
+ * sheet counts its sign-ups under (server/flfSignups.ts). A line saved here
+ * overrides the built-in default for that value; a value with neither counts
+ * under its own name. Saving re-places every stored sign-up at once.
+ */
+function FlfSourceMapCard() {
+  const utils = trpc.useUtils();
+  const q = trpc.settings.flfSourceMap.useQuery();
+  const d = q.data;
+  const [edits, setEdits] = useState<Record<string, string>>({});
+  const [all, setAll] = useState(false);
+  const [search, setSearch] = useState("");
+  // Start from the saved lines whenever they (re)load.
+  useEffect(() => { if (d) setEdits(Object.fromEntries(d.saved.map((e) => [e.sheet.toLowerCase(), e.channel]))); }, [d]);
+  const save = trpc.settings.saveFlfSourceMap.useMutation({
+    onSuccess: (r) => {
+      toast.success(`Saved ${r.lines} line${r.lines === 1 ? "" : "s"}; ${r.replaced} sign-up${r.replaced === 1 ? "" : "s"} moved to another channel.`);
+      void utils.settings.flfSourceMap.invalidate();
+      void utils.marketing.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  if (q.isError) return null;   // managers only; anyone else simply doesn't get the card
+
+  const savedMap = new Map((d?.saved ?? []).map((e) => [e.sheet.toLowerCase(), e.channel]));
+  const dirty = !!d && (Object.keys(edits).length !== savedMap.size || Object.entries(edits).some(([k, v]) => savedMap.get(k) !== v));
+  // Two years by default: the sheet's 2018–2023 tabs hold a thousand one-off answers to "How did you hear about us?".
+  const cutoff = new Date(Date.now() - 730 * 86_400_000).toISOString().slice(0, 7);
+  const k = search.trim().toLowerCase();
+  const rows = (d?.rows ?? []).filter((r) => r.sheet && (all || r.lastMonth >= cutoff) && (!k || r.sheet.toLowerCase().includes(k)));
+  const ownName = (d?.rows ?? []).filter((r) => r.sheet && r.lastMonth >= cutoff && r.how === "ownName" && !edits[r.sheet.toLowerCase()]).length;
+  const setLine = (sheet: string, channel: string) => setEdits((e) => {
+    const next = { ...e };
+    if (channel.trim()) next[sheet.toLowerCase()] = channel; else delete next[sheet.toLowerCase()];
+    return next;
+  });
+  const sheetOf = new Map((d?.rows ?? []).map((r) => [r.sheet.toLowerCase(), r.sheet]));
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><FileSpreadsheet className="w-4 h-4" /></span>
+        <div className="text-sm font-semibold text-foreground">FLF Sign Up sheet — where each Source counts</div>
+        {ownName > 0 && <span className="ml-auto text-xs font-medium text-amber-600 dark:text-amber-400">{ownName} not mapped</span>}
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        The Marketing Report counts sign-ups from the FLF Sign Up sheet under the channel its <b>Source</b> column maps to. Most values have a default
+        (Walker → Walker Advertising, BDR/FR → BD/FR team, GMB → Google Business Profile). Type or pick a channel to override one;
+        "{"(Lead Docket's source)"}" counts it under its Lead Docket lead's own Marketing Source. A value left unmapped counts under its own name.
+      </p>
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search sources…" className="h-8 w-56" aria-label="Search sources" />
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> Include sources not used in two years
+        </label>
+        <Button size="sm" className="gap-1.5 ml-auto" disabled={!dirty || save.isPending}
+          onClick={() => save.mutate({ lines: Object.entries(edits).map(([key, channel]) => ({ sheet: sheetOf.get(key) ?? key, channel })) })}>
+          {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save
+        </Button>
+      </div>
+      {!d ? <div className="h-24 rounded-lg bg-muted animate-pulse" /> : (
+        <div className="max-h-[420px] overflow-auto rounded-lg border border-border">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-card">
+              <tr className="text-left text-muted-foreground">
+                <th className="px-2 py-1.5 font-medium">Source on the sheet</th>
+                <th className="px-2 py-1.5 font-medium text-right">Sign-ups</th>
+                <th className="px-2 py-1.5 font-medium">Last used</th>
+                <th className="px-2 py-1.5 font-medium">Counts under</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const key = r.sheet.toLowerCase();
+                const edited = edits[key];
+                return (
+                  <tr key={r.sheet} className="border-t border-border">
+                    <td className="px-2 py-1 text-foreground">{r.sheet}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">{r.signups.toLocaleString("en-US")}</td>
+                    <td className="px-2 py-1 whitespace-nowrap text-muted-foreground">{r.lastMonth}</td>
+                    <td className="px-2 py-1">
+                      <div className="flex items-center gap-1.5">
+                        <Input list="flf-channels" value={edited ?? ""} onChange={(e) => setLine(r.sheet, e.target.value)}
+                          placeholder={r.channel ? `${r.channel}${r.how === "ownName" ? " (its own name)" : " (default)"}` : ""}
+                          className="h-7 text-xs min-w-[220px]" aria-label={`Channel for ${r.sheet}`} />
+                        {r.how === "ownName" && !edited && <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">not mapped</span>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <datalist id="flf-channels">{d.channels.map((c) => <option key={c} value={c} />)}</datalist>
+        </div>
+      )}
+      <p className="text-[11px] text-muted-foreground mt-2">A blank Source counts under its Lead Docket lead's source, or "No source recorded".</p>
     </div>
   );
 }

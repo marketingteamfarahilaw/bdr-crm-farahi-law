@@ -47,6 +47,10 @@ describe("parseFlfTab", () => {
     expect(out[2].signDay).toBeNull();
     expect(countMonthOf(out[2])).toBe("2026-10");
     expect(countMonthOf({ signDay: "2026-11-01", tabMonth: "2026-10" })).toBe("2026-11");
+    expect(countMonthOf({ signDay: "2026-09-28", tabMonth: "2026-10" })).toBe("2026-09");
+    // A mistyped year counts in the tab's month.
+    expect(countMonthOf({ signDay: "2033-06-02", tabMonth: "2023-06" })).toBe("2023-06");
+    expect(countMonthOf({ signDay: "0204-04-10", tabMonth: "2024-04" })).toBe("2024-04");
   });
   it("reads the older tabs' headers", () => {
     const y2018 = [
