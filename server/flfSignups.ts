@@ -17,11 +17,16 @@ import { formatInTimeZone } from "date-fns-tz";
 import { sql } from "drizzle-orm";
 import { getDb, getSetting, setSetting } from "./db";
 import { downloadWorkbook } from "./googleSheets";
-import { countMonthOf, matchSignups, monthOfTab, nameKeyOf, parseFlfTab, type FlfSignup, type MatchLead } from "@shared/flfSignups";
+import {
+  DEFAULT_SOURCE_MAP, countMonthOf, matchSignups, monthOfTab, nameKeyOf, parseFlfTab, placeSignup,
+  type FlfSignup, type LinkedLead, type MatchLead, type SourceMapEntry,
+} from "@shared/flfSignups";
+import { channelOfSource } from "@shared/marketing";
 import type { Cell } from "@shared/digitalSheet";
 
 const TZ = "America/Los_Angeles";
 const STATUS_KEY = "flf_signups_status";
+const MAP_KEY = "flf_source_map";
 /** Every month tab is re-read once this long after the last full read. */
 const FULL_EVERY_MS = 20 * 60 * 60 * 1000;
 
@@ -67,29 +72,53 @@ export function ensureFlfTable() {
       leadId BIGINT NULL,
       matchedBy VARCHAR(12) NULL,
       syncedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      reportSource VARCHAR(255) NULL,
+      reportTeamRole VARCHAR(20) NULL,
+      reportTeamRep VARCHAR(120) NULL,
       UNIQUE KEY flf_tab_row (tabMonth, rowNo),
       KEY flf_count_month (countMonth),
       KEY flf_lead (leadId)
     )`);
+    // Added after the table first shipped (Nov 23, 2026): where the Marketing Report counts each sign-up.
+    const [cols] = (await db.execute(sql`SELECT COLUMN_NAME AS c FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'flf_signups'`)) as unknown as [{ c: string }[]];
+    const have = new Set(cols.map((r) => r.c));
+    if (!have.has("reportSource")) await db.execute(sql`ALTER TABLE flf_signups ADD COLUMN reportSource VARCHAR(255) NULL`);
+    if (!have.has("reportTeamRole")) await db.execute(sql`ALTER TABLE flf_signups ADD COLUMN reportTeamRole VARCHAR(20) NULL`);
+    if (!have.has("reportTeamRep")) await db.execute(sql`ALTER TABLE flf_signups ADD COLUMN reportTeamRep VARCHAR(120) NULL`);
   })().catch((e) => { ready = null; throw e; });
   return ready;
 }
 
+// ── the column-A mapping ────────────────────────────────────────────────────
+
+/** The mapping in use: Settings' saved lines, else the defaults. */
+export async function getSourceMap(): Promise<SourceMapEntry[]> {
+  try {
+    const saved = JSON.parse((await getSetting(MAP_KEY)) ?? "null");
+    if (Array.isArray(saved)) return saved.filter((e) => e && typeof e.sheet === "string" && typeof e.channel === "string");
+  } catch { /* fall through to the defaults */ }
+  return DEFAULT_SOURCE_MAP;
+}
+
 // ── matching ─────────────────────────────────────────────────────────────────
 
+export type CandidateLead = MatchLead & NonNullable<LinkedLead>;
+
 /** The Lead Docket leads any of these sign-ups could be: same phone, or same name. */
-export async function candidateLeads(signups: FlfSignup[]): Promise<MatchLead[]> {
+export async function candidateLeads(signups: FlfSignup[]): Promise<CandidateLead[]> {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const phones = Array.from(new Set(signups.map((s) => s.phoneKey).filter((p): p is string => !!p)));
   const names = Array.from(new Set(signups.map((s) => nameKeyOf(s.clientName)).filter(Boolean)));
-  const out = new Map<number, MatchLead>();
+  const out = new Map<number, CandidateLead>();
+  type Row = { leadId: number; clientName: string | null; phoneKey: string | null; day: Date | string | null; marketingSource: string | null; teamRole: string | null; teamRep: string | null };
   const read = async (where: ReturnType<typeof sql>) => {
-    const [rows] = (await db.execute(sql`SELECT leadId, clientName, phoneKey, COALESCE(signedUpDate, leadDate) AS day
-      FROM leaddocket_leads WHERE ${where}`)) as unknown as [{ leadId: number; clientName: string | null; phoneKey: string | null; day: Date | string | null }[]];
+    const [rows] = (await db.execute(sql`SELECT leadId, clientName, phoneKey, COALESCE(signedUpDate, leadDate) AS day, marketingSource, teamRole, teamRep
+      FROM leaddocket_leads WHERE ${where}`)) as unknown as [Row[]];
     for (const r of rows) {
       const day = r.day ? formatInTimeZone(new Date(r.day), TZ, "yyyy-MM-dd") : null;
-      out.set(Number(r.leadId), { leadId: Number(r.leadId), clientName: r.clientName, phoneKey: r.phoneKey, day });
+      out.set(Number(r.leadId), { leadId: Number(r.leadId), clientName: r.clientName, phoneKey: r.phoneKey, day, marketingSource: r.marketingSource, teamRole: r.teamRole, teamRep: r.teamRep });
     }
   };
   for (let i = 0; i < phones.length; i += 500) {
@@ -152,7 +181,10 @@ export async function syncFlfSignups(opts: { all?: boolean } = {}): Promise<stri
       fs.rm(file, { force: true }, () => {});
     }
 
-    const matches = matchSignups(signups, await candidateLeads(signups));
+    const candidates = await candidateLeads(signups);
+    const matches = matchSignups(signups, candidates);
+    const byId = new Map(candidates.map((l) => [l.leadId, l]));
+    const map = await getSourceMap();
     const db = await getDb();
     if (!db) throw new Error("Database unavailable");
     const hash = (e: string | null) => (e ? createHash("sha256").update(e).digest("hex") : null);
@@ -165,13 +197,16 @@ export async function syncFlfSignups(opts: { all?: boolean } = {}): Promise<stri
       for (let i = 0; i < signups.length; i += 500) {
         const values = signups.slice(i, i + 500).map((s, j) => {
           const hit = matches[i + j];
+          const at = placeSignup(s, hit ? byId.get(hit.leadId) ?? null : null, map, channelOfSource);
           return sql`(${s.tabMonth}, ${s.rowNo}, ${countMonthOf(s)}, ${s.signDay}, ${cut(s.source, 120)}, ${cut(s.leadSource, 255)},
             ${cut(s.intaker, 120)}, ${cut(s.signedUpBy, 120)}, ${cut(s.referralStatus, 255)}, ${cut(s.outcome, 60)}, ${s.kind},
             ${cut(s.value, 60)}, ${cut(s.rank, 60)}, ${cut(s.clientName, 255)}, ${cut(s.caseType, 120)}, ${cut(s.caseNumber, 60)},
-            ${s.phoneKey}, ${hash(s.emailKey)}, ${hit?.leadId ?? null}, ${hit?.by ?? null})`;
+            ${s.phoneKey}, ${hash(s.emailKey)}, ${hit?.leadId ?? null}, ${hit?.by ?? null},
+            ${cut(at.marketingSource ?? "", 255)}, ${at.teamRole}, ${cut(at.teamRep ?? "", 120)})`;
         });
         await tx.execute(sql`INSERT INTO flf_signups (tabMonth, rowNo, countMonth, signDay, source, leadSource, intaker, signedUpBy,
-          referralStatus, outcome, kind, caseValue, caseRank, clientName, caseType, caseNumber, phoneKey, emailHash, leadId, matchedBy)
+          referralStatus, outcome, kind, caseValue, caseRank, clientName, caseType, caseNumber, phoneKey, emailHash, leadId, matchedBy,
+          reportSource, reportTeamRole, reportTeamRep)
           VALUES ${sql.join(values, sql`, `)}`);
       }
     });
@@ -185,4 +220,41 @@ export async function syncFlfSignups(opts: { all?: boolean } = {}): Promise<stri
     await saveStatus({ error: e?.message ?? String(e), errorAt: now.toISOString() }).catch(() => {});
     throw e;
   }
+}
+
+// ── placing rows again ───────────────────────────────────────────────────────
+
+/**
+ * Work out again where each sign-up counts — after the mapping changes, or
+ * for rows written without a placement (by the sync before placements
+ * existed). `onlyMissing` touches just those. Returns how many rows changed.
+ */
+export async function remapFlfSignups(onlyMissing = false): Promise<number> {
+  await ensureFlfTable();
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const [rows] = (await db.execute(sql`SELECT f.id, f.source, f.leadSource, f.signedUpBy, f.reportSource, f.reportTeamRole, f.reportTeamRep,
+      l.marketingSource, l.teamRole, l.teamRep, f.leadId
+    FROM flf_signups f LEFT JOIN leaddocket_leads l ON l.leadId = f.leadId
+    ${onlyMissing ? sql`WHERE f.reportSource IS NULL AND f.reportTeamRole IS NULL` : sql``}`)) as unknown as [{
+      id: number; source: string | null; leadSource: string | null; signedUpBy: string | null;
+      reportSource: string | null; reportTeamRole: string | null; reportTeamRep: string | null;
+      marketingSource: string | null; teamRole: string | null; teamRep: string | null; leadId: number | null;
+    }[]];
+  const map = await getSourceMap();
+  const changed: { id: number; src: string | null; role: string | null; rep: string | null }[] = [];
+  for (const r of rows) {
+    const lead = r.leadId != null ? { marketingSource: r.marketingSource, teamRole: r.teamRole, teamRep: r.teamRep } : null;
+    const at = placeSignup({ source: r.source ?? "", leadSource: r.leadSource ?? "", signedUpBy: r.signedUpBy ?? "" }, lead, map, channelOfSource);
+    const src = at.marketingSource ? cut(at.marketingSource, 255) : null, rep = at.teamRep ? cut(at.teamRep, 120) : null;
+    if (src !== r.reportSource || at.teamRole !== r.reportTeamRole || rep !== r.reportTeamRep) changed.push({ id: Number(r.id), src, role: at.teamRole, rep });
+  }
+  for (let i = 0; i < changed.length; i += 500) {
+    const b = changed.slice(i, i + 500);
+    const ids = sql.join(b.map((c) => sql`${c.id}`), sql`, `);
+    const caseOf = (pick: (c: (typeof b)[number]) => string | null) => sql`CASE id ${sql.join(b.map((c) => sql`WHEN ${c.id} THEN ${pick(c)}`), sql` `)} END`;
+    await db.execute(sql`UPDATE flf_signups SET reportSource = ${caseOf((c) => c.src)}, reportTeamRole = ${caseOf((c) => c.role)},
+      reportTeamRep = ${caseOf((c) => c.rep)} WHERE id IN (${ids})`);
+  }
+  return changed.length;
 }

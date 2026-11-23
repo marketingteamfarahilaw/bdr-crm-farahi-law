@@ -19,6 +19,7 @@ import {
 } from "./common";
 import { assignSpend, type SpendRow } from "./spend";
 import { periodLoaded, type Coverage } from "./coverage";
+import { reportCols, reportLeads } from "./reportLeads";
 
 export type CompareMode = "prev" | "yoy";
 
@@ -164,7 +165,7 @@ export async function loadPrior(range: { from: Date; to: Date }, group: Grouping
   const db = await getDb();
   if (!db) return tallyPrior([], months, group);
   const L = leaddocketLeads;
-  const rows = await db.select(PRIOR_COLS).from(L)
+  const rows = await db.select(reportCols(PRIOR_COLS)).from(await reportLeads())
     .where(and(gte(L.leadDate, range.from), lte(L.leadDate, range.to)));
   return tallyPrior(digital ? rows.filter((r) => isDigitalSource(sourceOf(r))) : rows, months, group);
 }

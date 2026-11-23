@@ -20,6 +20,8 @@
  */
 import { and, gte, inArray, lte } from "drizzle-orm";
 import { getDb } from "./db";
+import { reportCols, reportLeads, sheetSignupsOn } from "./marketing/reportLeads";
+import { getFlfSyncStatus } from "./flfSignups";
 import { leaddocketLeads, marketingSpend } from "../drizzle/schema";
 import {
   LEAD_COLS, NO_SOURCE, TEAM_CHANNEL, channelOfSource, clean, derive, isDigitalSource, sourceOf, emptyCounts, keyOf, monthsBetween, pct,
@@ -71,8 +73,10 @@ export async function getMarketingDashboard(
   const priorMonths = priorDates ? monthsBetween(priorDates.from, priorDates.to) : [];
 
   const L = leaddocketLeads;
+  const from = await reportLeads();
+  const [sheet, flf] = await Promise.all([sheetSignupsOn(), getFlfSyncStatus()]);
   const [rows, prior, cov, quiet, spendRows] = await Promise.all([
-    db.select(LEAD_COLS).from(L).where(and(gte(L.leadDate, range.from), lte(L.leadDate, range.to))),
+    db.select(reportCols(LEAD_COLS)).from(from).where(and(gte(L.leadDate, range.from), lte(L.leadDate, range.to))),
     // The comparison and the gone-quiet alert are extras: if either read fails,
     // the page still shows this period's numbers, just without them.
     priorDates
@@ -304,6 +308,8 @@ export async function getMarketingDashboard(
     compare,
     pace,
     alerts,
+    // Where the sign-ups came from: the FLF Sign Up History sheet once it has synced, else Lead Docket.
+    signupsFrom: { sheet, syncedAt: flf.lastSuccessAt, error: flf.error },
   };
 }
 

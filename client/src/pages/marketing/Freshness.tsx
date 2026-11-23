@@ -51,8 +51,12 @@ export function loadedLabel(c: Coverage): string | null {
   return `about ${dayLabel(c.completeFrom)}`;
 }
 
-/** ' · Lead Docket synced 9:18 pm · newest lead 7:07 pm', for the end of the hero's lead line. */
-export function FreshnessLine({ c }: { c: Coverage }) {
+/** The FLF sheet syncs every 30 minutes; this long without one says so. */
+const SHEET_OVERDUE_MS = 2 * 60 * 60 * 1000;
+export type SignupsFrom = { sheet: boolean; syncedAt: string | null; error: string | null };
+
+/** ' · Lead Docket synced 9:18 pm · newest lead 7:07 pm · FLF sheet synced 9:05 pm', for the end of the hero's lead line. */
+export function FreshnessLine({ c, sheet }: { c: Coverage; sheet?: SignupsFrom }) {
   const now = new Date();
   const synced = c.syncedAt ? whenLabel(c.syncedAt, now) : "";
   const newest = c.newestLeadAt ? whenLabel(c.newestLeadAt, now) : "";
@@ -65,6 +69,12 @@ export function FreshnessLine({ c }: { c: Coverage }) {
       <span className="mk-fr-part">{synced ? `Lead Docket synced ${synced}` : "Lead Docket not synced yet"}</span>
       {newest && <> · <span className="mk-fr-part">newest lead {newest}</span></>}
       {c.syncState === "running" && <> · <span className="mk-fr-part">syncing now</span></>}
+      {sheet?.sheet && sheet.syncedAt && <> · <span className="mk-fr-part">FLF sheet synced {whenLabel(sheet.syncedAt, now)}</span></>}
+      {sheet?.sheet && (!sheet.syncedAt || now.getTime() - Date.parse(sheet.syncedAt) > SHEET_OVERDUE_MS) && (
+        <span className="sr-badge sr-b-sun mk-fr-late" title={`The FLF Sign Up History sheet hasn't synced for over two hours, so the newest sign-ups may be missing.${sheet.error ? ` Last error: ${sheet.error}` : ""}`}>
+          Sheet sync overdue
+        </span>
+      )}
       {overdue && (
         <span
           className="sr-badge sr-b-sun mk-fr-late"

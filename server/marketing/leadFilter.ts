@@ -25,6 +25,7 @@ import {
 } from "./common";
 import { reasonOf } from "./reasons";
 import { dmBucketOf, dmOutcomeOf } from "./digital";
+import { reportCols, reportLeads } from "./reportLeads";
 
 export type LeadQuery = DrillScope & {
   from: Date; to: Date;
@@ -215,8 +216,8 @@ type Db = NonNullable<Awaited<ReturnType<typeof getDb>>>;
 
 async function groupsOf(db: Db, where: SQL): Promise<Triple[]> {
   const rows = await db
-    .select({ outcome: L.outcome, status: L.status, subStatus: L.subStatus, n: sql<number>`COUNT(*)` })
-    .from(L).where(where).groupBy(L.outcome, L.status, L.subStatus);
+    .select({ ...reportCols({ outcome: L.outcome, status: L.status, subStatus: L.subStatus }), n: sql<number>`COUNT(*)` })
+    .from(await reportLeads()).where(where).groupBy(L.outcome, L.status, L.subStatus);
   return rows.map((r) => ({ outcome: r.outcome, status: r.status, subStatus: r.subStatus, n: Number(r.n) || 0 }));
 }
 
@@ -265,7 +266,8 @@ export async function getMarketingLeads(query: LeadQuery): Promise<{ total: numb
   const db = await getDb();
   if (!db) return { total: 0, rows: [], why: q.withWhy ? [] : null };
   const where = scopeWhere(q);
-  const list = (w: SQL) => db.select(LIST_COLS).from(L).where(w).orderBy(desc(L.leadDate), desc(L.leadId)).limit(q.limit);
+  const from = await reportLeads();
+  const list = (w: SQL) => db.select(reportCols(LIST_COLS)).from(from).where(w).orderBy(desc(L.leadDate), desc(L.leadId)).limit(q.limit);
 
   // Nothing to classify: the groups only give the total (and the reasons), so both go at once.
   if (!hasOutcomeFilter(q)) {
@@ -365,8 +367,9 @@ export async function exportMarketingLeads(query: Omit<LeadQuery, "limit" | "wit
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const where = scopeWhere(q);
+  const from = await reportLeads();
   const select = (w: SQL, limit: number) =>
-    db.select(EXPORT_COLS).from(L).where(w).orderBy(desc(L.leadDate), desc(L.leadId)).limit(limit);
+    db.select(reportCols(EXPORT_COLS)).from(from).where(w).orderBy(desc(L.leadDate), desc(L.leadId)).limit(limit);
 
   if (!hasOutcomeFilter(q)) {
     // One over the cap tells us whether it was hit, without a count.
