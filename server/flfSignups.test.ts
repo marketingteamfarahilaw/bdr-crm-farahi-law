@@ -6,9 +6,10 @@ describe("monthOfTab", () => {
     expect(monthOfTab("October 2026")).toBe("2026-10");
     expect(monthOfTab(" Sept 2019 ")).toBe("2019-09");
     expect(monthOfTab("Jan 2018")).toBe("2018-01");
+    expect(monthOfTab("Februrary 2020")).toBe("2020-02");
   });
   it("skips every other tab", () => {
-    for (const t of ["Totals", "Pivot 2026", "Welcome Letters", "Signed Client Later Dropped or Referred Out", "Current Month", "Mayday 2026"]) {
+    for (const t of ["Totals", "Pivot 2026", "Welcome Letters", "Signed Client Later Dropped or Referred Out", "Current Month", "June April 2018", "2019 Total Sign Ups", "Pivot Table 1"]) {
       expect(monthOfTab(t)).toBeNull();
     }
   });
@@ -43,6 +44,18 @@ describe("parseFlfTab", () => {
     expect(out[2].signDay).toBeNull();
     expect(countMonthOf(out[2])).toBe("2026-10");
     expect(countMonthOf({ signDay: "2026-11-01", tabMonth: "2026-10" })).toBe("2026-11");
+  });
+  it("reads the older tabs' headers", () => {
+    const y2018 = [
+      ["", "Name of Person Conducting Intake ", "We are excited to serve you. How did you hear about Farahi Law Firm? How did you find us?", "Outcome", "Potential Client's Name", "Best Call Back Number "],
+      ["2/8/2018 14:30:13", "Jacqueline", "Justin's mom", "Signed", "Gissou R", "310-210-0000"],
+    ];
+    expect(parseFlfTab(y2018, "2018-02")![0]).toMatchObject({ signDay: null, source: "Justin's mom", leadSource: "", outcome: "Signed", clientName: "Gissou R", phoneKey: "3102100000" });
+    const y2020 = [
+      ["Lead Source", "Timestamp", "Sign Up Date", "We are excited to serve you. How did you hear about Farahi Law Firm? How did you find us?", "Outcome", "Potential Client's Name"],
+      ["Apex", "5/11/2020 19:53:09", "06/02/2020", "Apex Chat", "Signed", "Kevin M"],
+    ];
+    expect(parseFlfTab(y2020, "2020-06")![0]).toMatchObject({ signDay: "2020-06-02", source: "Apex", leadSource: "Apex Chat" });
   });
   it("is null for a tab without a Client's Name header", () => {
     expect(parseFlfTab([["Total", 5]], "2026-10")).toBeNull();

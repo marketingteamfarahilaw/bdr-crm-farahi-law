@@ -34,10 +34,12 @@ export const SHEETS = {
     id: process.env.GSHEET_MARKETING_ID || "1kzBCsZJdO3dj_8eOk_5_UBlTlII2ORfndmfa507J4bU",
     label: "FLF Sign-up Sheet (Current Month)",
   },
-  // The FLF Sign Up History sheet: one "<Month> <Year>" tab per month back to
-  // 2018. The Marketing Report's sign-ups come from it (flfSignups.ts).
+  // The FLF Sign Up History workbook: one "<Month> <Year>" tab per month back
+  // to 2018. The Marketing Report's sign-ups come from it (flfSignups.ts). This
+  // is the copy shared by link (Nov 23, 2026); the Google Sheet the spec names,
+  // 1_PLPrmmOv0KIyuqd_e2AaDKpLWYFvq4byj4DFdAB49k, isn't readable by the CRM.
   history: {
-    id: process.env.GSHEET_HISTORY_ID || "1_PLPrmmOv0KIyuqd_e2AaDKpLWYFvq4byj4DFdAB49k",
+    id: process.env.GSHEET_HISTORY_ID || "1CI1-fp5qPnoyCfmZ1UpE3LZ_6qXuRsfW",
     label: "FLF Sign Up History",
   },
 } as const;

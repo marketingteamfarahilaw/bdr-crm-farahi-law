@@ -18,7 +18,8 @@ const MONTHS = ["january", "february", "march", "april", "may", "june", "july", 
 export function monthOfTab(name: string): string | null {
   const m = name.trim().toLowerCase().match(/^([a-z]+)\.?\s+(\d{4})$/);
   if (!m) return null;
-  const i = MONTHS.findIndex((full) => full === m[1] || (m[1].length >= 3 && full.startsWith(m[1])));
+  // By the first three letters, so "Sept" and the sheet's own "Februrary 2020" still read.
+  const i = m[1].length < 3 ? -1 : MONTHS.findIndex((full) => full.startsWith(m[1].slice(0, 3)));
   return i < 0 ? null : `${m[2]}-${String(i + 1).padStart(2, "0")}`;
 }
 
@@ -67,16 +68,25 @@ export type FlfSignup = {
  * tab doesn't shift the rest. Null when the tab has no Client's Name header.
  */
 export function parseFlfTab(rows: Cell[][], tabMonth: string): FlfSignup[] | null {
-  const head = rows.slice(0, 10).findIndex((r) => (r ?? []).some((c) => key(c) === "clientsname" || key(c) === "clientname"));
+  // "Potential Client's Name" on the tabs before July 2020.
+  const isName = (k: string) => k === "clientsname" || k === "clientname" || k === "potentialclientsname";
+  const head = rows.slice(0, 10).findIndex((r) => (r ?? []).some((c) => isName(key(c))));
   if (head < 0) return null;
   const cols = (rows[head] ?? []).map(key);
   // Exact header, or the start of a long one ("Case Type (Slip, Auto, …)").
   const at = (k: string, starts = false) => cols.findIndex((c) => (starts ? c.startsWith(k) : c === k));
+  // Tabs before 2021 have no Source column: "Lead Source" in column A, or (2018)
+  // only the "How did you hear about Farahi Law Firm?" answer; no Sign Up Date
+  // in 2018, so the Timestamp's day stands in; "Outcome" for "Lead Outcome".
+  const heard = at("weareexcitedtoserveyouhowdidyouhear", true);
+  const source = at("source") >= 0 ? at("source") : at("leadsource") >= 0 ? at("leadsource") : heard;
   const c = {
-    source: at("source"), leadSource: at("leadsource"), intaker: at("nameofpersonconductingintake", true),
-    signedUpBy: at("signedupby"), day: at("signupdate"), referralStatus: at("signedcasesreferralstatus", true),
-    value: at("value"), rank: at("rank"), outcome: at("leadoutcome"),
-    name: cols.findIndex((x) => x === "clientsname" || x === "clientname"),
+    source, leadSource: at("source") >= 0 ? at("leadsource") : heard >= 0 && heard !== source ? heard : -1,
+    intaker: at("nameofpersonconductingintake", true),
+    signedUpBy: at("signedupby"), day: at("signupdate") >= 0 ? at("signupdate") : at("timestamp"),
+    referralStatus: at("signedcasesreferralstatus", true),
+    value: at("value"), rank: at("rank"), outcome: at("leadoutcome") >= 0 ? at("leadoutcome") : at("outcome"),
+    name: cols.findIndex(isName),
     phone: at("bestcallbacknumber", true), email: at("bestemail", true), caseType: at("casetype", true), caseNumber: at("casenumber"),
   };
   const get = (r: Cell[], i: number) => (i >= 0 ? text(r[i]) : "");
