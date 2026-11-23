@@ -1,21 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickTab } from "./marketingSheetSync";
 import { sheetVariances, type ParsedSheet, type ReportForSheet } from "@shared/digitalSheet";
-
-describe("marketing sheet: which day's tab", () => {
-  it("takes today's tab when it's there", () => {
-    expect(pickTab(["111626", "111726", "111826"], "2026-11-18")).toEqual({ day: "2026-11-18", tab: "111826" });
-  });
-  it("falls back to the latest earlier day this month", () => {
-    expect(pickTab(["111426", "111526"], "2026-11-18")).toEqual({ day: "2026-11-15", tab: "111526" });
-  });
-  it("never uses last month's tab — it is a different month to date", () => {
-    expect(pickTab(["103026", "103126"], "2026-11-02")).toBeNull();
-  });
-  it("gives up after a week", () => {
-    expect(pickTab(["11126"], "2026-11-20")).toBeNull();
-  });
-});
 
 describe("marketing sheet: the variance log's rows", () => {
   const sheet: ParsedSheet = {

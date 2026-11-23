@@ -52,6 +52,7 @@ function asText(v) {
  * The lead's "Status of Liability During Intake", or null when Lead Docket has
  * none. `lead` is the detail record (the Data of /api/Leads/{id}).
  */
+import { createHash } from "node:crypto";
 export function liabilityStatusFrom(lead) {
   let best = null;   // { rank, value }
   const offer = (r, v) => {
@@ -88,12 +89,23 @@ export const phoneKey = (s) => {
 };
 
 /**
+ * The client's email as the FLF sheet matcher compares it: a SHA-256 of the
+ * trimmed, lower-cased address, so the address itself is never stored here
+ * (server/flfSignups.ts hashes the sheet's the same way).
+ */
+export const emailHash = (s) => {
+  const e = String(s ?? "").trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) ? createHash("sha256").update(e).digest("hex") : null;
+};
+
+/**
  * Columns added to leaddocket_leads at runtime: deploys run no migrations, so
  * whichever of the sync or the server gets there first adds them.
  */
 export const LIABILITY_COLUMNS = [
   ["liabilityStatus", "VARCHAR(255) NULL"],
   ["phoneKey", "VARCHAR(10) NULL"],
+  ["emailHash", "CHAR(64) NULL"],
 ];
 export const PHONE_INDEX = ["leaddocket_leads_phoneKey", "phoneKey"];
 

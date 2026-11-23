@@ -109,12 +109,36 @@ export function parseFlfTab(rows: Cell[][], tabMonth: string): FlfSignup[] | nul
   return out;
 }
 
-/** The month a sign-up counts in: its Sign Up Date's, or the tab's when the date is blank. */
-export const countMonthOf = (s: Pick<FlfSignup, "signDay" | "tabMonth">) => s.signDay?.slice(0, 7) ?? s.tabMonth;
+const monthNo = (m: string) => Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7)) - 1;
+/**
+ * The month a sign-up counts in: its Sign Up Date's — a late entry on the next
+ * month's tab still counts when it signed — or the tab's when the date is blank
+ * or more than two months from the tab, which is a mistyped year ("2033",
+ * "0204") rather than a late entry.
+ */
+export const countMonthOf = (s: Pick<FlfSignup, "signDay" | "tabMonth">) => {
+  const m = s.signDay?.slice(0, 7);
+  return m && Math.abs(monthNo(m) - monthNo(s.tabMonth)) <= 2 ? m : s.tabMonth;
+};
 
 /** A Lead Docket lead as the matcher sees it. `day` is its Pacific sign-up (or lead) day. */
-export type MatchLead = { leadId: number; clientName: string | null; phoneKey: string | null; email?: string | null; day: string | null };
+export type MatchLead = {
+  leadId: number; clientName: string | null; phoneKey: string | null; day: string | null;
+  /** An email, or `emailKey` already in the sheet rows' form (the server compares hashes on both sides). */
+  email?: string | null; emailKey?: string | null;
+};
 export type MatchedBy = "phone" | "phone+name" | "email" | "name+date";
+
+/**
+ * A database timestamp as a Date. Raw queries return them as text with no
+ * zone ("2026-10-02 15:16:42"); the database is UTC, so that's what it means —
+ * `new Date()` alone would read it as the server's own (Pacific) time.
+ */
+export const utcDate = (v: Date | string | null | undefined): Date | null => {
+  if (v == null || v === "") return null;
+  if (v instanceof Date) return v;
+  return new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(v) ? v : `${v.replace(" ", "T")}Z`);
+};
 
 /** Whole days between two calendar days. */
 const daysApart = (a: string, b: string) => Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86_400_000;
@@ -153,7 +177,7 @@ export function matchSignups<S extends Pick<FlfSignup, "clientName" | "phoneKey"
   const add = (m: Map<string, MatchLead[]>, k: string | null | undefined, l: MatchLead) => { if (k) m.set(k, [...(m.get(k) ?? []), l]); };
   for (const l of leads) {
     add(byPhone, l.phoneKey, l);
-    add(byEmail, emailKeyOf(l.email ?? null), l);
+    add(byEmail, l.emailKey ?? emailKeyOf(l.email ?? null), l);
     add(byNameKey, nameKeyOf(l.clientName), l);
   }
   const used = new Set<number>();

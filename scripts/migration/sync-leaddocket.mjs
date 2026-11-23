@@ -38,7 +38,7 @@ dotenv.config({ quiet: true });
 import mysql from "mysql2/promise";
 import { creditFor, outcomeFor, str } from "./leaddocket-rules.mjs";
 import { ldInstant, pacificYmd } from "./dates.mjs";
-import { liabilityStatusFrom, phoneKey, ensureLiabilityColumns } from "./leaddocket-liability.mjs";
+import { liabilityStatusFrom, phoneKey, emailHash, ensureLiabilityColumns } from "./leaddocket-liability.mjs";
 import { caseValueFrom, ensureDigitalColumns } from "./leaddocket-digital.mjs";
 
 const BASE = process.env.LEADDOCKET_BASE_URL || "https://farahi.leaddocket.com";
@@ -337,6 +337,8 @@ async function storeMarketing(d, row) {
     // Docket next reports a change to them.
     liabilityStatus: cut(liabilityStatusFrom(d), 255),
     phoneKey: phoneKey(contact.MobilePhone || contact.PhoneNumber || contact.HomePhone || contact.WorkPhone),
+    // For matching the FLF sheet's sign-ups by email; only a hash is kept.
+    emailHash: emailHash(contact.Email),
     // The Digital Marketing Report's: Lead Docket's Case Value, and the accident
     // (its day and the leads intake linked to it) for the "Sign-up Unique Count",
     // as store() keeps them for the team. Leads stored before this gain them when

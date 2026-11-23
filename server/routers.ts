@@ -137,6 +137,8 @@ import { getDigitalMarketingReport } from "./digitalMarketing";
 import { getDigitalAudit, getSourceDirectory } from "./digitalAudit";
 import { explainSheetNames } from "./sheetNames";
 import { getSignupSheet } from "./signupSheet";
+import { getFlfReconciliation } from "./flfAudit";
+import { getSourceMapView, saveSourceMap } from "./flfSignups";
 import { listLocks, lockMonth, readSnapshot, unlockMonth, wholeMonthOf } from "./monthLock";
 import { VARIANCE_KINDS, readLog, saveComparison } from "./varianceLog";
 import { comparisonRange, rangeWords } from "./marketing/compare";
@@ -339,6 +341,12 @@ export const appRouter = router({
         catch (e: any) { throw new TRPCError({ code: "BAD_REQUEST", message: e?.message ?? String(e) }); }
       }),
     clearGoogleSheetsAccount: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return clearGoogleSheetsAccount(); }),
+    // Which report channel each FLF sheet Source counts under (flfSignups.ts). Managers, as with spend:
+    // saving moves sign-ups between the Marketing Report's rows.
+    flfSourceMap: protectedProcedure.query(({ ctx }) => { mgrOnly(ctx); return getSourceMapView(); }),
+    saveFlfSourceMap: protectedProcedure
+      .input(z.object({ lines: z.array(z.object({ sheet: z.string().min(1).max(120), channel: z.string().min(1).max(255) })).max(300) }))
+      .mutation(({ ctx, input }) => { mgrOnly(ctx); return saveSourceMap(input.lines); }),
     importTimeero: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return importTimeero(); }),
     newTimeeroSecret: protectedProcedure.mutation(({ ctx }) => { superOnly(ctx); return newTimeeroSecret(); }),
     timeeroSample: protectedProcedure
@@ -1000,9 +1008,13 @@ export const appRouter = router({
       signupSheet: marketingProcedure
         .input(z.object({ fresh: z.boolean().default(false) }))
         .query(({ ctx, input }) => getSignupSheet({ fresh: input.fresh, caseFacts: marketingCaseFacts(ctx.user.role) })),
-      // The digital marketing sheet read from Google Sheets (marketingSheetSync.ts), from the Audit tab.
+      // The FLF sheet vs Lead Docket for a month: missing in Lead Docket, missing from the sheet, and differences (flfAudit.ts).
+      flfReconcile: marketingProcedure
+        .input(z.object({ month, digital: z.boolean().default(false) }))
+        .query(({ input }) => getFlfReconciliation(input)),
+      // The FLF Sign Up History sheet read from Google (marketingSheetSync.ts), from the Data audit.
       // Open to whoever sees this report, not only managers: it only reads the
-      // sheet and adds to the variance log, and never overlaps itself.
+      // sheet, and never overlaps itself.
       sheetSyncStatus: marketingProcedure.query(() => getSyncStatus("marketing_sheet")),
       syncSheet: marketingProcedure.mutation(async () => {
         const started = await startSyncJob("marketing_sheet", "manual");

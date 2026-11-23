@@ -26,10 +26,11 @@ import { getFlfSyncStatus, remapFlfSignups } from "../flfSignups";
 const SIGNED_SQL = `'signed', 'signed referred out', 'referral accepted'`;
 
 /**
- * When a sign-up counts: its Sign Up Date (or its tab's 1st when blank) at
- * 19:30 UTC — midday Pacific in summer and winter alike, so always that Pacific day.
+ * When a sign-up counts: its Sign Up Date at 19:30 UTC — midday Pacific in
+ * summer and winter alike, so always that Pacific day — or the 1st of the
+ * month it counts in when the date is blank or mistyped (countMonthOf).
  */
-const SIGNED_AT = `TIMESTAMP(COALESCE(f.signDay, CONCAT(f.countMonth, '-01')), '19:30:00')`;
+const SIGNED_AT = `TIMESTAMP(IF(LEFT(f.signDay, 7) = f.countMonth, f.signDay, CONCAT(f.countMonth, '-01')), '19:30:00')`;
 
 const COMBINED = sql.raw(`(
   SELECT ld.leadId, ld.createdDate, ld.signedUpDate, ld.leadDate, ld.status, ld.subStatus, ld.outcome, ld.caseType,
