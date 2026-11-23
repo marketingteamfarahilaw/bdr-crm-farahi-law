@@ -27,6 +27,7 @@ import { explainSheetNames } from "./sheetNames";
 import { saveComparison } from "./varianceLog";
 import { getSetting, setSetting } from "./db";
 import { getStatus } from "./dataSync";
+import { syncFlfSignups } from "./flfSignups";
 
 const TZ = "America/Los_Angeles";
 /** How far back to look for a day's tab when today's isn't there yet (a weekend, a late update). */
@@ -47,7 +48,22 @@ export function pickTab(tabs: string[], today: string): { day: string; tab: stri
   return null;
 }
 
+/**
+ * The "Digital marketing sheet" job: the FLF Sign Up History sheet into
+ * flf_signups (the Marketing Report's sign-ups), then this month's digital
+ * sign-ups compared with Lead Docket. Either can fail without stopping the
+ * other; the job reports both.
+ */
 export async function runMarketingSheetSync(): Promise<{ ok: boolean; summary: string }> {
+  let history: string;
+  let historyOk = true;
+  try { history = await syncFlfSignups(); }
+  catch (e: any) { historyOk = false; history = `FLF Sign Up History not read: ${e?.message ?? e}`; }
+  const compared = await compareCurrentMonth().catch((e: any) => ({ ok: false, summary: `Comparison failed: ${e?.message ?? e}` }));
+  return { ok: historyOk && compared.ok, summary: `${history} ${compared.summary}` };
+}
+
+async function compareCurrentMonth(): Promise<{ ok: boolean; summary: string }> {
   const today = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
   const { file, bytes } = await downloadWorkbook("marketing");
   try {
