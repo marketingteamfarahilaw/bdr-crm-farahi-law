@@ -1,0 +1,171 @@
+/**
+ * The FLF Sign Up History sheet: the sign-up record intake keeps, one tab per
+ * month ("October 2026"), back to 2018. The Marketing Report counts and dates
+ * its sign-ups from here; Lead Docket stays the record of leads that never
+ * signed, because the sheet lists sign-ups only.
+ *
+ * Pure: reading a tab and matching its rows to Lead Docket leads. The sync that
+ * stores them is server/flfSignups.ts.
+ */
+import { sheetDay, type Cell } from "./digitalSheet";
+
+const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+
+/**
+ * The month a tab holds, "2026-10" for "October 2026" (or "Oct 2026"), or null
+ * for every other tab — totals, pivots, welcome letters, the dropped-clients tab.
+ */
+export function monthOfTab(name: string): string | null {
+  const m = name.trim().toLowerCase().match(/^([a-z]+)\.?\s+(\d{4})$/);
+  if (!m) return null;
+  const i = MONTHS.findIndex((full) => full === m[1] || (m[1].length >= 3 && full.startsWith(m[1])));
+  return i < 0 ? null : `${m[2]}-${String(i + 1).padStart(2, "0")}`;
+}
+
+/** Lower-case letters and digits only — how the headers are recognised. */
+const key = (v: Cell) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const text = (v: Cell) => String(v ?? "").replace(/\s+/g, " ").trim();
+
+/** A phone as Lead Docket keys it: digits only, the last ten. */
+export const phoneKeyOf = (v: Cell) => {
+  const d = String(v ?? "").replace(/\D/g, "");
+  return d.length >= 10 ? d.slice(-10) : null;
+};
+/** A name as the matcher compares it: lower-cased, letters, digits and single spaces. */
+export const nameKeyOf = (v: Cell) => String(v ?? "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+export const emailKeyOf = (v: Cell) => {
+  const e = String(v ?? "").trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) ? e : null;
+};
+
+/**
+ * Signed in-house or signed referred out. Referred out: Lead Outcome "Referred
+ * out", or a Signed Cases Referral Status starting "Lead/Client Referred out".
+ * Every other client row is an in-house sign-up, so the two add up to the tab.
+ */
+export function signupKind(outcome: string, referralStatus: string): "inHouse" | "referred" {
+  const o = key(outcome), r = key(referralStatus);
+  return o.startsWith("referred") || r.startsWith("leadclientreferredout") ? "referred" : "inHouse";
+}
+
+export type FlfSignup = {
+  /** The month tab the row is on, "2026-10". */
+  tabMonth: string;
+  /** Its row in the tab, 1-based as the sheet numbers it. */
+  rowNo: number;
+  /** Sign Up Date (F) as a calendar day — decides the month it counts in. Null when blank or unreadable. */
+  signDay: string | null;
+  source: string; leadSource: string; intaker: string; signedUpBy: string;
+  referralStatus: string; outcome: string; kind: "inHouse" | "referred";
+  value: string; rank: string; clientName: string; caseType: string; caseNumber: string;
+  phoneKey: string | null; emailKey: string | null;
+};
+
+/**
+ * Every client row of a month tab — a row counts only when Client's Name is
+ * filled. Columns are found by their header, so a column moving in an older
+ * tab doesn't shift the rest. Null when the tab has no Client's Name header.
+ */
+export function parseFlfTab(rows: Cell[][], tabMonth: string): FlfSignup[] | null {
+  const head = rows.slice(0, 10).findIndex((r) => (r ?? []).some((c) => key(c) === "clientsname" || key(c) === "clientname"));
+  if (head < 0) return null;
+  const cols = (rows[head] ?? []).map(key);
+  // Exact header, or the start of a long one ("Case Type (Slip, Auto, …)").
+  const at = (k: string, starts = false) => cols.findIndex((c) => (starts ? c.startsWith(k) : c === k));
+  const c = {
+    source: at("source"), leadSource: at("leadsource"), intaker: at("nameofpersonconductingintake", true),
+    signedUpBy: at("signedupby"), day: at("signupdate"), referralStatus: at("signedcasesreferralstatus", true),
+    value: at("value"), rank: at("rank"), outcome: at("leadoutcome"),
+    name: cols.findIndex((x) => x === "clientsname" || x === "clientname"),
+    phone: at("bestcallbacknumber", true), email: at("bestemail", true), caseType: at("casetype", true), caseNumber: at("casenumber"),
+  };
+  const get = (r: Cell[], i: number) => (i >= 0 ? text(r[i]) : "");
+  const out: FlfSignup[] = [];
+  for (let i = head + 1; i < rows.length; i++) {
+    const r = rows[i] ?? [];
+    const clientName = get(r, c.name);
+    if (!clientName) continue;
+    const outcome = get(r, c.outcome), referralStatus = get(r, c.referralStatus);
+    out.push({
+      tabMonth, rowNo: i + 1,
+      signDay: c.day >= 0 ? sheetDay(r[c.day]) : null,
+      source: get(r, c.source), leadSource: get(r, c.leadSource), intaker: get(r, c.intaker), signedUpBy: get(r, c.signedUpBy),
+      referralStatus, outcome, kind: signupKind(outcome, referralStatus),
+      value: get(r, c.value), rank: get(r, c.rank), clientName, caseType: get(r, c.caseType), caseNumber: get(r, c.caseNumber),
+      phoneKey: c.phone >= 0 ? phoneKeyOf(r[c.phone]) : null,
+      emailKey: c.email >= 0 ? emailKeyOf(r[c.email]) : null,
+    });
+  }
+  return out;
+}
+
+/** The month a sign-up counts in: its Sign Up Date's, or the tab's when the date is blank. */
+export const countMonthOf = (s: Pick<FlfSignup, "signDay" | "tabMonth">) => s.signDay?.slice(0, 7) ?? s.tabMonth;
+
+/** A Lead Docket lead as the matcher sees it. `day` is its Pacific sign-up (or lead) day. */
+export type MatchLead = { leadId: number; clientName: string | null; phoneKey: string | null; email?: string | null; day: string | null };
+export type MatchedBy = "phone" | "phone+name" | "email" | "name+date";
+
+/** Whole days between two calendar days. */
+const daysApart = (a: string, b: string) => Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86_400_000;
+
+/**
+ * Which name of several is this client's: the same name, else one whose words
+ * all appear in the other ("Ana Ruiz" and "Ana M Ruiz"). Null when none or
+ * more than one does.
+ */
+function byName<T extends { clientName: string | null }>(name: string, among: T[]): T | null {
+  const n = nameKeyOf(name);
+  const exact = among.filter((l) => nameKeyOf(l.clientName) === n);
+  if (exact.length === 1) return exact[0];
+  if (exact.length > 1) return null;
+  const words = new Set(n.split(" "));
+  const within = among.filter((l) => {
+    const w = nameKeyOf(l.clientName).split(" ").filter(Boolean);
+    if (!w.length) return false;
+    const lw = new Set(w);
+    return w.every((x) => words.has(x)) || Array.from(words).every((x) => lw.has(x));
+  });
+  return within.length === 1 ? within[0] : null;
+}
+
+/**
+ * Link each sign-up to its Lead Docket lead. Keys in order, stopping at the
+ * first that settles it: phone (last ten digits), email, then name with a
+ * sign-up date within 7 days. Passengers share a caller's phone, so a phone
+ * with several leads is settled by name among them. A lead is linked to one
+ * sign-up at most; the earlier rows claim first.
+ */
+export function matchSignups<S extends Pick<FlfSignup, "clientName" | "phoneKey" | "emailKey" | "signDay">>(
+  signups: S[], leads: MatchLead[],
+): ({ leadId: number; by: MatchedBy } | null)[] {
+  const byPhone = new Map<string, MatchLead[]>(), byEmail = new Map<string, MatchLead[]>(), byNameKey = new Map<string, MatchLead[]>();
+  const add = (m: Map<string, MatchLead[]>, k: string | null | undefined, l: MatchLead) => { if (k) m.set(k, [...(m.get(k) ?? []), l]); };
+  for (const l of leads) {
+    add(byPhone, l.phoneKey, l);
+    add(byEmail, emailKeyOf(l.email ?? null), l);
+    add(byNameKey, nameKeyOf(l.clientName), l);
+  }
+  const used = new Set<number>();
+  const free = (ls: MatchLead[] | undefined) => (ls ?? []).filter((l) => !used.has(l.leadId));
+  return signups.map((s) => {
+    let hit: { leadId: number; by: MatchedBy } | null = null;
+    const phone = free(s.phoneKey ? byPhone.get(s.phoneKey) : undefined);
+    if (phone.length === 1) hit = { leadId: phone[0].leadId, by: "phone" };
+    else if (phone.length > 1) {
+      const l = byName(s.clientName, phone);
+      if (l) hit = { leadId: l.leadId, by: "phone+name" };
+    }
+    if (!hit && s.emailKey) {
+      const email = free(byEmail.get(s.emailKey));
+      const l = email.length === 1 ? email[0] : byName(s.clientName, email);
+      if (l) hit = { leadId: l.leadId, by: "email" };
+    }
+    if (!hit && s.signDay) {
+      const near = free(byNameKey.get(nameKeyOf(s.clientName))).filter((l) => l.day && daysApart(l.day, s.signDay!) <= 7);
+      if (near.length === 1) hit = { leadId: near[0].leadId, by: "name+date" };
+    }
+    if (hit) used.add(hit.leadId);
+    return hit;
+  });
+}
